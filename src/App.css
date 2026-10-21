@@ -1,4 +1,3 @@
-
 :root {
   font-family: Inter, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
   color: #25352d;
@@ -22,7 +21,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -30,8 +30,14 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 a:focus-visible {
   outline: 3px solid #d4a65d;
   outline-offset: 3px;
@@ -42,11 +48,12 @@ a:focus-visible {
 }
 
 .topbar {
-  height: 76px;
+  min-height: 76px;
   padding: 0 8%;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   background: #fffefa;
   border-bottom: 1px solid #e9e6dc;
 }
@@ -62,10 +69,10 @@ a:focus-visible {
 }
 
 .brand-icon {
-  display: grid;
-  place-items: center;
   width: 38px;
   height: 38px;
+  display: grid;
+  place-items: center;
   border-radius: 12px;
   background: #e8eee5;
   font-size: 22px;
@@ -136,7 +143,7 @@ a:focus-visible {
   outline: 0;
   background: transparent;
   color: #25352d;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .search-box input:focus-visible {
@@ -152,7 +159,7 @@ a:focus-visible {
 }
 
 .library {
-  max-width: 1120px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 68px 24px 44px;
 }
@@ -185,6 +192,160 @@ a:focus-visible {
   white-space: nowrap;
 }
 
+/* 篩選面板 */
+
+.filter-panel {
+  margin-bottom: 30px;
+  padding: 24px;
+  border: 1px solid #e5e7db;
+  border-radius: 18px;
+  background: #fffefa;
+  box-shadow: 0 6px 20px #25352d06;
+}
+
+.filter-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.filter-heading .eyebrow {
+  margin: 0 0 7px;
+}
+
+.filter-heading h3 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.clear-button,
+.sort-direction-button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid #dfe6d9;
+  border-radius: 9px;
+  background: #edf1e8;
+  color: #4d6847;
+  font-size: 13px;
+  font-weight: 700;
+  transition: background 150ms ease;
+}
+
+.clear-button:hover:not(:disabled),
+.sort-direction-button:hover {
+  background: #dfe8d8;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.filter-field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #596456;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.filter-field select {
+  width: 100%;
+  min-height: 43px;
+  padding: 0 12px;
+  border: 1px solid #e1e4d9;
+  border-radius: 9px;
+  background: #fbfbf7;
+  color: #25352d;
+  font-size: 13px;
+}
+
+.filter-field select:focus {
+  border-color: #9eaf92;
+}
+
+.category-filter {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #eeeee6;
+}
+
+.category-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 13px;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.category-hint {
+  color: #818879;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.category-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  max-height: 190px;
+  overflow-y: auto;
+  padding: 2px 2px 6px;
+}
+
+.category-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border: 1px solid #e2e6dc;
+  border-radius: 20px;
+  background: #fbfbf7;
+  color: #52604d;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.category-option:has(input:checked) {
+  border-color: #a8b99c;
+  background: #e8eee5;
+  color: #385333;
+}
+
+.category-option input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #66805d;
+}
+
+.sort-row {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #eeeee6;
+}
+
+.sort-field {
+  width: min(100%, 320px);
+}
+
+.sort-direction-button {
+  min-width: 100px;
+}
+
+/* 桌遊卡片 */
+
 .game-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -211,6 +372,7 @@ a:focus-visible {
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow: hidden;
   background: #e8eddf;
 }
 
@@ -235,11 +397,15 @@ a:focus-visible {
   position: absolute;
   top: 12px;
   left: 12px;
+  right: 12px;
+  width: fit-content;
+  max-width: calc(100% - 24px);
   padding: 5px 9px;
   border-radius: 20px;
-  background: #fffefaD9;
-  font-size: 11px;
+  background: #fffefad9;
   color: #4e5d49;
+  font-size: 11px;
+  overflow-wrap: anywhere;
 }
 
 .game-info {
@@ -249,23 +415,23 @@ a:focus-visible {
 .game-info h3 {
   margin: 0 0 10px;
   font-size: 18px;
+  overflow-wrap: anywhere;
 }
 
-.game-description {
-  min-height: 48px;
+.game-bggScore {
   margin: 0;
-  color: #7b7e74;
+  color: #818879;
   font-size: 12px;
-  line-height: 1.8;
 }
 
 .game-meta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-direction: column;
+  gap: 9px;
   margin: 18px 0;
   color: #72786d;
   font-size: 11px;
+  line-height: 1.6;
 }
 
 .rule-button {
@@ -306,10 +472,18 @@ a:focus-visible {
 
 .empty-state p {
   font-size: 13px;
+  line-height: 1.8;
 }
 
+.empty-reset-button {
+  width: min(100%, 220px);
+  margin: 20px auto 0;
+}
+
+/* AI 助手區塊 */
+
 .assistant-banner {
-  max-width: 1072px;
+  max-width: 1120px;
   margin: 0 auto 64px;
   padding: 30px;
   display: flex;
@@ -330,6 +504,10 @@ a:focus-visible {
   background: #dce5d3;
   color: #55724c;
   font-size: 28px;
+}
+
+.assistant-copy {
+  min-width: 0;
 }
 
 .assistant-banner .eyebrow {
@@ -367,6 +545,8 @@ a:focus-visible {
   font-size: 12px;
 }
 
+/* 詳細資訊視窗 */
+
 .modal-backdrop {
   position: fixed;
   z-index: 10;
@@ -374,12 +554,15 @@ a:focus-visible {
   padding: 20px;
   display: grid;
   place-items: center;
+  overflow-y: auto;
   background: #18231dc7;
 }
 
 .game-modal {
-  width: min(100%, 440px);
+  width: min(100%, 460px);
+  max-height: calc(100vh - 40px);
   position: relative;
+  overflow-y: auto;
   padding: 30px;
   border-radius: 20px;
   background: #fffefa;
@@ -400,31 +583,82 @@ a:focus-visible {
 }
 
 .modal-game-icon {
-  margin-bottom: 15px;
-  font-size: 46px;
+  margin-bottom: 12px;
+  font-size: 42px;
 }
 
 .game-modal .eyebrow {
-  margin-bottom: 8px;
+  margin: 0 0 6px;
+}
+
+.modal-score {
+  margin-bottom: 6px;
+  color: #66805d;
+  font-size: 24px;
+  font-weight: 800;
 }
 
 .game-modal h2 {
   margin: 0 0 12px;
   font-size: 27px;
+  overflow-wrap: anywhere;
 }
 
-.game-modal > p:not(.eyebrow) {
-  color: #73786e;
-  font-size: 14px;
-  line-height: 1.8;
+.bgg-link {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: #4d6847;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .modal-meta {
   display: flex;
-  gap: 18px;
+  flex-wrap: wrap;
+  gap: 10px 18px;
   margin: 18px 0;
   color: #72786d;
+  font-size: 12px;
+}
+
+.rating-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.rating-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e9e6dc;
+}
+
+.rating-label {
+  width: 4.5em;
+  flex-shrink: 0;
+  color: #354332;
+  font-weight: 600;
   font-size: 13px;
+  text-align: justify;
+  text-align-last: justify;
+}
+
+.rating-content {
+  max-width: 75%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  color: #72786d;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .notice {
@@ -445,9 +679,11 @@ a:focus-visible {
   color: #73786e;
 }
 
-@media (max-width: 900px) {
+/* 平板 */
+
+@media (max-width: 1000px) {
   .game-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .assistant-banner {
@@ -456,9 +692,26 @@ a:focus-visible {
   }
 }
 
+@media (max-width: 760px) {
+  .filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .game-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .library {
+    padding-top: 48px;
+  }
+}
+
+/* 手機 */
+
 @media (max-width: 520px) {
   .topbar {
-    height: 64px;
+    min-height: 64px;
     padding: 0 18px;
   }
 
@@ -491,11 +744,64 @@ a:focus-visible {
   }
 
   .library {
-    padding: 48px 16px 32px;
+    padding: 42px 16px 32px;
+  }
+
+  .section-heading {
+    align-items: flex-start;
   }
 
   .section-heading h2 {
     font-size: 22px;
+  }
+
+  .game-count {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+
+  .filter-panel {
+    padding: 17px;
+    border-radius: 14px;
+  }
+
+  .filter-heading h3 {
+    font-size: 19px;
+  }
+
+  .filter-grid {
+    gap: 13px 10px;
+  }
+
+  .filter-field {
+    font-size: 11px;
+  }
+
+  .filter-field select {
+    min-height: 41px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .category-options {
+    max-height: 220px;
+    gap: 7px;
+  }
+
+  .category-option {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+
+  .sort-row {
+    align-items: stretch;
+  }
+
+  .sort-direction-button {
+    align-self: end;
+    min-width: 88px;
+    padding: 8px;
+    font-size: 12px;
   }
 
   .game-grid {
@@ -516,11 +822,7 @@ a:focus-visible {
 
   .game-info h3 {
     font-size: 16px;
-  }
-
-  .game-description {
-    min-height: 66px;
-    font-size: 11px;
+    line-height: 1.5;
   }
 
   .game-meta {
@@ -536,12 +838,26 @@ a:focus-visible {
     flex-wrap: wrap;
   }
 
+  .assistant-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 23px;
+  }
+
+  .assistant-copy {
+    flex: 1;
+  }
+
   .assistant-banner h2 {
     font-size: 18px;
   }
 
+  .assistant-banner p:last-child {
+    font-size: 12px;
+  }
+
   .coming-soon {
-    margin-left: 74px;
+    margin-left: 64px;
   }
 
   .footer {
@@ -549,84 +865,246 @@ a:focus-visible {
     flex-direction: column;
   }
 
-.rating-content > span {
-  font-size: 18px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
+  .game-modal {
+    padding: 24px 20px;
+  }
+
+  .game-modal h2 {
+    font-size: 23px;
+  }
 }
 
-@media (max-width: 420px) {
-.rating-item {
+@media (max-width: 360px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .game-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .game-art {
+    min-height: 145px;
+  }
+}
+
+.game-rankings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.game-rankings p {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.game-ranking-engine {
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.game-score-rank {
+  color: var(--text-secondary, #666);
+}
+
+/* ===== 抽屜式篩選 ===== */
+.heading-actions {
   display: flex;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid #d9d6c9;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #354332;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter-toggle-button:hover {
+  background: #f1f0e8;
+}
+
+.filter-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #5f7455;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.filter-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  width: min(420px, 92vw);
+  padding: 16px;
+  overflow-y: auto;
+  background: #fffdf8;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition:
+    transform 0.25s ease,
+    visibility 0s linear 0.25s;
+}
+
+.filter-drawer.open {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform 0.25s ease;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: flex-end;
   margin-bottom: 8px;
 }
 
-  .rating-content {
-    max-width: 65%;
-  }
-}
-}
-
-/* 桌遊詳細資訊 */
-.game-detail-section {
-  margin: 20px 0;
-  padding: 16px;
-  border-radius: 12px;
-  background: #f5f5f5;
-}
-
-.game-detail-section p {
-  margin: 8px 0;
-  line-height: 1.6;
-}
-
-/* 評價清單 */
-.rating-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin: 20px 0;
-}
-
-.rating-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e9e6dc;
-}
-
-.rating-label {
-  width: 4.5em;
-  text-align: justify;
-  text-align-last: justify;
-  font-weight: 600;
+.drawer-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #f1f0e8;
   color: #354332;
-  flex-shrink: 0;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
 }
 
-.rating-content {
+.filter-drawer .filter-panel {
+  margin: 0;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.filter-drawer .filter-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.drawer-done {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.missing-data-note {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #7a8570;
+}
+
+.category-main-options {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.category-chip {
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  padding: 8px 18px;
+  border: 1px solid #d5d9cc;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 14px;
+  cursor: pointer;
 }
 
-.rating-content > span {
-  font-size: 18px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
+.category-chip input {
+  display: none;
 }
 
-/* 手機版評價排版 */
-@media (max-width: 420px) {
-  .rating-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-  }
+.category-chip.selected {
+  background: #5f7a52;
+  border-color: #5f7a52;
+  color: #fff;
+}
 
-  .rating-content {
-    max-width: 65%;
-  }
+.category-sub-toggle {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px dashed #d5d9cc;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.category-search {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid #d5d9cc;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.category-empty {
+  margin: 0;
+  font-size: 13px;
+  color: #7a8570;
+}
+
+.game-art .cover-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-art .game-category {
+  z-index: 1;
+}
+
+.modal-cover {
+  display: block;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 8px;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.game-art {
+  height: 160px; /* 原本 200px，縮小封面區域 */
+  min-height: 0;
+  aspect-ratio: auto;
 }

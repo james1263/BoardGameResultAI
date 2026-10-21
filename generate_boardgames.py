@@ -3,6 +3,7 @@ import csv
 import json
 import re
 import sys
+import unicodedata
 from pathlib import Path
 
 
@@ -27,17 +28,12 @@ def clean_text(value):
 
 
 def get_number(value):
-    """
-    讀取數字。
-    空白或無法解析的值回傳 None，
-    產生 TypeScript 時會變成 null，而不是 0。
-    """
+    """將數字文字轉成 int / float；空白或無效值回傳 None。"""
     text = clean_text(value)
 
     if not text:
         return None
 
-    # 兼容千分位，例如 1,200
     text = text.replace(",", "")
 
     try:
@@ -52,10 +48,7 @@ def get_number(value):
 
 
 def get_player_list(value):
-    """
-    將「3, 4, 5」轉成 [3, 4, 5]。
-    空白或無效的內容會轉成空陣列。
-    """
+    """將「3, 4, 5」轉成 [3, 4, 5]。"""
     text = clean_text(value)
 
     if not text:
@@ -70,24 +63,18 @@ def get_player_list(value):
 
         number = get_number(part)
 
-        # 玩家人數必須是正整數
         if (
             number is not None
-            and isinstance(number, (int, float))
             and number > 0
             and number == int(number)
         ):
             result.append(int(number))
 
-    # 去除重複值並排序
     return sorted(set(result))
 
 
 def get_categories(value):
-    """
-    將「派對, 賽車, 骰子」轉成：
-    ["派對", "賽車", "骰子"]
-    """
+    """將多個類型文字轉成不重複的字串陣列。"""
     text = clean_text(value)
 
     if not text:
@@ -103,7 +90,7 @@ def get_categories(value):
 
 
 def get_value(row, column_name):
-    """讀取指定 CSV 欄位；不存在時回傳空字串。"""
+    """讀取文字欄位；空白或不存在時回傳空字串。"""
     return clean_text(row.get(column_name, ""))
 
 
@@ -111,6 +98,14 @@ def get_optional_number(row, column_name):
     """讀取可缺失的數值。"""
     return get_number(row.get(column_name, ""))
 
+def make_cover_slug(text):
+    """把 BGG 名稱轉成安全的圖片檔名（小寫、用 - 連接）。"""
+    normalized = unicodedata.normalize("NFKD", clean_text(text)).lower()
+    normalized = "".join(
+        char for char in normalized
+        if not unicodedata.combining(char)
+    )
+    return re.sub(r"[^\w]+", "-", normalized).strip("-")
 
 # --------------------------------------------------
 # 讀取 CSV
@@ -118,11 +113,8 @@ def get_optional_number(row, column_name):
 
 def load_csv():
     if not CSV_PATH.exists():
-        raise FileNotFoundError(
-            f"找不到 CSV 檔案：{CSV_PATH}"
-        )
+        raise FileNotFoundError(f"找不到 CSV 檔案：{CSV_PATH}")
 
-    # utf-8-sig 可以處理常見的 UTF-8 BOM
     with CSV_PATH.open(
         "r",
         encoding="utf-8-sig",
@@ -133,8 +125,6 @@ def load_csv():
         if not reader.fieldnames:
             raise ValueError("CSV 沒有欄位標題。")
 
-        # 清除欄位名稱前後空白。
-        # 例如「最佳人數 」會變成「最佳人數」。
         reader.fieldnames = [
             clean_text(name)
             for name in reader.fieldnames
@@ -142,16 +132,25 @@ def load_csv():
 
         required_columns = [
             "屬性",
+            "bggName",
             "類型",
             "bgg網站",
             "BGG分數",
             "BGG時間",
             "BGG難度",
             "Ranking engine",
+            "分數_排名",
             "人數上限",
             "人數下限",
             "推薦人數",
             "最佳人數",
+            "喜歡度",
+            "快速性",
+            "溝通性",
+            "獨特性",
+            "玩家影響性",
+            "複雜性",
+            "變化性",
         ]
 
         missing_columns = [
@@ -164,7 +163,7 @@ def load_csv():
             raise ValueError(
                 "CSV 缺少必要欄位："
                 + "、".join(missing_columns)
-                + "\n請確認 CSV 標題列是否與原始資料一致。"
+                + "\n請確認 CSV 標題列是否正確。"
             )
 
         rows = list(reader)
@@ -181,17 +180,24 @@ def load_csv():
 
 def convert_row(row, index):
     name = get_value(row, "屬性")
+    bgg_name = get_value(row, "bggName")
 
     if not name:
         raise ValueError(
-            f"CSV 第 {index + 2} 列的「屬性」欄位是空白，"
-            "無法建立桌遊名稱。"
+            f"CSV 第 {index + 2} 列的「屬性」欄位是空白。"
+        )
+
+    if not bgg_name:
+        raise ValueError(
+            f"CSV 第 {index + 2} 列的「bggName」欄位是空白。"
         )
 
     game = {
         "id": index + 1,
         "name": name,
+        "bggName": bgg_name,
         "slug": f"game-{index + 1}",
+        "coverSlug": make_cover_slug(bgg_name),
 
         "links": {
             "bgg": get_value(row, "bgg網站"),
@@ -200,75 +206,90 @@ def convert_row(row, index):
             "faq": "",
         },
 
-        "category": get_categories(
-            get_value(row, "類型")
-        ),
+        "category": get_categories(get_value(row, "類型")),
 
-        "bggScore": get_optional_number(
-            row, "BGG分數"
-        ),
-        "maxPlayers": get_optional_number(
-            row, "人數上限"
-        ),
-        "minPlayers": get_optional_number(
-            row, "人數下限"
-        ),
-        "bggTime": get_optional_number(
-            row, "BGG時間"
-        ),
-        "bggDifficulty": get_optional_number(
-            row, "BGG難度"
-        ),
+        "bggScore": get_optional_number(row, "BGG分數"),
+        "maxPlayers": get_optional_number(row, "人數上限"),
+        "minPlayers": get_optional_number(row, "人數下限"),
+        "bggTime": get_optional_number(row, "BGG時間"),
+        "bggDifficulty": get_optional_number(row, "BGG難度"),
 
-        "bestPlayers": get_player_list(
-            get_value(row, "最佳人數")
-        ),
-        "recommendPlayers": get_player_list(
-            get_value(row, "推薦人數")
-        ),
+        "bestPlayers": get_player_list(get_value(row, "最佳人數")),
+        "recommendPlayers": get_player_list(get_value(row, "推薦人數")),
 
-        "rankingEngine": get_optional_number(
-            row, "Ranking engine"
-        ),
+        "rankingEngine": get_optional_number(row, "Ranking engine"),
         "classicGameRanking": get_optional_number(
             row, "老遊戲想玩綜合評分"
         ),
-
+        # 綜合分數排名：直接讀取 CSV，不重新計算。
+        "scoreRank": get_optional_number(row, "分數_排名"),
         "playerImpactRanking": get_optional_number(
             row, "玩家影響性排名"
         ),
-        "changeRanking": get_optional_number(
-            row, "變化排名"
-        ),
-        "uniqueRanking": get_optional_number(
-            row, "獨特排名"
-        ),
-        "communicationRanking": get_optional_number(
-            row, "溝通排名"
-        ),
+        "changeRanking": get_optional_number(row, "變化排名"),
+        "uniqueRanking": get_optional_number(row, "獨特排名"),
+        "communicationRanking": get_optional_number(row, "溝通排名"),
 
-        "likeDegree": get_optional_number(
-            row, "喜歡程度"
-        ),
-        "changeDegree": get_optional_number(
-            row, "變化程度"
-        ),
-        "communicationDegree": get_optional_number(
-            row, "溝通互動"
-        ),
+        # 數字評分：保留原本資料，不用來重新計算 Emoji。
+        "likeDegree": get_optional_number(row, "喜歡程度"),
+        "changeDegree": get_optional_number(row, "變化程度"),
+        "communicationDegree": get_optional_number(row, "溝通互動"),
         "playerImpactDegree": get_optional_number(
             row, "玩家影響程度（在意操作+下一步限制）"
         ),
-        "uniqueDegree": get_optional_number(
-            row, "獨特程度"
-        ),
-        "complexityDegree": get_optional_number(
-            row, "複雜度"
-        ),
+        "uniqueDegree": get_optional_number(row, "獨特程度"),
+        "complexityDegree": get_optional_number(row, "複雜度"),
+
+        # Emoji：直接讀取 CSV，保留原始圖示與數量。
+        "likeEmoji": get_value(row, "喜歡度"),
+        "speedEmoji": get_value(row, "快速性"),
+        "communicationEmoji": get_value(row, "溝通性"),
+        "uniqueEmoji": get_value(row, "獨特性"),
+        "playerImpactEmoji": get_value(row, "玩家影響性"),
+        "complexityEmoji": get_value(row, "複雜性"),
+        "changeEmoji": get_value(row, "變化性"),
     }
 
     return game
 
+
+# --------------------------------------------------
+# 驗證資料
+# --------------------------------------------------
+
+def validate_games(games):
+    names = [game["name"] for game in games]
+    bgg_names = [game["bggName"] for game in games]
+    cover_slugs = [game["coverSlug"] for game in games]
+
+    duplicate_names = sorted({
+        name for name in names
+        if names.count(name) > 1
+    })
+
+    duplicate_bgg_names = sorted({
+        name for name in bgg_names
+        if bgg_names.count(name) > 1
+    })
+
+    duplicate_cover_slugs = sorted({
+        slug for slug in cover_slugs
+        if cover_slugs.count(slug) > 1
+    })
+
+    if duplicate_bgg_names:
+        raise ValueError(
+            "bggName 有重複值，為避免桌遊對應錯誤，取消產生檔案：\n"
+            + "\n".join(f"- {name}" for name in duplicate_bgg_names)
+        )
+
+    if duplicate_cover_slugs:
+        raise ValueError(
+            "圖片檔名有重複，請確認 bggName：\n"
+            + "\n".join(f"- {slug}" for slug in duplicate_cover_slugs)
+        )
+
+    return duplicate_names
 
 # --------------------------------------------------
 # 產生 TypeScript 檔案
@@ -279,7 +300,9 @@ def write_typescript(games):
 export type BoardGame = {
   id: number
   name: string
+  bggName: string
   slug: string
+  coverSlug: string
   links: {
     bgg: string
     rulebookZh: string
@@ -296,6 +319,7 @@ export type BoardGame = {
   recommendPlayers: number[]
   rankingEngine: number | null
   classicGameRanking: number | null
+  scoreRank: number | null
   playerImpactRanking: number | null
   changeRanking: number | null
   uniqueRanking: number | null
@@ -306,24 +330,24 @@ export type BoardGame = {
   playerImpactDegree: number | null
   uniqueDegree: number | null
   complexityDegree: number | null
+  likeEmoji: string
+  speedEmoji: string
+  communicationEmoji: string
+  uniqueEmoji: string
+  playerImpactEmoji: string
+  complexityEmoji: string
+  changeEmoji: string
 }
 
 """
 
     output_data = (
         "export const boardGames: BoardGame[] = "
-        + json.dumps(
-            games,
-            ensure_ascii=False,
-            indent=2
-        )
+        + json.dumps(games, ensure_ascii=False, indent=2)
         + ";\n"
     )
 
-    OUTPUT_PATH.parent.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     OUTPUT_PATH.write_text(
         output_type + output_data,
@@ -344,30 +368,20 @@ def main():
             for index, row in enumerate(rows)
         ]
 
-        # 檢查是否有重複名稱
-        names = [game["name"] for game in games]
-        duplicate_names = sorted({
-            name
-            for name in names
-            if names.count(name) > 1
-        })
-
-        write_typescript(games)
+        # 所有資料驗證完成後，才允許覆寫產生檔。
+        duplicate_names = validate_games(games)
 
         missing_bgg_urls = sum(
-            not game["links"]["bgg"]
-            for game in games
+            not game["links"]["bgg"] for game in games
         )
-
         missing_bgg_scores = sum(
-            game["bggScore"] is None
-            for game in games
+            game["bggScore"] is None for game in games
+        )
+        missing_difficulties = sum(
+            game["bggDifficulty"] is None for game in games
         )
 
-        missing_difficulties = sum(
-            game["bggDifficulty"] is None
-            for game in games
-        )
+        write_typescript(games)
 
         print("===== 桌遊資料產生完成 =====")
         print(f"CSV 資料筆數：{len(rows)}")
@@ -379,24 +393,17 @@ def main():
         print(f"輸出檔案：{OUTPUT_PATH}")
 
         if duplicate_names:
-            print("\n請檢查重複名稱：")
+            print("\n提醒：以下桌遊名稱重複，請確認是否為不同版本：")
             for name in duplicate_names:
                 print(f"- {name}")
 
         print("\n前 3 款桌遊檢查：")
-
         for game in games[:3]:
             print(
                 f"- {game['name']} | "
-                f"類型：{'、'.join(game['category'])} | "
-                f"最佳人數：{game['bestPlayers']} | "
-                f"推薦人數：{game['recommendPlayers']}"
-            )
-
-        if len(games) != 107:
-            print(
-                "\n注意：目前不是 107 筆資料。"
-                "請先確認 CSV 是否完整，不要覆蓋舊檔。"
+                f"bggName：{game['bggName']} | "
+                f"喜歡度：{game['likeEmoji'] or '未提供'} | "
+                f"快速性：{game['speedEmoji'] or '未提供'}"
             )
 
     except (OSError, ValueError, csv.Error) as error:
