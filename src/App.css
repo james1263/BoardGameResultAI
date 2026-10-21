@@ -1108,3 +1108,176 @@ a:focus-visible {
   min-height: 0;
   aspect-ratio: auto;
 }
+
+/* ===== 檢視模式切換 ===== */
+.view-toggle {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid #e0ddd2;
+  border-radius: 10px;
+  background: #fffefa;
+}
+
+.view-toggle button {
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: #5c6b62;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.view-toggle button.active {
+  background: #25352d;
+  color: #fff;
+}
+
+/* 一排 9 個：小卡片，隱藏次要資訊 */
+.game-grid.view-grid-9 {
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.view-grid-9 .game-art {
+  height: 110px;
+}
+
+.view-grid-9 .game-category,
+.view-grid-9 .game-rankings,
+.view-grid-9 .game-meta {
+  display: none;
+}
+
+.view-grid-9 .game-info {
+  padding: 8px;
+}
+
+.view-grid-9 .game-info h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.view-grid-9 .rule-button {
+  padding: 6px;
+  font-size: 11px;
+}
+
+/* 8 個一排在小螢幕時自動減少欄數 */
+@media (max-width: 1000px) {
+  .game-grid.view-grid-9 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .game-grid.view-grid-9 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .view-toggle button {
+    padding: 7px 8px;
+    font-size: 11px;
+  }
+}
+
+/* ===== 檢視模式：圖示按鈕 ===== */
+.view-toggle .view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #8a968e;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.view-toggle .view-btn:hover {
+  color: #25352d;
+}
+
+.view-toggle .view-btn.active {
+  background: #25352d;
+  color: #fff;
+}
+
+/* ===== 清單檢視：一列一款 ===== */
+.game-grid.view-list {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.view-list .game-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-right: 16px;
+}
+
+.view-list .game-art {
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+  min-height: 0;
+}
+
+.view-list .game-category {
+  display: none;
+}
+
+.view-list .game-info {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  min-width: 0;
+  padding: 10px 0;
+}
+
+.view-list .game-info h3 {
+  flex: 1 1 180px;
+  margin: 0;
+}
+
+.view-list .game-rankings p {
+  margin: 0;
+}
+
+.view-list .game-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+}
+
+.view-list .rule-button {
+  width: auto;
+  padding: 8px 16px;
+  white-space: nowrap;
+}
+
+/* 手機：清單改成較緊湊的版面 */
+@media (max-width: 520px) {
+  .view-list .game-art {
+    width: 76px;
+    height: 76px;
+  }
+
+  .view-list .game-card {
+    gap: 10px;
+    padding-right: 10px;
+  }
+
+  .view-list .game-rankings,
+  .view-list .game-meta {
+    display: none;
+  }
+}

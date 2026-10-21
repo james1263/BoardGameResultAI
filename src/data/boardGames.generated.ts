@@ -3845,7 +3845,7 @@ export const boardGames: BoardGame[] = [
       "策略",
       "跟隨"
     ],
-    "bggScore": 3.8,
+    "bggScore": 8.3,
     "maxPlayers": 4,
     "minPlayers": 2,
     "bggTime": 180,
@@ -4864,7 +4864,7 @@ export const boardGames: BoardGame[] = [
       "競標",
       "策略"
     ],
-    "bggScore": 3.9,
+    "bggScore": 8.4,
     "maxPlayers": 8,
     "minPlayers": 3,
     "bggTime": 240,
