@@ -1,59 +1,79 @@
 # 桌遊規則助手 — 懶人包（給下一個 AI）
 
-> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`。最後更新：2026-10-21（傍晚）
+> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`。最後更新：2026-10-21（深夜）
 
 ## 這是什麼
 
 使用者在做一個**公開給朋友瀏覽的桌遊收藏網站**「桌遊規則助手」，目前有 107 款桌遊，能搜尋、篩選、排序、看封面和評分。最終目標是讓大家能問 **AI 規則助手**，AI 要根據使用者上傳的規則書 PDF 回答，並標明出處與頁碼。
 
 - 線上網址：https://board-game-result-ai.vercel.app/（GitHub `master` 分支 → Vercel 自動部署）
-- 技術：React + TypeScript + Vite + **Supabase（資料庫與登入，免費方案，首爾）**
-- 本機路徑：`D:\BoardGameResultAI`（Windows、PowerShell、用 `npm.cmd`）
-- **桌遊資料現在存在 Supabase 的 `board_games` 資料表**；網站讀取失敗時才退回本機 `boardGames.generated.ts`。
-- 目前的手動更新流程：Notion → `boardgames.csv` → `python generate_boardgames.py` → `python make_supabase_import.py` → 把 `supabase_import.sql` 貼進 Supabase SQL Editor 執行（可重複執行，等於更新）。
+- 技術：React + TypeScript + Vite + **Supabase（資料庫、登入、檔案儲存，免費方案，首爾）**
+- 本機路徑：`D:\BoardGameResultAI`（Windows、PowerShell、用 `npm.cmd`）。**使用者會在多台電腦作業（外面的電腦、家裡的電腦），路徑可能不同，見 `PROJECT_CONTEXT.md` 第 10 節。**
+- **桌遊資料存在 Supabase 的 `board_games` 資料表**；網站讀取失敗時才退回本機 `boardGames.generated.ts`。
+- **資料更新流程（已改為網站操作）**：Notion 匯出 CSV → 網站頁尾登入管理者 →「匯入 CSV」→ 預覽 →「確認匯入」。舊的 Python 流程（`generate_boardgames.py`、`make_supabase_import.py`）已不再需要，只留作備份與參考。
 
 ## 使用者是誰、怎麼合作
 
 - **程式初學者**，繁體中文。**一次只給一個步驟**。
 - 給法：明確檔案、`Ctrl + F` 搜尋位置、完整程式碼（改函式就整個換掉）、測試步驟。
 - 你**碰不到**他的檔案，也**收不到** CSV。要資訊就給 PowerShell／Python 指令，請他貼結果或截圖。
-- **要改 `App.tsx` 前，先請他貼目前版本**（結構已改過：`App` 負責讀資料，`Library` 是原本的主畫面）。
+- **要改 `App.tsx` 前，先請他貼目前版本**（結構：`App` 負責讀資料，`Library` 是主畫面）。
 - 改完 `npm.cmd run build` 並實測。不要破壞 107 款資料和現有功能。不要揭露「綜合分數排名」的計算方式。
 - **不要叫他貼密碼或 Secret／service_role key。**
 
 ## 已完成
 
-搜尋、篩選抽屜、類型篩選（3 大項 + 可搜尋的更多類型，多選為 AND）、缺資料提示、排序與重設排序、封面圖（`public/covers/{coverSlug}.webp|jpg|png`，沒圖顯示 🎲）、精簡詳細視窗（使用者不要再加其他資訊）、**檢視模式切換（清單／一排 4／一排 9，存 localStorage）**、**資料搬到 Supabase 並已上線**、**單一管理者帳號 + 寫入權限（RLS）**。
+- 搜尋、篩選抽屜、類型篩選、缺資料提示、排序、檢視模式切換（清單／4／9）、精簡詳細視窗（使用者不要再加其他資訊）。
+- 資料搬到 Supabase 並已上線；單一管理者帳號 + 寫入權限（RLS）。
+- **管理者登入**（頁尾）：已實測成功並 push。
+- **網站匯入 CSV**：`src/lib/parseCsv.ts`（移植自 Python 規則）+ `AdminPanel.tsx` 預覽與「確認匯入」（以 `bgg_name` upsert）。預覽實測正確（107 款、更新 107、新增 0）；匯入已實測成功。**只新增／更新，不刪除。**
+- **封面改存 Supabase Storage**：已建立公開 bucket `covers` 與 4 條 storage 權限（讀取 anon+authenticated；新增／更新／刪除只給 authenticated）。`CoverImage` 讀取順序：Storage `{coverSlug}.webp` → 舊的 `public/covers/` webp／jpg／png → 🎲。
+- **詳細視窗「上傳／更換封面」**（登入後才出現）：`src/lib/uploadCover.ts` 在瀏覽器把圖縮成寬度最多 600px、轉 webp 後上傳；`src/lib/useSession.ts` 提供登入狀態。**已實測成功。**
 
-## 進行中
+## 進行中（未完成、未測試）
 
-**管理者登入畫面**：`src/AdminPanel.tsx`（頁尾「管理者登入」）已寫好、build 成功，**但還沒實測、還沒 push**。使用者忘記密碼，正在到 Supabase（Authentication → Users）刪除帳號重建（勾 Auto Confirm），或用 Send password recovery。請先確認他能登入。
+**匯入 CSV 時一起附上封面圖**（步驟 4）：預覽畫面多一個可多選的「封面圖片」欄位，圖片檔名 → `makeCoverSlug`（去副檔名後轉換）→ 對應遊戲，對應不到的略過並列出。已提供程式碼修改（`parseCsv.ts` 匯出 `makeCoverSlug`、`AdminPanel.tsx` 的 `matchCovers`、`coverFiles` 狀態、新版 `handleConfirmImport`、畫面選圖欄位）。**使用者尚未套用／測試，不確定 build 是否通過。**
+
+這批尚未測試的程式碼，使用者離開前應已 commit 並 push 到分支 **`wip-cover-upload`**（沒有進 `master`）。請開場先確認：`git branch -a`、目前在哪個分支。
 
 ## 下一步（照順序）
 
-1. 登入實測成功 → push（**不要 `git add .`**，只加 `.gitignore`、`package*.json`、`src`、`public`、兩份交接文件）。
-2. **網站上傳 CSV**（登入後才出現）：瀏覽器解析 CSV（移植 `generate_boardgames.py` 的規則）→ 預覽 → 用 `bgg_name` 做 `upsert`。**不能動封面圖。** 先問使用者：CSV 沒有但資料庫有的遊戲要不要刪（建議預設不刪）。
-3. 規則書連結（`link_rulebook_zh/en`、`link_faq` 目前全空，需決定檔案放哪，可能用 Supabase Storage）。
-4. 個人收藏（想玩、已玩、備註，先存 localStorage）。
-5. 新到貨桌遊標示（需 Notion／CSV 新增「入手日期」欄位）。
-6. 之後：**AI 規則助手（最重要）** → 討論／揪團／行事曆 → 帳號與遊玩紀錄。
+1. 確認 `wip-cover-upload` 分支狀態 → 套用／確認步驟 4 程式碼 → `npm.cmd run build` → 實測（選 1～2 張檔名為 `bggName` 的圖 + 1 張亂取名的圖；注意會真的覆蓋封面）。
+2. 測試成功後合併進 `master` 並 push（只 `git add` 需要的檔案，**不要 `git add .`**），確認 Vercel 線上版的「匯入 CSV」與「上傳／更換封面」都正常。
+3. **決定「CSV 沒有、資料庫有的遊戲」要不要能刪除**（見下方「待確認」）。
+4. 規則書連結（`link_rulebook_zh/en`、`link_faq` 目前全空；可用 Supabase Storage，與 AI 助手相關）。
+5. 個人收藏（想玩、已玩、備註，先存 localStorage）。
+6. 新到貨桌遊標示（需 Notion／CSV 新增「入手日期」欄位）。
+7. 之後：**AI 規則助手（最重要）** → 討論／揪團／行事曆 → 帳號與遊玩紀錄。
+
+## 待確認：CSV 上傳的刪除行為
+
+使用者發現：**上傳筆數比資料庫少的 CSV，缺少的遊戲不會被刪除。** 這是目前**刻意的預設**（只 upsert，預覽顯示「資料庫有、但 CSV 沒有：N 款（不會刪除）」），不是 bug，但使用者希望之後再確認要不要提供刪除。建議方案（尚未動工、需使用者決定）：
+
+- 預覽時列出「CSV 沒有」的遊戲名稱；
+- 預設不刪，提供一個**預設關閉**的勾選「同時刪除這些遊戲」，勾選後再次跳出確認（顯示筆數與名稱）；
+- 決定刪除遊戲時，是否連帶刪除 Storage 裡的封面（建議不連帶，避免誤刪）。
+- 相關地雷：在 Notion 改了 `bggName` 會被當成新遊戲，舊的那筆會留下；若新舊 `cover_slug` 相同會撞到唯一限制而匯入失敗。
 
 ## 關鍵決定與地雷
 
 - **公開瀏覽、只有使用者能編輯；訪客可以問 AI 但不能改設定。** AI 開放給訪客會花錢，之後要做每日提問次數限制，AI 金鑰只能放後端。
 - Supabase：Project URL 是**根網址** `https://hgeuockbjrzayfdylavq.supabase.co`（不加 `/rest/v1/`）。只有 Publishable key 可放前端。已**關閉開放註冊**。
-- ⚠️ 寫入規則給所有 `authenticated` 使用者；**日後開放朋友登入前，必須改成只認管理者**，否則朋友能改桌遊資料。
-- Vercel 的 `VITE_SUPABASE_URL`、`VITE_SUPABASE_PUBLISHABLE_KEY` 必須存成 **Config**（不是 Secret），名稱一個字母都不能錯；錯了網站會悄悄退回本機資料。
-- Supabase 免費專案閒置一週會暫停（資料不會消失，需到後台恢復）。
+- ⚠️ 資料表與 Storage 的寫入規則都給所有 `authenticated` 使用者；**日後開放朋友登入前，兩邊都必須改成只認管理者**，否則朋友能改桌遊資料和封面。
+- Vercel 的 `VITE_SUPABASE_URL`、`VITE_SUPABASE_PUBLISHABLE_KEY` 必須存成 **Config**（不是 Secret），名稱一個字母都不能錯；錯了網站會悄悄退回本機資料。本機的 `.env.local` 不在 Git 裡，換電腦要重建。
+- Supabase 免費專案閒置一週會暫停（資料不會消失，需到後台恢復）；檔案儲存免費額度約 1 GB，封面已壓縮，之後放規則書 PDF 要留意。
 - 資料庫主鍵是 `bgg_name`；前端 `id` 只是流水號，**絕對不能用來對應圖片或使用者資料**。
 - 缺值保留 `null`，顯示「未提供」，不要編造。
-- 上線網站只看得到有 push 的檔案；改資料庫內容則不需要 push。
-- 瀏覽器 Console 裡大量封面 404 是正常的（元件依序試 webp／jpg／png）。
+- 上線網站只看得到有 push 的檔案；改資料庫內容與上傳封面（Storage）**不需要 push**。舊的 `public/covers/` 108 張圖不用搬，繼續當備援。
+- 瀏覽器 Console 裡大量封面 404 是正常的（元件依序試 Storage、webp、jpg、png）。
+- 匯入 CSV 或上傳封面後，要重新整理網頁才會看到最新資料（上傳封面當下會自動換圖）。
+- `BoardGame` 型別仍由 `src/data/boardGames.generated.ts` 匯出，**不要刪這個檔案**。
 - 使用者想讓「常玩遊戲排名」之後由遊玩紀錄計算，尚未決定。
 
 ## 開場前先確認
 
-1. 使用者能否登入管理者帳號、頁尾登入畫面是否正常。
-2. 請他貼出目前的 `src/App.tsx`。
-3. 清單檢視與 9 個一排的外觀是否滿意（清單檢視還沒看到截圖）。
-4. 確認是否已 push，Vercel 網站是否正常。
+1. 使用者現在在哪台電腦、專案資料夾在哪；是否已照 `PROJECT_CONTEXT.md` 第 10 節設好。
+2. `git branch -a`：`wip-cover-upload` 是否存在、目前在哪個分支。
+3. 請他貼出目前的 `src/App.tsx` 與 `src/AdminPanel.tsx`（兩份都已大改）。
+4. 步驟 4（匯入附圖）是否已測試；Vercel 線上版是否正常。
+5. 清單檢視與 9 個一排的外觀是否滿意（清單檢視還沒看到截圖）。

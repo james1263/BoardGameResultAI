@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from 'react'
 import './App.css'
 import {
   boardGames as fallbackGames,
@@ -6,6 +12,8 @@ import {
 } from './data/boardGames.generated'
 import { supabase } from './lib/supabase'
 import AdminPanel from './AdminPanel'
+import { useSession } from './lib/useSession'
+import { uploadCover } from './lib/uploadCover'
 
 type SortKey =
   | 'name'
@@ -78,20 +86,36 @@ function compareNullableNumbers(
 
 const COVER_EXTENSIONS = ['webp', 'jpg', 'png']
 
+function getCoverSources(slug: string, version: number): string[] {
+  const baseUrl = supabase.storage
+    .from('covers')
+    .getPublicUrl(`${slug}.webp`).data.publicUrl
+  const storageUrl = version > 0 ? `${baseUrl}?v=${version}` : baseUrl
+
+  // 順序：Supabase 上傳的圖 → 舊的本機圖 webp／jpg／png
+  return [
+    storageUrl,
+    ...COVER_EXTENSIONS.map((ext) => `/covers/${slug}.${ext}`),
+  ]
+}
+
 function CoverImage({
   slug,
   alt,
   className,
   fallback,
+  version = 0,
 }: {
   slug: string
   alt: string
   className: string
   fallback: ReactNode
+  version?: number
 }) {
-  const [extIndex, setExtIndex] = useState(0)
+  const sources = getCoverSources(slug, version)
+  const [srcIndex, setSrcIndex] = useState(0)
   const [loaded, setLoaded] = useState(false)
-  const failed = extIndex >= COVER_EXTENSIONS.length
+  const failed = srcIndex >= sources.length
 
   return (
     <>
@@ -99,11 +123,11 @@ function CoverImage({
       {!failed && (
         <img
           className={className}
-          src={`/covers/${slug}.${COVER_EXTENSIONS[extIndex]}`}
+          src={sources[srcIndex]}
           alt={alt}
           style={{ display: loaded ? 'block' : 'none' }}
           onLoad={() => setLoaded(true)}
-          onError={() => setExtIndex((current) => current + 1)}
+          onError={() => setSrcIndex((current) => current + 1)}
         />
       )}
     </>
@@ -205,6 +229,30 @@ async function fetchBoardGames(): Promise<BoardGame[]> {
 function Library({ boardGames }: { boardGames: BoardGame[] }) {
   const [searchText, setSearchText] = useState('')
   const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null)
+  const session = useSession()
+  const [coverVersions, setCoverVersions] = useState<Record<string, number>>({})
+  const [isUploadingCover, setIsUploadingCover] = useState(false)
+  const [coverMessage, setCoverMessage] = useState('')
+
+  async function handleCoverUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file || !selectedGame) return
+
+    const slug = selectedGame.coverSlug
+    setCoverMessage('')
+    setIsUploadingCover(true)
+
+    try {
+      await uploadCover(slug, file)
+      setCoverVersions((current) => ({ ...current, [slug]: Date.now() }))
+      setCoverMessage('封面已更新。')
+    } catch (error) {
+      setCoverMessage(error instanceof Error ? error.message : '上傳失敗')
+    } finally {
+      setIsUploadingCover(false)
+    }
+  }
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [minDifficulty, setMinDifficulty] = useState<NumericFilter>('')
@@ -914,6 +962,8 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
                 <article className="game-card" key={game.id}>
                   <div className={`game-art game-art-${game.id}`}>
                     <CoverImage
+                      key={`${game.coverSlug}-${coverVersions[game.coverSlug] ?? 0}`}
+                      version={coverVersions[game.coverSlug] ?? 0}
                       slug={game.coverSlug}
                       alt={game.name}
                       className="cover-image"
@@ -961,7 +1011,10 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
                     <button
                       className="rule-button"
                       type="button"
-                      onClick={() => setSelectedGame(game)}
+                      onClick={() => {
+                        setCoverMessage('')
+                        setSelectedGame(game)
+                      }}
                     >
                       查看規則 <span aria-hidden="true">→</span>
                     </button>
@@ -1026,6 +1079,8 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
             </button>
 
             <CoverImage
+              key={`${selectedGame.coverSlug}-${coverVersions[selectedGame.coverSlug] ?? 0}`}
+              version={coverVersions[selectedGame.coverSlug] ?? 0}
               slug={selectedGame.coverSlug}
               alt={selectedGame.name}
               className="modal-cover"
@@ -1035,6 +1090,22 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
                 </div>
               }
             />
+
+            {session && (
+              <div className="cover-upload">
+                <label className="admin-link" style={{ cursor: 'pointer' }}>
+                  {isUploadingCover ? '上傳中…' : '上傳／更換封面'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    disabled={isUploadingCover}
+                    onChange={handleCoverUpload}
+                  />
+                </label>
+                {coverMessage && <p>{coverMessage}</p>}
+              </div>
+            )}
 
             <p className="eyebrow">BGG SCORE</p>
             <div className="modal-score">

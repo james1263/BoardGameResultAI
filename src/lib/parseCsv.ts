@@ -50,7 +50,8 @@ function getCategories(value: unknown): string[] {
   return [...new Set(parts)]
 }
 
-function makeCoverSlug(text: string): string {
+
+export function makeCoverSlug(text: string): string {
   return cleanText(text)
     .normalize('NFKD')
     .toLowerCase()

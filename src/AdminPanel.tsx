@@ -6,7 +6,12 @@ import {
 } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
-import { parseBoardGamesCsv, type ParsedGame } from './lib/parseCsv'
+import {
+    parseBoardGamesCsv,
+    makeCoverSlug,
+    type ParsedGame,
+} from './lib/parseCsv'
+import { uploadCover } from './lib/uploadCover'
 
 type ImportPreview = {
     fileName: string
@@ -16,6 +21,24 @@ type ImportPreview = {
     notInCsvCount: number
     duplicateNames: string[]
     sample: ParsedGame[]
+}
+
+function matchCovers(games: ParsedGame[], files: File[]) {
+    const slugs = new Set(games.map((game) => game.coverSlug))
+    const matched = new Map<string, File>()
+    const unmatched: string[] = []
+
+    for (const file of files) {
+        const baseName = file.name.replace(/\.[^.]+$/, '')
+        const slug = makeCoverSlug(baseName)
+        if (slugs.has(slug)) {
+            matched.set(slug, file)
+        } else {
+            unmatched.push(file.name)
+        }
+    }
+
+    return { matched, unmatched }
 }
 
 export default function AdminPanel() {
@@ -33,6 +56,7 @@ export default function AdminPanel() {
     const [pendingGames, setPendingGames] = useState<ParsedGame[]>([])
     const [isImporting, setIsImporting] = useState(false)
     const [importResult, setImportResult] = useState('')
+    const [coverFiles, setCoverFiles] = useState<File[]>([])
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data }) => setSession(data.session))
@@ -75,6 +99,7 @@ export default function AdminPanel() {
         setImportResult('')
         setPreview(null)
         setPendingGames([])
+        setCoverFiles([])
     }
 
     function toRow(game: ParsedGame) {
@@ -117,8 +142,10 @@ export default function AdminPanel() {
     async function handleConfirmImport() {
         if (!preview || pendingGames.length === 0) return
 
+        const { matched } = matchCovers(pendingGames, coverFiles)
+
         const ok = window.confirm(
-            `確定要匯入 ${preview.total} 款桌遊嗎？\n新增 ${preview.newCount} 款、更新 ${preview.updateCount} 款（不會刪除任何遊戲）。`,
+            `確定要匯入 ${preview.total} 款桌遊嗎？\n新增 ${preview.newCount} 款、更新 ${preview.updateCount} 款（不會刪除任何遊戲）。\n將上傳 ${matched.size} 張封面。`,
         )
         if (!ok) return
 
@@ -130,18 +157,33 @@ export default function AdminPanel() {
             .from('board_games')
             .upsert(pendingGames.map(toRow), { onConflict: 'bgg_name' })
 
-        setIsImporting(false)
-
         if (error) {
+            setIsImporting(false)
             setImportError('匯入失敗：' + error.message)
             return
         }
 
-        setImportResult(
-            `匯入完成：新增 ${preview.newCount} 款、更新 ${preview.updateCount} 款。請重新整理網頁查看。`,
-        )
+        let uploaded = 0
+        const failed: string[] = []
+        for (const [slug, file] of matched) {
+            try {
+                await uploadCover(slug, file)
+                uploaded++
+            } catch {
+                failed.push(file.name)
+            }
+        }
+
+        setIsImporting(false)
+
+        let message = `匯入完成：新增 ${preview.newCount} 款、更新 ${preview.updateCount} 款，上傳封面 ${uploaded} 張。請重新整理網頁查看。`
+        if (failed.length > 0) {
+            message += `\n以下封面上傳失敗，請之後在遊戲詳細視窗補上：${failed.join('、')}`
+        }
+        setImportResult(message)
         setPreview(null)
         setPendingGames([])
+        setCoverFiles([])
     }
 
     async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -188,6 +230,8 @@ export default function AdminPanel() {
         }
     }
 
+    const coverMatch = matchCovers(pendingGames, coverFiles)
+
     if (session) {
         return (
             <>
@@ -220,7 +264,9 @@ export default function AdminPanel() {
                             />
 
                             {isParsing && <p>解析中…</p>}
-                            {importResult && <p>{importResult}</p>}
+                            {importResult && (
+                                <p style={{ whiteSpace: 'pre-wrap' }}>{importResult}</p>
+                            )}
 
                             {importError && (
                                 <p className="admin-error" style={{ whiteSpace: 'pre-wrap' }}>
@@ -252,6 +298,29 @@ export default function AdminPanel() {
                                             </li>
                                         ))}
                                     </ul>
+                                    <p>封面圖片（可不選，之後也能補）：</p>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={(event) =>
+                                            setCoverFiles(Array.from(event.target.files ?? []))
+                                        }
+                                    />
+                                    {coverFiles.length > 0 && (
+                                        <>
+                                            <p>
+                                                已選 {coverFiles.length} 張，可對應到遊戲：
+                                                {coverMatch.matched.size} 張
+                                            </p>
+                                            {coverMatch.unmatched.length > 0 && (
+                                                <p>
+                                                    找不到對應遊戲（會略過）：
+                                                    {coverMatch.unmatched.join('、')}
+                                                </p>
+                                            )}
+                                        </>
+                                    )}
                                     <button
                                         className="rule-button"
                                         type="button"

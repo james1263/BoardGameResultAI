@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案交接文件
 
 > 給接手的 AI 閱讀。**請先讀 `QUICKSTART.md`（懶人包），再讀本文件。**
-> 最後更新：2026-10-21（傍晚）
+> 最後更新：2026-10-21（深夜）
 
 ## 1. 專案簡介
 
@@ -10,61 +10,69 @@
 - **網站已上線**：https://board-game-result-ai.vercel.app/
 - **長期願景**：完整的「桌遊社群平台」，優先順序見第 6 節（AI 規則助手最重要）。
 - **使用模式（重要）**：網站**公開給別人瀏覽，也開放訪客問 AI，但只有使用者本人能編輯**（匯入 CSV、上傳封面、上傳規則書）。訪客不能更動網站內部設定。
-- **目前資料量**：107 款桌遊（使用者在 Notion 整理後匯出 `boardgames.csv`）。
-- **本機專案路徑**：`D:\BoardGameResultAI`（Windows、PowerShell）
+- **目前資料量**：107 款桌遊（使用者在 Notion 整理後匯出 CSV）。
+- **本機專案路徑**：`D:\BoardGameResultAI`（Windows、PowerShell）。使用者會在多台電腦作業，路徑可能不同，見第 10 節。
 
 ## 2. 技術架構與部署
 
 - 前端：React + TypeScript + Vite。
-- **後端：Supabase（免費方案，區域首爾 ap-northeast-2）**。專案 ID `hgeuockbjrzayfdylavq`，Project URL `https://hgeuockbjrzayfdylavq.supabase.co`（給前端的是**根網址**，不要加 `/rest/v1/`）。Publishable key 在 Supabase 後台 Project Settings → API Keys（公開用的 key，可放前端）。**Secret key / service_role 絕對不能放進網站或貼給任何人，目前完全沒用到。**
-- 部署：GitHub 倉庫連到 Vercel，**分支是 `master`**，push 後自動建置。
-- **環境變數**：本機放 `.env.local`（已加入 `.gitignore`），變數名 `VITE_SUPABASE_URL`、`VITE_SUPABASE_PUBLISHABLE_KEY`。Vercel 後台 Environment Variables 也已設定，Environments 為 Production、Preview、Development。
+- **後端：Supabase（免費方案，區域首爾 ap-northeast-2）**，提供資料庫、登入、檔案儲存（Storage）。專案 ID `hgeuockbjrzayfdylavq`，Project URL `https://hgeuockbjrzayfdylavq.supabase.co`（給前端的是**根網址**，不要加 `/rest/v1/`）。Publishable key 在 Supabase 後台 Project Settings → API Keys（公開用的 key，可放前端）。**Secret key / service_role 絕對不能放進網站或貼給任何人，目前完全沒用到。**
+- 部署：GitHub 倉庫連到 Vercel，**正式分支是 `master`**，push 後自動建置。其他分支（例如 `wip-cover-upload`）只會產生預覽部署，不影響正式網站。
+- **環境變數**：本機放 `.env.local`（已加入 `.gitignore`，**不在 Git 裡**），變數名 `VITE_SUPABASE_URL`、`VITE_SUPABASE_PUBLISHABLE_KEY`。Vercel 後台 Environment Variables 也已設定，Environments 為 Production、Preview、Development。
   - **地雷**：Vercel 對 `VITE_` 開頭的變數不允許存成 Secret，必須選 **Config**（公開用，沒問題）。
   - 環境變數只在「新的部署」才生效；變數名稱錯一個字母，網站會悄悄退回本機備用資料，很難發現。
 - 主要檔案：
-  - `src/App.tsx`：包含三個層次：`App`（向 Supabase 讀資料、失敗時退回本機資料）→ `Library`（原本的主畫面，接收 `boardGames` 作為 props）；另有 `CoverImage`、`rowToGame`（把資料庫的 snake_case 轉成前端的 camelCase）、`fetchBoardGames`。
-  - `src/AdminPanel.tsx`：管理者登入／登出（放在頁尾）。
+  - `src/App.tsx`：`App`（向 Supabase 讀資料、失敗時退回本機資料）→ `Library`（主畫面，接收 `boardGames` 作為 props）；另有 `CoverImage`、`getCoverSources`、`rowToGame`（snake_case → camelCase）、`fetchBoardGames`。`Library` 內使用 `useSession` 判斷是否登入，詳細視窗登入後顯示「上傳／更換封面」。
+  - `src/AdminPanel.tsx`：頁尾的管理者登入／登出，登入後多一個「匯入 CSV」視窗（選檔 → 預覽 → 確認匯入；步驟 4 加入「附封面圖片」）。含 `toRow`（前端欄位 → 資料庫欄位）。
   - `src/lib/supabase.ts`：建立 Supabase 連線。
+  - `src/lib/parseCsv.ts`：在瀏覽器解析 CSV（移植自 `generate_boardgames.py`：欄位檢查、`cleanText`、數字、類型切陣列、人數轉數字陣列、`makeCoverSlug`、檢查 `bggName`／`coverSlug` 不重複）。`makeCoverSlug` 在步驟 4 改為 `export`。
+  - `src/lib/useSession.ts`：React hook，回傳目前登入的 session（沒登入為 `null`）。
+  - `src/lib/uploadCover.ts`：把圖片縮成寬度最多 600px、轉成 webp（品質 0.85）後，以 `{coverSlug}.webp` 上傳到 `covers` bucket（`upsert: true`，`cacheControl: 60`）。
   - `src/App.css`：樣式（含檢視模式、管理者登入）。
-  - `src/data/boardGames.generated.ts`：本機備用資料與 `BoardGame` 型別（**不要手動改**）。
-  - `generate_boardgames.py`：讀 `boardgames.csv`，輸出上面那份 `.ts`。
-  - `make_supabase_import.py`：讀 `boardGames.generated.ts`，輸出 `supabase_import.sql`（用 `on conflict (bgg_name) do update`，可重複執行當作更新資料）。
-  - `public/covers/`：封面圖（108 個檔，已全部在 Git 裡）。
-- 指令（PowerShell 用 `npm.cmd`）：`python generate_boardgames.py`、`npm.cmd run dev`（`http://localhost:5173/`，改 `.env.local` 後要重開）、`npm.cmd run build`（成功顯示 `✓ built in ...`；「chunks larger than 500 kB」是提醒，可忽略）。
-- **目前的資料更新流程（手動）**：Notion → 匯出 `boardgames.csv` → `python generate_boardgames.py` → `python make_supabase_import.py` → 把 `supabase_import.sql` 全文貼進 Supabase SQL Editor 執行。**下一個大功能就是用網站上傳 CSV 取代這個流程。**
+  - `src/data/boardGames.generated.ts`：本機備用資料與 `BoardGame` 型別（**不要手動改、不要刪**，型別仍被其他檔案匯入）。
+  - `generate_boardgames.py`、`make_supabase_import.py`：舊的資料更新流程，**已被網站匯入取代，僅留作備份與規則參考**（不在 Git 裡）。
+  - `public/covers/`：舊的封面圖（108 個檔，已在 Git 裡），繼續當備援。
+- 指令（PowerShell 用 `npm.cmd`）：`npm.cmd run dev`（`http://localhost:5173/`，改 `.env.local` 後要重開；終端機關掉或按 `Ctrl + C` 後 `localhost:5173` 會連不上，重新執行即可）、`npm.cmd run build`（成功顯示 `✓ built in ...`；「chunks larger than 500 kB」是提醒，可忽略）。
+- **目前的資料更新流程**：Notion → 匯出 CSV → 網站頁尾「管理者登入」→「匯入 CSV」→ 預覽 →「確認匯入」。不需要 push（資料在雲端）。
 - **push 注意**：不要用 `git add .`。只加入需要的檔案：`.gitignore`、`package.json`、`package-lock.json`、`src`、`public`、兩份交接文件。**不要上傳**：`boardgame_source.zip`、`supabase_import.sql`、`make_supabase_import.py`、`boardgames.csv`、`categories_check.txt`、`covers_needed.txt`、`list_categories.py`、`generate_boardgames.backup.py`、`.env.local`。
 - Windows 的 `LF will be replaced by CRLF` 警告可忽略。PowerShell 用 `Get-Content` 顯示 UTF-8 中文會變亂碼，只是終端機顯示問題，檔案本身正常。
 
-## 3. 資料庫與權限（Supabase）
+## 3. 資料庫、儲存與權限（Supabase）
 
 資料表 `public.board_games`（主鍵 `bgg_name`，`cover_slug` 唯一）。欄位為前端 `BoardGame` 型別的 snake_case 版本：
 
 `bgg_name, name, cover_slug, link_bgg, link_rulebook_zh, link_rulebook_en, link_faq, category(text[]), bgg_score, bgg_difficulty, bgg_time, min_players, max_players, best_players(int[]), recommend_players(int[]), ranking_engine, classic_game_ranking, score_rank, player_impact_ranking, change_ranking, unique_ranking, communication_ranking, like_degree, change_degree, communication_degree, player_impact_degree, unique_degree, complexity_degree, like_emoji, speed_emoji, communication_emoji, unique_emoji, player_impact_emoji, complexity_emoji, change_emoji, created_at`
 
 - 缺值為 `NULL`（數字）或空字串（文字）。**主鍵用 `bgg_name` 而不是 `id`**，因為 `id` 會隨 CSV 順序位移；前端的 `id` 只是讀取後依排序給的流水號，**不可用來對應圖片或使用者資料**。
-- **RLS 已啟用，共 4 條規則**：SELECT（`anon`、`authenticated` 都可讀）；INSERT／UPDATE／DELETE 只給 `authenticated`。
+- **資料表 RLS 已啟用，共 4 條規則**：SELECT（`anon`、`authenticated` 都可讀）；INSERT／UPDATE／DELETE 只給 `authenticated`。
+- **Storage**：公開 bucket `covers`（任何人可讀圖），並已建立 4 條 `storage.objects` 規則：SELECT 給 `anon`、`authenticated`；INSERT／UPDATE／DELETE 只給 `authenticated`（限 `bucket_id = 'covers'`）。檔名為 `{coverSlug}.webp`。
 - **管理者帳號**：已在 Authentication → Users 手動建立 1 個帳號（Auto Confirm），**已關閉「Allow new users to sign up」**。因此目前「已登入者 = 使用者本人」，寫入規則才安全。
-- ⚠️ **未來若開放朋友登入（留言、報名、想玩清單），他們也會是 `authenticated`，就能改桌遊資料。** 屆時必須把 INSERT／UPDATE／DELETE 規則改成只認管理者（例如比對管理者的 user id 或另建角色表），或改用不同機制。
-- ⚠️ 免費方案：專案閒置一週會自動暫停（資料不會消失，但暫停期間網站讀不到資料，需到後台恢復）。檔案儲存免費額度約 1 GB（各來源寫 500 MB～1 GB，請以官方頁面為準），之後存規則書 PDF 要注意。
+- ⚠️ **未來若開放朋友登入（留言、報名、想玩清單），他們也會是 `authenticated`，就能改桌遊資料與封面。** 屆時必須把資料表與 Storage 的 INSERT／UPDATE／DELETE 規則都改成只認管理者（例如比對管理者的 user id 或另建角色表）。
+- ⚠️ 免費方案：專案閒置一週會自動暫停（資料不會消失，但暫停期間網站讀不到資料，需到後台恢復）。檔案儲存免費額度約 1 GB（各來源寫 500 MB～1 GB，請以官方頁面為準）；封面已壓縮，但之後存規則書 PDF 要注意。
 
 ## 4. 前端資料欄位（`BoardGame` 型別）
 
-- `id`、`name`（中文名，來自 CSV「屬性」）、`bggName`、`slug`、`coverSlug`、`links{bgg,rulebookZh,rulebookEn,faq}`、`category[]`、`bggScore/bggDifficulty/bggTime`、`minPlayers/maxPlayers`、`bestPlayers/recommendPlayers`（兩者獨立，不要合併）、`rankingEngine`、`classicGameRanking`（前端稱「常玩遊戲排名」）、`scoreRank`（「綜合分數排名」，直接用 CSV 的「分數_排名」）、四個其他排名（保留但**不排序、不顯示**）、七個 `*Degree`、七個 `*Emoji`（`like/speed/communication/unique/playerImpact/complexity/change`）。
-- CSV：107 筆、35 欄；「類型」以逗號分隔切成陣列；「最佳人數 」欄名尾端可能有空白（產生器已處理）；「墨敵賽」無網路資料，BGG 分數與難度保留 `null`，顯示「未提供」，**不要編造**。
-- 類型共 49 種：大項 3 個（策略、派對、陣營），其餘為小項。類型清單由資料自動整理，新增類型只要重新匯入即可自動出現。
+- `id`、`name`（中文名，來自 CSV「屬性」）、`bggName`、`slug`、`coverSlug`、`links{bgg,rulebookZh,rulebookEn,faq}`、`category[]`、`bggScore/bggDifficulty/bggTime`、`minPlayers/maxPlayers`、`bestPlayers/recommendPlayers`（兩者獨立，不要合併）、`rankingEngine`、`classicGameRanking`（前端稱「常玩遊戲排名」，CSV 欄位「老遊戲想玩綜合評分」）、`scoreRank`（「綜合分數排名」，直接用 CSV 的「分數_排名」）、四個其他排名（保留但**不排序、不顯示**）、七個 `*Degree`、七個 `*Emoji`（`like/speed/communication/unique/playerImpact/complexity/change`）。
+- CSV 必要欄位（缺任何一個，預覽會直接報錯、不會寫入）：`屬性`、`bggName`、`類型`、`bgg網站`、`BGG分數`、`BGG時間`、`BGG難度`、`Ranking engine`、`分數_排名`、`人數上限`、`人數下限`、`推薦人數`、`最佳人數`、`喜歡度`、`快速性`、`溝通性`、`獨特性`、`玩家影響性`、`複雜性`、`變化性`。欄位順序不重要、多的欄位會被忽略；**檔名不重要**。
+- CSV：107 筆、35 欄；「類型」以逗號分隔切成陣列；「墨敵賽」無網路資料，BGG 分數與難度保留 `null`，顯示「未提供」，**不要編造**。
+- 類型共 49 種：大項 3 個（策略、派對、陣營），其餘為小項。類型清單由資料自動整理，新增類型只要重新匯入即可自動出現（需重新整理網頁）。
 - **不要揭露「綜合分數排名」的計算方式**（Notion 中由數個排名相加），也不要在前端重算。
-- 封面圖：`public/covers/{coverSlug}.webp|jpg|png`，`coverSlug` 由 `bggName` 轉換（小寫、去重音、非字母數字換 `-`）。找不到圖顯示 🎲，所以可以慢慢補。網站會依序嘗試三種副檔名，Console 裡的大量 404 是正常的。更新資料**絕不能動 `public/covers/`**。
+- **封面圖**：`coverSlug` 由 `bggName` 轉換（NFKD、小寫、去重音、非字母數字底線換 `-`、去頭尾 `-`）。顯示順序：Supabase Storage `{coverSlug}.webp`（上傳後網址加 `?v=` 版本參數以立即換圖）→ `public/covers/{coverSlug}.webp|jpg|png` → 🎲。所以可以慢慢補圖。Console 裡的大量 404 是正常的。
 
-## 5. 目前已完成的功能（使用者已實測）
+## 5. 目前已完成的功能
 
+**已實測：**
 - 搜尋、篩選抽屜（難度、最佳／推薦人數、遊戲時間、類型）。類型：三個大項按鈕 + 可搜尋的「更多類型」，**多選為 AND**。
-- 缺資料提示：設了難度或時間篩選時，缺資料的遊戲被排除並顯示「有 N 款因缺少難度或時間資料，未納入篩選結果」。
-- 排序：Ranking engine、常玩遊戲排名、綜合分數排名、名稱、BGG 分數／難度／時間、最佳／推薦人數；升降冪；一鍵重設排序。缺值固定排最後。
-- 卡片：封面、類型、名稱、Ranking engine 與綜合分數排名、人數、時間、難度、查看規則。
-- **詳細視窗刻意保持精簡**（BGG 分數、封面、名稱、BGG 連結、七項 Emoji、開發中提示）。**使用者明確不要**再放排名、人數、類型、時間、難度。
-- **檢視模式切換**（標題列圖示按鈕）：清單 `list`、一排 4 個 `grid-4`、一排 9 個 `grid-9`（原本要 8 個，使用者改成 9 個以對應圖示）。選擇存在 `localStorage`（key `boardgame-view-mode`），CSS 類別 `.view-list`、`.view-grid-4`、`.view-grid-9`，小螢幕自動減少欄數。清單檢視的實際畫面使用者**尚未回報截圖**，需確認；「代辦清單」被當成首頁桌遊列表（使用者未反對）。
-- **資料來源已改為 Supabase**（讀取失敗時退回本機資料，網站不會空白）。已部署，線上確認有 `board_games` 請求且顯示 107 款。
-- **管理者登入**：`AdminPanel.tsx` 與樣式已寫好，**`npm.cmd run build` 成功，但尚未完成登入實測，也尚未 push**。使用者目前忘記密碼，正在重設（做法：在 Supabase Authentication → Users 刪除該帳號後重新建立，勾 Auto Confirm；或用 Send password recovery）。
+- 缺資料提示、排序（Ranking engine、常玩遊戲排名、綜合分數排名、名稱、BGG 分數／難度／時間、最佳／推薦人數；升降冪；重設排序，缺值固定排最後）。
+- 卡片與**刻意精簡的詳細視窗**（BGG 分數、封面、名稱、BGG 連結、七項 Emoji、開發中提示）。**使用者明確不要**再放排名、人數、類型、時間、難度。
+- 檢視模式切換：清單 `list`、一排 4 `grid-4`、一排 9 `grid-9`，存 `localStorage`（key `boardgame-view-mode`）。清單檢視實際畫面使用者**尚未回報截圖**；「代辦清單」被當成首頁桌遊列表（使用者未反對）。
+- 資料來源為 Supabase（讀取失敗退回本機資料）。
+- **管理者登入／登出**（頁尾）：已實測並 push。
+- **匯入 CSV**：預覽（解析幾款、新增、更新、資料庫有但 CSV 沒有幾款、前 3 款）實測正確（107 款、更新 107、新增 0）；「確認匯入」（以 `bgg_name` upsert，匯入前有 `window.confirm`）已實測成功。
+- **詳細視窗「上傳／更換封面」**（登入後才出現）：已實測成功，圖片自動壓縮成 webp 上傳，上傳後卡片與視窗立即換圖。
+
+**已寫好、尚未測試（步驟 4）：**
+- **匯入 CSV 時附上封面圖片**：預覽畫面可多選圖片，檔名 → `makeCoverSlug(去副檔名)` → 對應遊戲；顯示「已選幾張、可對應幾張、找不到對應的檔名（略過）」；確認匯入時先 upsert 資料，再逐張 `uploadCover`，結果訊息列出上傳張數與失敗檔名。使用者尚未套用或測試，不確定 build 是否通過。程式碼存在分支 `wip-cover-upload`（若使用者已照做，請以 `git branch -a` 確認）。
 
 ## 6. 長期願景與優先順序（使用者已排定）
 
@@ -76,25 +84,25 @@
 
 ## 7. 路線圖與下一步
 
-**已完成**：篩選與缺資料、封面圖、檢視模式、後端（Supabase）、資料搬到雲端、單一管理者帳號與寫入權限。
+**已完成**：篩選與缺資料、封面圖、檢視模式、後端（Supabase）、資料搬到雲端、單一管理者帳號與寫入權限、管理者登入、網站匯入 CSV、封面改存 Storage 並可在網站上傳。
 
-**進行中**：管理者登入畫面（等使用者重設密碼後實測）。
+**進行中**：步驟 4（匯入 CSV 時附封面圖）— 待套用與測試。
 
 **接下來（一次做一項）：**
-1. 完成登入實測 → 一起 push（只 `git add` 需要的檔案）。
-2. **網站上傳 CSV**（登入後才出現）：在瀏覽器解析 CSV（需把 `generate_boardgames.py` 的規則移植到 TypeScript：欄位對應、`clean_text`、類型切陣列、人數轉數字陣列、`make_cover_slug`、缺值轉 null、檢查 `bggName`／`coverSlug` 不重複）→ 預覽（新增幾款、更新幾款）→ 用 `upsert`（以 `bgg_name` 為衝突鍵）寫入。**不得動封面圖片。** 需先決定：CSV 裡沒有、但資料庫有的遊戲要不要刪除（建議預設不刪，或明確提示）。
-3. **規則書連結**：`link_rulebook_zh/en`、`link_faq` 目前皆空；需決定檔案放哪裡（可能放 Supabase Storage，與 AI 助手相關）。
-4. **個人收藏**（想玩、已玩、備註，初期存 localStorage）。
-5. **新到貨桌遊（New Arrival）**：需在 Notion／CSV 新增「入手日期」欄位，資料表加欄位，卡片標示。
-6. 之後：AI 規則助手 → 討論／揪團／行事曆 → 完整帳號與遊玩紀錄。
+1. 確認 `wip-cover-upload` 分支 → 套用／檢查步驟 4 → `npm.cmd run build` → 實測（挑 1～2 張檔名為 `bggName` 的圖 + 1 張亂取名的圖；注意會真的覆蓋封面）。
+2. 測試成功 → 合併進 `master` 並 push（只 `git add` 需要的檔案）→ 確認 Vercel 線上版「匯入 CSV」與「上傳／更換封面」正常。
+3. 決定 CSV 匯入的**刪除行為**（見第 9 節）。
+4. **規則書連結**：`link_rulebook_zh/en`、`link_faq` 目前皆空；可放 Supabase Storage（與 AI 助手相關），需決定檔案結構與權限。
+5. **個人收藏**（想玩、已玩、備註，初期存 localStorage）。
+6. **新到貨桌遊（New Arrival）**：需在 Notion／CSV 新增「入手日期」欄位，資料表加欄位，卡片標示。
+7. 之後：AI 規則助手 → 討論／揪團／行事曆 → 完整帳號與遊玩紀錄。
 
 ## 8. 與使用者合作的規則（重要）
 
 - 使用者是**程式初學者**，用**繁體中文**，請**一次只處理一個步驟**。
 - 提供：明確檔案路徑；**完整可用程式碼，或精準修改位置**（用 `Ctrl + F` 搜尋某段文字）；指令解釋；測試方式。只給「貼在某行下面」的片段容易貼錯；改函式時優先請使用者整個換掉並提醒縮排。
-- **你碰不到使用者的本機檔案**，也收不到 CSV。需要資訊就給 PowerShell／Python 指令請他貼結果，或請他貼截圖。使用者常貼截圖回報。
-- **要改 `App.tsx` 前，請使用者貼出目前版本**（這份文件記載的結構可能已過期）。
-- 改資料欄位才動 Python 產生器，且動手前先備份（`Copy-Item`）；改完重新執行再 build。
+- **你碰不到使用者的本機檔案**，也收不到 CSV。需要資訊就給 PowerShell 指令請他貼結果，或請他貼截圖。使用者常貼截圖回報。
+- **要改 `App.tsx`、`AdminPanel.tsx` 前，請使用者貼出目前版本**（這份文件記載的結構可能已過期）。
 - 每階段改完用 `npm.cmd run build`，再實測畫面。build 成功不等於畫面正確。
 - 不要破壞現有功能與 107 款資料；已正常運作的功能不要隨意改動。
 - **不要要求使用者貼出密碼、Secret key、service_role key、資料庫密碼。**
@@ -102,11 +110,36 @@
 
 ## 9. 待確認事項
 
-- 管理者登入是否實測成功。
+- **CSV 匯入的刪除行為（使用者要求記錄、待確認）**：使用者發現上傳筆數比資料庫少的 CSV 時，缺少的遊戲**不會被刪除**。這是目前刻意的預設（只 upsert；預覽顯示「資料庫有、但 CSV 沒有：N 款（不會刪除）」），不是 bug。若要提供刪除，建議：預覽列出這些遊戲名稱；提供**預設關閉**的勾選「同時刪除」，勾選後再跳一次確認（筆數＋名稱）；是否連帶刪除 Storage 封面（建議不連帶）。相關地雷：Notion 裡改 `bggName` 會被當成新遊戲、舊的留下；新舊 `cover_slug` 相同會撞唯一限制導致匯入失敗。
+- 步驟 4（匯入附圖）是否測試成功、是否已合併進 `master`。
 - 清單檢視、9 個一排的實際外觀是否滿意（清單檢視尚無截圖）。
 - 「代辦清單」是否真的指首頁桌遊列表。
-- 上傳 CSV 時，資料庫有但 CSV 沒有的遊戲如何處理。
 - 規則書檔案要放哪裡、AI 規則助手的後端與模型選擇、訪客提問次數限制方式。
 - 總遊玩次數記錄完成後，常玩遊戲排名是否改為自動計算。
-- 開放朋友登入時，要重做寫入權限（見第 3 節）。
+- 開放朋友登入時，要重做資料表與 Storage 的寫入權限（見第 3 節）。
 - `陣營` 與 `策略` 可同時出現在同一款遊戲，目前允許。
+
+## 10. 多台電腦作業（外面的電腦／家裡的電腦）
+
+**哪些東西會自動同步（不用搬）**：Supabase 的資料表、登入帳號、Storage 封面（都在雲端）；GitHub 上的程式碼與 `public/covers/`。
+
+**哪些東西不會同步（要自己處理）**：`.env.local`（要重建）、`boardgames.csv`（從 Notion 重新匯出）、舊的 Python 腳本與 `supabase_import.sql` 等（已不需要）、**沒有 commit／push 的修改**。
+
+**在新電腦第一次設定：**
+1. 安裝 Git、Node.js（LTS 版）、VS Code（Python 已不需要）。第一次用 Git 需設定姓名與 email（`git config --global user.name "..."`、`git config --global user.email "..."`），push 時會跳出 GitHub 登入視窗。
+2. 在舊電腦的專案資料夾執行 `git remote get-url origin` 取得倉庫網址（或到 GitHub 倉庫頁面 Code → HTTPS）。
+3. 在新電腦選一個資料夾，執行 `git clone <倉庫網址>`，然後 `cd` 進專案資料夾。
+4. 若要接續尚未合併的工作：`git checkout wip-cover-upload`。
+5. 執行 `npm.cmd install`。
+6. 在專案根目錄建立 `.env.local`（純文字，內容兩行，不加引號）：
+   ```
+   VITE_SUPABASE_URL=https://hgeuockbjrzayfdylavq.supabase.co
+   VITE_SUPABASE_PUBLISHABLE_KEY=（從 Supabase 後台 Project Settings → API Keys 複製 Publishable key）
+   ```
+   **只能用 Publishable key，絕對不要用 Secret／service_role key。**
+7. 執行 `npm.cmd run dev`，打開 `http://localhost:5173/`，確認顯示 107 款、能登入管理者。
+
+**日常習慣：**
+- 開始工作前先 `git pull`；結束前 `git add`（指定檔案）→ `git commit` → `git push`，下一台電腦才拿得到。
+- 不要兩台電腦同時改同一批檔案；未完成的工作用分支（如 `wip-cover-upload`）存，測試成功再合併進 `master`。
+- 新電腦上的專案路徑可能不是 `D:\BoardGameResultAI`，指令請以實際路徑為準。
