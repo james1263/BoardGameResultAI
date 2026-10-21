@@ -5,7 +5,7 @@ import {
   type BoardGame,
 } from './data/boardGames.generated'
 import { supabase } from './lib/supabase'
-
+import AdminPanel from './AdminPanel'
 
 type SortKey =
   | 'name'
@@ -1001,6 +1001,7 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
       <footer className="footer">
         <span>桌遊規則助手</span>
         <span>讓每一場遊戲，都玩得更盡興。</span>
+        <AdminPanel />
       </footer>
 
       {selectedGame && (
