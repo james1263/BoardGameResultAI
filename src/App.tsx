@@ -14,6 +14,7 @@ import { supabase } from './lib/supabase'
 import AdminPanel from './AdminPanel'
 import { useSession } from './lib/useSession'
 import { uploadCover } from './lib/uploadCover'
+import GameDocuments from './GameDocuments'
 
 type SortKey =
   | 'name'
@@ -1177,7 +1178,11 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
               </div>
             </div>
 
-
+            <GameDocuments
+              key={selectedGame.bggName}
+              bggName={selectedGame.bggName}
+              isAdmin={Boolean(session)}
+            />
             <div className="notice">
               <strong>規則查詢功能開發中</strong>
               <p>
