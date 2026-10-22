@@ -16,6 +16,7 @@ import PlayerPanel from './PlayerPanel'
 import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
 import GameDocuments from './GameDocuments'
+import { usePersonalCollection } from './lib/usePersonalCollection'
 
 type SortKey =
   | 'name'
@@ -228,10 +229,89 @@ async function fetchBoardGames(): Promise<BoardGame[]> {
   return (data as BoardGameRow[]).map(rowToGame)
 }
 
+type PersonalApi = ReturnType<typeof usePersonalCollection>
+
+function StatusButtons({
+  bggName,
+  personal,
+  variant = 'overlay',
+}: {
+  bggName: string
+  personal: PersonalApi
+  variant?: 'overlay' | 'inline'
+}) {
+  const entry = personal.getEntry(bggName)
+  const disabled = !personal.canEdit
+  const withLabel = variant === 'inline'
+
+  return (
+    <div
+      className={`status-buttons ${variant}`}
+      onClick={(event) => event.stopPropagation()}
+    >
+      <button
+        type="button"
+        className={`status-btn want ${entry.wantToPlay ? 'on' : ''}`}
+        aria-pressed={entry.wantToPlay}
+        aria-label="想玩"
+        title="想玩"
+        disabled={disabled}
+        onClick={() =>
+          personal.updateEntry(bggName, { wantToPlay: !entry.wantToPlay })
+        }
+      >
+        ♥{withLabel && <span> 想玩</span>}
+      </button>
+      <button
+        type="button"
+        className={`status-btn played ${entry.played ? 'on' : ''}`}
+        aria-pressed={entry.played}
+        aria-label="已玩"
+        title="已玩"
+        disabled={disabled}
+        onClick={() =>
+          personal.updateEntry(bggName, { played: !entry.played })
+        }
+      >
+        ✓{withLabel && <span> 已玩</span>}
+      </button>
+    </div>
+  )
+}
+
+function PersonalNote({
+  value,
+  disabled,
+  onSave,
+}: {
+  value: string
+  disabled: boolean
+  onSave: (text: string) => void
+}) {
+  const [text, setText] = useState(value)
+
+  return (
+    <label className="personal-note">
+      <span>我的備註（只有你看得到）</span>
+      <textarea
+        value={text}
+        maxLength={500}
+        disabled={disabled}
+        placeholder="例如：想找 4 個人一起玩"
+        onChange={(event) => setText(event.target.value)}
+        onBlur={() => {
+          if (text !== value) onSave(text)
+        }}
+      />
+    </label>
+  )
+}
+
 function Library({ boardGames }: { boardGames: BoardGame[] }) {
   const [searchText, setSearchText] = useState('')
   const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null)
   const isAdmin = useIsAdmin()
+  const personal = usePersonalCollection()
   const [coverVersions, setCoverVersions] = useState<Record<string, number>>({})
   const [isUploadingCover, setIsUploadingCover] = useState(false)
   const [coverMessage, setCoverMessage] = useState('')
@@ -975,6 +1055,10 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
                         </span>
                       }
                     />
+                    <StatusButtons
+                      bggName={game.bggName}
+                      personal={personal}
+                    />
                     <span className="game-category">
                       {game.category.length > 0
                         ? game.category.join('、')
@@ -1179,6 +1263,26 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
                 </span>
               </div>
             </div>
+            <div className="personal-box">
+              <StatusButtons
+                bggName={selectedGame.bggName}
+                personal={personal}
+                variant="inline"
+              />
+              <PersonalNote
+                key={`${selectedGame.bggName}-${personal.status}`}
+                value={personal.getEntry(selectedGame.bggName).note}
+                disabled={!personal.canEdit}
+                onSave={(text) =>
+                  personal.updateEntry(selectedGame.bggName, { note: text })
+                }
+              />
+              {!personal.isLoggedIn && (
+                <p className="personal-hint">
+                  目前存在這個瀏覽器；用 Google 登入後可跨裝置保存。
+                </p>
+              )}
+            </div>
             <GameDocuments
               key={selectedGame.bggName}
               bggName={selectedGame.bggName}
@@ -1200,6 +1304,62 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
               知道了
             </button>
           </section>
+        </div>
+      )}
+
+      {personal.needsMerge && (
+        <div className="modal-backdrop">
+          <section
+            className="admin-modal"
+            role="dialog"
+            aria-modal="true"
+          >
+            <h2>要把這台電腦的紀錄加進你的帳號嗎？</h2>
+            <p>
+              這個瀏覽器有 {personal.localCount} 筆訪客紀錄（想玩／已玩／備註）。
+              加入後會和你帳號裡的紀錄合併，不會取消你已經勾選的項目。
+            </p>
+            <p>如果這是共用電腦，這些紀錄可能不是你的，請選「不加入」。</p>
+
+            {personal.errorMessage && (
+              <p className="admin-error">{personal.errorMessage}</p>
+            )}
+
+            <button
+              className="rule-button"
+              type="button"
+              disabled={personal.mergeStatus === 'merging'}
+              onClick={() => void personal.mergeLocalIntoCloud()}
+            >
+              {personal.mergeStatus === 'merging'
+                ? '同步中…'
+                : personal.mergeStatus === 'error'
+                  ? '重試'
+                  : '加入我的帳號'}
+            </button>
+            <button
+              className="admin-cancel"
+              type="button"
+              disabled={personal.mergeStatus === 'merging'}
+              onClick={personal.declineMerge}
+            >
+              不加入
+            </button>
+          </section>
+        </div>
+      )}
+
+      {personal.errorMessage && !personal.needsMerge && (
+        <div className="personal-toast" role="alert">
+          <span>{personal.errorMessage}</span>
+          {personal.status === 'error' && (
+            <button type="button" onClick={personal.reload}>
+              重試
+            </button>
+          )}
+          <button type="button" onClick={personal.clearError}>
+            關閉
+          </button>
         </div>
       )}
     </div>
