@@ -282,6 +282,7 @@ export function usePersonalCollection() {
   const clearError = useCallback(() => setErrorMessage(''), [])
 
   return {
+    entries,
     getEntry,
     updateEntry,
     isLoggedIn: !!userId,

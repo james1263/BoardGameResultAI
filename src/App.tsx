@@ -17,6 +17,7 @@ import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
 import GameDocuments from './GameDocuments'
 import { usePersonalCollection } from './lib/usePersonalCollection'
+import MyList from './MyList'
 
 type SortKey =
   | 'name'
@@ -312,6 +313,11 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
   const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null)
   const isAdmin = useIsAdmin()
   const personal = usePersonalCollection()
+  const [isMyListOpen, setIsMyListOpen] = useState(false)
+  const myListCount = boardGames.filter((game) => {
+    const entry = personal.entries[game.bggName]
+    return entry !== undefined && (entry.wantToPlay || entry.played)
+  }).length
   const [coverVersions, setCoverVersions] = useState<Record<string, number>>({})
   const [isUploadingCover, setIsUploadingCover] = useState(false)
   const [coverMessage, setCoverMessage] = useState('')
@@ -662,6 +668,16 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
           <span>桌遊規則助手</span>
         </a>
         <span className="topbar-label">BOARD GAME COMPANION</span>
+        <button
+          type="button"
+          className="mylist-button"
+          onClick={() => setIsMyListOpen(true)}
+        >
+          我的清單
+          {myListCount > 0 && (
+            <span className="mylist-count">{myListCount}</span>
+          )}
+        </button>
       </header>
 
       <main>
@@ -1307,6 +1323,27 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
         </div>
       )}
 
+      <MyList
+        boardGames={boardGames}
+        personal={personal}
+        isOpen={isMyListOpen}
+        onClose={() => setIsMyListOpen(false)}
+        onOpenGame={(game) => {
+          setCoverMessage('')
+          setSelectedGame(game)
+          setIsMyListOpen(false)
+        }}
+        renderCover={(game) => (
+          <CoverImage
+            key={`${game.coverSlug}-${coverVersions[game.coverSlug] ?? 0}`}
+            version={coverVersions[game.coverSlug] ?? 0}
+            slug={game.coverSlug}
+            alt={game.name}
+            className="mylist-cover"
+            fallback={<span aria-hidden="true">🎲</span>}
+          />
+        )}
+      />
       {personal.needsMerge && (
         <div className="modal-backdrop">
           <section
