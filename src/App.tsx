@@ -16,7 +16,10 @@ import PlayerPanel from './PlayerPanel'
 import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
 import GameDocuments from './GameDocuments'
-import { usePersonalCollection } from './lib/usePersonalCollection'
+import {
+  usePersonalCollection,
+  type PersonalEntry,
+} from './lib/usePersonalCollection'
 import MyList from './MyList'
 
 type SortKey =
@@ -47,6 +50,26 @@ function loadViewMode(): ViewMode {
     // 讀取失敗就用預設值
   }
   return 'grid-4'
+}
+
+type MineGroup = 'want' | 'untouched' | 'played'
+
+const MINE_GROUPS: MineGroup[] = ['want', 'untouched', 'played']
+
+const MINE_GROUP_LABELS: Record<MineGroup, string> = {
+  want: '想玩',
+  untouched: '還沒玩過',
+  played: '已玩',
+}
+
+type DisplayItem =
+  | { kind: 'header'; group: MineGroup; label: string; count: number }
+  | { kind: 'game'; game: BoardGame }
+
+function getMineGroup(entry: PersonalEntry | undefined): MineGroup {
+  if (entry?.wantToPlay) return 'want'
+  if (entry?.played) return 'played'
+  return 'untouched'
 }
 
 const MAIN_CATEGORIES = ['策略', '陣營', '派對']
@@ -138,8 +161,11 @@ function CoverImage({
   )
 }
 
+type LibraryGame = BoardGame & { createdAt?: string | null }
+
 type BoardGameRow = {
   bgg_name: string
+  created_at?: string | null
   name: string
   cover_slug: string
   link_bgg: string
@@ -176,11 +202,12 @@ type BoardGameRow = {
   change_emoji: string
 }
 
-function rowToGame(row: BoardGameRow, index: number): BoardGame {
+function rowToGame(row: BoardGameRow, index: number): LibraryGame {
   return {
     id: index + 1,
     name: row.name,
     bggName: row.bgg_name,
+    createdAt: row.created_at,
     slug: `game-${index + 1}`,
     coverSlug: row.cover_slug,
     links: {
@@ -220,7 +247,7 @@ function rowToGame(row: BoardGameRow, index: number): BoardGame {
   }
 }
 
-async function fetchBoardGames(): Promise<BoardGame[]> {
+async function fetchBoardGames(): Promise<LibraryGame[]> {
   const { data, error } = await supabase
     .from('board_games')
     .select('*')
@@ -308,7 +335,7 @@ function PersonalNote({
   )
 }
 
-function Library({ boardGames }: { boardGames: BoardGame[] }) {
+function Library({ boardGames }: { boardGames: LibraryGame[] }) {
   const [searchText, setSearchText] = useState('')
   const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null)
   const isAdmin = useIsAdmin()
@@ -354,6 +381,8 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
   const [sortBy, setSortBy] = useState<SortKey>('rankingEngine')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [groupByMine, setGroupByMine] = useState(false)
+  const [hiddenGroups, setHiddenGroups] = useState<MineGroup[]>([])
 
   const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode)
 
@@ -544,6 +573,49 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
     sortDirection,
   ])
 
+
+  const displayedItems = useMemo<DisplayItem[]>(() => {
+    const visibleGroups = MINE_GROUPS.filter(
+      (group) => !hiddenGroups.includes(group),
+    )
+
+    if (!groupByMine) {
+      return filteredGames
+        .filter((game) =>
+          visibleGroups.includes(getMineGroup(personal.entries[game.bggName])),
+        )
+        .map((game) => ({ kind: 'game' as const, game }))
+    }
+
+    const byGroup: Record<MineGroup, BoardGame[]> = {
+      want: [],
+      untouched: [],
+      played: [],
+    }
+    for (const game of filteredGames) {
+      byGroup[getMineGroup(personal.entries[game.bggName])].push(game)
+    }
+
+    const items: DisplayItem[] = []
+    for (const group of visibleGroups) {
+      if (byGroup[group].length === 0) continue
+      items.push({
+        kind: 'header',
+        group,
+        label: MINE_GROUP_LABELS[group],
+        count: byGroup[group].length,
+      })
+      for (const game of byGroup[group]) {
+        items.push({ kind: 'game', game })
+      }
+    }
+    return items
+  }, [filteredGames, personal.entries, groupByMine, hiddenGroups])
+
+  const displayedGameCount = displayedItems.filter(
+    (item) => item.kind === 'game',
+  ).length
+
   const missingDataCount = useMemo(() => {
     const hasDifficultyFilter = minDifficulty !== '' || maxDifficulty !== ''
     const hasTimeFilter = minTime !== '' || maxTime !== ''
@@ -606,8 +678,9 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
     Number(bestPlayerCount !== '') +
     Number(recommendPlayerCount !== '') +
     Number(minTime !== '') +
-    Number(maxTime !== '')
-
+    Number(maxTime !== '') +
+    Number(groupByMine) +
+    hiddenGroups.length
   const subCategories = categories.filter(
     (category) => !MAIN_CATEGORIES.includes(category),
   )
@@ -633,6 +706,15 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
     )
   }
 
+
+  function toggleMineGroup(group: MineGroup) {
+    setHiddenGroups((current) =>
+      current.includes(group)
+        ? current.filter((item) => item !== group)
+        : [...current, group],
+    )
+  }
+
   function clearFilters() {
     setSearchText('')
     setSelectedCategories([])
@@ -643,6 +725,8 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
     setMinTime('')
     setMaxTime('')
     setCategorySearch('')
+    setGroupByMine(false)
+    setHiddenGroups([])
   }
 
   function resetSort() {
@@ -715,7 +799,7 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
             </div>
             <div className="heading-actions">
               <span className="game-count">
-                顯示 {filteredGames.length} / {boardGames.length} 款
+                顯示 {displayedGameCount} / {boardGames.length} 款
               </span>
               <div className="view-toggle" role="group" aria-label="檢視模式">
                 <button
@@ -991,7 +1075,44 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
                   </>
                 )}
               </div>
+              <div className="mine-filter">
+                <div className="category-heading">
+                  <span>我的紀錄</span>
+                  <span className="category-hint">
+                    按眼睛可隱藏該類遊戲
+                  </span>
+                </div>
 
+                <div className="mine-eyes">
+                  {MINE_GROUPS.map((group) => {
+                    const hidden = hiddenGroups.includes(group)
+                    return (
+                      <button
+                        key={group}
+                        type="button"
+                        className={`mine-eye ${hidden ? 'hidden' : ''}`}
+                        aria-pressed={!hidden}
+                        onClick={() => toggleMineGroup(group)}
+                      >
+                        <span aria-hidden="true">👁</span>
+                        {MINE_GROUP_LABELS[group]}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <label className="category-option">
+                  <input
+                    type="checkbox"
+                    checked={groupByMine}
+                    onChange={(event) => setGroupByMine(event.target.checked)}
+                  />
+                  <span>依我的紀錄分區顯示</span>
+                </label>
+                <p className="mine-note">
+                  想玩的遊戲就算也玩過，仍歸在「想玩」區。
+                </p>
+              </div>
               <div className="sort-row">
                 <label className="filter-field sort-field">
                   <span>排序依據</span>
@@ -1045,7 +1166,7 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
               type="button"
               onClick={() => setIsFilterOpen(false)}
             >
-              查看 {filteredGames.length} 款結果
+              查看 {displayedGameCount} 款結果
             </button>
           </aside>
 
@@ -1054,7 +1175,7 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
               有 {missingDataCount} 款因缺少難度或時間資料，未納入篩選結果。
             </p>
           )}
-          {filteredGames.length > 0 ? (
+          {displayedGameCount > 0 ? (
             <div className={`game-grid view-${viewMode}`}>
               {filteredGames.map((game) => (
                 <article className="game-card" key={game.id}>
@@ -1404,7 +1525,7 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
 }
 
 function App() {
-  const [games, setGames] = useState<BoardGame[] | null>(null)
+  const [games, setGames] = useState<LibraryGame[] | null>(null)
 
   useEffect(() => {
     let cancelled = false
