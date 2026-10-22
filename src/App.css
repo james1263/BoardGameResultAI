@@ -1752,3 +1752,32 @@ a:focus-visible {
 .mine-group-heading:first-child {
   margin-top: 0;
 }
+
+/* ===== 新遊戲標示 ===== */
+.game-card.is-new {
+  box-shadow:
+    0 0 0 2px #f0a22e,
+    0 6px 18px rgba(240, 162, 46, 0.25);
+}
+
+.new-badge {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 2;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #f0a22e;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.view-grid-9 .new-badge,
+.view-list .new-badge {
+  left: 4px;
+  bottom: 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+}

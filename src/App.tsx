@@ -52,6 +52,8 @@ function loadViewMode(): ViewMode {
   return 'grid-4'
 }
 
+const NEW_GAME_DAYS = 30
+
 type MineGroup = 'want' | 'untouched' | 'played'
 
 const MINE_GROUPS: MineGroup[] = ['want', 'untouched', 'played']
@@ -64,7 +66,7 @@ const MINE_GROUP_LABELS: Record<MineGroup, string> = {
 
 type DisplayItem =
   | { kind: 'header'; group: MineGroup; label: string; count: number }
-  | { kind: 'game'; game: BoardGame }
+  | { kind: 'game'; game: LibraryGame }
 
 function getMineGroup(entry: PersonalEntry | undefined): MineGroup {
   if (entry?.wantToPlay) return 'want'
@@ -341,6 +343,13 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
   const isAdmin = useIsAdmin()
   const personal = usePersonalCollection()
   const [isMyListOpen, setIsMyListOpen] = useState(false)
+  const [nowMs] = useState(() => Date.now())
+
+  function isNewGame(game: LibraryGame): boolean {
+    if (!game.createdAt) return false
+    const age = nowMs - new Date(game.createdAt).getTime()
+    return age < NEW_GAME_DAYS * 24 * 60 * 60 * 1000
+  }
   const myListCount = boardGames.filter((game) => {
     const entry = personal.entries[game.bggName]
     return entry !== undefined && (entry.wantToPlay || entry.played)
@@ -1177,73 +1186,92 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
           )}
           {displayedGameCount > 0 ? (
             <div className={`game-grid view-${viewMode}`}>
-              {filteredGames.map((game) => (
-                <article className="game-card" key={game.id}>
-                  <div className={`game-art game-art-${game.id}`}>
-                    <CoverImage
-                      key={`${game.coverSlug}-${coverVersions[game.coverSlug] ?? 0}`}
-                      version={coverVersions[game.coverSlug] ?? 0}
-                      slug={game.coverSlug}
-                      alt={game.name}
-                      className="cover-image"
-                      fallback={
-                        <span className="game-emoji" aria-hidden="true">
-                          🎲
-                        </span>
-                      }
-                    />
-                    <StatusButtons
-                      bggName={game.bggName}
-                      personal={personal}
-                    />
-                    <span className="game-category">
-                      {game.category.length > 0
-                        ? game.category.join('、')
-                        : '尚未分類'}
-                    </span>
-                  </div>
-
-                  <div className="game-info">
-                    <h3>{game.name}</h3>
-
-                    <div className="game-rankings">
-                      <p className="game-ranking-engine">
-                        Ranking engine：{formatNumber(game.rankingEngine)}
-                      </p>
-
-                      <p className="game-score-rank">
-                        綜合分數排名：{formatNumber(game.scoreRank)}
-                      </p>
-                    </div>
-
-                    <div className="game-meta">
-                      <span>
-                        最佳人數：{formatPlayers(game.bestPlayers)}
-                      </span>
-                      <span>
-                        推薦人數：{formatPlayers(game.recommendPlayers)}
-                      </span>
-                      <span>
-                        ◷ {game.bggTime == null ? '未提供時間' : `${game.bggTime} 分鐘`}
-                      </span>
-                      <span>
-                        📊 BGG 難度：{formatNumber(game.bggDifficulty)}
-                      </span>
-                    </div>
-
-                    <button
-                      className="rule-button"
-                      type="button"
-                      onClick={() => {
-                        setCoverMessage('')
-                        setSelectedGame(game)
-                      }}
+              {displayedItems.map((item) => {
+                if (item.kind === 'header') {
+                  return (
+                    <div
+                      className="mine-group-heading"
+                      key={`group-${item.group}`}
                     >
-                      查看規則 <span aria-hidden="true">→</span>
-                    </button>
-                  </div>
-                </article>
-              ))}
+                      {item.label}（{item.count}）
+                    </div>
+                  )
+                }
+                const game = item.game
+                return (
+                  <article
+                    className={`game-card ${isNewGame(game) ? 'is-new' : ''}`}
+                    key={game.id}
+                  >
+                    <div className={`game-art game-art-${game.id}`}>
+                      <CoverImage
+                        key={`${game.coverSlug}-${coverVersions[game.coverSlug] ?? 0}`}
+                        version={coverVersions[game.coverSlug] ?? 0}
+                        slug={game.coverSlug}
+                        alt={game.name}
+                        className="cover-image"
+                        fallback={
+                          <span className="game-emoji" aria-hidden="true">
+                            🎲
+                          </span>
+                        }
+                      />
+                      <StatusButtons
+                        bggName={game.bggName}
+                        personal={personal}
+                      />
+                      {isNewGame(game) && (
+                        <span className="new-badge">NEW</span>
+                      )}
+                      <span className="game-category">
+                        {game.category.length > 0
+                          ? game.category.join('、')
+                          : '尚未分類'}
+                      </span>
+                    </div>
+
+                    <div className="game-info">
+                      <h3>{game.name}</h3>
+
+                      <div className="game-rankings">
+                        <p className="game-ranking-engine">
+                          Ranking engine：{formatNumber(game.rankingEngine)}
+                        </p>
+
+                        <p className="game-score-rank">
+                          綜合分數排名：{formatNumber(game.scoreRank)}
+                        </p>
+                      </div>
+
+                      <div className="game-meta">
+                        <span>
+                          最佳人數：{formatPlayers(game.bestPlayers)}
+                        </span>
+                        <span>
+                          推薦人數：{formatPlayers(game.recommendPlayers)}
+                        </span>
+                        <span>
+                          ◷ {game.bggTime == null ? '未提供時間' : `${game.bggTime} 分鐘`}
+                        </span>
+                        <span>
+                          📊 BGG 難度：{formatNumber(game.bggDifficulty)}
+                        </span>
+                      </div>
+
+                      <button
+                        className="rule-button"
+                        type="button"
+                        onClick={() => {
+                          setCoverMessage('')
+                          setSelectedGame(game)
+                        }}
+                      >
+                        查看規則 <span aria-hidden="true">→</span>
+                      </button>
+                    </div>
+                  </article>
+                )
+              })}
             </div>
           ) : (
             <div className="empty-state">
