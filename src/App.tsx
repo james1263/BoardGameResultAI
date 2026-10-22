@@ -290,6 +290,24 @@ function CheckIcon() {
   )
 }
 
+function EyeIcon({ off }: { off: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+      {off && <path d="M4 4l16 16" />}
+    </svg>
+  )
+}
+
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 
 function StatusButtons({
@@ -489,6 +507,20 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
   const [coverVersions, setCoverVersions] = useState<Record<string, number>>({})
   const [isUploadingCover, setIsUploadingCover] = useState(false)
   const [coverMessage, setCoverMessage] = useState('')
+
+  function openGame(game: LibraryGame) {
+    setCoverMessage('')
+    setSelectedGame(game)
+  }
+
+  useEffect(() => {
+    if (!selectedGame) return
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setSelectedGame(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selectedGame])
 
   async function handleCoverUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -893,16 +925,19 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
           <span>桌遊規則助手</span>
         </a>
         <span className="topbar-label">BOARD GAME COMPANION</span>
-        <button
-          type="button"
-          className="mylist-button"
-          onClick={() => setIsMyListOpen(true)}
-        >
-          我的清單
-          {myListCount > 0 && (
-            <span className="mylist-count">{myListCount}</span>
-          )}
-        </button>
+        <div className="topbar-actions">
+          <PlayerPanel />
+          <button
+            type="button"
+            className="mylist-button"
+            onClick={() => setIsMyListOpen(true)}
+          >
+            我的清單
+            {myListCount > 0 && (
+              <span className="mylist-count">{myListCount}</span>
+            )}
+          </button>
+        </div>
       </header>
 
       <main>
@@ -1235,7 +1270,7 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
                         aria-pressed={!hidden}
                         onClick={() => toggleMineGroup(group)}
                       >
-                        <span aria-hidden="true">👁</span>
+                        <EyeIcon off={hidden} />
                         {MINE_GROUP_LABELS[group]}
                       </button>
                     )
@@ -1346,7 +1381,10 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
                     className={`game-card ${isNewGame(game) ? 'is-new' : ''}`}
                     key={game.id}
                   >
-                    <div className={`game-art game-art-${game.id}`}>
+                    <div
+                      className={`game-art game-art-${game.id}`}
+                      onClick={() => openGame(game)}
+                    >
                       <CoverImage
                         key={`${game.coverSlug}-${coverVersions[game.coverSlug] ?? 0}`}
                         version={coverVersions[game.coverSlug] ?? 0}
@@ -1449,7 +1487,6 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
         <span>桌遊規則助手</span>
         <span>讓每一場遊戲，都玩得更盡興。</span>
         <AdminPanel />
-        <PlayerPanel />
       </footer>
 
       {selectedGame && (
