@@ -1793,9 +1793,10 @@ a:focus-visible {
   font-size: 13px;
 }
 
-/* ===== 詳細視窗：精簡版面 + 遊玩次數 ===== */
+/* ===== 詳細視窗：圓點版 ===== */
 .game-modal.compact {
   padding: 14px 20px 18px;
+  background: #f6f8f2;
 }
 
 .modal-topbar {
@@ -1884,86 +1885,525 @@ a:focus-visible {
   font-size: 12px;
 }
 
+/* 區塊 */
+.modal-section {
+  padding: 14px 0;
+  border-top: 1px solid #e3e9dd;
+  text-align: left;
+}
+
+.modal-section-title {
+  margin: 0 0 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #818879;
+  text-align: left;
+}
+
+/* 評分圓點 */
 .game-modal.compact .rating-list {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px 14px;
-  margin: 0 0 14px;
+  gap: 14px 16px;
+  margin: 0;
 }
 
 .game-modal.compact .rating-item {
+  display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
-  padding-bottom: 6px;
+  gap: 6px;
+  padding: 0;
+  border: 0;
 }
 
 .game-modal.compact .rating-label {
   width: auto;
-  font-size: 12px;
+  font-size: 13px;
+  color: #52604d;
   text-align: left;
   text-align-last: auto;
 }
 
-.game-modal.compact .rating-content {
-  max-width: 100%;
-  justify-content: flex-start;
-  font-size: 13px;
-  text-align: left;
-}
-
-.game-modal.compact .personal-box {
-  margin: 0 0 10px;
-}
-
-.personal-actions {
+.rating-dots {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px 12px;
-  margin-bottom: 10px;
+  gap: 6px;
+  min-height: 10px;
 }
 
+.rating-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.rating-empty {
+  font-size: 12px;
+  color: #8a8f85;
+}
+
+/* 想玩／已玩：兩個等寬大按鈕 */
 .game-modal.compact .status-buttons.inline {
-  justify-content: flex-start;
-  margin-bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin: 0 0 14px;
 }
 
-.game-modal.compact .personal-note textarea {
-  min-height: 56px;
+.game-modal.compact .status-buttons.inline .status-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: auto;
+  min-height: 64px;
+  padding: 10px;
+  border: 1px solid #d9e1d2;
+  border-radius: 12px;
+  background: #fff;
+  color: #52604d;
+  font-size: 13px;
 }
 
+.game-modal.compact .status-buttons.inline .status-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.game-modal.compact .status-buttons.inline .status-btn.on {
+  border-color: #c9d4c0;
+  background: #e6eadf;
+  color: #3e5a38;
+}
+
+.game-modal.compact .status-buttons.inline .status-btn:disabled {
+  opacity: 0.5;
+}
+
+/* 遊玩次數 */
 .play-counter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.play-counter-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.play-counter-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #25352d;
+}
+
+.play-counter-sub {
+  font-size: 11px;
+  color: #818879;
+}
+
+.play-counter-controls {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  color: #52604d;
+  gap: 12px;
 }
 
 .play-counter-btn {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 1px solid #dfe6d9;
   border-radius: 50%;
   background: #edf1e8;
   color: #4d6847;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
+}
+
+.play-counter-btn.plus {
+  border-color: #6b7f5e;
+  background: #6b7f5e;
+  color: #fff;
+}
+
+.play-counter-btn:disabled {
+  opacity: 0.4;
 }
 
 .play-counter-value {
   min-width: 2ch;
   text-align: center;
+  font-size: 16px;
   font-weight: 700;
   color: #25352d;
 }
 
-.modal-dev-note {
-  margin: 10px 0 0;
+/* 備註 */
+.note-label {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #25352d;
+  text-align: left;
+}
+
+.game-modal.compact .personal-note textarea {
+  min-height: 72px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.game-modal.compact .personal-hint {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: #818879;
+  text-align: left;
+}
+
+/* ===== 詳細視窗：精修（版面更緊湊、樣式更精緻） ===== */
+.game-modal.compact {
+  padding: 12px 18px 14px;
+  background: #f6f8f2;
+}
+
+.modal-topbar {
+  margin-bottom: 6px;
+}
+
+/* 上半部：封面左、文字右且靠左對齊 */
+.modal-head {
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.game-modal.compact .modal-cover {
+  width: 84px;
+  height: 84px;
+  border-radius: 10px;
+}
+
+.modal-head-text,
+.modal-head-text > * {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.modal-score-line {
+  justify-content: flex-start;
+}
+
+/* 區塊間距與小標：細、淡、不搶眼 */
+.modal-section {
+  padding: 10px 0;
+}
+
+.modal-section-title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: #8a9184;
+}
+
+/* 評分圓點：更小更密 */
+.game-modal.compact .rating-list {
+  gap: 10px 16px;
+}
+
+.game-modal.compact .rating-item {
+  gap: 4px;
+}
+
+.game-modal.compact .rating-label {
   font-size: 12px;
-  color: #8a8f85;
-  text-align: center;
+  font-weight: 400;
+  color: #5a6655;
+}
+
+.rating-dots {
+  gap: 5px;
+  min-height: 8px;
+}
+
+.rating-dot {
+  width: 8px;
+  height: 8px;
+}
+
+/* 想玩／已玩：矮一點，選取時是淡綠底，不要金色外框 */
+.game-modal.compact .status-buttons.inline {
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.game-modal.compact .status-buttons.inline .status-btn {
+  min-height: 52px;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.game-modal.compact .status-buttons.inline .status-btn.want.on,
+.game-modal.compact .status-buttons.inline .status-btn.played.on {
+  border-color: #cfd8c6;
+  background: #e6eadf;
+  color: #3e5a38;
+  box-shadow: none;
+}
+
+.game-modal.compact .status-buttons.inline .status-btn:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+.game-modal.compact .status-buttons.inline .status-btn:focus-visible {
+  outline: 2px solid #6b7f5e;
+  outline-offset: 2px;
+}
+
+/* 遊玩次數：小一點 */
+.play-counter-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+}
+
+.play-counter-controls {
+  gap: 10px;
+}
+
+/* 備註：矮一點 */
+.game-modal.compact .personal-note textarea {
+  min-height: 56px;
+  font-size: 13px;
+}
+
+.game-modal.compact .personal-hint {
+  margin: 6px 0 0;
+}
+
+/* ===== 詳細視窗：頂部與備註（對應設計稿） ===== */
+.modal-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.modal-topbar .modal-section-title {
+  margin: 0;
+}
+
+.game-modal.compact .modal-close {
+  width: 28px;
+  height: 28px;
+  font-size: 20px;
+  background: transparent;
+  color: #6b7466;
+}
+
+.modal-head-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  text-align: left;
+}
+
+.game-modal.compact .bgg-link {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: #6b7f5e;
+  text-decoration: none;
+}
+
+.game-modal.compact .bgg-link:hover {
+  text-decoration: underline;
+}
+
+.game-modal.compact h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.modal-score-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.modal-score-star {
+  font-size: 14px;
+  color: #6b7f5e;
+}
+
+.game-modal.compact .modal-score {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+  color: #6b7f5e;
+}
+
+.modal-score-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #8a9184;
+}
+
+.modal-score-empty {
+  font-size: 13px;
+  color: #8a9184;
+}
+
+.game-modal.compact .modal-categories {
+  justify-content: flex-start;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.game-modal.compact .modal-category {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #e6ecdf;
+  font-size: 11px;
+  color: #4d6847;
+}
+
+/* 備註標題 */
+.game-modal.compact .personal-note {
+  display: block;
+  text-align: left;
+}
+
+.game-modal.compact .personal-note .note-label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #25352d;
+}
+
+.game-modal.compact .personal-note .note-label small {
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 400;
+  color: #8a9184;
+}
+
+/* ===== 詳細視窗：再緊湊一輪 ===== */
+.game-modal.compact {
+  padding: 10px 16px 12px;
+}
+
+.modal-topbar {
+  margin-bottom: 4px;
+}
+
+/* 頂部：封面縮小 */
+.modal-head {
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.game-modal.compact .modal-cover {
+  width: 72px;
+  height: 72px;
+}
+
+.modal-head-info {
+  gap: 3px;
+}
+
+.game-modal.compact .modal-score {
+  font-size: 24px;
+}
+
+/* 區塊間距 */
+.modal-section {
+  padding: 8px 0;
+}
+
+.modal-section-title {
+  margin: 0 0 6px;
+}
+
+/* 評分：3 欄 × 2 列 */
+.game-modal.compact .rating-list {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 10px;
+}
+
+.game-modal.compact .rating-item {
+  gap: 3px;
+}
+
+/* 想玩／已玩：橫排、較矮、圖示放大 */
+.game-modal.compact .status-buttons.inline {
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.game-modal.compact .status-buttons.inline .status-btn {
+  flex-direction: row;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+.game-modal.compact .status-buttons.inline .status-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.game-modal.compact .status-buttons.inline .status-btn:focus-visible {
+  outline: 2px solid #b9c7ae;
+  outline-offset: 1px;
+}
+
+/* 遊玩次數 */
+.play-counter-title {
+  font-size: 13px;
+}
+
+.play-counter-sub {
+  font-size: 10px;
+}
+
+.play-counter-btn {
+  width: 26px;
+  height: 26px;
+  font-size: 15px;
+}
+
+/* 備註 */
+.game-modal.compact .personal-note .note-label {
+  margin: 0 0 4px;
+  font-size: 12px;
+}
+
+.game-modal.compact .personal-note textarea {
+  min-height: 44px;
+  padding: 8px 10px;
+}
+
+.game-modal.compact .personal-hint {
+  margin: 4px 0 0;
 }

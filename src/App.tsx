@@ -342,6 +342,58 @@ function StatusButtons({
   )
 }
 
+const RATING_DOT_COLORS: Record<string, string> = {
+  快速性: '#8a6a72',
+  變化度: '#7d7f9a',
+  溝通度: '#6f7f9a',
+  影響度: '#c08a68',
+  獨特性: '#b09068',
+  複雜度: '#a87aa0',
+}
+
+// 同一個 emoji 重複 N 次 → 圓點數 = 符號個數。
+// 用 Array.from 以字元計算，並忽略變體選擇符與空白，避免 ❤️ 被算成 2。
+function countRatingSymbols(text?: string | null): number {
+  if (!text) return 0
+  return Array.from(text).filter(
+    (ch) => ch.trim() !== '' && ch !== '\uFE0F' && ch !== '\u200D',
+  ).length
+}
+
+function RatingDots({
+  label,
+  value,
+}: {
+  label: string
+  value?: string | null
+}) {
+  const count = Math.min(countRatingSymbols(value), 10)
+  const color = RATING_DOT_COLORS[label] ?? '#7d8a74'
+
+  return (
+    <div className="rating-item">
+      <span className="rating-label">{label}</span>
+      {count > 0 ? (
+        <span
+          className="rating-dots"
+          role="img"
+          aria-label={`${label} ${count} 點`}
+        >
+          {Array.from({ length: count }, (_, index) => (
+            <span
+              key={index}
+              className="rating-dot"
+              style={{ background: color }}
+            />
+          ))}
+        </span>
+      ) : (
+        <span className="rating-empty">未提供</span>
+      )}
+    </div>
+  )
+}
+
 function PlayCounter({
   bggName,
   personal,
@@ -354,31 +406,35 @@ function PlayCounter({
 
   return (
     <div className="play-counter">
-      <span>玩過</span>
-      <button
-        type="button"
-        className="play-counter-btn"
-        aria-label="減少遊玩次數"
-        disabled={disabled || entry.playCount <= 0}
-        onClick={() =>
-          personal.updateEntry(bggName, { playCount: entry.playCount - 1 })
-        }
-      >
-        −
-      </button>
-      <span className="play-counter-value">{entry.playCount}</span>
-      <button
-        type="button"
-        className="play-counter-btn"
-        aria-label="增加遊玩次數"
-        disabled={disabled || entry.playCount >= 999}
-        onClick={() =>
-          personal.updateEntry(bggName, { playCount: entry.playCount + 1 })
-        }
-      >
-        ＋
-      </button>
-      <span>次</span>
+      <div className="play-counter-info">
+        <span className="play-counter-title">遊玩次數</span>
+        <span className="play-counter-sub">記錄你的桌遊歷程</span>
+      </div>
+      <div className="play-counter-controls">
+        <button
+          type="button"
+          className="play-counter-btn"
+          aria-label="減少遊玩次數"
+          disabled={disabled || entry.playCount <= 0}
+          onClick={() =>
+            personal.updateEntry(bggName, { playCount: entry.playCount - 1 })
+          }
+        >
+          −
+        </button>
+        <span className="play-counter-value">{entry.playCount}</span>
+        <button
+          type="button"
+          className="play-counter-btn plus"
+          aria-label="增加遊玩次數"
+          disabled={disabled || entry.playCount >= 999}
+          onClick={() =>
+            personal.updateEntry(bggName, { playCount: entry.playCount + 1 })
+          }
+        >
+          ＋
+        </button>
+      </div>
     </div>
   )
 }
@@ -396,12 +452,14 @@ function PersonalNote({
 
   return (
     <label className="personal-note">
-      <span>我的備註（只有你看得到）</span>
+      <span className="note-label">
+        我的備註<small>（只有你看得到）</small>
+      </span>
       <textarea
         value={text}
         maxLength={500}
         disabled={disabled}
-        placeholder="例如：想找 4 個人一起玩"
+        placeholder="記錄遊玩心得、策略或下次想嘗試的玩法……"
         onChange={(event) => setText(event.target.value)}
         onBlur={() => {
           if (text !== value) onSave(text)
@@ -1407,16 +1465,7 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="modal-topbar">
-              {selectedGame.links.bgg && (
-                <a
-                  className="bgg-link"
-                  href={selectedGame.links.bgg}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  BGG ↗
-                </a>
-              )}
+              <h3 className="modal-section-title">01 / GAME PROFILE</h3>
               <button
                 className="modal-close"
                 type="button"
@@ -1441,13 +1490,30 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
                 }
               />
               <div className="modal-head-info">
-                <p className="eyebrow">BGG SCORE</p>
-                <div className="modal-score">
-                  {selectedGame.bggScore == null
-                    ? '尚無 BGG 分數'
-                    : selectedGame.bggScore}
-                </div>
+                {selectedGame.links.bgg && (
+                  <a
+                    className="bgg-link"
+                    href={selectedGame.links.bgg}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    BoardGameGeek ↗
+                  </a>
+                )}
                 <h2 id="modal-title">{selectedGame.name}</h2>
+                <div className="modal-score-line">
+                  {selectedGame.bggScore == null ? (
+                    <span className="modal-score-empty">尚無 BGG 分數</span>
+                  ) : (
+                    <>
+                      <span className="modal-score-star" aria-hidden="true">
+                        ☆
+                      </span>
+                      <span className="modal-score">{selectedGame.bggScore}</span>
+                      <span className="modal-score-label">BGG SCORE</span>
+                    </>
+                  )}
+                </div>
                 {selectedGame.category.length > 0 && (
                   <div className="modal-categories">
                     {selectedGame.category.map((category) => (
@@ -1476,57 +1542,42 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
               </div>
             )}
 
-            <div className="rating-list">
-              <div className="rating-item">
-                <span className="rating-label">快速性</span>
-                <span className="rating-content">
-                  {selectedGame.speedEmoji || '未提供'}
-                </span>
-              </div>
-              <div className="rating-item">
-                <span className="rating-label">變化度</span>
-                <span className="rating-content">
-                  {selectedGame.changeEmoji || '未提供'}
-                </span>
-              </div>
-              <div className="rating-item">
-                <span className="rating-label">溝通度</span>
-                <span className="rating-content">
-                  {selectedGame.communicationEmoji || '未提供'}
-                </span>
-              </div>
-              <div className="rating-item">
-                <span className="rating-label">影響度</span>
-                <span className="rating-content">
-                  {selectedGame.playerImpactEmoji || '未提供'}
-                </span>
-              </div>
-              <div className="rating-item">
-                <span className="rating-label">獨特性</span>
-                <span className="rating-content">
-                  {selectedGame.uniqueEmoji || '未提供'}
-                </span>
-              </div>
-              <div className="rating-item">
-                <span className="rating-label">複雜度</span>
-                <span className="rating-content">
-                  {selectedGame.complexityEmoji || '未提供'}
-                </span>
+            <div className="modal-section">
+              <h3 className="modal-section-title">02 / GAME ATTRIBUTES</h3>
+              <div className="rating-list">
+                <RatingDots label="快速性" value={selectedGame.speedEmoji} />
+                <RatingDots label="變化度" value={selectedGame.changeEmoji} />
+                <RatingDots
+                  label="溝通度"
+                  value={selectedGame.communicationEmoji}
+                />
+                <RatingDots
+                  label="影響度"
+                  value={selectedGame.playerImpactEmoji}
+                />
+                <RatingDots label="獨特性" value={selectedGame.uniqueEmoji} />
+                <RatingDots
+                  label="複雜度"
+                  value={selectedGame.complexityEmoji}
+                />
               </div>
             </div>
 
-            <div className="personal-box">
-              <div className="personal-actions">
-                <StatusButtons
-                  bggName={selectedGame.bggName}
-                  personal={personal}
-                  variant="inline"
-                />
-                <PlayCounter
-                  bggName={selectedGame.bggName}
-                  personal={personal}
-                />
-              </div>
+            <div className="modal-section">
+              <h3 className="modal-section-title">03 / MY COLLECTION</h3>
+              <StatusButtons
+                bggName={selectedGame.bggName}
+                personal={personal}
+                variant="inline"
+              />
+              <PlayCounter
+                bggName={selectedGame.bggName}
+                personal={personal}
+              />
+            </div>
+
+            <div className="modal-section">
+              <h3 className="modal-section-title">04 / PERSONAL NOTES</h3>
               <PersonalNote
                 key={`${selectedGame.bggName}-${personal.status}`}
                 value={personal.getEntry(selectedGame.bggName).note}
@@ -1536,25 +1587,22 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
                 }
               />
               {!personal.isLoggedIn && (
-                <p className="personal-hint">
-                  目前存在這個瀏覽器；用 Google 登入後可跨裝置保存。
-                </p>
+                <p className="personal-hint">登入後即可跨裝置保存</p>
               )}
             </div>
 
-            <GameDocuments
-              key={selectedGame.bggName}
-              bggName={selectedGame.bggName}
-              isAdmin={isAdmin}
-            />
-
-            <p className="modal-dev-note">
-              規則查詢功能開發中，之後會加入規則書搜尋與頁碼。
-            </p>
+            <div className="modal-section">
+              <h3 className="modal-section-title">05 / GAME RESOURCES</h3>
+              <GameDocuments
+                key={selectedGame.bggName}
+                bggName={selectedGame.bggName}
+                isAdmin={isAdmin}
+              />
+            </div>
           </section>
         </div>
       )}
-      
+
       <MyList
         boardGames={boardGames}
         personal={personal}
