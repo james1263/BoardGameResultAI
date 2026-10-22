@@ -1792,3 +1792,178 @@ a:focus-visible {
   color: #4a5a4f;
   font-size: 13px;
 }
+
+/* ===== 詳細視窗：精簡版面 + 遊玩次數 ===== */
+.game-modal.compact {
+  padding: 14px 20px 18px;
+}
+
+.modal-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.modal-bgg-link {
+  padding: 5px 12px;
+  border: 1px solid #dfe6d9;
+  border-radius: 999px;
+  background: #edf1e8;
+  color: #4d6847;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.game-modal.compact .modal-close {
+  position: static;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  font-size: 22px;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.game-modal.compact .modal-cover {
+  flex: none;
+  width: 88px;
+  height: 88px;
+  margin: 0;
+}
+
+.game-modal.compact .modal-game-icon {
+  margin: 0;
+  font-size: 36px;
+}
+
+.modal-head-text {
+  min-width: 0;
+  text-align: left;
+}
+
+.modal-score-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.modal-score-label {
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 2px;
+  color: #818879;
+}
+
+.game-modal.compact .modal-score {
+  margin: 0;
+  font-size: 20px;
+}
+
+.game-modal.compact h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.game-modal.compact .modal-categories {
+  justify-content: flex-start;
+  margin: 0;
+}
+
+.game-modal.compact .modal-category {
+  padding: 2px 9px;
+  font-size: 12px;
+}
+
+.game-modal.compact .rating-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+  margin: 0 0 14px;
+}
+
+.game-modal.compact .rating-item {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding-bottom: 6px;
+}
+
+.game-modal.compact .rating-label {
+  width: auto;
+  font-size: 12px;
+  text-align: left;
+  text-align-last: auto;
+}
+
+.game-modal.compact .rating-content {
+  max-width: 100%;
+  justify-content: flex-start;
+  font-size: 13px;
+  text-align: left;
+}
+
+.game-modal.compact .personal-box {
+  margin: 0 0 10px;
+}
+
+.personal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+}
+
+.game-modal.compact .status-buttons.inline {
+  justify-content: flex-start;
+  margin-bottom: 0;
+}
+
+.game-modal.compact .personal-note textarea {
+  min-height: 56px;
+}
+
+.play-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #52604d;
+}
+
+.play-counter-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #dfe6d9;
+  border-radius: 50%;
+  background: #edf1e8;
+  color: #4d6847;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.play-counter-value {
+  min-width: 2ch;
+  text-align: center;
+  font-weight: 700;
+  color: #25352d;
+}
+
+.modal-dev-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #8a8f85;
+  text-align: center;
+}

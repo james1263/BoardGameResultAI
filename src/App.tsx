@@ -342,6 +342,47 @@ function StatusButtons({
   )
 }
 
+function PlayCounter({
+  bggName,
+  personal,
+}: {
+  bggName: string
+  personal: PersonalApi
+}) {
+  const entry = personal.getEntry(bggName)
+  const disabled = !personal.canEdit
+
+  return (
+    <div className="play-counter">
+      <span>玩過</span>
+      <button
+        type="button"
+        className="play-counter-btn"
+        aria-label="減少遊玩次數"
+        disabled={disabled || entry.playCount <= 0}
+        onClick={() =>
+          personal.updateEntry(bggName, { playCount: entry.playCount - 1 })
+        }
+      >
+        −
+      </button>
+      <span className="play-counter-value">{entry.playCount}</span>
+      <button
+        type="button"
+        className="play-counter-btn"
+        aria-label="增加遊玩次數"
+        disabled={disabled || entry.playCount >= 999}
+        onClick={() =>
+          personal.updateEntry(bggName, { playCount: entry.playCount + 1 })
+        }
+      >
+        ＋
+      </button>
+      <span>次</span>
+    </div>
+  )
+}
+
 function PersonalNote({
   value,
   disabled,
@@ -1359,33 +1400,65 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
           onClick={() => setSelectedGame(null)}
         >
           <section
-            className="game-modal"
+            className="game-modal compact"
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
             onClick={(event) => event.stopPropagation()}
           >
-            <button
-              className="modal-close"
-              type="button"
-              aria-label="關閉"
-              onClick={() => setSelectedGame(null)}
-            >
-              ×
-            </button>
+            <div className="modal-topbar">
+              {selectedGame.links.bgg && (
+                <a
+                  className="bgg-link"
+                  href={selectedGame.links.bgg}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  BGG ↗
+                </a>
+              )}
+              <button
+                className="modal-close"
+                type="button"
+                aria-label="關閉"
+                onClick={() => setSelectedGame(null)}
+              >
+                ×
+              </button>
+            </div>
 
-            <CoverImage
-              key={`${selectedGame.coverSlug}-${coverVersions[selectedGame.coverSlug] ?? 0}`}
-              version={coverVersions[selectedGame.coverSlug] ?? 0}
-              slug={selectedGame.coverSlug}
-              alt={selectedGame.name}
-              className="modal-cover"
-              fallback={
-                <div className="modal-game-icon" aria-hidden="true">
-                  🎲
+            <div className="modal-head">
+              <CoverImage
+                key={`${selectedGame.coverSlug}-${coverVersions[selectedGame.coverSlug] ?? 0}`}
+                version={coverVersions[selectedGame.coverSlug] ?? 0}
+                slug={selectedGame.coverSlug}
+                alt={selectedGame.name}
+                className="modal-cover"
+                fallback={
+                  <div className="modal-game-icon" aria-hidden="true">
+                    🎲
+                  </div>
+                }
+              />
+              <div className="modal-head-info">
+                <p className="eyebrow">BGG SCORE</p>
+                <div className="modal-score">
+                  {selectedGame.bggScore == null
+                    ? '尚無 BGG 分數'
+                    : selectedGame.bggScore}
                 </div>
-              }
-            />
+                <h2 id="modal-title">{selectedGame.name}</h2>
+                {selectedGame.category.length > 0 && (
+                  <div className="modal-categories">
+                    {selectedGame.category.map((category) => (
+                      <span className="modal-category" key={category}>
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {isAdmin && (
               <div className="cover-upload">
@@ -1403,77 +1476,37 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
               </div>
             )}
 
-            <p className="eyebrow">BGG SCORE</p>
-            <div className="modal-score">
-              {selectedGame.bggScore == null
-                ? '尚無 BGG 分數'
-                : selectedGame.bggScore}
-            </div>
-            <h2 id="modal-title">{selectedGame.name}</h2>
-            {selectedGame.category.length > 0 && (
-              <div className="modal-categories">
-                {selectedGame.category.map((category) => (
-                  <span className="modal-category" key={category}>
-                    {category}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {selectedGame.links.bgg && (
-              <a
-                className="bgg-link"
-                href={selectedGame.links.bgg}
-                target="_blank"
-                rel="noreferrer"
-              >
-                在 BoardGameGeek 查看 ↗
-              </a>
-            )}
-
             <div className="rating-list">
-              <div className="rating-item">
-                <span className="rating-label">喜歡度</span>
-                <span className="rating-content">
-                  {selectedGame.likeEmoji || '未提供'}
-                </span>
-              </div>
-
               <div className="rating-item">
                 <span className="rating-label">快速性</span>
                 <span className="rating-content">
                   {selectedGame.speedEmoji || '未提供'}
                 </span>
               </div>
-
               <div className="rating-item">
                 <span className="rating-label">變化度</span>
                 <span className="rating-content">
                   {selectedGame.changeEmoji || '未提供'}
                 </span>
               </div>
-
               <div className="rating-item">
                 <span className="rating-label">溝通度</span>
                 <span className="rating-content">
                   {selectedGame.communicationEmoji || '未提供'}
                 </span>
               </div>
-
               <div className="rating-item">
                 <span className="rating-label">影響度</span>
                 <span className="rating-content">
                   {selectedGame.playerImpactEmoji || '未提供'}
                 </span>
               </div>
-
               <div className="rating-item">
                 <span className="rating-label">獨特性</span>
                 <span className="rating-content">
                   {selectedGame.uniqueEmoji || '未提供'}
                 </span>
               </div>
-
               <div className="rating-item">
                 <span className="rating-label">複雜度</span>
                 <span className="rating-content">
@@ -1481,12 +1514,19 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
                 </span>
               </div>
             </div>
+
             <div className="personal-box">
-              <StatusButtons
-                bggName={selectedGame.bggName}
-                personal={personal}
-                variant="inline"
-              />
+              <div className="personal-actions">
+                <StatusButtons
+                  bggName={selectedGame.bggName}
+                  personal={personal}
+                  variant="inline"
+                />
+                <PlayCounter
+                  bggName={selectedGame.bggName}
+                  personal={personal}
+                />
+              </div>
               <PersonalNote
                 key={`${selectedGame.bggName}-${personal.status}`}
                 value={personal.getEntry(selectedGame.bggName).note}
@@ -1501,30 +1541,20 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
                 </p>
               )}
             </div>
+
             <GameDocuments
               key={selectedGame.bggName}
               bggName={selectedGame.bggName}
               isAdmin={isAdmin}
             />
-            <div className="notice">
-              <strong>規則查詢功能開發中</strong>
-              <p>
-                目前這是介面展示。下一階段我們會加入規則書匯入與搜尋，
-                讓你能查到實際規則和對應頁碼。
-              </p>
-            </div>
 
-            <button
-              className="rule-button"
-              type="button"
-              onClick={() => setSelectedGame(null)}
-            >
-              知道了
-            </button>
+            <p className="modal-dev-note">
+              規則查詢功能開發中，之後會加入規則書搜尋與頁碼。
+            </p>
           </section>
         </div>
       )}
-
+      
       <MyList
         boardGames={boardGames}
         personal={personal}

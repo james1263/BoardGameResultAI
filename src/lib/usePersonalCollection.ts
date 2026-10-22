@@ -6,6 +6,7 @@ export type PersonalEntry = {
     wantToPlay: boolean
     played: boolean
     note: string
+    playCount: number
 }
 
 export type PersonalCollection = Record<string, PersonalEntry>
@@ -19,27 +20,45 @@ type StatusRow = {
     want_to_play: boolean
     played: boolean
     note: string
+    play_count: number | null
 }
 
 const STORAGE_KEY = 'boardgame-personal-collection'
 const TABLE = 'user_game_status'
 const NOTE_MAX = 500
+const PLAY_COUNT_MAX = 999
 
 const EMPTY_ENTRY: PersonalEntry = {
     wantToPlay: false,
     played: false,
     note: '',
+    playCount: 0,
+}
+
+function clampCount(value: unknown): number {
+    const number = typeof value === 'number' ? Math.floor(value) : 0
+    if (!Number.isFinite(number)) return 0
+    return Math.min(PLAY_COUNT_MAX, Math.max(0, number))
 }
 
 function isEmptyEntry(entry: PersonalEntry): boolean {
-    return !entry.wantToPlay && !entry.played && entry.note === ''
+    return (
+        !entry.wantToPlay &&
+        !entry.played &&
+        entry.note === '' &&
+        entry.playCount === 0
+    )
 }
 
 function normalizeEntry(entry: PersonalEntry): PersonalEntry {
-    return { ...entry, note: entry.note.slice(0, NOTE_MAX) }
+    return {
+        ...entry,
+        note: entry.note.slice(0, NOTE_MAX),
+        playCount: clampCount(entry.playCount),
+    }
 }
 
-// 回傳新的收藏；三項都沒有內容時，就不留紀錄
+// 回傳新的收藏；四項都沒有內容時，就不留紀錄
 function withEntry(
     collection: PersonalCollection,
     bggName: string,
@@ -71,6 +90,7 @@ function loadLocal(): PersonalCollection {
                 wantToPlay: entry.wantToPlay === true,
                 played: entry.played === true,
                 note: typeof entry.note === 'string' ? entry.note : '',
+                playCount: clampCount(entry.playCount),
             })
             if (!isEmptyEntry(clean)) result[key] = clean
         }
@@ -86,6 +106,22 @@ function saveLocal(collection: PersonalCollection) {
     } catch {
         // 儲存失敗也不影響使用
     }
+}
+
+// 勾「已玩」時，如果次數還是 0，就設成 1；其他情況不動次數
+function applyPlayedRule(
+    previous: PersonalEntry,
+    changes: Partial<PersonalEntry>,
+    merged: PersonalEntry,
+): PersonalEntry {
+    if (
+        changes.played === true &&
+        !previous.played &&
+        merged.playCount === 0
+    ) {
+        return { ...merged, playCount: 1 }
+    }
+    return merged
 }
 
 export function usePersonalCollection() {
@@ -121,7 +157,7 @@ export function usePersonalCollection() {
 
         supabase
             .from(TABLE)
-            .select('bgg_name, want_to_play, played, note')
+            .select('bgg_name, want_to_play, played, note, play_count')
             .eq('user_id', userId)
             .then(({ data, error }) => {
                 if (cancelled) return
@@ -137,6 +173,7 @@ export function usePersonalCollection() {
                         wantToPlay: row.want_to_play,
                         played: row.played,
                         note: row.note,
+                        playCount: clampCount(row.play_count),
                     }
                     if (isEmptyEntry(entry)) continue
                     next[row.bgg_name] = entry
@@ -163,13 +200,15 @@ export function usePersonalCollection() {
         (bggName: string, changes: Partial<PersonalEntry>) => {
             // 訪客：只改本機
             if (!userId) {
-                setLocal((current) =>
-                    withEntry(
+                setLocal((current) => {
+                    const previous = current[bggName] ?? EMPTY_ENTRY
+                    const merged = normalizeEntry({ ...previous, ...changes })
+                    return withEntry(
                         current,
                         bggName,
-                        normalizeEntry({ ...EMPTY_ENTRY, ...current[bggName], ...changes }),
-                    ),
-                )
+                        applyPlayedRule(previous, changes, merged),
+                    )
+                })
                 return
             }
 
@@ -177,7 +216,11 @@ export function usePersonalCollection() {
             if (status !== 'ready') return
 
             const previous = cloudRef.current[bggName] ?? EMPTY_ENTRY
-            const merged = normalizeEntry({ ...previous, ...changes })
+            const merged = applyPlayedRule(
+                previous,
+                changes,
+                normalizeEntry({ ...previous, ...changes }),
+            )
 
             // 先更新畫面，再寫雲端；失敗時還原
             cloudRef.current = withEntry(cloudRef.current, bggName, merged)
@@ -191,6 +234,7 @@ export function usePersonalCollection() {
                         want_to_play: merged.wantToPlay,
                         played: merged.played,
                         note: merged.note,
+                        play_count: merged.playCount,
                         updated_at: new Date().toISOString(),
                     },
                     { onConflict: 'user_id,bgg_name' },
@@ -214,7 +258,7 @@ export function usePersonalCollection() {
         localCount > 0 &&
         declinedUserId !== userId
 
-    // 兩邊聯集：想玩／已玩任一邊有勾就有；備註雲端已有就保留雲端的
+    // 兩邊聯集：想玩／已玩任一邊有勾就有；備註雲端已有就保留雲端的；次數取較大值
     const mergeLocalIntoCloud = useCallback(async (): Promise<boolean> => {
         if (!userId) return false
         setMergeStatus('merging')
@@ -229,6 +273,10 @@ export function usePersonalCollection() {
                     cloudEntry && cloudEntry.note !== ''
                         ? cloudEntry.note
                         : localEntry.note,
+                playCount: Math.max(
+                    localEntry.playCount,
+                    cloudEntry?.playCount ?? 0,
+                ),
             })
         }
 
@@ -241,6 +289,7 @@ export function usePersonalCollection() {
                 want_to_play: merged[bggName].wantToPlay,
                 played: merged[bggName].played,
                 note: merged[bggName].note,
+                play_count: merged[bggName].playCount,
                 updated_at: now,
             }))
 
