@@ -259,6 +259,37 @@ async function fetchBoardGames(): Promise<LibraryGame[]> {
   return (data as BoardGameRow[]).map(rowToGame)
 }
 
+function HeartIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinejoin="round"
+    >
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+    </svg>
+  )
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  )
+}
+
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 
 function StatusButtons({
@@ -290,7 +321,8 @@ function StatusButtons({
           personal.updateEntry(bggName, { wantToPlay: !entry.wantToPlay })
         }
       >
-        ♥{withLabel && <span> 想玩</span>}
+        <HeartIcon filled={entry.wantToPlay} />
+        {withLabel && <span>想玩</span>}
       </button>
       <button
         type="button"
@@ -303,7 +335,8 @@ function StatusButtons({
           personal.updateEntry(bggName, { played: !entry.played })
         }
       >
-        ✓{withLabel && <span> 已玩</span>}
+        <CheckIcon />
+        {withLabel && <span>已玩</span>}
       </button>
     </div>
   )
@@ -1020,7 +1053,7 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
                 <div className="category-heading">
                   <span>桌遊類型</span>
                   <span className="category-hint">
-                    可複選，符合任一類型即可
+                    可複選，需同時符合所有已選類型
                   </span>
                 </div>
 
@@ -1179,6 +1212,17 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
             </button>
           </aside>
 
+          <p className="status-legend">
+            <span>
+              <HeartIcon filled={false} /> 想玩
+            </span>
+            <span>
+              <CheckIcon /> 已玩
+            </span>
+            <span className="status-legend-tip">
+              點封面右下角的圖示即可標記；登入後可跨裝置保存
+            </span>
+          </p>
           {missingDataCount > 0 && (
             <p className="missing-data-note">
               有 {missingDataCount} 款因缺少難度或時間資料，未納入篩選結果。
@@ -1366,6 +1410,15 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
                 : selectedGame.bggScore}
             </div>
             <h2 id="modal-title">{selectedGame.name}</h2>
+            {selectedGame.category.length > 0 && (
+              <div className="modal-categories">
+                {selectedGame.category.map((category) => (
+                  <span className="modal-category" key={category}>
+                    {category}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {selectedGame.links.bgg && (
               <a
