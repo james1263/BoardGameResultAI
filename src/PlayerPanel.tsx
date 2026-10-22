@@ -66,16 +66,16 @@ export default function PlayerPanel() {
 
     const result = profile
       ? await supabase
-          .from('player_profiles')
-          .update({ nickname: trimmed })
-          .eq('id', userId)
-          .select('nickname, public_id')
-          .single()
+        .from('player_profiles')
+        .update({ nickname: trimmed })
+        .eq('id', userId)
+        .select('nickname, public_id')
+        .single()
       : await supabase
-          .from('player_profiles')
-          .insert({ id: userId, nickname: trimmed })
-          .select('nickname, public_id')
-          .single()
+        .from('player_profiles')
+        .insert({ id: userId, nickname: trimmed })
+        .select('nickname, public_id')
+        .single()
 
     setIsSaving(false)
 
