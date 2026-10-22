@@ -12,6 +12,7 @@ import {
 } from './data/boardGames.generated'
 import { supabase } from './lib/supabase'
 import AdminPanel from './AdminPanel'
+import PlayerPanel from './PlayerPanel'
 import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
 import GameDocuments from './GameDocuments'
@@ -1056,6 +1057,7 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
         <span>桌遊規則助手</span>
         <span>讓每一場遊戲，都玩得更盡興。</span>
         <AdminPanel />
+        <PlayerPanel />
       </footer>
 
       {selectedGame && (

@@ -371,6 +371,7 @@ export default function AdminPanel() {
 
     const coverMatch = matchCovers(pendingGames, coverFiles)
 
+    if (session && !isAdmin) return null
     if (session) {
         return (
             <>

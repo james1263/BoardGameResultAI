@@ -2,17 +2,17 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { useSession } from './useSession'
 
-// 回傳目前登入者是不是管理者（查 admin_users 表，政策只讓人讀到自己那一列）
-export function useIsAdmin(): boolean {
+// 回傳是否為管理者，以及管理者身分是否已檢查完成
+export function useAdminCheck(): { isAdmin: boolean; checked: boolean } {
   const session = useSession()
   const userId = session?.user?.id ?? null
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [state, setState] = useState<{
+    userId: string | null
+    isAdmin: boolean
+  }>({ userId: null, isAdmin: false })
 
   useEffect(() => {
-    if (!userId) {
-      setIsAdmin(false)
-      return
-    }
+    if (!userId) return
 
     let cancelled = false
 
@@ -23,7 +23,7 @@ export function useIsAdmin(): boolean {
       .maybeSingle()
       .then(({ data, error }) => {
         if (cancelled) return
-        setIsAdmin(!error && data !== null)
+        setState({ userId, isAdmin: !error && data !== null })
       })
 
     return () => {
@@ -31,5 +31,12 @@ export function useIsAdmin(): boolean {
     }
   }, [userId])
 
-  return isAdmin
+  const checked = userId === null || state.userId === userId
+  const isAdmin = userId !== null && state.userId === userId && state.isAdmin
+
+  return { isAdmin, checked }
+}
+
+export function useIsAdmin(): boolean {
+  return useAdminCheck().isAdmin
 }
