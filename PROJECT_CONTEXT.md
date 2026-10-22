@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案交接文件
 
 > 給接手的 AI 閱讀。**請先讀 `QUICKSTART.md`（懶人包），再讀本文件。**
-> 最後更新：2026-10-21（深夜）
+> 最後更新：2026-10-22
 
 ## 1. 專案簡介
 
@@ -23,9 +23,9 @@
   - 環境變數只在「新的部署」才生效；變數名稱錯一個字母，網站會悄悄退回本機備用資料，很難發現。
 - 主要檔案：
   - `src/App.tsx`：`App`（向 Supabase 讀資料、失敗時退回本機資料）→ `Library`（主畫面，接收 `boardGames` 作為 props）；另有 `CoverImage`、`getCoverSources`、`rowToGame`（snake_case → camelCase）、`fetchBoardGames`。`Library` 內使用 `useSession` 判斷是否登入，詳細視窗登入後顯示「上傳／更換封面」。
-  - `src/AdminPanel.tsx`：頁尾的管理者登入／登出，登入後多一個「匯入 CSV」視窗（選檔 → 預覽 → 確認匯入；步驟 4 加入「附封面圖片」）。含 `toRow`（前端欄位 → 資料庫欄位）。
+  - `src/AdminPanel.tsx`：頁尾的管理者登入／登出，登入後多一個「匯入 CSV」視窗：選檔 → 預覽（新增／更新、新增名單、將被刪除名單、封面對應結果）→「確認匯入」（upsert、上傳封面、刪除 CSV 沒有的遊戲與雲端封面）。含 `toRow`（前端欄位 → 資料庫欄位）與 `matchCovers`（依檔名模糊對應封面）。
   - `src/lib/supabase.ts`：建立 Supabase 連線。
-  - `src/lib/parseCsv.ts`：在瀏覽器解析 CSV（移植自 `generate_boardgames.py`：欄位檢查、`cleanText`、數字、類型切陣列、人數轉數字陣列、`makeCoverSlug`、檢查 `bggName`／`coverSlug` 不重複）。`makeCoverSlug` 在步驟 4 改為 `export`。
+  - `src/lib/parseCsv.ts`：在瀏覽器解析 CSV（移植自 `generate_boardgames.py`：欄位檢查、`cleanText`、數字、類型切陣列、人數轉數字陣列、`makeCoverSlug`、檢查 `bggName`／`coverSlug` 不重複）。`makeCoverSlug` 已 `export`（`AdminPanel.tsx` 用來比對封面檔名）。
   - `src/lib/useSession.ts`：React hook，回傳目前登入的 session（沒登入為 `null`）。
   - `src/lib/uploadCover.ts`：把圖片縮成寬度最多 600px、轉成 webp（品質 0.85）後，以 `{coverSlug}.webp` 上傳到 `covers` bucket（`upsert: true`，`cacheControl: 60`）。
   - `src/App.css`：樣式（含檢視模式、管理者登入）。
@@ -33,7 +33,7 @@
   - `generate_boardgames.py`、`make_supabase_import.py`：舊的資料更新流程，**已被網站匯入取代，僅留作備份與規則參考**（不在 Git 裡）。
   - `public/covers/`：舊的封面圖（108 個檔，已在 Git 裡），繼續當備援。
 - 指令（PowerShell 用 `npm.cmd`）：`npm.cmd run dev`（`http://localhost:5173/`，改 `.env.local` 後要重開；終端機關掉或按 `Ctrl + C` 後 `localhost:5173` 會連不上，重新執行即可）、`npm.cmd run build`（成功顯示 `✓ built in ...`；「chunks larger than 500 kB」是提醒，可忽略）。
-- **目前的資料更新流程**：Notion → 匯出 CSV → 網站頁尾「管理者登入」→「匯入 CSV」→ 預覽 →「確認匯入」。不需要 push（資料在雲端）。
+- **目前的資料更新流程**：Notion → 匯出 CSV → 網站頁尾「管理者登入」→「匯入 CSV」→ 看預覽（尤其是紅字「將被刪除」名單）→「確認匯入」。**CSV 沒有的遊戲會被刪除。**不需要 push（資料在雲端）。
 - **push 注意**：不要用 `git add .`。只加入需要的檔案：`.gitignore`、`package.json`、`package-lock.json`、`src`、`public`、兩份交接文件。**不要上傳**：`boardgame_source.zip`、`supabase_import.sql`、`make_supabase_import.py`、`boardgames.csv`、`categories_check.txt`、`covers_needed.txt`、`list_categories.py`、`generate_boardgames.backup.py`、`.env.local`。
 - Windows 的 `LF will be replaced by CRLF` 警告可忽略。PowerShell 用 `Get-Content` 顯示 UTF-8 中文會變亂碼，只是終端機顯示問題，檔案本身正常。
 
@@ -68,11 +68,13 @@
 - 檢視模式切換：清單 `list`、一排 4 `grid-4`、一排 9 `grid-9`，存 `localStorage`（key `boardgame-view-mode`）。清單檢視實際畫面使用者**尚未回報截圖**；「代辦清單」被當成首頁桌遊列表（使用者未反對）。
 - 資料來源為 Supabase（讀取失敗退回本機資料）。
 - **管理者登入／登出**（頁尾）：已實測並 push。
-- **匯入 CSV**：預覽（解析幾款、新增、更新、資料庫有但 CSV 沒有幾款、前 3 款）實測正確（107 款、更新 107、新增 0）；「確認匯入」（以 `bgg_name` upsert，匯入前有 `window.confirm`）已實測成功。
+- **匯入 CSV**：預覽（新增、更新、新增名單、將被刪除名單）已實測；「確認匯入」（以 `bgg_name` upsert，匯入前有 `window.confirm`）已實測成功。已移除原本的「前 3 款檢查」。
 - **詳細視窗「上傳／更換封面」**（登入後才出現）：已實測成功，圖片自動壓縮成 webp 上傳，上傳後卡片與視窗立即換圖。
 
-**已寫好、尚未測試（步驟 4）：**
-- **匯入 CSV 時附上封面圖片**：預覽畫面可多選圖片，檔名 → `makeCoverSlug(去副檔名)` → 對應遊戲；顯示「已選幾張、可對應幾張、找不到對應的檔名（略過）」；確認匯入時先 upsert 資料，再逐張 `uploadCover`，結果訊息列出上傳張數與失敗檔名。使用者尚未套用或測試，不確定 build 是否通過。程式碼存在分支 `wip-cover-upload`（若使用者已照做，請以 `git branch -a` 確認）。
+**已實測並上線（2026-10-22，分支 `wip-cover-upload` 已合併進 `master`）：**
+- **匯入 CSV 時附封面圖**：預覽可多選圖片，檔名不必和 `bggName` 完全相同，英文或中文名皆可。比對順序（`matchCovers`）：完全相同的封面代號 → 去掉括號後相同／中文名相同 → 名稱開頭相同；同時符合多款則略過並提醒使用者把檔名寫完整。預覽列出「檔名 → 遊戲」，找不到對應的圖片只留在瀏覽器、不會上傳。
+- **CSV 沒有的遊戲會被刪除**：預覽以紅字列名單，確認視窗再列一次，一次刪超過 5 款需輸入「刪除」；刪除遊戲時一併刪除 Storage 的 `{cover_slug}.webp`（本次 CSV 仍使用的封面代號除外）。順序為 upsert → 上傳封面 → 刪除。完成訊息會回報上傳張數、刪除遊戲數與封面數、失敗項目。
+- 匯入視窗最大高度 90vh、可捲動。
 
 ## 6. 長期願景與優先順序（使用者已排定）
 
@@ -84,18 +86,15 @@
 
 ## 7. 路線圖與下一步
 
-**已完成**：篩選與缺資料、封面圖、檢視模式、後端（Supabase）、資料搬到雲端、單一管理者帳號與寫入權限、管理者登入、網站匯入 CSV、封面改存 Storage 並可在網站上傳。
+**已完成**：篩選與缺資料、封面圖、檢視模式、後端（Supabase）、資料搬到雲端、單一管理者帳號與寫入權限、管理者登入、網站匯入 CSV（含自動刪除）、封面改存 Storage 並可在網站上傳、匯入時附封面圖。
 
-**進行中**：步驟 4（匯入 CSV 時附封面圖）— 待套用與測試。
+**進行中**：無。
 
 **接下來（一次做一項）：**
-1. 確認 `wip-cover-upload` 分支 → 套用／檢查步驟 4 → `npm.cmd run build` → 實測（挑 1～2 張檔名為 `bggName` 的圖 + 1 張亂取名的圖；注意會真的覆蓋封面）。
-2. 測試成功 → 合併進 `master` 並 push（只 `git add` 需要的檔案）→ 確認 Vercel 線上版「匯入 CSV」與「上傳／更換封面」正常。
-3. 決定 CSV 匯入的**刪除行為**（見第 9 節）。
-4. **規則書連結**：`link_rulebook_zh/en`、`link_faq` 目前皆空；可放 Supabase Storage（與 AI 助手相關），需決定檔案結構與權限。
-5. **個人收藏**（想玩、已玩、備註，初期存 localStorage）。
-6. **新到貨桌遊（New Arrival）**：需在 Notion／CSV 新增「入手日期」欄位，資料表加欄位，卡片標示。
-7. 之後：AI 規則助手 → 討論／揪團／行事曆 → 完整帳號與遊玩紀錄。
+1. **規則書連結**：`link_rulebook_zh/en`、`link_faq` 目前皆空。先和使用者決定檔案放哪裡（Supabase Storage 上傳，或貼外部連結）、中英文規則書與 FAQ 是否各一份、是否在網站上直接上傳。與日後 AI 規則助手相關，PDF 日後需切段並保留頁碼；注意免費 1 GB 儲存額度。
+2. **個人收藏**（想玩、已玩、備註，初期存 localStorage）。
+3. **新到貨桌遊（New Arrival）**：需在 Notion／CSV 新增「入手日期」欄位，資料表加欄位，卡片標示。
+4. 之後：AI 規則助手 → 討論／揪團／行事曆 → 完整帳號與遊玩紀錄。
 
 ## 8. 與使用者合作的規則（重要）
 
@@ -110,8 +109,8 @@
 
 ## 9. 待確認事項
 
-- **CSV 匯入的刪除行為（使用者要求記錄、待確認）**：使用者發現上傳筆數比資料庫少的 CSV 時，缺少的遊戲**不會被刪除**。這是目前刻意的預設（只 upsert；預覽顯示「資料庫有、但 CSV 沒有：N 款（不會刪除）」），不是 bug。若要提供刪除，建議：預覽列出這些遊戲名稱；提供**預設關閉**的勾選「同時刪除」，勾選後再跳一次確認（筆數＋名稱）；是否連帶刪除 Storage 封面（建議不連帶）。相關地雷：Notion 裡改 `bggName` 會被當成新遊戲、舊的留下；新舊 `cover_slug` 相同會撞唯一限制導致匯入失敗。
-- 步驟 4（匯入附圖）是否測試成功、是否已合併進 `master`。
+- CSV 匯入的刪除行為已依使用者要求實作（CSV 沒有的遊戲與其雲端封面會被刪除，見第 5 節）。地雷：在 Notion 改 `bggName` 會讓舊的被刪（含封面）、新的當新遊戲（封面要重傳）；新舊 `cover_slug` 相同會撞唯一限制；拿到不完整的 CSV 會刪掉其他遊戲，匯入前務必看紅字名單。若日後想改成「預設不刪」或加勾選，可再調整。
+- 規則書檔案要放哪裡（Supabase Storage 或外部連結）、中英文與 FAQ 的結構。
 - 清單檢視、9 個一排的實際外觀是否滿意（清單檢視尚無截圖）。
 - 「代辦清單」是否真的指首頁桌遊列表。
 - 規則書檔案要放哪裡、AI 規則助手的後端與模型選擇、訪客提問次數限制方式。
@@ -129,7 +128,7 @@
 1. 安裝 Git、Node.js（LTS 版）、VS Code（Python 已不需要）。第一次用 Git 需設定姓名與 email（`git config --global user.name "..."`、`git config --global user.email "..."`），push 時會跳出 GitHub 登入視窗。
 2. 在舊電腦的專案資料夾執行 `git remote get-url origin` 取得倉庫網址（或到 GitHub 倉庫頁面 Code → HTTPS）。
 3. 在新電腦選一個資料夾，執行 `git clone <倉庫網址>`，然後 `cd` 進專案資料夾。
-4. 若要接續尚未合併的工作：`git checkout wip-cover-upload`。
+4. 確認在 `master` 分支（`git branch`）。`wip-cover-upload` 已合併，可忽略。
 5. 執行 `npm.cmd install`。
 6. 在專案根目錄建立 `.env.local`（純文字，內容兩行，不加引號）：
    ```
