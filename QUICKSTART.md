@@ -1,6 +1,6 @@
 # 桌遊規則助手 — 懶人包（給下一個 AI）
 
-> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`。最後更新：2026-10-22
+> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`。最後更新：2026-10-22（晚）
 
 ## 這是什麼
 
@@ -34,14 +34,28 @@
 
 ## 進行中
 
-目前沒有進行中的項目。分支 `wip-cover-upload` 已合併進 `master` 並上線，使用者已測試線上版正常。之後直接在 `master` 開發，該分支可忽略。
+**規劃階段（尚未動工）**：使用者想做社群功能（想玩／已玩、公開評分、每月想玩排行榜、集點卡）。方向已與使用者確認，見下方「下一步」。**使用者的 AI 額度快用完，這份文件就是為了讓下一個 AI 直接接續。**
+
+**⚠️ 本機可能有未 commit 的試作（不要 push）**：`src/lib/usePersonalCollection.ts`（localStorage 個人收藏工具，以 `bggName` 為鍵，存想玩／已玩／備註），以及 `App.tsx`、`App.css` 裡可能已加入的「MY NOTES」區塊（`personal-box`、想玩／已玩按鈕、備註欄）。這是早期試作，**Phase 3 再整合**；使用者已決定備註先不做。請開場用 `git status` 確認這些檔案的狀態，**不要 `git add` 它們**，除非使用者決定要保留。另請確認上一輪的兩份交接文件是否已 push。
 
 ## 下一步（照順序）
 
-1. **上傳規則書 PDF（第二階段）**：存到 Supabase **私有** bucket（網站公開、規則書有著作權，只給管理者與日後的 AI 後端讀取，不可用公開 bucket）。`game_documents` 已預留 `source_type='upload'` 與 `storage_path`。需做：上傳介面、檔案大小限制、替換檔案；注意刪除遊戲時 `on delete cascade` 只會刪資料列、**不會刪 Storage 檔案**，需另外處理；先統計實際 PDF 數量與大小，並以 Supabase 當時的免費額度為準。
-2. 個人收藏（想玩、已玩、備註，先存 localStorage）。
-3. 新到貨桌遊標示（需 Notion／CSV 新增「入手日期」欄位）。
-4. **AI 規則助手（最重要）**：第三階段做 PDF 文字擷取、切段並保留頁碼、更新 `ai_indexed`。需先決定要支援全部桌遊，還是先支援最常玩的 10～20 款。之後再做討論／揪團／行事曆 → 帳號與遊玩紀錄。
+**社群功能計畫（使用者已確認方向，2026-10-22）— 依序進行，一次一階段：**
+
+1. **Phase 1｜管理權限與資料安全（最優先，尚未開始）**：把 `board_games`、`game_documents` 與 Storage `covers` 的新增／修改／刪除權限，從「所有 `authenticated`」改成「只有管理者」；網站的管理功能（頁尾「管理者模式」、匯入 CSV、上傳封面、新增／刪除規則書連結）也只對管理者顯示。**開放任何人登入之前必須先完成。**
+2. **Phase 2｜Email 免密碼登入**（Supabase Magic Link）、玩家暱稱與公開玩家 ID；管理者與一般玩家分開判斷。
+3. **Phase 3｜訪客紀錄與雲端同步**：訪客的想玩、已玩、集點存 `localStorage`；首次登入時合併到雲端（避免重複，合併規則要明確）。
+4. **Phase 4｜公開評分**：六項評分＋整體 1～10 分，每位登入玩家每款遊戲一筆（可修改），社群平均與評分人數公開。
+5. **Phase 5｜每月想玩排行榜**：每位登入玩家每款每月一票、有每月票數上限與資料庫唯一限制、各月份榜單永久保留可回顧。
+6. **Phase 6｜集點卡與成就**：依遊玩紀錄累積，登入玩家可跨裝置保留。
+
+其餘（上傳規則書 PDF、新到貨標示、**AI 規則助手（仍是最重要的長期目標）**、揪團／行事曆）排在這之後，順序請與使用者確認。
+
+**接續時請從 Phase 1 開始，第一件事：**
+1. 請使用者到 Supabase 後台 Authentication → Users，複製自己管理者帳號的 **User UID**（不是密碼，可貼出）。
+2. 建議做法（接手 AI 請對照 Supabase 當下文件確認後再給使用者）：建立 `public.admin_users(user_id uuid primary key references auth.users(id))` 並放入該 UID；建立 `public.is_admin()` 函式（`security definer`，設好 `search_path`）；把 `board_games`、`game_documents` 的 INSERT／UPDATE／DELETE 政策與 `storage.objects`（bucket `covers`）的 INSERT／UPDATE／DELETE 政策改成 `using / with check (public.is_admin())`；讀取政策（`anon`、`authenticated`）維持不變。SQL 一次一段貼給使用者，先給「查看現有政策」的查詢，再改。
+3. 前端：`AdminPanel.tsx`、`App.tsx`（`useSession`、上傳封面）、`GameDocuments.tsx`（`isAdmin`）目前都只判斷「有沒有登入」，要改成「是不是管理者」（例如查詢自己是否在 `admin_users`，政策讓使用者只能讀自己的那一列）。**前端隱藏不是安全防護，真正的保護是資料庫政策。**
+4. 測試：管理者仍能匯入 CSV、上傳封面、新增／刪除規則書連結；用沒登入的狀態確認無法寫入。**Phase 1 完成前不要開放註冊或任何人登入。**
 
 ## CSV 匯入的行為（重要，已改版）
 
@@ -56,6 +70,9 @@
 - **公開瀏覽、只有使用者能編輯；訪客可以問 AI 但不能改設定。** AI 開放給訪客會花錢，之後要做每日提問次數限制，AI 金鑰只能放後端。
 - Supabase：Project URL 是**根網址** `https://hgeuockbjrzayfdylavq.supabase.co`（不加 `/rest/v1/`）。只有 Publishable key 可放前端。已**關閉開放註冊**。
 - ⚠️ `board_games`、`game_documents` 與 Storage 的寫入規則都給所有 `authenticated` 使用者；**日後開放朋友登入前，三邊都必須改成只認管理者**，否則朋友能改桌遊資料、規則書連結和封面。
+- **已決定不採用匿名帳號**：依 Supabase 的設計，匿名使用者在資料庫裡的角色也是 `authenticated`，會直接套用現在「所有 authenticated 可寫入」的規則；而且匿名帳號清除瀏覽資料就能再建一個，無法做到「一人一帳」。改採「訪客存 `localStorage`＋登入玩家（Email 免密碼連結）才能評分／投票」。
+- **社群設計決定（使用者）**：不做留言板（之後可加選填短評）；評分一律公開、不放進玩家設定；評分項目沿用使用者的用語：喜歡度、玩家影響性（**不要改名成「玩家互動」**，定義是「在意別人操作＋下一步被限制」）、溝通性、變化性、獨特性、適合留下來程度（1～5 分），另有整體 1～10 分（兩種量表請與使用者再確認）。複雜度與快速性視為遊戲屬性，不列入評分。社群平均與使用者自己的 Emoji 評價並排顯示，但**不要與「綜合分數排名」混在一起或揭露其算法**。想玩投票是獨立功能，與個人「想玩清單」分開；「已玩」只是有／沒有，常玩遊戲排名需要的是遊玩次數，另外設計。
+- 登入的好處＝評分與投票計入社群排行榜、可換裝置找回紀錄；訪客仍可免註冊瀏覽並在本機記錄。
 - Vercel 的 `VITE_SUPABASE_URL`、`VITE_SUPABASE_PUBLISHABLE_KEY` 必須存成 **Config**（不是 Secret），名稱一個字母都不能錯；錯了網站會悄悄退回本機資料。本機的 `.env.local` 不在 Git 裡，換電腦要重建。
 - Supabase 免費專案閒置一週會暫停（資料不會消失，需到後台恢復）；檔案儲存免費額度約 1 GB，封面已壓縮，之後放規則書 PDF 要留意。
 - 資料庫主鍵是 `bgg_name`；前端 `id` 只是流水號，**絕對不能用來對應圖片或使用者資料**。
@@ -69,6 +86,7 @@
 ## 開場前先確認
 
 1. 使用者現在在哪台電腦；目前分支應為 `master`，先 `git pull`。多台電腦作業請看 `PROJECT_CONTEXT.md` 第 10 節。
-2. 若要改 `src/App.tsx` 或 `src/AdminPanel.tsx`，請他貼出目前版本（兩份都已大改）。
-3. 下一個功能是上傳 PDF、個人收藏還是其他，請使用者決定。
-4. 清單檢視與 9 個一排的外觀是否滿意（清單檢視還沒看到截圖）。
+2. `git status`：確認上一輪兩份交接文件是否已 push，以及 `usePersonalCollection.ts` 等試作檔案的狀態（不要 push）。
+3. 向使用者要管理者的 **User UID**，開始 Phase 1。
+4. 若要改 `src/App.tsx`、`src/AdminPanel.tsx`、`src/GameDocuments.tsx`，請他貼出目前版本。
+5. 評分量表（六項 1～5、整體 1～10）與每月想玩票數上限（建議每人每月 5 票，尚未定）請在做到對應階段時向使用者確認。
