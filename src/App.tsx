@@ -12,7 +12,7 @@ import {
 } from './data/boardGames.generated'
 import { supabase } from './lib/supabase'
 import AdminPanel from './AdminPanel'
-import { useSession } from './lib/useSession'
+import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
 import GameDocuments from './GameDocuments'
 
@@ -230,7 +230,7 @@ async function fetchBoardGames(): Promise<BoardGame[]> {
 function Library({ boardGames }: { boardGames: BoardGame[] }) {
   const [searchText, setSearchText] = useState('')
   const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null)
-  const session = useSession()
+  const isAdmin = useIsAdmin()
   const [coverVersions, setCoverVersions] = useState<Record<string, number>>({})
   const [isUploadingCover, setIsUploadingCover] = useState(false)
   const [coverMessage, setCoverMessage] = useState('')
@@ -1092,7 +1092,7 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
               }
             />
 
-            {session && (
+            {isAdmin && (
               <div className="cover-upload">
                 <label className="admin-link" style={{ cursor: 'pointer' }}>
                   {isUploadingCover ? '上傳中…' : '上傳／更換封面'}
@@ -1177,11 +1177,10 @@ function Library({ boardGames }: { boardGames: BoardGame[] }) {
                 </span>
               </div>
             </div>
-
             <GameDocuments
               key={selectedGame.bggName}
               bggName={selectedGame.bggName}
-              isAdmin={Boolean(session)}
+              isAdmin={isAdmin}
             />
             <div className="notice">
               <strong>規則查詢功能開發中</strong>
