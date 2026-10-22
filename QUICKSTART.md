@@ -28,6 +28,7 @@
 - **管理者登入**（頁尾）：已實測成功並 push。
 - **網站匯入 CSV**（已實測、已上線）：`src/lib/parseCsv.ts`（移植自 Python 規則）+ `AdminPanel.tsx`。預覽顯示新增／更新筆數、新增的遊戲名單（10 款以內）、**CSV 沒有的遊戲名單（紅字）**；「確認匯入」會以 `bgg_name` upsert、上傳附上的封面，並**刪除 CSV 裡沒有的遊戲與其雲端封面**（見下方「CSV 匯入的行為」）。已移除「前 3 款檢查」。
 - **匯入時附封面圖**（已實測、已上線）：預覽可多選圖片，檔名**不必和 `bggName` 完全相同**，英文或中文名都可以。比對順序：完全相同 → 去掉括號後相同／中文名相同 → 名稱開頭相同；同時符合多款則略過並提醒。預覽會列出「檔名 → 遊戲」，對應不到的圖片只留在瀏覽器、**不會上傳、不佔雲端空間**。
+- **規則書／FAQ 連結**（已實測、已上線）：新資料表 `game_documents`（一款遊戲可有多份文件：類型 規則書／FAQ／勘誤／其他、語言 中文／英文／其他、標題、外部網址）。詳細視窗由 `src/GameDocuments.tsx` 顯示，登入後可新增／刪除連結（網址須 http(s) 開頭）。目前**只做外部連結**；上傳 PDF 與 AI 索引欄位（`storage_path`、`ai_indexed`）已預留。舊的 `link_rulebook_zh/en`、`link_faq` 欄位保留但**不再使用**。
 - **封面改存 Supabase Storage**：已建立公開 bucket `covers` 與 4 條 storage 權限（讀取 anon+authenticated；新增／更新／刪除只給 authenticated）。`CoverImage` 讀取順序：Storage `{coverSlug}.webp` → 舊的 `public/covers/` webp／jpg／png → 🎲。
 - **詳細視窗「上傳／更換封面」**（登入後才出現）：`src/lib/uploadCover.ts` 在瀏覽器把圖縮成寬度最多 600px、轉 webp 後上傳；`src/lib/useSession.ts` 提供登入狀態。**已實測成功。**
 
@@ -37,10 +38,10 @@
 
 ## 下一步（照順序）
 
-1. **規則書連結**（`link_rulebook_zh/en`、`link_faq` 目前全空）：先和使用者決定檔案放哪裡（Supabase Storage 上傳，或貼外部連結如 Google Drive）、中英文規則書與 FAQ 是否各一份、是否網站上直接上傳。與日後 AI 規則助手相關，PDF 日後需要切段並保留頁碼。
+1. **上傳規則書 PDF（第二階段）**：存到 Supabase **私有** bucket（網站公開、規則書有著作權，只給管理者與日後的 AI 後端讀取，不可用公開 bucket）。`game_documents` 已預留 `source_type='upload'` 與 `storage_path`。需做：上傳介面、檔案大小限制、替換檔案；注意刪除遊戲時 `on delete cascade` 只會刪資料列、**不會刪 Storage 檔案**，需另外處理；先統計實際 PDF 數量與大小，並以 Supabase 當時的免費額度為準。
 2. 個人收藏（想玩、已玩、備註，先存 localStorage）。
 3. 新到貨桌遊標示（需 Notion／CSV 新增「入手日期」欄位）。
-4. 之後：**AI 規則助手（最重要）** → 討論／揪團／行事曆 → 帳號與遊玩紀錄。
+4. **AI 規則助手（最重要）**：第三階段做 PDF 文字擷取、切段並保留頁碼、更新 `ai_indexed`。需先決定要支援全部桌遊，還是先支援最常玩的 10～20 款。之後再做討論／揪團／行事曆 → 帳號與遊玩紀錄。
 
 ## CSV 匯入的行為（重要，已改版）
 
@@ -54,7 +55,7 @@
 
 - **公開瀏覽、只有使用者能編輯；訪客可以問 AI 但不能改設定。** AI 開放給訪客會花錢，之後要做每日提問次數限制，AI 金鑰只能放後端。
 - Supabase：Project URL 是**根網址** `https://hgeuockbjrzayfdylavq.supabase.co`（不加 `/rest/v1/`）。只有 Publishable key 可放前端。已**關閉開放註冊**。
-- ⚠️ 資料表與 Storage 的寫入規則都給所有 `authenticated` 使用者；**日後開放朋友登入前，兩邊都必須改成只認管理者**，否則朋友能改桌遊資料和封面。
+- ⚠️ `board_games`、`game_documents` 與 Storage 的寫入規則都給所有 `authenticated` 使用者；**日後開放朋友登入前，三邊都必須改成只認管理者**，否則朋友能改桌遊資料、規則書連結和封面。
 - Vercel 的 `VITE_SUPABASE_URL`、`VITE_SUPABASE_PUBLISHABLE_KEY` 必須存成 **Config**（不是 Secret），名稱一個字母都不能錯；錯了網站會悄悄退回本機資料。本機的 `.env.local` 不在 Git 裡，換電腦要重建。
 - Supabase 免費專案閒置一週會暫停（資料不會消失，需到後台恢復）；檔案儲存免費額度約 1 GB，封面已壓縮，之後放規則書 PDF 要留意。
 - 資料庫主鍵是 `bgg_name`；前端 `id` 只是流水號，**絕對不能用來對應圖片或使用者資料**。
@@ -69,5 +70,5 @@
 
 1. 使用者現在在哪台電腦；目前分支應為 `master`，先 `git pull`。多台電腦作業請看 `PROJECT_CONTEXT.md` 第 10 節。
 2. 若要改 `src/App.tsx` 或 `src/AdminPanel.tsx`，請他貼出目前版本（兩份都已大改）。
-3. 規則書連結要放哪裡、是否已有決定。
+3. 下一個功能是上傳 PDF、個人收藏還是其他，請使用者決定。
 4. 清單檢視與 9 個一排的外觀是否滿意（清單檢視還沒看到截圖）。

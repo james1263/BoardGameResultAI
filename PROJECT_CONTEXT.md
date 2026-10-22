@@ -24,6 +24,7 @@
 - 主要檔案：
   - `src/App.tsx`：`App`（向 Supabase 讀資料、失敗時退回本機資料）→ `Library`（主畫面，接收 `boardGames` 作為 props）；另有 `CoverImage`、`getCoverSources`、`rowToGame`（snake_case → camelCase）、`fetchBoardGames`。`Library` 內使用 `useSession` 判斷是否登入，詳細視窗登入後顯示「上傳／更換封面」。
   - `src/AdminPanel.tsx`：頁尾的管理者登入／登出，登入後多一個「匯入 CSV」視窗：選檔 → 預覽（新增／更新、新增名單、將被刪除名單、封面對應結果）→「確認匯入」（upsert、上傳封面、刪除 CSV 沒有的遊戲與雲端封面）。含 `toRow`（前端欄位 → 資料庫欄位）與 `matchCovers`（依檔名模糊對應封面）。
+  - `src/GameDocuments.tsx`：遊戲詳細視窗裡的規則書／FAQ 區塊（props：`bggName`、`isAdmin`）。讀取 `game_documents`，顯示外部連結（只接受 http(s) 網址）；登入後有新增表單與刪除按鈕。`App.tsx` 在詳細視窗的 `<div className="notice">` 上方放入，並以 `key={selectedGame.bggName}` 重置狀態。
   - `src/lib/supabase.ts`：建立 Supabase 連線。
   - `src/lib/parseCsv.ts`：在瀏覽器解析 CSV（移植自 `generate_boardgames.py`：欄位檢查、`cleanText`、數字、類型切陣列、人數轉數字陣列、`makeCoverSlug`、檢查 `bggName`／`coverSlug` 不重複）。`makeCoverSlug` 已 `export`（`AdminPanel.tsx` 用來比對封面檔名）。
   - `src/lib/useSession.ts`：React hook，回傳目前登入的 session（沒登入為 `null`）。
@@ -46,8 +47,9 @@
 - 缺值為 `NULL`（數字）或空字串（文字）。**主鍵用 `bgg_name` 而不是 `id`**，因為 `id` 會隨 CSV 順序位移；前端的 `id` 只是讀取後依排序給的流水號，**不可用來對應圖片或使用者資料**。
 - **資料表 RLS 已啟用，共 4 條規則**：SELECT（`anon`、`authenticated` 都可讀）；INSERT／UPDATE／DELETE 只給 `authenticated`。
 - **Storage**：公開 bucket `covers`（任何人可讀圖），並已建立 4 條 `storage.objects` 規則：SELECT 給 `anon`、`authenticated`；INSERT／UPDATE／DELETE 只給 `authenticated`（限 `bucket_id = 'covers'`）。檔名為 `{coverSlug}.webp`。
+- **`public.game_documents`（規則書／FAQ 等文件，一款遊戲可有多份）**：`id`(uuid)、`bgg_name`（外鍵 → `board_games.bgg_name`，`on delete cascade on update cascade`）、`doc_type`（`rulebook`／`faq`／`errata`／`other`）、`language`（`zh`／`en`／`other`）、`title`、`source_type`（`external`／`upload`）、`external_url`、`storage_path`、`ai_indexed`(boolean，預設 false)、`created_at`。檢查條件：external 必須有網址、upload 必須有路徑。RLS 與 `board_games` 相同（所有人可讀，只有 `authenticated` 可新增／修改／刪除）。**目前只使用 external**；`board_games` 的 `link_rulebook_zh/en`、`link_faq` 欄位保留但不再使用。刪除遊戲會連帶刪除文件資料列，但**不會刪 Storage 檔案**（日後做上傳時要處理）。
 - **管理者帳號**：已在 Authentication → Users 手動建立 1 個帳號（Auto Confirm），**已關閉「Allow new users to sign up」**。因此目前「已登入者 = 使用者本人」，寫入規則才安全。
-- ⚠️ **未來若開放朋友登入（留言、報名、想玩清單），他們也會是 `authenticated`，就能改桌遊資料與封面。** 屆時必須把資料表與 Storage 的 INSERT／UPDATE／DELETE 規則都改成只認管理者（例如比對管理者的 user id 或另建角色表）。
+- ⚠️ **未來若開放朋友登入（留言、報名、想玩清單），他們也會是 `authenticated`，就能改桌遊資料、規則書連結與封面。** 屆時必須把 `board_games`、`game_documents` 與 Storage 的 INSERT／UPDATE／DELETE 規則都改成只認管理者（例如比對管理者的 user id 或另建角色表）。
 - ⚠️ 免費方案：專案閒置一週會自動暫停（資料不會消失，但暫停期間網站讀不到資料，需到後台恢復）。檔案儲存免費額度約 1 GB（各來源寫 500 MB～1 GB，請以官方頁面為準）；封面已壓縮，但之後存規則書 PDF 要注意。
 
 ## 4. 前端資料欄位（`BoardGame` 型別）
@@ -76,6 +78,8 @@
 - **CSV 沒有的遊戲會被刪除**：預覽以紅字列名單，確認視窗再列一次，一次刪超過 5 款需輸入「刪除」；刪除遊戲時一併刪除 Storage 的 `{cover_slug}.webp`（本次 CSV 仍使用的封面代號除外）。順序為 upsert → 上傳封面 → 刪除。完成訊息會回報上傳張數、刪除遊戲數與封面數、失敗項目。
 - 匯入視窗最大高度 90vh、可捲動。
 
+**規則書／FAQ 連結（已實測並上線）**：詳細視窗顯示該遊戲的文件連結（類型、語言、標題，點擊於新分頁開啟）；沒有時顯示「尚未提供規則書或 FAQ 連結。」；登入後可新增（類型、語言、標題可不填、網址）與刪除連結。訪客只能看。上傳 PDF 與 AI 索引尚未做。
+
 ## 6. 長期願景與優先順序（使用者已排定）
 
 > 近期項目完成前，不要動工以下功能。
@@ -86,15 +90,15 @@
 
 ## 7. 路線圖與下一步
 
-**已完成**：篩選與缺資料、封面圖、檢視模式、後端（Supabase）、資料搬到雲端、單一管理者帳號與寫入權限、管理者登入、網站匯入 CSV（含自動刪除）、封面改存 Storage 並可在網站上傳、匯入時附封面圖。
+**已完成**：篩選與缺資料、封面圖、檢視模式、後端（Supabase）、資料搬到雲端、單一管理者帳號與寫入權限、管理者登入、網站匯入 CSV（含自動刪除）、封面改存 Storage 並可在網站上傳、匯入時附封面圖、規則書／FAQ 外部連結。
 
 **進行中**：無。
 
-**接下來（一次做一項）：**
-1. **規則書連結**：`link_rulebook_zh/en`、`link_faq` 目前皆空。先和使用者決定檔案放哪裡（Supabase Storage 上傳，或貼外部連結）、中英文規則書與 FAQ 是否各一份、是否在網站上直接上傳。與日後 AI 規則助手相關，PDF 日後需切段並保留頁碼；注意免費 1 GB 儲存額度。
-2. **個人收藏**（想玩、已玩、備註，初期存 localStorage）。
-3. **新到貨桌遊（New Arrival）**：需在 Notion／CSV 新增「入手日期」欄位，資料表加欄位，卡片標示。
-4. 之後：AI 規則助手 → 討論／揪團／行事曆 → 完整帳號與遊玩紀錄。
+**接下來（一次做一項，順序由使用者決定）：**
+1. **上傳規則書 PDF（第二階段）**：存到 Supabase **私有** bucket（網站公開、規則書有著作權，只給管理者與日後的 AI 後端讀取，不可用公開 bucket）。`game_documents` 已預留 `source_type='upload'` 與 `storage_path`。需做：上傳介面、檔案大小限制、替換檔案；注意刪除遊戲時 `on delete cascade` 只會刪資料列、**不會刪 Storage 檔案**，需另外處理；先統計實際 PDF 數量與大小，並以 Supabase 當時的免費額度為準。
+2. 個人收藏（想玩、已玩、備註，先存 localStorage）。
+3. 新到貨桌遊標示（需 Notion／CSV 新增「入手日期」欄位）。
+4. **AI 規則助手（最重要）**：第三階段做 PDF 文字擷取、切段並保留頁碼、更新 `ai_indexed`。需先決定要支援全部桌遊，還是先支援最常玩的 10～20 款。之後再做討論／揪團／行事曆 → 帳號與遊玩紀錄。
 
 ## 8. 與使用者合作的規則（重要）
 
@@ -110,7 +114,7 @@
 ## 9. 待確認事項
 
 - CSV 匯入的刪除行為已依使用者要求實作（CSV 沒有的遊戲與其雲端封面會被刪除，見第 5 節）。地雷：在 Notion 改 `bggName` 會讓舊的被刪（含封面）、新的當新遊戲（封面要重傳）；新舊 `cover_slug` 相同會撞唯一限制；拿到不完整的 CSV 會刪掉其他遊戲，匯入前務必看紅字名單。若日後想改成「預設不刪」或加勾選，可再調整。
-- 規則書檔案要放哪裡（Supabase Storage 或外部連結）、中英文與 FAQ 的結構。
+- 規則書 PDF 是否要上傳、是否用私有 bucket、著作權處理；AI 規則助手要支援全部桌遊還是先 10～20 款、後端與模型選擇、訪客提問次數限制方式。
 - 清單檢視、9 個一排的實際外觀是否滿意（清單檢視尚無截圖）。
 - 「代辦清單」是否真的指首頁桌遊列表。
 - 規則書檔案要放哪裡、AI 規則助手的後端與模型選擇、訪客提問次數限制方式。
