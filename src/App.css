@@ -2483,3 +2483,24 @@ a:focus-visible {
 .game-art {
   cursor: pointer;
 }
+
+.topbar-actions .player-chip {
+  max-width: 9em;
+  padding: 6px 14px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  background: #fff;
+  color: #25352d;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 430px) {
+  .topbar-actions .player-chip {
+    max-width: 6em;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+}

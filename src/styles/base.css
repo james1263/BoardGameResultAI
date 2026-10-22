@@ -1,0 +1,77 @@
+/* 基礎：全站字型、按鈕預設、共用的 .eyebrow 與 .rule-button */
+
+:root {
+  font-family: Inter, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  color: #25352d;
+  background: #f8f7f2;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+input,
+select {
+  font: inherit;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 3px solid #d4a65d;
+  outline-offset: 3px;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 750;
+  color: #818879;
+}
+
+.rule-button {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #dfe6d9;
+  border-radius: 9px;
+  background: #edf1e8;
+  color: #4d6847;
+  font-size: 13px;
+  font-weight: 700;
+  transition: background 150ms ease;
+}
+
+.rule-button:hover {
+  background: #dfe8d8;
+}

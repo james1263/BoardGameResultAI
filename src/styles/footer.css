@@ -1,0 +1,109 @@
+/* AI 助手預告與頁尾 */
+
+.assistant-banner h2 {
+  margin: 0;
+  font-size: 21px;
+  letter-spacing: -0.5px;
+}
+
+.assistant-banner {
+  max-width: 1120px;
+  margin: 0 auto 64px;
+  padding: 30px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid #e5e7db;
+  border-radius: 18px;
+  background: #eef0e6;
+}
+
+.assistant-icon {
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: #dce5d3;
+  color: #55724c;
+  font-size: 28px;
+}
+
+.assistant-copy {
+  min-width: 0;
+}
+
+.assistant-banner .eyebrow {
+  margin: 0 0 8px;
+}
+
+.assistant-banner p:last-child {
+  margin: 9px 0 0;
+  color: #73786e;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.coming-soon {
+  margin-left: auto;
+  padding: 7px 11px;
+  border: 1px solid #d7dfcd;
+  border-radius: 20px;
+  color: #607657;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.footer {
+  padding: 24px 8%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid #e9e6dc;
+  color: #818579;
+  font-size: 12px;
+}
+
+@media (max-width: 1000px) {
+  .assistant-banner {
+    margin-right: 24px;
+    margin-left: 24px;
+  }
+}
+
+@media (max-width: 520px) {
+  .assistant-banner h2 {
+    font-size: 18px;
+  }
+
+  .assistant-banner {
+    margin: 0 16px 42px;
+    padding: 20px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .assistant-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 23px;
+  }
+
+  .assistant-copy {
+    flex: 1;
+  }
+
+  .assistant-banner p:last-child {
+    font-size: 12px;
+  }
+
+  .coming-soon {
+    margin-left: 64px;
+  }
+
+  .footer {
+    padding: 22px 18px;
+    flex-direction: column;
+  }
+}

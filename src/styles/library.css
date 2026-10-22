@@ -1,0 +1,225 @@
+/* 收藏區：標題列、檢視切換、空狀態、圖例、提示條 */
+
+.library {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 68px 24px 44px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.section-heading .eyebrow {
+  margin: 0 0 8px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 25px;
+  letter-spacing: -0.5px;
+}
+
+.game-count {
+  padding: 8px 12px;
+  border-radius: 20px;
+  background: #e8eee5;
+  color: #4d6847;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.empty-state {
+  padding: 48px 20px;
+  text-align: center;
+  border: 1px dashed #d9ddcf;
+  border-radius: 16px;
+  color: #777e70;
+}
+
+.empty-state > span {
+  font-size: 32px;
+}
+
+.empty-state h3 {
+  color: #354332;
+}
+
+.empty-state p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.empty-reset-button {
+  width: min(100%, 220px);
+  margin: 20px auto 0;
+}
+
+.heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid #d9d6c9;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #354332;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter-toggle-button:hover {
+  background: #f1f0e8;
+}
+
+.filter-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #5f7455;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.missing-data-note {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #7a8570;
+}
+
+.view-toggle {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid #e0ddd2;
+  border-radius: 10px;
+  background: #fffefa;
+}
+
+.view-toggle .view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #8a968e;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.view-toggle .view-btn:hover {
+  color: #25352d;
+}
+
+.view-toggle .view-btn.active {
+  background: #25352d;
+  color: #fff;
+}
+
+.mine-group-heading {
+  grid-column: 1 / -1;
+  margin: 18px 0 2px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+  font-size: 16px;
+  font-weight: 700;
+  color: #3f7d58;
+}
+
+.mine-group-heading:first-child {
+  margin-top: 0;
+}
+
+.personal-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 90vw;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: #3a3a36;
+  color: #fff;
+  font-size: 14px;
+}
+
+.personal-toast button {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #6b7066;
+}
+
+.status-legend svg {
+  width: 14px;
+  height: 14px;
+}
+
+.status-legend-tip {
+  color: #8a8f85;
+}
+
+@media (max-width: 760px) {
+  .library {
+    padding-top: 48px;
+  }
+}
+
+@media (max-width: 520px) {
+  .library {
+    padding: 42px 16px 32px;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+  }
+
+  .section-heading h2 {
+    font-size: 22px;
+  }
+
+  .game-count {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 360px) {
+  .section-heading {
+    flex-direction: column;
+  }
+}
