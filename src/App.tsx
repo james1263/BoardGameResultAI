@@ -5,8 +5,6 @@ import {
   type BoardGame,
 } from './data/boardGames.generated'
 import AdminPanel from './AdminPanel'
-import PlayerPanel from './PlayerPanel'
-import GameDocuments from './GameDocuments'
 import MyList from './MyList'
 import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
@@ -25,21 +23,17 @@ import {
   MINE_GROUPS,
   MINE_GROUP_LABELS,
   getMineGroup,
-  MAIN_CATEGORIES,
 } from './lib/libraryTypes'
-import {
-  formatPlayers,
-  formatNumber,
-  getPlayerSortValue,
-  compareNullableNumbers,
-} from './lib/gameFormat'
-import { HeartIcon, CheckIcon, EyeIcon } from './components/Icons'
+import { getPlayerSortValue, compareNullableNumbers } from './lib/gameFormat'
+import { HeartIcon, CheckIcon } from './components/Icons'
 import CoverImage from './components/CoverImage'
-import StatusButtons from './components/StatusButtons'
-import RatingDots from './components/RatingDots'
-import PlayCounter from './components/PlayCounter'
-import PersonalNote from './components/PersonalNote'
-
+import TopBar from './components/TopBar'
+import ViewToggle from './components/ViewToggle'
+import FilterDrawer from './components/FilterDrawer'
+import GameCard from './components/GameCard'
+import GameModal from './components/GameModal'
+import MergeDialog from './components/MergeDialog'
+import PersonalToast from './components/PersonalToast'
 
 function Library({ boardGames }: { boardGames: LibraryGame[] }) {
   const [searchText, setSearchText] = useState('')
@@ -66,15 +60,6 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
     setCoverMessage('')
     setSelectedGame(game)
   }
-
-  useEffect(() => {
-    if (!selectedGame) return
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setSelectedGame(null)
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [selectedGame])
 
   async function handleCoverUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -174,10 +159,7 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
     const search = searchText.trim().toLocaleLowerCase()
 
     const filtered = boardGames.filter((game) => {
-      if (
-        search &&
-        !game.name.toLocaleLowerCase().includes(search)
-      ) {
+      if (search && !game.name.toLocaleLowerCase().includes(search)) {
         return false
       }
 
@@ -193,16 +175,14 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
 
       if (
         minDifficulty !== '' &&
-        (game.bggDifficulty == null ||
-          game.bggDifficulty < minDifficulty)
+        (game.bggDifficulty == null || game.bggDifficulty < minDifficulty)
       ) {
         return false
       }
 
       if (
         maxDifficulty !== '' &&
-        (game.bggDifficulty == null ||
-          game.bggDifficulty > maxDifficulty)
+        (game.bggDifficulty == null || game.bggDifficulty > maxDifficulty)
       ) {
         return false
       }
@@ -221,17 +201,11 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
         return false
       }
 
-      if (
-        minTime !== '' &&
-        (game.bggTime == null || game.bggTime < minTime)
-      ) {
+      if (minTime !== '' && (game.bggTime == null || game.bggTime < minTime)) {
         return false
       }
 
-      if (
-        maxTime !== '' &&
-        (game.bggTime == null || game.bggTime > maxTime)
-      ) {
+      if (maxTime !== '' && (game.bggTime == null || game.bggTime > maxTime)) {
         return false
       }
 
@@ -300,7 +274,6 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
     sortDirection,
   ])
 
-
   const displayedItems = useMemo<DisplayItem[]>(() => {
     const visibleGroups = MINE_GROUPS.filter(
       (group) => !hiddenGroups.includes(group),
@@ -314,7 +287,7 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
         .map((game) => ({ kind: 'game' as const, game }))
     }
 
-    const byGroup: Record<MineGroup, BoardGame[]> = {
+    const byGroup: Record<MineGroup, LibraryGame[]> = {
       want: [],
       untouched: [],
       played: [],
@@ -408,22 +381,6 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
     Number(maxTime !== '') +
     Number(groupByMine) +
     hiddenGroups.length
-  const subCategories = categories.filter(
-    (category) => !MAIN_CATEGORIES.includes(category),
-  )
-
-  const visibleSubCategories = subCategories.filter((category) =>
-    category
-      .toLocaleLowerCase()
-      .includes(categorySearch.trim().toLocaleLowerCase()),
-  )
-
-  const selectedSubCount = selectedCategories.filter(
-    (category) => !MAIN_CATEGORIES.includes(category),
-  ).length
-
-  const showSubCategories =
-    isSubCategoryOpen || categorySearch.trim() !== ''
 
   function toggleCategory(category: string) {
     setSelectedCategories((current) =>
@@ -432,7 +389,6 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
         : [...current, category],
     )
   }
-
 
   function toggleMineGroup(group: MineGroup) {
     setHiddenGroups((current) =>
@@ -461,38 +417,12 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
     setSortDirection('asc')
   }
 
-  function renderNumberOptions(values: number[]) {
-    return values.map((value) => (
-      <option key={value} value={value}>
-        {value}
-      </option>
-    ))
-  }
-
   return (
     <div className="app">
-      <header className="topbar">
-        <a className="brand" href="#" aria-label="桌遊規則助手首頁">
-          <span className="brand-icon" aria-hidden="true">
-            🎲
-          </span>
-          <span>桌遊規則助手</span>
-        </a>
-        <span className="topbar-label">BOARD GAME COMPANION</span>
-        <div className="topbar-actions">
-          <PlayerPanel />
-          <button
-            type="button"
-            className="mylist-button"
-            onClick={() => setIsMyListOpen(true)}
-          >
-            我的清單
-            {myListCount > 0 && (
-              <span className="mylist-count">{myListCount}</span>
-            )}
-          </button>
-        </div>
-      </header>
+      <TopBar
+        myListCount={myListCount}
+        onOpenMyList={() => setIsMyListOpen(true)}
+      />
 
       <main>
         <section className="hero">
@@ -531,57 +461,7 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
               <span className="game-count">
                 顯示 {displayedGameCount} / {boardGames.length} 款
               </span>
-              <div className="view-toggle" role="group" aria-label="檢視模式">
-                <button
-                  type="button"
-                  className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
-                  onClick={() => changeViewMode('list')}
-                  aria-label="清單檢視"
-                  title="清單"
-                >
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <line x1="8" y1="6" x2="20" y2="6" />
-                    <line x1="8" y1="12" x2="20" y2="12" />
-                    <line x1="8" y1="18" x2="20" y2="18" />
-                    <circle cx="4" cy="6" r="1" fill="currentColor" />
-                    <circle cx="4" cy="12" r="1" fill="currentColor" />
-                    <circle cx="4" cy="18" r="1" fill="currentColor" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className={`view-btn ${viewMode === 'grid-4' ? 'active' : ''}`}
-                  onClick={() => changeViewMode('grid-4')}
-                  aria-label="一排 4 個"
-                  title="一排 4 個"
-                >
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                    <rect x="3" y="3" width="8" height="8" rx="1.5" />
-                    <rect x="13" y="3" width="8" height="8" rx="1.5" />
-                    <rect x="3" y="13" width="8" height="8" rx="1.5" />
-                    <rect x="13" y="13" width="8" height="8" rx="1.5" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className={`view-btn ${viewMode === 'grid-9' ? 'active' : ''}`}
-                  onClick={() => changeViewMode('grid-9')}
-                  aria-label="一排 9 個"
-                  title="一排 9 個"
-                >
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                    <rect x="3" y="3" width="5" height="5" rx="1" />
-                    <rect x="9.5" y="3" width="5" height="5" rx="1" />
-                    <rect x="16" y="3" width="5" height="5" rx="1" />
-                    <rect x="3" y="9.5" width="5" height="5" rx="1" />
-                    <rect x="9.5" y="9.5" width="5" height="5" rx="1" />
-                    <rect x="16" y="9.5" width="5" height="5" rx="1" />
-                    <rect x="3" y="16" width="5" height="5" rx="1" />
-                    <rect x="9.5" y="16" width="5" height="5" rx="1" />
-                    <rect x="16" y="16" width="5" height="5" rx="1" />
-                  </svg>
-                </button>
-              </div>
+              <ViewToggle viewMode={viewMode} onChange={changeViewMode} />
               <button
                 className="filter-toggle-button"
                 type="button"
@@ -595,310 +475,44 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
             </div>
           </div>
 
-          {isFilterOpen && (
-            <div
-              className="drawer-backdrop"
-              onClick={() => setIsFilterOpen(false)}
-            />
-          )}
-
-          <aside className={`filter-drawer ${isFilterOpen ? 'open' : ''}`}>
-            <div className="drawer-header">
-              <button
-                className="drawer-close"
-                type="button"
-                aria-label="關閉篩選"
-                onClick={() => setIsFilterOpen(false)}
-              >
-                ×
-              </button>
-            </div>
-
-            <section className="filter-panel" aria-label="桌遊篩選與排序">
-              <div className="filter-heading">
-                <div>
-                  <p className="eyebrow">FIND YOUR GAME</p>
-                  <h3>篩選與排序</h3>
-                </div>
-                <button
-                  className="clear-button"
-                  type="button"
-                  onClick={clearFilters}
-                  disabled={
-                    searchText === '' &&
-                    activeFilterCount === 0
-                  }
-                >
-                  清除篩選
-                </button>
-              </div>
-
-              <div className="filter-grid">
-                <label className="filter-field">
-                  <span>最低 BGG 難度</span>
-                  <select
-                    value={minDifficulty}
-                    onChange={(event) =>
-                      setMinDifficulty(
-                        event.target.value === ''
-                          ? ''
-                          : Number(event.target.value),
-                      )
-                    }
-                  >
-                    <option value="">不限</option>
-                    {renderNumberOptions(difficulties)}
-                  </select>
-                </label>
-
-                <label className="filter-field">
-                  <span>最高 BGG 難度</span>
-                  <select
-                    value={maxDifficulty}
-                    onChange={(event) =>
-                      setMaxDifficulty(
-                        event.target.value === ''
-                          ? ''
-                          : Number(event.target.value),
-                      )
-                    }
-                  >
-                    <option value="">不限</option>
-                    {renderNumberOptions(difficulties)}
-                  </select>
-                </label>
-
-                <label className="filter-field">
-                  <span>最佳人數</span>
-                  <select
-                    value={bestPlayerCount}
-                    onChange={(event) =>
-                      setBestPlayerCount(
-                        event.target.value === ''
-                          ? ''
-                          : Number(event.target.value),
-                      )
-                    }
-                  >
-                    <option value="">不限</option>
-                    {renderNumberOptions(playerCounts)}
-                  </select>
-                </label>
-
-                <label className="filter-field">
-                  <span>推薦人數</span>
-                  <select
-                    value={recommendPlayerCount}
-                    onChange={(event) =>
-                      setRecommendPlayerCount(
-                        event.target.value === ''
-                          ? ''
-                          : Number(event.target.value),
-                      )
-                    }
-                  >
-                    <option value="">不限</option>
-                    {renderNumberOptions(playerCounts)}
-                  </select>
-                </label>
-
-                <label className="filter-field">
-                  <span>最短遊戲時間（分鐘）</span>
-                  <select
-                    value={minTime}
-                    onChange={(event) =>
-                      setMinTime(
-                        event.target.value === ''
-                          ? ''
-                          : Number(event.target.value),
-                      )
-                    }
-                  >
-                    <option value="">不限</option>
-                    {renderNumberOptions(times)}
-                  </select>
-                </label>
-
-                <label className="filter-field">
-                  <span>最長遊戲時間（分鐘）</span>
-                  <select
-                    value={maxTime}
-                    onChange={(event) =>
-                      setMaxTime(
-                        event.target.value === ''
-                          ? ''
-                          : Number(event.target.value),
-                      )
-                    }
-                  >
-                    <option value="">不限</option>
-                    {renderNumberOptions(times)}
-                  </select>
-                </label>
-              </div>
-
-              <div className="category-filter">
-                <div className="category-heading">
-                  <span>桌遊類型</span>
-                  <span className="category-hint">
-                    可複選，需同時符合所有已選類型
-                  </span>
-                </div>
-
-                <div className="category-main-options">
-                  {MAIN_CATEGORIES.filter((category) =>
-                    categories.includes(category),
-                  ).map((category) => (
-                    <label
-                      className={`category-chip ${selectedCategories.includes(category) ? 'selected' : ''
-                        }`}
-                      key={category}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(category)}
-                        onChange={() => toggleCategory(category)}
-                      />
-                      <span>{category}</span>
-                    </label>
-                  ))}
-                </div>
-
-                <button
-                  className="category-sub-toggle"
-                  type="button"
-                  onClick={() => setIsSubCategoryOpen((current) => !current)}
-                >
-                  {showSubCategories ? '▾' : '▸'} 更多類型（
-                  {subCategories.length}）
-                  {selectedSubCount > 0 && ` · 已選 ${selectedSubCount}`}
-                </button>
-
-                {showSubCategories && (
-                  <>
-                    <input
-                      className="category-search"
-                      type="search"
-                      placeholder="搜尋類型，例如：區控"
-                      value={categorySearch}
-                      onChange={(event) =>
-                        setCategorySearch(event.target.value)
-                      }
-                      aria-label="搜尋桌遊類型"
-                    />
-
-                    <div className="category-options">
-                      {visibleSubCategories.map((category) => (
-                        <label className="category-option" key={category}>
-                          <input
-                            type="checkbox"
-                            checked={selectedCategories.includes(category)}
-                            onChange={() => toggleCategory(category)}
-                          />
-                          <span>{category}</span>
-                        </label>
-                      ))}
-                      {visibleSubCategories.length === 0 && (
-                        <p className="category-empty">找不到符合的類型</p>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="mine-filter">
-                <div className="category-heading">
-                  <span>我的紀錄</span>
-                  <span className="category-hint">
-                    按眼睛可隱藏該類遊戲
-                  </span>
-                </div>
-
-                <div className="mine-eyes">
-                  {MINE_GROUPS.map((group) => {
-                    const hidden = hiddenGroups.includes(group)
-                    return (
-                      <button
-                        key={group}
-                        type="button"
-                        className={`mine-eye ${hidden ? 'hidden' : ''}`}
-                        aria-pressed={!hidden}
-                        onClick={() => toggleMineGroup(group)}
-                      >
-                        <EyeIcon off={hidden} />
-                        {MINE_GROUP_LABELS[group]}
-                      </button>
-                    )
-                  })}
-                </div>
-
-                <label className="category-option">
-                  <input
-                    type="checkbox"
-                    checked={groupByMine}
-                    onChange={(event) => setGroupByMine(event.target.checked)}
-                  />
-                  <span>依我的紀錄分區顯示</span>
-                </label>
-                <p className="mine-note">
-                  想玩的遊戲就算也玩過，仍歸在「想玩」區。
-                </p>
-              </div>
-              <div className="sort-row">
-                <label className="filter-field sort-field">
-                  <span>排序依據</span>
-                  <select
-                    value={sortBy}
-                    onChange={(event) =>
-                      setSortBy(event.target.value as SortKey)
-                    }
-                  >
-                    <option value="rankingEngine">Ranking engine</option>
-                    <option value="classicGameRanking">常玩遊戲排名</option>
-                    <option value="scoreRank">綜合分數排名</option>
-                    <option value="name">桌遊名稱</option>
-                    <option value="bggScore">BGG 分數</option>
-                    <option value="bggDifficulty">BGG 難度</option>
-                    <option value="bggTime">遊戲時間</option>
-                    <option value="bestPlayers">最佳人數</option>
-                    <option value="recommendPlayers">推薦人數</option>
-                  </select>
-                </label>
-
-                <button
-                  className="sort-direction-button"
-                  type="button"
-                  onClick={() =>
-                    setSortDirection((current) =>
-                      current === 'asc' ? 'desc' : 'asc',
-                    )
-                  }
-                  aria-label={
-                    sortDirection === 'asc' ? '切換為降冪排序' : '切換為升冪排序'
-                  }
-                >
-                  {sortDirection === 'asc' ? '↑ 升冪' : '↓ 降冪'}
-                </button>
-                <button
-                  className="sort-direction-button"
-                  type="button"
-                  onClick={resetSort}
-                  disabled={
-                    sortBy === 'rankingEngine' && sortDirection === 'asc'
-                  }
-                >
-                  重設排序
-                </button>
-              </div>
-            </section>
-
-            <button
-              className="rule-button drawer-done"
-              type="button"
-              onClick={() => setIsFilterOpen(false)}
-            >
-              查看 {displayedGameCount} 款結果
-            </button>
-          </aside>
+          <FilterDrawer
+            isOpen={isFilterOpen}
+            onClose={() => setIsFilterOpen(false)}
+            displayedGameCount={displayedGameCount}
+            clearDisabled={searchText === '' && activeFilterCount === 0}
+            onClear={clearFilters}
+            difficulties={difficulties}
+            times={times}
+            playerCounts={playerCounts}
+            categories={categories}
+            minDifficulty={minDifficulty}
+            setMinDifficulty={setMinDifficulty}
+            maxDifficulty={maxDifficulty}
+            setMaxDifficulty={setMaxDifficulty}
+            bestPlayerCount={bestPlayerCount}
+            setBestPlayerCount={setBestPlayerCount}
+            recommendPlayerCount={recommendPlayerCount}
+            setRecommendPlayerCount={setRecommendPlayerCount}
+            minTime={minTime}
+            setMinTime={setMinTime}
+            maxTime={maxTime}
+            setMaxTime={setMaxTime}
+            selectedCategories={selectedCategories}
+            toggleCategory={toggleCategory}
+            categorySearch={categorySearch}
+            setCategorySearch={setCategorySearch}
+            isSubCategoryOpen={isSubCategoryOpen}
+            setIsSubCategoryOpen={setIsSubCategoryOpen}
+            hiddenGroups={hiddenGroups}
+            toggleMineGroup={toggleMineGroup}
+            groupByMine={groupByMine}
+            setGroupByMine={setGroupByMine}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortDirection={sortDirection}
+            setSortDirection={setSortDirection}
+            resetSort={resetSort}
+          />
 
           <p className="status-legend">
             <span>
@@ -929,82 +543,15 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
                     </div>
                   )
                 }
-                const game = item.game
                 return (
-                  <article
-                    className={`game-card ${isNewGame(game) ? 'is-new' : ''}`}
-                    key={game.id}
-                  >
-                    <div
-                      className={`game-art game-art-${game.id}`}
-                      onClick={() => openGame(game)}
-                    >
-                      <CoverImage
-                        key={`${game.coverSlug}-${coverVersions[game.coverSlug] ?? 0}`}
-                        version={coverVersions[game.coverSlug] ?? 0}
-                        slug={game.coverSlug}
-                        alt={game.name}
-                        className="cover-image"
-                        fallback={
-                          <span className="game-emoji" aria-hidden="true">
-                            🎲
-                          </span>
-                        }
-                      />
-                      <StatusButtons
-                        bggName={game.bggName}
-                        personal={personal}
-                      />
-                      {isNewGame(game) && (
-                        <span className="new-badge">NEW</span>
-                      )}
-                      <span className="game-category">
-                        {game.category.length > 0
-                          ? game.category.join('、')
-                          : '尚未分類'}
-                      </span>
-                    </div>
-
-                    <div className="game-info">
-                      <h3>{game.name}</h3>
-
-                      <div className="game-rankings">
-                        <p className="game-ranking-engine">
-                          Ranking engine：{formatNumber(game.rankingEngine)}
-                        </p>
-
-                        <p className="game-score-rank">
-                          綜合分數排名：{formatNumber(game.scoreRank)}
-                        </p>
-                      </div>
-
-                      <div className="game-meta">
-                        <span>
-                          最佳人數：{formatPlayers(game.bestPlayers)}
-                        </span>
-                        <span>
-                          推薦人數：{formatPlayers(game.recommendPlayers)}
-                        </span>
-                        <span>
-                          ◷ {game.bggTime == null ? '未提供時間' : `${game.bggTime} 分鐘`}
-                        </span>
-                        <span>
-                          📊 BGG 難度：{formatNumber(game.bggDifficulty)}
-                        </span>
-                      </div>
-
-                      <button
-                        className="rule-button"
-                        type="button"
-                        onClick={() => {
-                          setCoverMessage('')
-                          setSelectedGame(game)
-                        }}
-                      >
-                        查看規則 <span aria-hidden="true">→</span>
-                      </button>
-                    </div>
-                  </article>
+                  <GameCard
+                    key={item.game.id}
+                    game={item.game}
+                    isNew={isNewGame(item.game)}
+                    coverVersion={coverVersions[item.game.coverSlug] ?? 0}
+                    personal={personal}
+                    onOpen={openGame}
+                  />
                 )
               })}
             </div>
@@ -1044,154 +591,16 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
       </footer>
 
       {selectedGame && (
-        <div
-          className="modal-backdrop"
-          onClick={() => setSelectedGame(null)}
-        >
-          <section
-            className="game-modal compact"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="modal-topbar">
-              <h3 className="modal-section-title">01 / GAME PROFILE</h3>
-              <button
-                className="modal-close"
-                type="button"
-                aria-label="關閉"
-                onClick={() => setSelectedGame(null)}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="modal-head">
-              <CoverImage
-                key={`${selectedGame.coverSlug}-${coverVersions[selectedGame.coverSlug] ?? 0}`}
-                version={coverVersions[selectedGame.coverSlug] ?? 0}
-                slug={selectedGame.coverSlug}
-                alt={selectedGame.name}
-                className="modal-cover"
-                fallback={
-                  <div className="modal-game-icon" aria-hidden="true">
-                    🎲
-                  </div>
-                }
-              />
-              <div className="modal-head-info">
-                {selectedGame.links.bgg && (
-                  <a
-                    className="bgg-link"
-                    href={selectedGame.links.bgg}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    BoardGameGeek ↗
-                  </a>
-                )}
-                <h2 id="modal-title">{selectedGame.name}</h2>
-                <div className="modal-score-line">
-                  {selectedGame.bggScore == null ? (
-                    <span className="modal-score-empty">尚無 BGG 分數</span>
-                  ) : (
-                    <>
-                      <span className="modal-score-star" aria-hidden="true">
-                        ☆
-                      </span>
-                      <span className="modal-score">{selectedGame.bggScore}</span>
-                      <span className="modal-score-label">BGG SCORE</span>
-                    </>
-                  )}
-                </div>
-                {selectedGame.category.length > 0 && (
-                  <div className="modal-categories">
-                    {selectedGame.category.map((category) => (
-                      <span className="modal-category" key={category}>
-                        {category}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {isAdmin && (
-              <div className="cover-upload">
-                <label className="admin-link" style={{ cursor: 'pointer' }}>
-                  {isUploadingCover ? '上傳中…' : '上傳／更換封面'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    hidden
-                    disabled={isUploadingCover}
-                    onChange={handleCoverUpload}
-                  />
-                </label>
-                {coverMessage && <p>{coverMessage}</p>}
-              </div>
-            )}
-
-            <div className="modal-section">
-              <h3 className="modal-section-title">02 / GAME ATTRIBUTES</h3>
-              <div className="rating-list">
-                <RatingDots label="快速性" value={selectedGame.speedEmoji} />
-                <RatingDots label="變化度" value={selectedGame.changeEmoji} />
-                <RatingDots
-                  label="溝通度"
-                  value={selectedGame.communicationEmoji}
-                />
-                <RatingDots
-                  label="影響度"
-                  value={selectedGame.playerImpactEmoji}
-                />
-                <RatingDots label="獨特性" value={selectedGame.uniqueEmoji} />
-                <RatingDots
-                  label="複雜度"
-                  value={selectedGame.complexityEmoji}
-                />
-              </div>
-            </div>
-
-            <div className="modal-section">
-              <h3 className="modal-section-title">03 / MY COLLECTION</h3>
-              <StatusButtons
-                bggName={selectedGame.bggName}
-                personal={personal}
-                variant="inline"
-              />
-              <PlayCounter
-                bggName={selectedGame.bggName}
-                personal={personal}
-              />
-            </div>
-
-            <div className="modal-section">
-              <h3 className="modal-section-title">04 / PERSONAL NOTES</h3>
-              <PersonalNote
-                key={`${selectedGame.bggName}-${personal.status}`}
-                value={personal.getEntry(selectedGame.bggName).note}
-                disabled={!personal.canEdit}
-                onSave={(text) =>
-                  personal.updateEntry(selectedGame.bggName, { note: text })
-                }
-              />
-              {!personal.isLoggedIn && (
-                <p className="personal-hint">登入後即可跨裝置保存</p>
-              )}
-            </div>
-
-            <div className="modal-section">
-              <h3 className="modal-section-title">05 / GAME RESOURCES</h3>
-              <GameDocuments
-                key={selectedGame.bggName}
-                bggName={selectedGame.bggName}
-                isAdmin={isAdmin}
-              />
-            </div>
-          </section>
-        </div>
+        <GameModal
+          game={selectedGame}
+          coverVersion={coverVersions[selectedGame.coverSlug] ?? 0}
+          isAdmin={isAdmin}
+          personal={personal}
+          isUploadingCover={isUploadingCover}
+          coverMessage={coverMessage}
+          onCoverUpload={handleCoverUpload}
+          onClose={() => setSelectedGame(null)}
+        />
       )}
 
       <MyList
@@ -1215,60 +624,11 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
           />
         )}
       />
-      {personal.needsMerge && (
-        <div className="modal-backdrop">
-          <section
-            className="admin-modal"
-            role="dialog"
-            aria-modal="true"
-          >
-            <h2>要把這台電腦的紀錄加進你的帳號嗎？</h2>
-            <p>
-              這個瀏覽器有 {personal.localCount} 筆訪客紀錄（想玩／已玩／備註）。
-              加入後會和你帳號裡的紀錄合併，不會取消你已經勾選的項目。
-            </p>
-            <p>如果這是共用電腦，這些紀錄可能不是你的，請選「不加入」。</p>
 
-            {personal.errorMessage && (
-              <p className="admin-error">{personal.errorMessage}</p>
-            )}
-
-            <button
-              className="rule-button"
-              type="button"
-              disabled={personal.mergeStatus === 'merging'}
-              onClick={() => void personal.mergeLocalIntoCloud()}
-            >
-              {personal.mergeStatus === 'merging'
-                ? '同步中…'
-                : personal.mergeStatus === 'error'
-                  ? '重試'
-                  : '加入我的帳號'}
-            </button>
-            <button
-              className="admin-cancel"
-              type="button"
-              disabled={personal.mergeStatus === 'merging'}
-              onClick={personal.declineMerge}
-            >
-              不加入
-            </button>
-          </section>
-        </div>
-      )}
+      {personal.needsMerge && <MergeDialog personal={personal} />}
 
       {personal.errorMessage && !personal.needsMerge && (
-        <div className="personal-toast" role="alert">
-          <span>{personal.errorMessage}</span>
-          {personal.status === 'error' && (
-            <button type="button" onClick={personal.reload}>
-              重試
-            </button>
-          )}
-          <button type="button" onClick={personal.clearError}>
-            關閉
-          </button>
-        </div>
+        <PersonalToast personal={personal} />
       )}
     </div>
   )
@@ -1306,4 +666,5 @@ function App() {
 
   return <Library boardGames={games} />
 }
+
 export default App
