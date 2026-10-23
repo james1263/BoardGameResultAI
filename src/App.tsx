@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+} from 'react'
 import './App.css'
 import {
   boardGames as fallbackGames,
@@ -34,8 +40,25 @@ import GameCard from './components/GameCard'
 import GameModal from './components/GameModal'
 import MergeDialog from './components/MergeDialog'
 import PersonalToast from './components/PersonalToast'
+import TrashSection from './components/TrashSection'
+import { useTrashActions } from './lib/useTrashActions'
 
-function Library({ boardGames }: { boardGames: LibraryGame[] }) {
+function Library({
+  allGames,
+  onGamesChange,
+}: {
+  allGames: LibraryGame[]
+  onGamesChange: (updater: (games: LibraryGame[]) => LibraryGame[]) => void
+}) {
+  const boardGames = useMemo(
+    () => allGames.filter((game) => !game.removedAt),
+    [allGames],
+  )
+  const trashedGames = useMemo(
+    () => allGames.filter((game) => game.removedAt),
+    [allGames],
+  )
+  const trash = useTrashActions(allGames, onGamesChange)
   const [searchText, setSearchText] = useState('')
   const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null)
   const isAdmin = useIsAdmin()
@@ -115,7 +138,7 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
       Array.from(new Set(boardGames.flatMap((game) => game.category))).sort(
         (a, b) => a.localeCompare(b, 'zh-Hant'),
       ),
-    [],
+    [boardGames],
   )
 
   const difficulties = useMemo(
@@ -127,7 +150,7 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
             .filter((value): value is number => value != null),
         ),
       ).sort((a, b) => a - b),
-    [],
+    [boardGames],
   )
 
   const times = useMemo(
@@ -139,7 +162,7 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
             .filter((value): value is number => value != null),
         ),
       ).sort((a, b) => a - b),
-    [],
+    [boardGames],
   )
 
   const playerCounts = useMemo(
@@ -152,7 +175,7 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
           ]),
         ),
       ).sort((a, b) => a - b),
-    [],
+    [boardGames],
   )
 
   const filteredGames = useMemo(() => {
@@ -272,6 +295,7 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
     maxTime,
     sortBy,
     sortDirection,
+    boardGames,
   ])
 
   const displayedItems = useMemo<DisplayItem[]>(() => {
@@ -369,6 +393,7 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
     recommendPlayerCount,
     minTime,
     maxTime,
+    boardGames,
   ])
 
   const activeFilterCount =
@@ -582,6 +607,15 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
           </div>
           <span className="coming-soon">開發中</span>
         </section>
+
+        <TrashSection
+          games={trashedGames}
+          isAdmin={isAdmin}
+          coverVersions={coverVersions}
+          busyName={trash.busyName}
+          onRestore={trash.restoreGame}
+          onDelete={trash.deleteForever}
+        />
       </main>
 
       <footer className="footer">
@@ -599,6 +633,10 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
           isUploadingCover={isUploadingCover}
           coverMessage={coverMessage}
           onCoverUpload={handleCoverUpload}
+          isTrashing={trash.busyName === selectedGame.bggName}
+          onTrash={async () => {
+            if (await trash.trashGame(selectedGame)) setSelectedGame(null)
+          }}
           onClose={() => setSelectedGame(null)}
         />
       )}
@@ -637,6 +675,13 @@ function Library({ boardGames }: { boardGames: LibraryGame[] }) {
 function App() {
   const [games, setGames] = useState<LibraryGame[] | null>(null)
 
+  const updateGames = useCallback(
+    (updater: (current: LibraryGame[]) => LibraryGame[]) => {
+      setGames((current) => (current ? updater(current) : current))
+    },
+    [],
+  )
+
   useEffect(() => {
     let cancelled = false
 
@@ -664,7 +709,7 @@ function App() {
     )
   }
 
-  return <Library boardGames={games} />
+  return <Library allGames={games} onGamesChange={updateGames} />
 }
 
 export default App

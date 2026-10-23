@@ -1,0 +1,129 @@
+/* 垃圾桶區（頁尾上方）與詳細視窗的「移到垃圾桶」 */
+.trash-section {
+  max-width: 1120px;
+  margin: 24px auto 0;
+  padding: 0 20px;
+}
+
+.trash-toggle {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px dashed rgba(0, 0, 0, 0.18);
+  border-radius: 12px;
+  background: transparent;
+  color: #25352d;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trash-toggle small {
+  color: #7a857e;
+  font-size: 12px;
+}
+
+.trash-list {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trash-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.trash-cover-wrap {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #eef1ec;
+}
+
+.trash-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.7;
+}
+
+.trash-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.trash-name {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trash-info small {
+  color: #7a857e;
+  font-size: 12px;
+}
+
+.trash-actions {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+.trash-actions button {
+  padding: 5px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 999px;
+  background: #fff;
+  color: #25352d;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.trash-actions .trash-delete {
+  border-color: rgba(180, 50, 50, 0.4);
+  color: #b43232;
+}
+
+.trash-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.modal-trash-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.modal-trash-btn {
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: #9a6a6a;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.modal-trash-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

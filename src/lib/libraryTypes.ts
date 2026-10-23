@@ -1,7 +1,10 @@
 import type { BoardGame } from '../data/boardGames.generated'
 import type { PersonalEntry } from './usePersonalCollection'
 
-export type LibraryGame = BoardGame & { createdAt?: string | null }
+export type LibraryGame = BoardGame & {
+  createdAt?: string | null
+  removedAt?: string | null
+}
 
 export type SortKey =
   | 'name'

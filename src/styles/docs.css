@@ -1,0 +1,29 @@
+/* 詳細視窗 05 區：規則書與 FAQ 單行 */
+.game-docs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.game-docs-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.game-docs-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.game-docs-text small {
+  color: #7a857e;
+  font-size: 12px;
+}
+
+.game-docs-chevron {
+  color: #9aa59d;
+  font-size: 22px;
+  line-height: 1;
+}

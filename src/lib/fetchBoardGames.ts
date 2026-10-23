@@ -4,6 +4,7 @@ import type { LibraryGame } from './libraryTypes'
 type BoardGameRow = {
   bgg_name: string
   created_at?: string | null
+  removed_at?: string | null
   name: string
   cover_slug: string
   link_bgg: string
@@ -46,6 +47,7 @@ function rowToGame(row: BoardGameRow, index: number): LibraryGame {
     name: row.name,
     bggName: row.bgg_name,
     createdAt: row.created_at,
+    removedAt: row.removed_at,
     slug: `game-${index + 1}`,
     coverSlug: row.cover_slug,
     links: {

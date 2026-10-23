@@ -16,6 +16,8 @@ export default function GameModal({
   isUploadingCover,
   coverMessage,
   onCoverUpload,
+  onTrash,
+  isTrashing,
   onClose,
 }: {
   game: BoardGame
@@ -25,6 +27,8 @@ export default function GameModal({
   isUploadingCover: boolean
   coverMessage: string
   onCoverUpload: (event: ChangeEvent<HTMLInputElement>) => void
+  onTrash: () => void
+  isTrashing: boolean
   onClose: () => void
 }) {
   useEffect(() => {
@@ -167,6 +171,19 @@ export default function GameModal({
             isAdmin={isAdmin}
           />
         </div>
+
+        {isAdmin && (
+          <div className="modal-trash-row">
+            <button
+              className="modal-trash-btn"
+              type="button"
+              disabled={isTrashing}
+              onClick={onTrash}
+            >
+              {isTrashing ? '處理中…' : '移到垃圾桶'}
+            </button>
+          </div>
+        )}
       </section>
     </div>
   )
