@@ -105,23 +105,17 @@ export default function PlayerPanel() {
 
   return (
     <>
-      <span className="admin-status">
-        {profile ? profile.nickname : '已登入'}
-        <button
-          className="admin-link"
-          type="button"
-          onClick={() => {
-            setNickname(profile?.nickname ?? '')
-            setMessage('')
-            setIsOpen(true)
-          }}
-        >
-          {profile ? '改暱稱' : '設定暱稱'}
-        </button>
-        <button className="admin-link" type="button" onClick={handleLogout}>
-          登出
-        </button>
-      </span>
+      <button
+        className="player-chip"
+        type="button"
+        onClick={() => {
+          setNickname(profile?.nickname ?? '')
+          setMessage('')
+          setIsOpen(true)
+        }}
+      >
+        {profile ? profile.nickname : '設定暱稱'}
+      </button>
 
       {isOpen && (
         <div className="modal-backdrop" onClick={() => setIsOpen(false)}>
@@ -155,6 +149,13 @@ export default function PlayerPanel() {
               onClick={() => setIsOpen(false)}
             >
               稍後再說
+            </button>
+            <button
+              className="admin-cancel"
+              type="button"
+              onClick={handleLogout}
+            >
+              登出
             </button>
           </form>
         </div>
