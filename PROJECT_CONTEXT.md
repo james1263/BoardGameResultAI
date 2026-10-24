@@ -493,3 +493,56 @@ L-4. 下一步建議
 - `parseCsv.ts` 的必要欄位只含 `Ranking engine` 與 `分數_排名`；其他 4 個排名欄位若 CSV 沒有，會被當成 `null` 並覆蓋資料庫。匯出給 Notion 的排名 CSV 缺少「類型」等必要欄位，匯入網站會被擋下（安全），但提醒不要誤用；日後可考慮把 6 欄都加入必要欄位檢查（小改動）。
 - 待使用者在 Notion 確認：「合併」匯入 CSV 是否用標題欄「屬性」對應遊戲（建議先用小 CSV 試）；排名為空的遊戲怎麼排。
 - 開工前仍要請使用者貼目前的 `AdminPanel.tsx`、`fetchBoardGames.ts`（`parseCsv.ts` 已看過、不用再貼）。
+
+
+---
+
+## 附錄 M｜小功能、遊玩紀錄、Phase 4 資料表、封面代號修正（2026-10-24 下午；與上面衝突時以這裡為準）
+
+### M-1. 已完成並實測
+- **回到頂端按鈕**：`src/components/BackToTop.tsx`、`src/styles/backtotop.css`（`App.css` 已加 `@import`）；往下捲超過一屏才出現，固定右下角。
+- **垃圾桶移除原因**：`board_games.removed_reason`（text，≤200 字，已建立）。管理者「移到垃圾桶」時用 `window.prompt` 填原因（可留空，取消則不移動）；垃圾桶區顯示「原因：○○」（訪客也看得到）；還原時清空原因與 `removed_at`。`useTrashActions.setRemovedAt` 多一個 `removedReason` 參數。
+- **排序功能**：使用者說「先跳過，之後再想」，尚未定義要排什麼。
+- **privacy.html**：已加入遊玩紀錄（日期、人數、心得）說明，日期 2026-10-24。
+
+### M-2. 遊玩紀錄 `game_play_sessions`（已上線）
+- 欄位：`id`(uuid)、`user_id`（預設 `auth.uid()`，`on delete cascade`）、`bgg_name`、`played_on`(date，預設今天)、`player_count`(1～99，可空)、`note`(≤200)、`created_at`。**不對 `board_games` 加外鍵。**
+- RLS 四條政策皆為 `user_id = (select auth.uid())`，角色 `authenticated`；`anon` 無權限；已撤銷 `authenticated` 的 `truncate, references, trigger`。已驗證。
+- **次數定義（使用者提出的設計，重要）**：`user_game_status.play_count` ＝「沒有日期的次數」（舊累積＋手動 −／＋）；有日期的次數＝該遊戲在 `game_play_sessions` 的筆數；**畫面總次數＝兩者相加**。新增紀錄只寫紀錄表並把遊戲標為已玩（`updateEntry(..., { skipPlayedRule: true })`，避免次數 0 時被設成 1 而多算）；刪除紀錄只刪那一筆，不動 `play_count`、不取消已玩。計數器 － 只減 `play_count`，為 0 時反灰。
+- 前端：`src/lib/useGamePlaySessions.ts`（**不帶參數**，在 `Library` 呼叫一次，登入後一次讀取該使用者全部紀錄，提供 `getSessions(bggName)`、`getSummary(bggName)`、`addSession(bggName, input)`、`deleteSession(id)`、`reload`、`status`、`busy`；`todayLocal()` 用本機日期）。`GameModal` 與 `MyList` 都收 `playSessions` 屬性共用。`PlaySessions.tsx`（新增表單與列表）、`PlayCounter.tsx`（收 `datedCount`，顯示總次數）。`MyList` 每款顯示「玩過 N 次 · 最近：日期」。
+- 只有登入玩家能用，訪客不存本機。
+- 已知限制：①Supabase 單次查詢預設最多 1000 筆，接近時要改分頁；②若有日期紀錄、次數 0，又手動取消再勾「已玩」，舊規則會把 `play_count` 設成 1，總次數多 1（罕見）。
+
+### M-3. Phase 4 公開評分：資料庫已建立，前端尚未開始
+- 使用者確認的設計：整體評分 1～10（**必填**）；六項 1～5（喜歡度、玩家影響性、溝通性、變化性、獨特性、適合留下來程度，**選填可留白**）；每人每款一筆、可修改；公開門檻 5 人；**第一版不做私人分數**；未登入可看公開彙總，登入才能評分。
+- 資料表 `public.game_ratings`：主鍵 `(user_id, bgg_name)`；欄位 `overall`、`like_score`、`player_impact_score`、`communication_score`、`change_score`、`unique_score`、`keep_score`、`created_at`、`updated_at`（觸發器 `game_ratings_set_updated_at` 自動更新）。RLS 四條政策皆只允許本人；`anon` 無權限；`authenticated` 只有 DELETE／INSERT／SELECT／UPDATE。**已驗證。**
+- **個別評分只有本人看得到。公開的只有彙總**：函式 `public.get_rating_summaries()`（`security definer`、`set search_path = ''`，授權 `anon`、`authenticated`）回傳每款 `rating_count`、`overall_avg` 與六項平均；**門檻在資料庫判斷**：整體不到 5 人不回傳平均，六項各自計算人數、各自不到 5 人就不回傳。門檻 5 寫死在函式裡，要改用 `create or replace function`。目前回傳 0 列（還沒人評分）。
+- 評分隨帳號 `on delete cascade` 刪除，刪帳號後平均會變動，屬預期。
+- **下一步（前端）**：`useGameRatings.ts`（讀自己的評分＋公開彙總，各讀一次、在 `Library` 共用）、`RatingForm.tsx`、詳細視窗評分區塊（未達 5 人顯示「評分累積中（N 人）」；與使用者自己的 Emoji 評價並排，**不要與「綜合分數排名」混用**）、更新 `privacy.html`。可沿用 `RatingDots.tsx`（圓點，色表 `RATING_DOT_COLORS` 以標籤文字為鍵）。
+- 前端建好後別忘了：新增評分、彙總公開、人數少可能被推測，要寫進 `privacy.html`。
+
+### M-4. 封面上傳失敗：`Invalid key: 兵臨城下.webp`
+- 原因：Supabase Storage 的物件名稱不接受中日文。舊 `makeCoverSlug` 保留所有 Unicode 字母，所以 `bggName` 含中日文的遊戲，`cover_slug` 也含中日文，上傳失敗。已知受影響：「蒼天之死 (Death of Heaven)」「Death Note 人狼」「冷たい彼女が目覚める前に (Embalming Girl)」「新幕 桜降る代に決闘を 基本セット…」，另有「兵臨城下」相關（查詢結果可能被截斷，修完後再查）。
+- 修法（已提供，**待確認使用者是否已套用**）：`src/lib/parseCsv.ts` 的 `makeCoverSlug` 改為：純英數字結果維持原代號（現有封面不受影響）；含中日文者保留英數字部分再加 `shortHash(原名稱)`（FNV-1a 8 位十六進位，同名永遠同代號）；完全沒有英數字則為 `game-<hash>`。
+- 套用後：重新匯入同一份 CSV 覆蓋 `cover_slug`（預覽看「更新」數正常、紅字名單沒多出來再確認），再執行 `select bgg_name, cover_slug from public.board_games where cover_slug !~ '^[a-z0-9_-]+$';`，**應為 0 列**。
+- `AdminPanel.tsx` 的 `matchCovers`：完整中文檔名（如「方舟動物園.jpg」）仍可對應（檔名與遊戲名稱轉成同一個雜湊代號）；只寫部分中文名的前綴比對會失效，這種改在詳細視窗上傳。
+- 教訓：任何要當檔名或 Storage key 的字串都必須是 ASCII。
+
+### M-5. 垃圾桶「編輯原因」（程式已提供，**build 尚有一個錯誤待修**）
+- `useTrashActions.editReason(game)`（prompt 預填目前原因，留空＝清除）；`TrashSection` 新增 `onEditReason` 屬性與「編輯原因」按鈕（沿用 `trash-restore` 樣式）；`App.tsx` 的 `<TrashSection` 要傳 `onEditReason={trash.editReason}`。
+- 2026-10-24 17:21 的 build 錯誤：`App.tsx` 漏傳 `onEditReason`。使用者之前把按鈕貼進了還原按鈕的標籤裡（結構錯亂），已教他整段 `trash-actions` 區塊換掉。
+
+### M-6. 權限收斂
+- 已對 `game_play_sessions` 執行 `revoke truncate, references, trigger ... from authenticated`。`game_ratings` 建表時已一併處理。
+- `user_game_status` 查出 `authenticated` 多了 `REFERENCES`、`TRIGGER`、`TRUNCATE`（Supabase 預設值，`anon` 無權限）。已提供 `revoke truncate, references, trigger on public.user_game_status from authenticated;`，使用者回報「做完了」。**若想確認，請用 `information_schema.role_table_grants` 再查。**
+- 之後新建任何資料表，建表 SQL 都要順手加這行 revoke。
+
+### M-7. 協作注意
+- 使用者貼程式碼時常貼錯位置（這次發生過兩次：把 `const list = ...` 換成別行、把新按鈕貼進原標籤裡）。**修改量大時，直接給整份檔案，或請他「整段刪掉換成」，不要只寫「在某行下面加」。** 先請他貼 `Get-Content ... -TotalCount 25` 或截圖確認結構。
+- 使用者說「好」表示照做完成。他不一定每項都貼測試結果，重要項目要再問一次。
+
+### M-8. 下一步
+1. 修 `onEditReason` 錯誤、build、測試、commit。
+2. 確認 `makeCoverSlug` 已換新版並重新匯入 CSV、查詢為 0 列。
+3. Phase 4 前端（M-3）。
+4. 之後的想做清單見附錄 L（我的桌遊改版、集點卡、揪團、「今天想玩什麼」、拖曳排名編輯 L-6、RAG 規則助手 L-5）。

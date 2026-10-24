@@ -1,6 +1,6 @@
 # 桌遊規則助手 — 懶人包（給下一個 AI）
 
-> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`（最底下有附錄，越後面越新）。最後更新：2026-10-24（垃圾桶已實測通過；`App.css` 已換成入口檔；CSV 匯入改為「移到垃圾桶」已完成並實測；`privacy.html` 已補遊玩次數；使用者的想做清單見 `PROJECT_CONTEXT.md` 附錄 L）
+> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`（最底下有附錄，越後面越新）。   最後更新：2026-10-24 下午（回到頂端、垃圾桶移除原因、遊玩紀錄表、Phase 4 資料表已建立；細節見 `PROJECT_CONTEXT.md` 附錄 M）
 
 ## 這是什麼
 
@@ -41,14 +41,16 @@
   - 前端：`Library` 以 `removedAt` 分出主畫面與垃圾桶；詳細視窗右下角小字「移到垃圾桶」（只有管理者）；頁面最下方 `TrashSection`（預設收合，垃圾桶為 0 款時整區隱藏，管理者才有「還原」「永久刪除」）；永久刪除會刪 `board_games` 那列與 Storage 封面（別款還在用同封面代號則不刪），**不清玩家的想玩／已玩紀錄**。邏輯在 `src/lib/useTrashActions.ts`。詳細視窗第 05 區已改單行「規則書與 FAQ」。
 - **✅ `App.css` 入口檔已套用（2026-10-24）**：使用者本機的 `src/App.css` 曾是拆檔前的舊整份（`src/styles/` 12 個檔雖在，但沒被載入，所以垃圾桶與第 05 區單行樣式沒生效）。已換成 12 行 `@import`，build 通過（CSS 約 29.67 KB）、畫面使用者回「好」。舊檔備份為 `App.css.bak`（不要 add）。
 - **AI 助手橫幅**：截圖顯示文字是**整塊置中**（不是標題偏右）。建議在 `src/styles/footer.css` 的 `.assistant-copy` 加 `flex: 1; text-align: left;` 讓文字靠左；使用者回「好」，**是否真的改了請 `git diff src/styles/footer.css` 確認**，沒改也不影響功能。
+- **✅ 回到頂端按鈕、垃圾桶移除原因**（2026-10-24，`removed_reason`；「編輯原因」按鈕程式已提供，待修 build）。
+- **✅ 遊玩紀錄**（2026-10-24）：資料表 `game_play_sessions`；總次數＝`play_count`（沒日期的次數）＋有日期的紀錄筆數；`useGamePlaySessions()` 在 `Library` 讀一次、詳細視窗與「我的清單」共用，抽屜顯示「玩過 N 次 · 最近：日期」。`privacy.html` 已更新。
+- **✅ Phase 4 資料庫**（2026-10-24）：`game_ratings`＋`get_rating_summaries()`（門檻 5 人在資料庫判斷，個別評分只有本人看得到）。前端未做。
 
 ## 進行中（開場先問使用者）
 
-1. **確認 git 狀態**：`App.css` 入口檔（與可能的 `footer.css` 修改）是否已 commit／push。先 `git status --short`、`git log --oneline -5`。順便請他貼 `git log --oneline -- src/App.css`，確認舊版 `App.css` 是什麼時候被換回去的（QUICKSTART 先前記載拆檔提交 `0317534` 已 push，但他本機是舊的，原因不明，可能是某台電腦沒 pull 或被舊檔覆蓋）。
-2. ✅ **CSV 匯入配合垃圾桶**：已完成並實測（2026-10-24，使用者回「好了」），見下方「CSV 匯入的行為」。
-3. **`public/privacy.html` 已補「遊玩次數」並把日期改為 2026 年 10 月 24 日（待 commit／push）**。垃圾桶只顯示遊戲名稱與封面，不含個人資料，不需額外說明。
-4. **簡短確認（不是阻擋項）**：「我的紀錄」眼睛篩選有沒有實測；新遊戲標示的 `created_at` 補 `2026-09-01` SQL 有沒有跑。確認指令：`select bgg_name, created_at from public.board_games order by created_at desc limit 5;`。
-5. **選用**：管理者即使垃圾桶 0 款也顯示垃圾桶區（一行改動），使用者沒要求就不做。
+1. **修 build 錯誤**：`App.tsx` 的 `<TrashSection` 要加 `onEditReason={trash.editReason}`；確認 `useTrashActions.ts` 的 return 含 `editReason`。通過後測試並 commit。
+2. **封面代號修正**：確認 `src/lib/parseCsv.ts` 的 `makeCoverSlug` 是否已換成新版（含 `shortHash`；含中日文的 `bggName` 改為「英數字部分＋雜湊」）。套用後重新匯入 CSV，再查 `select bgg_name, cover_slug from public.board_games where cover_slug !~ '^[a-z0-9_-]+$';`，應為 0 列。
+3. **Phase 4 公開評分前端**：資料表與彙總函式已建好並驗證（見附錄 M-3），前端未開始。
+4. 先 `git status --short`、`git log --oneline -5` 確認提交狀況。
 
 ## 想做清單（使用者 2026-10-24 提出，尚未排序、尚未動工）
 
@@ -110,6 +112,11 @@
 - `BoardGame` 型別仍由 `src/data/boardGames.generated.ts` 匯出，**不要刪這個檔案**。
 - Brevo 帳號已註冊但目前沒用到；若日後買網域，可補 Email Magic Link。
 - 垃圾桶 0 款時整區隱藏是設計如此，不是壞掉。
+- **Storage 檔名必須是 ASCII**：中日文 `bggName` 會讓封面上傳失敗（`Invalid key`），已改 `makeCoverSlug`（見附錄 M-4）。
+- **次數定義**：`play_count`＝沒日期的次數，總次數＝它＋遊玩紀錄筆數；不要把兩者混為一個數字存回資料庫。
+- **新建資料表一律加**：`revoke truncate, references, trigger on 表名 from authenticated;`，並確認 `anon` 無權限。
+- **給使用者改程式碼時**：量大就給整份檔案，不要只寫「貼在某行下面」（他兩次貼錯位置）。
+- 排序功能：使用者說之後再想，尚未定義。
 
 ## 開場前先確認
 
