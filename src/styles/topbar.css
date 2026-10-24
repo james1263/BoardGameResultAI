@@ -147,3 +147,72 @@
     font-size: 13px;
   }
 }
+
+.desc-admin-row {
+  display: flex;
+  gap: 14px;
+  margin: 2px 0 6px;
+}
+
+.desc-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #4d6847;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.desc-link.danger {
+  color: #a33;
+}
+
+.desc-editor {
+  margin: 8px 0 6px;
+}
+
+.desc-editor textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d9e1d2;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.desc-count {
+  margin: 2px 0 6px;
+  font-size: 11px;
+  color: #818879;
+  text-align: right;
+}
+
+.desc-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.desc-actions button {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #6b7f5e;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.desc-actions button.secondary {
+  background: #e6eadf;
+  color: #3e5a38;
+}
+
+.desc-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
