@@ -127,3 +127,8 @@
   opacity: 0.5;
   cursor: default;
 }
+
+.trash-reason {
+  display: block;
+  color: #8a6d3b;
+}

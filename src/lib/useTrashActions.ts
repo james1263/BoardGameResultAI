@@ -14,11 +14,12 @@ export function useTrashActions(
   async function setRemovedAt(
     game: GameRef,
     removedAt: string | null,
+    removedReason: string | null,
   ): Promise<boolean> {
     setBusyName(game.bggName)
     const { data, error } = await supabase
       .from('board_games')
-      .update({ removed_at: removedAt })
+      .update({ removed_at: removedAt, removed_reason: removedReason })
       .eq('bgg_name', game.bggName)
       .select('bgg_name')
     setBusyName(null)
@@ -32,25 +33,26 @@ export function useTrashActions(
 
     onGamesChange((list) =>
       list.map((item) =>
-        item.bggName === game.bggName ? { ...item, removedAt } : item,
+        item.bggName === game.bggName
+          ? { ...item, removedAt, removedReason }
+          : item,
       ),
     )
     return true
   }
-
   async function trashGame(game: GameRef): Promise<boolean> {
-    if (
-      !window.confirm(
-        `確定要把「${game.name}」移到垃圾桶嗎？\n之後可以在頁面最下方還原。`,
-      )
-    ) {
-      return false
-    }
-    return setRemovedAt(game, new Date().toISOString())
+    const input = window.prompt(
+      `要把「${game.name}」移到垃圾桶嗎？\n可填寫原因（例如：已售出、送人），也可以留空。\n按「取消」則不移動。`,
+      '',
+    )
+    if (input === null) return false
+
+    const reason = input.trim().slice(0, 200)
+    return setRemovedAt(game, new Date().toISOString(), reason || null)
   }
 
   async function restoreGame(game: GameRef): Promise<boolean> {
-    return setRemovedAt(game, null)
+    return setRemovedAt(game, null, null)
   }
 
   async function deleteForever(game: LibraryGame): Promise<boolean> {

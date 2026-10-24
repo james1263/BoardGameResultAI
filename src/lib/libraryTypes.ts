@@ -4,6 +4,7 @@ import type { PersonalEntry } from './usePersonalCollection'
 export type LibraryGame = BoardGame & {
   createdAt?: string | null
   removedAt?: string | null
+  removedReason?: string | null
 }
 
 export type SortKey =

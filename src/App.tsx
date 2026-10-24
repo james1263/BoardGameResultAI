@@ -41,6 +41,7 @@ import GameModal from './components/GameModal'
 import MergeDialog from './components/MergeDialog'
 import PersonalToast from './components/PersonalToast'
 import TrashSection from './components/TrashSection'
+import BackToTop from './components/BackToTop'
 import { useTrashActions } from './lib/useTrashActions'
 
 function Library({
@@ -663,6 +664,7 @@ function Library({
         )}
       />
 
+      <BackToTop />
       {personal.needsMerge && <MergeDialog personal={personal} />}
 
       {personal.errorMessage && !personal.needsMerge && (
