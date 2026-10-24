@@ -50,14 +50,32 @@ function getCategories(value: unknown): string[] {
   return [...new Set(parts)]
 }
 
+function shortHash(text: string): string {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0')
+}
 
 export function makeCoverSlug(text: string): string {
-  return cleanText(text)
+  const clean = cleanText(text)
+  const oldSlug = clean
     .normalize('NFKD')
     .toLowerCase()
     .replace(/\p{M}/gu, '')
     .replace(/[^\p{L}\p{N}_]+/gu, '-')
     .replace(/^-+|-+$/g, '')
+
+  // 純英數字：維持原本的代號，現有封面不受影響
+  if (/^[a-z0-9_-]*$/.test(oldSlug) && oldSlug !== '') return oldSlug
+
+  // 含中文、日文等：保留英數字部分，加上固定短代碼
+  const base = oldSlug
+    .replace(/[^a-z0-9_]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return base ? `${base}-${shortHash(clean)}` : `game-${shortHash(clean)}`
 }
 
 // 把 CSV 文字切成「列 × 欄」（支援引號、欄位內換行、BOM）

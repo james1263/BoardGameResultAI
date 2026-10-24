@@ -15,7 +15,7 @@ import MyList from './MyList'
 import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
 import { usePersonalCollection } from './lib/usePersonalCollection'
-   import { useGamePlaySessions } from './lib/useGamePlaySessions'
+import { useGamePlaySessions } from './lib/useGamePlaySessions'
 import { fetchBoardGames } from './lib/fetchBoardGames'
 import {
   type LibraryGame,
@@ -618,6 +618,7 @@ function Library({
           busyName={trash.busyName}
           onRestore={trash.restoreGame}
           onDelete={trash.deleteForever}
+          onEditReason={trash.editReason}
         />
       </main>
 
@@ -633,7 +634,7 @@ function Library({
           coverVersion={coverVersions[selectedGame.coverSlug] ?? 0}
           isAdmin={isAdmin}
           personal={personal}
-                       playSessions={playSessions}
+          playSessions={playSessions}
           isUploadingCover={isUploadingCover}
           coverMessage={coverMessage}
           onCoverUpload={handleCoverUpload}
@@ -648,7 +649,7 @@ function Library({
       <MyList
         boardGames={boardGames}
         personal={personal}
-                   playSessions={playSessions}
+        playSessions={playSessions}
         isOpen={isMyListOpen}
         onClose={() => setIsMyListOpen(false)}
         onOpenGame={(game) => {

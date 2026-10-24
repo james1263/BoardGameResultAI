@@ -9,6 +9,7 @@ export default function TrashSection({
   busyName,
   onRestore,
   onDelete,
+  onEditReason,
 }: {
   games: LibraryGame[]
   isAdmin: boolean
@@ -16,6 +17,7 @@ export default function TrashSection({
   busyName: string | null
   onRestore: (game: LibraryGame) => void
   onDelete: (game: LibraryGame) => void
+  onEditReason: (game: LibraryGame) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -77,6 +79,14 @@ export default function TrashSection({
                       type="button"
                       className="trash-restore"
                       disabled={busy}
+                      onClick={() => onEditReason(game)}
+                    >
+                      編輯原因
+                    </button>
+                    <button
+                      type="button"
+                      className="trash-restore"
+                      disabled={busy}
                       onClick={() => onRestore(game)}
                     >
                       還原
@@ -95,7 +105,8 @@ export default function TrashSection({
             )
           })}
         </ul>
-      )}
-    </section>
+      )
+      }
+    </section >
   )
 }

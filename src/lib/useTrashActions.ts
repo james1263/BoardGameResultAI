@@ -100,5 +100,39 @@ export function useTrashActions(
     return true
   }
 
-  return { busyName, trashGame, restoreGame, deleteForever }
+  async function editReason(game: LibraryGame): Promise<boolean> {
+    const input = window.prompt(
+      `修改「${game.name}」的移除原因（留空表示清除原因）：`,
+      game.removedReason ?? '',
+    )
+    if (input === null) return false
+
+    const reason = input.trim().slice(0, 200) || null
+
+    setBusyName(game.bggName)
+    const { data, error } = await supabase
+      .from('board_games')
+      .update({ removed_reason: reason })
+      .eq('bgg_name', game.bggName)
+      .select('bgg_name')
+    setBusyName(null)
+
+    if (error || !data || data.length === 0) {
+      window.alert(
+        '修改失敗：' + (error?.message ?? '沒有權限，或找不到這款遊戲。'),
+      )
+      return false
+    }
+
+    onGamesChange((list) =>
+      list.map((item) =>
+        item.bggName === game.bggName
+          ? { ...item, removedReason: reason }
+          : item,
+      ),
+    )
+    return true
+  }
+
+  return { busyName, trashGame, restoreGame, deleteForever, editReason }
 }
