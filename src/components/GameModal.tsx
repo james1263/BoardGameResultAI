@@ -56,6 +56,9 @@ export default function GameModal({
   const introDocs = docsApi.docs.filter(
     (doc) => doc.doc_type === 'intro' && isSafeUrl(doc.external_url),
   )
+  const videoDocs = docsApi.docs.filter(
+    (doc) => doc.doc_type === 'video' && isSafeUrl(doc.external_url),
+  )
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -122,6 +125,20 @@ export default function GameModal({
                   >
                     {doc.title ||
                       `中文介紹${introDocs.length > 1 ? index + 1 : ''}`}{' '}
+                    ↗
+                  </a>
+                ))}
+                {videoDocs.map((doc, index) => (
+                  <a
+                    className="bgg-link"
+                    key={doc.id}
+                    href={doc.external_url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    ▶{' '}
+                    {doc.title ||
+                      `影片${videoDocs.length > 1 ? index + 1 : ''}`}{' '}
                     ↗
                   </a>
                 ))}

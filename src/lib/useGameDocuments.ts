@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 
-export type DocType = 'rulebook' | 'faq' | 'errata' | 'intro' | 'other'
+export type DocType = 'rulebook' | 'faq' | 'errata' | 'intro' | 'video' | 'other'
 export type DocLanguage = 'zh' | 'en' | 'other'
 
 export type GameDocument = {

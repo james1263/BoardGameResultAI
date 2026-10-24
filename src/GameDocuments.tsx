@@ -12,6 +12,7 @@ const DOC_TYPE_LABELS: Record<DocType, string> = {
   faq: 'FAQ',
   errata: '勘誤',
   intro: '中文介紹',
+  video: '影片',
   other: '其他',
 }
 
@@ -24,6 +25,7 @@ const LANGUAGE_LABELS: Record<DocLanguage, string> = {
 function docLabel(doc: GameDocument): string {
   // 中文介紹：直接用標題，沒填標題就顯示「中文介紹」
   if (doc.doc_type === 'intro') return doc.title || '中文介紹'
+  if (doc.doc_type === 'video') return doc.title || '影片'
   return `${DOC_TYPE_LABELS[doc.doc_type]}（${LANGUAGE_LABELS[doc.language]}）${doc.title ? '：' + doc.title : ''}`
 }
 
@@ -44,7 +46,9 @@ export default function GameDocuments({
   const [formError, setFormError] = useState('')
 
   // 中文介紹顯示在視窗頂部；訪客這裡只列規則書等文件，管理者全部都列（才能刪除）
-  const otherDocs = docs.filter((doc) => doc.doc_type !== 'intro')
+  const otherDocs = docs.filter(
+    (doc) => doc.doc_type !== 'intro' && doc.doc_type !== 'video',
+  )
   const listedDocs = isAdmin ? docs : otherDocs
 
   async function handleAdd(event: FormEvent) {
@@ -133,6 +137,7 @@ export default function GameDocuments({
               <option value="faq">FAQ</option>
               <option value="errata">勘誤</option>
               <option value="intro">中文介紹（顯示在視窗頂部）</option>
+              <option value="video">影片（顯示在視窗頂部，AI 不會參考）</option>
               <option value="other">其他</option>
             </select>
           </label>
