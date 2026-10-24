@@ -5,6 +5,7 @@ export type LibraryGame = BoardGame & {
   createdAt?: string | null
   removedAt?: string | null
   removedReason?: string | null
+  description?: string | null
 }
 
 export type SortKey =

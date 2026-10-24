@@ -8,7 +8,6 @@ import {
 import './App.css'
 import {
   boardGames as fallbackGames,
-  type BoardGame,
 } from './data/boardGames.generated'
 import AdminPanel from './AdminPanel'
 import MyList from './MyList'
@@ -45,6 +44,7 @@ import PersonalToast from './components/PersonalToast'
 import TrashSection from './components/TrashSection'
 import BackToTop from './components/BackToTop'
 import { useTrashActions } from './lib/useTrashActions'
+import { updateDescription } from './lib/saveDescription'
 
 function Library({
   allGames,
@@ -63,7 +63,7 @@ function Library({
   )
   const trash = useTrashActions(allGames, onGamesChange)
   const [searchText, setSearchText] = useState('')
-  const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null)
+  const [selectedGame, setSelectedGame] = useState<LibraryGame | null>(null)
   const isAdmin = useIsAdmin()
   const personal = usePersonalCollection()
   const playSessions = useGamePlaySessions()
@@ -641,6 +641,25 @@ function Library({
           isUploadingCover={isUploadingCover}
           coverMessage={coverMessage}
           onCoverUpload={handleCoverUpload}
+          onSaveDescription={async (text) => {
+            const clean = text.trim()
+            if (!(await updateDescription(selectedGame.bggName, clean))) {
+              return false
+            }
+            onGamesChange((current) =>
+              current.map((item) =>
+                item.bggName === selectedGame.bggName
+                  ? { ...item, description: clean }
+                  : item,
+              ),
+            )
+            setSelectedGame((current) =>
+              current && current.bggName === selectedGame.bggName
+                ? { ...current, description: clean }
+                : current,
+            )
+            return true
+          }}
           isTrashing={trash.busyName === selectedGame.bggName}
           onTrash={async () => {
             if (await trash.trashGame(selectedGame)) setSelectedGame(null)

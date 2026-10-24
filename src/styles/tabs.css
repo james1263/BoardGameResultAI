@@ -63,3 +63,12 @@
     border-radius: 0;
   }
 }
+
+.modal-description {
+  margin: 10px 0 6px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #354332;
+  text-align: left;
+  white-space: pre-wrap;
+}

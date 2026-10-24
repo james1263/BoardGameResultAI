@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
-import type { BoardGame } from '../data/boardGames.generated'
+import type { LibraryGame } from '../lib/libraryTypes'
 import type { PersonalApi } from '../lib/personalApi'
 import GameDocuments from '../GameDocuments'
 import CoverImage from './CoverImage'
@@ -8,6 +8,7 @@ import RatingDots from './RatingDots'
 import PlayCounter from './PlayCounter'
 import PersonalNote from './PersonalNote'
 import PlaySessions from './PlaySessions'
+import DescriptionEditor from './DescriptionEditor'
 import RatingSection, { CommunitySummary } from './RatingSection'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import type { RatingsApi } from '../lib/useGameRatings'
@@ -27,6 +28,7 @@ export default function GameModal({
   personal,
   playSessions,
   ratings,
+  onSaveDescription,
   isUploadingCover,
   coverMessage,
   onCoverUpload,
@@ -34,12 +36,13 @@ export default function GameModal({
   isTrashing,
   onClose,
 }: {
-  game: BoardGame
+  game: LibraryGame
   coverVersion: number
   isAdmin: boolean
   personal: PersonalApi
   playSessions: PlaySessionsApi
   ratings: RatingsApi
+  onSaveDescription: (text: string) => Promise<boolean>
   isUploadingCover: boolean
   coverMessage: string
   onCoverUpload: (event: ChangeEvent<HTMLInputElement>) => void
@@ -148,6 +151,12 @@ export default function GameModal({
         <div className="modal-body" role="tabpanel">
           {tab === 'overview' && (
             <>
+              <DescriptionEditor
+                key={game.bggName}
+                value={game.description ?? ''}
+                isAdmin={isAdmin}
+                onSave={onSaveDescription}
+              />
               <div className="modal-section">
                 <h3 className="modal-section-title">GAME ATTRIBUTES</h3>
                 <div className="rating-list">

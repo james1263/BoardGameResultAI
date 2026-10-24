@@ -1,6 +1,6 @@
 import type { BoardGame } from '../data/boardGames.generated'
 
-export type ParsedGame = Omit<BoardGame, 'id' | 'slug'>
+export type ParsedGame = Omit<BoardGame, 'id' | 'slug'> & { description: string }
 
 export type ParseResult = {
   games: ParsedGame[]
@@ -151,11 +151,18 @@ export function parseBoardGamesCsv(csvText: string): ParseResult {
     const bggName = text('bggName')
     if (!name) throw new Error(`CSV 第 ${index + 2} 列的「屬性」欄位是空白。`)
     if (!bggName) throw new Error(`CSV 第 ${index + 2} 列的「bggName」欄位是空白。`)
+    const description = text('簡介')
+    if (description.length > 300) {
+      throw new Error(
+        `CSV 第 ${index + 2} 列的「簡介」超過 300 字（目前 ${description.length} 字）。`,
+      )
+    }
 
     return {
       name,
       bggName,
       coverSlug: makeCoverSlug(bggName),
+      description,
       links: {
         bgg: text('bgg網站'),
         rulebookZh: '',

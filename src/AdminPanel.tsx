@@ -232,6 +232,21 @@ export default function AdminPanel() {
         }
 
         const problems: string[] = []
+        // 0. 寫入簡介（CSV 沒有簡介欄、或該款簡介空白時，不動資料庫原有的簡介）
+        let descriptionCount = 0
+        const descriptionRows = pendingGames
+            .filter((game) => game.description)
+            .map((game) => ({ ...toRow(game), description: game.description }))
+        if (descriptionRows.length > 0) {
+            const { error: descriptionError } = await supabase
+                .from('board_games')
+                .upsert(descriptionRows, { onConflict: 'bgg_name' })
+            if (descriptionError) {
+                problems.push('簡介寫入失敗：' + descriptionError.message)
+            } else {
+                descriptionCount = descriptionRows.length
+            }
+        }
 
         // 1. 上傳封面
         let uploaded = 0
@@ -279,6 +294,9 @@ export default function AdminPanel() {
         setIsImporting(false)
 
         let message = `匯入完成：新增 ${preview.newCount} 款、更新 ${preview.updateCount} 款，上傳封面 ${uploaded} 張。`
+        if (descriptionCount > 0) {
+            message += `\n已寫入簡介 ${descriptionCount} 款。`
+        }
         if (removed.length > 0) {
             message += `\n已移到垃圾桶 ${trashedGames} 款遊戲（封面保留，可在頁面最下方的垃圾桶還原）。`
         }

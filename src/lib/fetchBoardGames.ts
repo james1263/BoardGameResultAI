@@ -6,6 +6,7 @@ type BoardGameRow = {
   created_at?: string | null
   removed_at?: string | null
   removed_reason?: string | null
+  description?: string | null
   name: string
   cover_slug: string
   link_bgg: string
@@ -50,6 +51,7 @@ function rowToGame(row: BoardGameRow, index: number): LibraryGame {
     createdAt: row.created_at,
     removedAt: row.removed_at,
     removedReason: row.removed_reason,
+    description: row.description ?? '',
     slug: `game-${index + 1}`,
     coverSlug: row.cover_slug,
     links: {
