@@ -1,0 +1,65 @@
+/* 詳細視窗：頂部固定＋分頁＋內容捲動 */
+
+.game-modal.has-tabs {
+  display: flex;
+  flex-direction: column;
+  height: min(680px, calc(100dvh - 40px));
+  max-height: none;
+  overflow: hidden;
+  padding: 0;
+}
+
+.modal-fixed {
+  flex: none;
+  padding: 10px 16px 0;
+  background: #f6f8f2;
+}
+
+.modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 16px 16px;
+}
+
+.modal-body > .modal-section:first-child {
+  border-top: 0;
+}
+
+.modal-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 8px 0 10px;
+  border-bottom: 1px solid #e3e9dd;
+}
+
+.modal-tab {
+  padding: 8px 0;
+  border: 1px solid #d9e1d2;
+  border-radius: 10px;
+  background: #fff;
+  color: #52604d;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.modal-tab.is-active {
+  border-color: #c9d4c0;
+  background: #e6eadf;
+  color: #3e5a38;
+  font-weight: 700;
+}
+
+@media (max-width: 520px) {
+  .modal-backdrop {
+    padding: 0;
+  }
+
+  .game-modal.has-tabs {
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+  }
+}

@@ -31,8 +31,52 @@ function sameAsSaved(draft: Draft, mine: MyRating | null): boolean {
   return RATING_FIELDS.every((f) => draft.scores[f.key] === mine[f.key])
 }
 
-function formatAvg(value: number | null): string {
-  return value == null ? '累積中' : value.toFixed(1)
+function hasAnyDetail(draft: Draft): boolean {
+  return RATING_FIELDS.some((f) => draft.scores[f.key] != null)
+}
+
+export function CommunitySummary({
+  bggName,
+  api,
+  detailed,
+}: {
+  bggName: string
+  api: RatingsApi
+  detailed: boolean
+}) {
+  const summary = api.getSummary(bggName)
+
+  if (summary.overallAvg == null) {
+    return (
+      <p className="rate-note">
+        {summary.count === 0
+          ? '還沒有人評分'
+          : `評分累積中（${summary.count} 人）`}
+      </p>
+    )
+  }
+
+  return (
+    <div>
+      <p className="rate-overall">
+        <strong>{summary.overallAvg.toFixed(1)}</strong> / 10 · {summary.count}{' '}
+        人評分
+      </p>
+      {detailed && (
+        <div className="rate-grid">
+          {RATING_FIELDS.map((field) => {
+            const value = summary.avgs[field.key]
+            return (
+              <div className="rate-grid-item" key={field.key}>
+                <span>{field.label}</span>
+                <strong>{value == null ? '累積中' : value.toFixed(1)}</strong>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function RatingSection({
@@ -42,9 +86,9 @@ export default function RatingSection({
   bggName: string
   api: RatingsApi
 }) {
-  const summary = api.getSummary(bggName)
   const mine = api.getMine(bggName)
   const [draft, setDraft] = useState<Draft>(() => toDraft(mine))
+  const [showDetail, setShowDetail] = useState(() => hasAnyDetail(toDraft(mine)))
 
   const isGuest = api.status === 'guest'
   const canEdit = api.status === 'ready' && !api.busy
@@ -64,58 +108,37 @@ export default function RatingSection({
 
   async function handleSave() {
     if (draft.overall == null) return
-    await api.saveRating(bggName, {
-      overall: draft.overall,
-      ...draft.scores,
-    })
+    await api.saveRating(bggName, { overall: draft.overall, ...draft.scores })
   }
 
   async function handleDelete() {
     if (!window.confirm('確定要刪除你對這款遊戲的評分嗎？')) return
-    if (await api.deleteRating(bggName)) setDraft(toDraft(null))
+    if (await api.deleteRating(bggName)) {
+      setDraft(toDraft(null))
+      setShowDetail(false)
+    }
   }
 
   return (
-    <div className="rating-section">
-      <div className="rating-community">
-        <p className="rating-subtitle">大家的評分</p>
-        {summary.overallAvg == null ? (
-          <p className="rating-pending">
-            {summary.count === 0
-              ? '還沒有人評分'
-              : `評分累積中（${summary.count} 人）`}
-          </p>
-        ) : (
-          <>
-            <p className="rating-overall">
-              <strong>{summary.overallAvg.toFixed(1)}</strong>
-              <span> / 10 · {summary.count} 人評分</span>
-            </p>
-            <div className="rating-avg-grid">
-              {RATING_FIELDS.map((field) => (
-                <div className="rating-avg-item" key={field.key}>
-                  <span>{field.label}</span>
-                  <strong>{formatAvg(summary.avgs[field.key])}</strong>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+    <div className="rate-section">
+      <div>
+        <p className="rate-subtitle">大家的評分</p>
+        <CommunitySummary bggName={bggName} api={api} detailed />
       </div>
 
-      <div className="rating-mine">
-        <p className="rating-subtitle">我的評分</p>
+      <div>
+        <p className="rate-subtitle">我的評分</p>
 
-        {isGuest && <p className="rating-hint">登入後即可評分</p>}
-        {api.status === 'loading' && <p className="rating-hint">讀取中…</p>}
+        {isGuest && <p className="rate-note">登入後即可評分</p>}
+        {api.status === 'loading' && <p className="rate-note">讀取中…</p>}
         {api.status === 'error' && (
-          <p className="rating-hint">讀取評分失敗，請重新整理頁面。</p>
+          <p className="rate-note">讀取評分失敗，請重新整理頁面。</p>
         )}
 
         {api.status === 'ready' && (
           <>
-            <p className="rating-label">整體評分（1～10，必填）</p>
-            <div className="rating-scale rating-scale-10">
+            <p className="rate-label">整體評分（1～10，必填）</p>
+            <div className="rate-scale rate-scale-10">
               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
                 <button
                   key={n}
@@ -130,30 +153,41 @@ export default function RatingSection({
               ))}
             </div>
 
-            {RATING_FIELDS.map((field) => (
-              <div className="rating-row" key={field.key}>
-                <span className="rating-label">{field.label}（選填）</span>
-                <div className="rating-scale rating-scale-5">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      className={draft.scores[field.key] === n ? 'is-selected' : ''}
-                      aria-pressed={draft.scores[field.key] === n}
-                      disabled={!canEdit}
-                      onClick={() => setScore(field.key, n)}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+            <button
+              type="button"
+              className="rate-toggle"
+              onClick={() => setShowDetail((open) => !open)}
+            >
+              {showDetail ? '收合六項細評 ▴' : '填寫六項細評（選填）▾'}
+            </button>
 
-            <div className="rating-actions">
+            {showDetail &&
+              RATING_FIELDS.map((field) => (
+                <div className="rate-row" key={field.key}>
+                  <p className="rate-label">{field.label}</p>
+                  <div className="rate-scale rate-scale-5">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        className={
+                          draft.scores[field.key] === n ? 'is-selected' : ''
+                        }
+                        aria-pressed={draft.scores[field.key] === n}
+                        disabled={!canEdit}
+                        onClick={() => setScore(field.key, n)}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+            <div className="rate-actions">
               <button
                 type="button"
-                className="rating-save"
+                className="rate-save"
                 disabled={!canEdit || draft.overall == null || !dirty}
                 onClick={handleSave}
               >
@@ -162,7 +196,7 @@ export default function RatingSection({
               {mine && (
                 <button
                   type="button"
-                  className="rating-delete"
+                  className="rate-delete"
                   disabled={!canEdit}
                   onClick={handleDelete}
                 >
@@ -170,7 +204,7 @@ export default function RatingSection({
                 </button>
               )}
             </div>
-            <p className="rating-hint">
+            <p className="rate-note">
               公開的只有彙總平均，你個別的評分只有你自己看得到。
             </p>
           </>
