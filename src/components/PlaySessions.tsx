@@ -15,6 +15,7 @@ export default function PlaySessions({
   const [date, setDate] = useState(todayLocal)
   const [players, setPlayers] = useState('')
   const [note, setNote] = useState('')
+  const list = api.getSessions(bggName)
 
   if (!personal.isLoggedIn) {
     return (
@@ -35,7 +36,7 @@ export default function PlaySessions({
       return
     }
 
-    const ok = await api.addSession({
+    const ok = await api.addSession(bggName, {
       playedOn: date,
       playerCount: count,
       note: note.trim(),
@@ -129,9 +130,9 @@ export default function PlaySessions({
         </p>
       )}
 
-      {api.sessions.length > 0 && (
+      {list.length > 0 && (
         <ul className="play-sessions-list">
-          {api.sessions.map((item) => (
+          {list.map((item) => (
             <li key={item.id}>
               <div className="play-sessions-main">
                 <strong>{item.playedOn.replaceAll('-', '/')}</strong>

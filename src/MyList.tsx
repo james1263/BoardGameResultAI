@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import type { BoardGame } from './data/boardGames.generated'
 import { usePersonalCollection } from './lib/usePersonalCollection'
+import type { PlaySessionsApi } from './lib/useGamePlaySessions'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 type Tab = 'want' | 'played'
@@ -8,6 +9,7 @@ type Tab = 'want' | 'played'
 export default function MyList({
   boardGames,
   personal,
+  playSessions,
   isOpen,
   onClose,
   onOpenGame,
@@ -15,6 +17,7 @@ export default function MyList({
 }: {
   boardGames: BoardGame[]
   personal: PersonalApi
+  playSessions: PlaySessionsApi
   isOpen: boolean
   onClose: () => void
   onOpenGame: (game: BoardGame) => void
@@ -88,6 +91,8 @@ export default function MyList({
             <ul className="mylist-list">
               {shown.map((game) => {
                 const entry = personal.entries[game.bggName]
+                const summary = playSessions.getSummary(game.bggName)
+                const total = (entry?.playCount ?? 0) + summary.count
                 return (
                   <li className="mylist-item" key={game.bggName}>
                     <div className="mylist-thumb">{renderCover(game)}</div>
@@ -99,6 +104,13 @@ export default function MyList({
                       >
                         {game.name}
                       </button>
+                      {total > 0 && (
+                        <p className="mylist-meta">
+                          玩過 {total} 次
+                          {summary.lastPlayedOn &&
+                            ` · 最近：${summary.lastPlayedOn.replaceAll('-', '/')}`}
+                        </p>
+                      )}
                       {entry?.note && (
                         <p className="mylist-note">{entry.note}</p>
                       )}

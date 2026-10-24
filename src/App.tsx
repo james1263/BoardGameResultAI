@@ -15,6 +15,7 @@ import MyList from './MyList'
 import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
 import { usePersonalCollection } from './lib/usePersonalCollection'
+   import { useGamePlaySessions } from './lib/useGamePlaySessions'
 import { fetchBoardGames } from './lib/fetchBoardGames'
 import {
   type LibraryGame,
@@ -64,6 +65,7 @@ function Library({
   const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null)
   const isAdmin = useIsAdmin()
   const personal = usePersonalCollection()
+  const playSessions = useGamePlaySessions()
   const [isMyListOpen, setIsMyListOpen] = useState(false)
   const [nowMs] = useState(() => Date.now())
 
@@ -631,6 +633,7 @@ function Library({
           coverVersion={coverVersions[selectedGame.coverSlug] ?? 0}
           isAdmin={isAdmin}
           personal={personal}
+                       playSessions={playSessions}
           isUploadingCover={isUploadingCover}
           coverMessage={coverMessage}
           onCoverUpload={handleCoverUpload}
@@ -645,6 +648,7 @@ function Library({
       <MyList
         boardGames={boardGames}
         personal={personal}
+                   playSessions={playSessions}
         isOpen={isMyListOpen}
         onClose={() => setIsMyListOpen(false)}
         onOpenGame={(game) => {

@@ -8,13 +8,14 @@ import RatingDots from './RatingDots'
 import PlayCounter from './PlayCounter'
 import PersonalNote from './PersonalNote'
 import PlaySessions from './PlaySessions'
-import { useGamePlaySessions } from '../lib/useGamePlaySessions'
+import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 
 export default function GameModal({
   game,
   coverVersion,
   isAdmin,
   personal,
+  playSessions,
   isUploadingCover,
   coverMessage,
   onCoverUpload,
@@ -26,6 +27,7 @@ export default function GameModal({
   coverVersion: number
   isAdmin: boolean
   personal: PersonalApi
+  playSessions: PlaySessionsApi
   isUploadingCover: boolean
   coverMessage: string
   onCoverUpload: (event: ChangeEvent<HTMLInputElement>) => void
@@ -33,7 +35,6 @@ export default function GameModal({
   isTrashing: boolean
   onClose: () => void
 }) {
-  const playSessions = useGamePlaySessions(game.bggName)
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose()
@@ -151,7 +152,7 @@ export default function GameModal({
           <PlayCounter
             bggName={game.bggName}
             personal={personal}
-            datedCount={playSessions.sessions.length}
+            datedCount={playSessions.getSummary(game.bggName).count}
           />
           <PlaySessions
             key={game.bggName}
