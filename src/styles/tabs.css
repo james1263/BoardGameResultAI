@@ -72,3 +72,13 @@
   text-align: left;
   white-space: pre-wrap;
 }
+
+.modal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+}
+
+.modal-links .bgg-link {
+  margin-bottom: 0;
+}

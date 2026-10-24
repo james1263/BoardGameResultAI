@@ -9,6 +9,7 @@ import PlayCounter from './PlayCounter'
 import PersonalNote from './PersonalNote'
 import PlaySessions from './PlaySessions'
 import DescriptionEditor from './DescriptionEditor'
+import { isSafeUrl, useGameDocuments } from '../lib/useGameDocuments'
 import RatingSection, { CommunitySummary } from './RatingSection'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import type { RatingsApi } from '../lib/useGameRatings'
@@ -51,6 +52,10 @@ export default function GameModal({
   onClose: () => void
 }) {
   const [tab, setTab] = useState<TabKey>('overview')
+  const docsApi = useGameDocuments(game.bggName)
+  const introDocs = docsApi.docs.filter(
+    (doc) => doc.doc_type === 'intro' && isSafeUrl(doc.external_url),
+  )
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -96,16 +101,31 @@ export default function GameModal({
               }
             />
             <div className="modal-head-info">
-              {game.links.bgg && (
-                <a
-                  className="bgg-link"
-                  href={game.links.bgg}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  BoardGameGeek ↗
-                </a>
-              )}
+              <div className="modal-links">
+                {game.links.bgg && (
+                  <a
+                    className="bgg-link"
+                    href={game.links.bgg}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    BoardGameGeek ↗
+                  </a>
+                )}
+                {introDocs.map((doc, index) => (
+                  <a
+                    className="bgg-link"
+                    key={doc.id}
+                    href={doc.external_url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {doc.title ||
+                      `中文介紹${introDocs.length > 1 ? index + 1 : ''}`}{' '}
+                    ↗
+                  </a>
+                ))}
+              </div>
               <h2 id="modal-title">{game.name}</h2>
               <div className="modal-score-line">
                 {game.bggScore == null ? (
@@ -182,7 +202,7 @@ export default function GameModal({
                 <h3 className="modal-section-title">GAME RESOURCES</h3>
                 <GameDocuments
                   key={game.bggName}
-                  bggName={game.bggName}
+                  api={docsApi}
                   isAdmin={isAdmin}
                 />
               </div>
