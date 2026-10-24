@@ -8,7 +8,9 @@ import RatingDots from './RatingDots'
 import PlayCounter from './PlayCounter'
 import PersonalNote from './PersonalNote'
 import PlaySessions from './PlaySessions'
+import RatingSection from './RatingSection'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
+import type { RatingsApi } from '../lib/useGameRatings'
 
 export default function GameModal({
   game,
@@ -16,6 +18,7 @@ export default function GameModal({
   isAdmin,
   personal,
   playSessions,
+  ratings,
   isUploadingCover,
   coverMessage,
   onCoverUpload,
@@ -28,6 +31,7 @@ export default function GameModal({
   isAdmin: boolean
   personal: PersonalApi
   playSessions: PlaySessionsApi
+  ratings: RatingsApi
   isUploadingCover: boolean
   coverMessage: string
   onCoverUpload: (event: ChangeEvent<HTMLInputElement>) => void
@@ -143,7 +147,16 @@ export default function GameModal({
         </div>
 
         <div className="modal-section">
-          <h3 className="modal-section-title">03 / MY COLLECTION</h3>
+          <h3 className="modal-section-title">03 / COMMUNITY RATINGS</h3>
+          <RatingSection
+            key={`${game.bggName}-${ratings.status}`}
+            bggName={game.bggName}
+            api={ratings}
+          />
+        </div>
+
+        <div className="modal-section">
+          <h3 className="modal-section-title">04 / MY COLLECTION</h3>
           <StatusButtons
             bggName={game.bggName}
             personal={personal}
@@ -163,7 +176,7 @@ export default function GameModal({
         </div>
 
         <div className="modal-section">
-          <h3 className="modal-section-title">04 / PERSONAL NOTES</h3>
+          <h3 className="modal-section-title">05 / PERSONAL NOTES</h3>
           <PersonalNote
             key={`${game.bggName}-${personal.status}`}
             value={personal.getEntry(game.bggName).note}
@@ -178,7 +191,7 @@ export default function GameModal({
         </div>
 
         <div className="modal-section">
-          <h3 className="modal-section-title">05 / GAME RESOURCES</h3>
+          <h3 className="modal-section-title">06 / GAME RESOURCES</h3>
           <GameDocuments
             key={game.bggName}
             bggName={game.bggName}

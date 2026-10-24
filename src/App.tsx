@@ -16,6 +16,7 @@ import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
 import { usePersonalCollection } from './lib/usePersonalCollection'
 import { useGamePlaySessions } from './lib/useGamePlaySessions'
+import { useGameRatings } from './lib/useGameRatings'
 import { fetchBoardGames } from './lib/fetchBoardGames'
 import {
   type LibraryGame,
@@ -66,6 +67,7 @@ function Library({
   const isAdmin = useIsAdmin()
   const personal = usePersonalCollection()
   const playSessions = useGamePlaySessions()
+  const ratings = useGameRatings()
   const [isMyListOpen, setIsMyListOpen] = useState(false)
   const [nowMs] = useState(() => Date.now())
 
@@ -635,6 +637,7 @@ function Library({
           isAdmin={isAdmin}
           personal={personal}
           playSessions={playSessions}
+          ratings={ratings}
           isUploadingCover={isUploadingCover}
           coverMessage={coverMessage}
           onCoverUpload={handleCoverUpload}
