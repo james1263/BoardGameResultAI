@@ -32,6 +32,8 @@
 
 .assistant-copy {
   min-width: 0;
+  flex: 1;
+  text-align: left;
 }
 
 .assistant-banner .eyebrow {
