@@ -197,7 +197,11 @@ export function usePersonalCollection() {
     )
 
     const updateEntry = useCallback(
-        (bggName: string, changes: Partial<PersonalEntry>) => {
+        (
+            bggName: string,
+            changes: Partial<PersonalEntry>,
+            options?: { skipPlayedRule?: boolean },
+        ) => {
             // 訪客：只改本機
             if (!userId) {
                 setLocal((current) => {
@@ -206,7 +210,9 @@ export function usePersonalCollection() {
                     return withEntry(
                         current,
                         bggName,
-                        applyPlayedRule(previous, changes, merged),
+                        options?.skipPlayedRule
+                            ? merged
+                            : applyPlayedRule(previous, changes, merged),
                     )
                 })
                 return
@@ -216,11 +222,10 @@ export function usePersonalCollection() {
             if (status !== 'ready') return
 
             const previous = cloudRef.current[bggName] ?? EMPTY_ENTRY
-            const merged = applyPlayedRule(
-                previous,
-                changes,
-                normalizeEntry({ ...previous, ...changes }),
-            )
+            const base = normalizeEntry({ ...previous, ...changes })
+            const merged = options?.skipPlayedRule
+                ? base
+                : applyPlayedRule(previous, changes, base)
 
             // 先更新畫面，再寫雲端；失敗時還原
             cloudRef.current = withEntry(cloudRef.current, bggName, merged)
@@ -249,7 +254,7 @@ export function usePersonalCollection() {
         },
         [userId, status],
     )
-
+    
     // 首次合併：本機有紀錄、雲端讀取完成、而且使用者還沒選「不加入」
     const localCount = Object.keys(local).length
     const needsMerge =

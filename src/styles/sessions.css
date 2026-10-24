@@ -1,0 +1,98 @@
+.play-sessions {
+  margin-top: 10px;
+}
+
+.play-sessions-add {
+  width: 100%;
+  padding: 10px;
+  border: 1px dashed #c9c3b8;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.play-sessions-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.play-sessions-form {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e4dfd5;
+  border-radius: 10px;
+}
+
+.play-sessions-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.play-sessions-form input,
+.play-sessions-form textarea {
+  padding: 8px;
+  border: 1px solid #d6d0c4;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.play-sessions-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.play-sessions-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #1f1f1f;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.play-sessions-actions button.secondary {
+  background: #ece8de;
+  color: #333;
+}
+
+.play-sessions-list {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.play-sessions-list li {
+  padding: 8px 0;
+  border-top: 1px solid #eee9de;
+  font-size: 14px;
+}
+
+.play-sessions-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.play-sessions-main .play-sessions-link {
+  margin-left: auto;
+}
+
+.play-sessions-list p {
+  margin: 4px 0 0;
+  color: #666;
+  white-space: pre-wrap;
+}
+
+.play-sessions-link {
+  border: none;
+  background: none;
+  color: #a33;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}

@@ -7,6 +7,8 @@ import StatusButtons from './StatusButtons'
 import RatingDots from './RatingDots'
 import PlayCounter from './PlayCounter'
 import PersonalNote from './PersonalNote'
+import PlaySessions from './PlaySessions'
+import { useGamePlaySessions } from '../lib/useGamePlaySessions'
 
 export default function GameModal({
   game,
@@ -31,6 +33,7 @@ export default function GameModal({
   isTrashing: boolean
   onClose: () => void
 }) {
+  const playSessions = useGamePlaySessions(game.bggName)
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose()
@@ -145,7 +148,17 @@ export default function GameModal({
             personal={personal}
             variant="inline"
           />
-          <PlayCounter bggName={game.bggName} personal={personal} />
+          <PlayCounter
+            bggName={game.bggName}
+            personal={personal}
+            datedCount={playSessions.sessions.length}
+          />
+          <PlaySessions
+            key={game.bggName}
+            bggName={game.bggName}
+            personal={personal}
+            api={playSessions}
+          />
         </div>
 
         <div className="modal-section">

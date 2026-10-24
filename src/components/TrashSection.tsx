@@ -65,6 +65,11 @@ export default function TrashSection({
                       ? new Date(game.removedAt).toLocaleDateString('zh-TW')
                       : '—'}
                   </small>
+                  {game.removedReason && (
+                    <small className="trash-reason">
+                      原因：{game.removedReason}
+                    </small>
+                  )}
                 </div>
                 {isAdmin && (
                   <div className="trash-actions">
