@@ -27,6 +27,8 @@ type ImportPreview = {
     updateCount: number
     newNames: string[]
     removed: RemovedGame[]
+    alreadyTrashed: RemovedGame[]
+    trashedInCsv: RemovedGame[]
     duplicateNames: string[]
     sample: ParsedGame[]
 }
@@ -202,7 +204,7 @@ export default function AdminPanel() {
 
         if (removed.length > 0) {
             confirmText +=
-                `\n\n⚠️ 將刪除 ${removed.length} 款（CSV 裡沒有），並一併刪除它們的雲端封面：\n` +
+                `\n\n🗑️ 有 ${removed.length} 款在資料庫裡、但 CSV 沒有，將移到垃圾桶（資料與封面都保留，可以還原）：\n` +
                 removed.map((item) => `・${item.name}（${item.bggName}）`).join('\n')
         }
 
@@ -210,9 +212,9 @@ export default function AdminPanel() {
 
         if (removed.length > 5) {
             const typed = window.prompt(
-                `這次會刪除 ${removed.length} 款遊戲，請輸入「刪除」兩個字確認：`,
+                `這次會把 ${removed.length} 款遊戲移到垃圾桶，請輸入「移除」兩個字確認：`,
             )
-            if (typed?.trim() !== '刪除') return
+            if (typed?.trim() !== '移除') return
         }
 
         setImportError('')
@@ -248,50 +250,28 @@ export default function AdminPanel() {
             )
         }
 
-        // 2. 刪除 CSV 裡沒有的遊戲與雲端封面
-        let deletedGames = 0
-        let deletedCovers = 0
+        // 2. 把 CSV 裡沒有的遊戲移到垃圾桶（不刪資料、不刪封面，之後可還原）
+        let trashedGames = 0
 
         if (removed.length > 0) {
-            const { data: deletedRows, error: deleteError } = await supabase
+            const { data: trashedRows, error: trashError } = await supabase
                 .from('board_games')
-                .delete()
+                .update({ removed_at: new Date().toISOString() })
                 .in(
                     'bgg_name',
                     removed.map((item) => item.bggName),
                 )
+                .is('removed_at', null)
                 .select('bgg_name')
 
-            if (deleteError) {
-                problems.push('刪除遊戲失敗：' + deleteError.message)
+            if (trashError) {
+                problems.push('移到垃圾桶失敗：' + trashError.message)
             } else {
-                deletedGames = deletedRows?.length ?? 0
-                if (deletedGames < removed.length) {
-                    problems.push(`有 ${removed.length - deletedGames} 款沒有被刪除。`)
-                }
-
-                const deletedSet = new Set(
-                    (deletedRows ?? []).map((row) => row.bgg_name as string),
-                )
-                const inUse = new Set(pendingGames.map((game) => game.coverSlug))
-                const paths = removed
-                    .filter(
-                        (item) =>
-                            deletedSet.has(item.bggName) &&
-                            item.coverSlug &&
-                            !inUse.has(item.coverSlug),
+                trashedGames = trashedRows?.length ?? 0
+                if (trashedGames < removed.length) {
+                    problems.push(
+                        `有 ${removed.length - trashedGames} 款沒有被移到垃圾桶。`,
                     )
-                    .map((item) => `${item.coverSlug}.webp`)
-
-                if (paths.length > 0) {
-                    const { data: removedFiles, error: removeError } =
-                        await supabase.storage.from('covers').remove(paths)
-
-                    if (removeError) {
-                        problems.push('刪除雲端封面失敗：' + removeError.message)
-                    } else {
-                        deletedCovers = removedFiles?.length ?? 0
-                    }
                 }
             }
         }
@@ -300,7 +280,7 @@ export default function AdminPanel() {
 
         let message = `匯入完成：新增 ${preview.newCount} 款、更新 ${preview.updateCount} 款，上傳封面 ${uploaded} 張。`
         if (removed.length > 0) {
-            message += `\n已刪除 ${deletedGames} 款遊戲、${deletedCovers} 張雲端封面。`
+            message += `\n已移到垃圾桶 ${trashedGames} 款遊戲（封面保留，可在頁面最下方的垃圾桶還原）。`
         }
         if (problems.length > 0) {
             message += '\n' + problems.join('\n')
@@ -330,7 +310,7 @@ export default function AdminPanel() {
 
             const { data, error } = await supabase
                 .from('board_games')
-                .select('bgg_name, name, cover_slug')
+                .select('bgg_name, name, cover_slug, removed_at')
 
             if (error) throw new Error('讀取資料庫失敗：' + error.message)
 
@@ -338,18 +318,33 @@ export default function AdminPanel() {
                 bgg_name: string
                 name: string
                 cover_slug: string
+                removed_at: string | null
             }[]
             const existing = new Set(existingRows.map((row) => row.bgg_name))
             const incoming = new Set(games.map((game) => game.bggName))
 
             const newGames = games.filter((game) => !existing.has(game.bggName))
-            const removed: RemovedGame[] = existingRows
-                .filter((row) => !incoming.has(row.bgg_name))
-                .map((row) => ({
-                    bggName: row.bgg_name,
-                    name: row.name,
-                    coverSlug: row.cover_slug,
-                }))
+            const toRemoved = (row: {
+                bgg_name: string
+                name: string
+                cover_slug: string
+            }): RemovedGame => ({
+                bggName: row.bgg_name,
+                name: row.name,
+                coverSlug: row.cover_slug,
+            })
+            // 資料庫正常、CSV 沒有 → 這次會移到垃圾桶
+            const removed = existingRows
+                .filter((row) => !incoming.has(row.bgg_name) && !row.removed_at)
+                .map(toRemoved)
+            // 已在垃圾桶、CSV 也沒有 → 維持原狀
+            const alreadyTrashed = existingRows
+                .filter((row) => !incoming.has(row.bgg_name) && row.removed_at)
+                .map(toRemoved)
+            // 已在垃圾桶、但 CSV 有 → 資料更新，但仍留在垃圾桶
+            const trashedInCsv = existingRows
+                .filter((row) => incoming.has(row.bgg_name) && row.removed_at)
+                .map(toRemoved)
 
             setPendingGames(games)
             setPreview({
@@ -359,6 +354,8 @@ export default function AdminPanel() {
                 updateCount: games.length - newGames.length,
                 newNames: newGames.map((game) => game.name),
                 removed,
+                alreadyTrashed,
+                trashedInCsv,
                 duplicateNames,
                 sample: games.slice(0, 3),
             })
@@ -433,7 +430,7 @@ export default function AdminPanel() {
                                     {preview.removed.length > 0 && (
                                         <>
                                             <p className="admin-error">
-                                                按「確認匯入」後，這些遊戲會被刪除，並一併刪除雲端封面：
+                                                按「確認匯入」後，這些遊戲會被移到垃圾桶（資料與封面都保留，可以還原）：
                                             </p>
                                             <ul>
                                                 {preview.removed.map((item) => (
@@ -444,9 +441,20 @@ export default function AdminPanel() {
                                             </ul>
                                         </>
                                     )}
+                                    {preview.trashedInCsv.length > 0 && (
+                                        <p>
+                                            提醒：CSV 裡有、但目前在垃圾桶的遊戲（資料會更新，仍留在垃圾桶，要放回請到頁面最下方按「還原」）：
+                                            {preview.trashedInCsv.map((item) => item.name).join('、')}
+                                        </p>
+                                    )}
+                                    {preview.alreadyTrashed.length > 0 && (
+                                        <p>
+                                            垃圾桶裡本來就有、CSV 也沒有的遊戲：{preview.alreadyTrashed.length} 款（維持原狀，不會被刪除）。
+                                        </p>
+                                    )}
                                     {preview.newCount > 0 && preview.removed.length > 0 && (
                                         <p>
-                                            提醒：如果是在 Notion 改了 bggName，舊名稱那筆會被刪除、
+                                            提醒：如果是在 Notion 改了 bggName，舊名稱那筆會被移到垃圾桶、
                                             新名稱那筆會當成新遊戲，封面需要重新上傳。
                                         </p>
                                     )}
