@@ -463,3 +463,33 @@ L-4. 下一步建議
 - **AI 規則助手必須用 RAG（使用者明確要求）**
   - 回答只能根據檢索到的規則書／FAQ 片段；必須列出出處（哪本、第幾頁，最好附引用片段）；找不到可靠依據時要明說「找不到」，不可憑空回答。
   - 技術方向（待決定）：PDF 擷取文字、切段並保留頁碼、建立檢索（Supabase 可用 pgvector；中文檢索要注意斷詞，可能需向量＋關鍵字混合）；AI 金鑰只放後端；訪客提問要有每日次數限制。規則書 PDF 存在私有 bucket。
+
+### L-6. 拖曳排名編輯：已確認事項與建議設計（2026-10-24；使用者說「晚點再嘗試」，尚未動工）
+**已確認**
+- 要拖曳的 6 個排名（Notion 欄名＝`parseCsv.ts` 欄名＝資料庫欄位）：
+
+| Notion／CSV 欄名 | 資料庫欄位 | 前端欄位 |
+|---|---|---|
+| Ranking engine | `ranking_engine` | `rankingEngine` |
+| 老遊戲想玩綜合評分（網站稱「常玩遊戲排名」） | `classic_game_ranking` | `classicGameRanking` |
+| 溝通排名 | `communication_ranking` | `communicationRanking` |
+| 獨特排名 | `unique_ranking` | `uniqueRanking` |
+| 玩家影響性排名 | `player_impact_ranking` | `playerImpactRanking` |
+| 變化排名 | `change_ranking` | `changeRanking` |
+
+- 6 欄**都已存在**，不需改資料庫；現有 `board_games` 的 Admin update 政策（`is_admin()`）就夠用。（先前說有兩項不在資料庫是錯的。）
+- 功能只給管理者，目的是更新使用者自己的 CSV。「把我之前說的排行」＝常玩遊戲排名。
+- 「綜合分數排名」（`分數_排名`）由 Notion 算，網站不重算、不揭露算法；網站拖曳儲存後，它要等「匯出 CSV → 匯入 Notion → 從 Notion 匯出完整 CSV → 匯入網站」才會更新。
+
+**建議設計（使用者尚未回「照建議」）**
+- 入口：管理者登入後頁尾多「排名編輯」，開全螢幕視窗；下拉選 6 個排名之一，列表依該排名排序。
+- 拖曳用新套件 `@dnd-kit`（手機可拖）。換位規則：每一列保留原本的排名數字，拖完只有被影響的幾款變動；拖一格＝與鄰居交換，拖多格＝中間順移一格。
+- 沒有排名數字（null）的遊戲放最下面「未排名」，第一版不能拖。
+- 先顯示「將更新 N 款」，按「儲存」才批次寫入；未儲存離開要提醒。
+- 匯出 CSV：欄位為「屬性」「bggName」加上述 6 欄（欄名同 Notion），全部遊戲、目前資料庫的數字，UTF-8 含 BOM；檔名如 `boardgame-rankings-日期.csv`。
+- 畫面上要提醒固定流程與風險：網站改過排名後，若先匯入舊的 Notion CSV，網站排名會被覆蓋。
+
+**注意與待確認**
+- `parseCsv.ts` 的必要欄位只含 `Ranking engine` 與 `分數_排名`；其他 4 個排名欄位若 CSV 沒有，會被當成 `null` 並覆蓋資料庫。匯出給 Notion 的排名 CSV 缺少「類型」等必要欄位，匯入網站會被擋下（安全），但提醒不要誤用；日後可考慮把 6 欄都加入必要欄位檢查（小改動）。
+- 待使用者在 Notion 確認：「合併」匯入 CSV 是否用標題欄「屬性」對應遊戲（建議先用小 CSV 試）；排名為空的遊戲怎麼排。
+- 開工前仍要請使用者貼目前的 `AdminPanel.tsx`、`fetchBoardGames.ts`（`parseCsv.ts` 已看過、不用再貼）。
