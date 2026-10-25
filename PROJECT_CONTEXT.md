@@ -569,3 +569,20 @@
 - 使用者的 `loyalty-card` 版面在窄螢幕的呈現，仍要在手機寬度確認。
 - `privacy.html` 尚未提到自助報到與免評分。
 - 「窄螢幕頂端按鈕是否擠在一起」尚未確認。
+
+### Q-6　自助報到已完成（2026-10-26，使用者測試通過）
+
+**資料庫**（SQL 檔：`checkin_v1.sql`）
+- `gathering_attendees.source text not null default 'admin' check (source in ('admin','self'))`
+- `gathering_checkins(gathering_id pk → gatherings on delete cascade, token text unique default 去掉連字號的 gen_random_uuid, is_open default false, capacity int null check 1～500)`；RLS 只有 `is_admin()`；`anon` 無權限；已 `revoke truncate, references, trigger from authenticated`。
+- 函式 `public.join_gathering(p_token text) returns table(result_status text, result_date date)`：`security definer`、`set search_path=''`；`revoke from public, anon`、`grant execute to authenticated`。狀態：`not_logged_in`、`invalid`、`already`、`closed`、`not_started`、`ended`、`no_profile`、`no_contact`、`full`、`joined`。以 `for update` 鎖住 `gatherings` 該列再計算人數。聚會日以 `Asia/Taipei` 的今天判斷。
+
+**前端**
+- `src/lib/useCheckinLink.ts`：讀 `?join=`（只接受 `[A-Za-z0-9_-]{8,100}`），存 `localStorage('boardgame-checkin-token')` 並清掉網址參數；未登入顯示 `.invite-banner`。
+- `src/components/CheckInDialog.tsx`：`createPortal`、`.modal-backdrop.checkin-backdrop`（z-index 1050，比暱稱視窗 1100 低，兩個同時出現時先填暱稱）。
+- `App.tsx`：`handleCheckedIn(date)` 清除 token 並用既有的 `inviteKey`／`inviteFocus` 打開集點卡分頁。
+- `LoyaltyAdmin.tsx`：自助報到區（建立、開關、人數上限、複製連結、重設連結）、「自己報到」標籤、手動加入超過上限會跳確認。
+
+**兩種連結的差別**：`?card=日期` 只是打開集點卡的捷徑，不會讓人變成出席者；`?join=隨機碼` 才會報到。
+
+**尚未驗證**：從 LINE 內建瀏覽器點連結時，Google 登入可能被擋（內嵌瀏覽器限制），需要用手機實測；`privacy.html` 尚未補自助報到那一句。

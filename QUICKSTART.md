@@ -50,15 +50,15 @@
 - **✅ 玩家登出選單**：暱稱 ▾ →「修改暱稱與聯絡方式／登出」；頂端列固定在最上方（管理者的登出在頂端列）。
 - **✅ 聯絡方式（LINE／FB 名字）**：獨立資料表 `player_contacts`（只有本人和管理者可讀，anon 無權限，已驗證）；玩家第一次登入或尚未填寫時會跳出設定視窗（必填、可「稍後再說」）；管理者的聚會視窗與集點狀況表會顯示聯絡方式。
 - **✅ 管理者聚會視窗**：改成俱樂部風格；出席者以頭像標籤呈現；新增「搜尋玩家」（可用暱稱或 LINE／FB 名字搜尋）。
+- **✅ 自助報到（2026-10-26，使用者已測試通過）**：管理者在聚會詳情按「建立報到連結」→ 開關「開放報到」、人數上限（留空＝不限）、複製 `?join=隨機碼` 連結、重設連結；出席名單標示「自己報到」。玩家點連結→（未登入先登入）→ `CheckInDialog`「我來了」→ 呼叫資料庫函式 `join_gathering(p_token)`（security definer，檢查：登入、token 有效、已報到則回 already、開放中、**台北時間聚會當天**、有暱稱、有聯絡方式、未額滿；鎖住該場聚會防止超額）→ 成功後打開集點卡並標出那一天。資料表 `gathering_checkins`（只有管理者可讀寫，anon 無權限）；`gathering_attendees.source`（admin／self）。管理者手動加入超過上限會先跳確認。前端：`src/lib/useCheckinLink.ts`、`src/components/CheckInDialog.tsx`、`LoyaltyAdmin.tsx`、`App.tsx`。
 - **✅ `privacy.html` 已補**：排行榜、集點卡、聯絡方式（聯絡方式那句請確認已 commit）。
 
 ## 進行中（開場先問使用者）
 
-1. **自助報到（規則已決定，尚未動工）**：管理者產生隨機報到連結，玩家登入後按「我來了」就算出席。使用者已選方案 A，預設規則：①每場聚會有獨立隨機連結（不是日期）；②管理者可「開放／關閉報到」，預設關閉，聚會當天晚上自動關閉；③人數上限（選填，不填＝不限）＝連結報到＋管理者現場加入的總人數，**必須在資料庫函式檢查**；④管理者手動加入可超過上限，但要跳確認；⑤同一帳號一場只能報到一次；⑥玩家要先有暱稱（與聯絡方式）；⑦出席名單標示「自己報到／管理者加入」，管理者可移除；⑧現場報到碼**先不做**，遇到陌生人再加。詳細規格見 `PROJECT_CONTEXT.md` 附錄 Q-3。
-   - 開工前請使用者執行（Supabase SQL Editor）：`select column_name, data_type, is_nullable, column_default from information_schema.columns where table_schema='public' and table_name in ('gatherings','gathering_attendees') order by table_name, ordinal_position;` 與 `select policyname, cmd, roles, qual, with_check from pg_policies where schemaname='public' and tablename in ('gatherings','gathering_attendees');`，並請他貼目前的 `src/App.tsx`（他改過）。
-2. **請使用者回報這一批的測試結果**：免評分、邀請連結（已登入／未登入）、暱稱與聯絡方式視窗（桌面與手機寬度）、管理者搜尋玩家、集點卡文字靠左、頂端列固定後各視窗有沒有被蓋住。
-3. **視覺改版（使用者想要，順序未定）**：溫暖桌遊俱樂部風格（奶油白 #F5F0E5、森林綠 #456B50、焦糖 #B78A5A、深墨綠 #34463C）。建議順序：設計變數檔 → 頂端導覽列（加「聚會與集點」入口）→ 首頁與遊戲卡片 → 集點卡獨立頁面。**不要現在搬資料夾或加路由**（另一個 AI 的規劃有提，我們判斷風險大於收益）。
-4. **`privacy.html`** 日後要補：自助報到（出席紀錄由玩家自己報到、管理者可移除）、免評分說明。
+1. **`privacy.html` 要補自助報到那一句**（出席可由玩家用報到連結自行報到、管理者可手動加入與移除；管理者看得到暱稱與聯絡方式）。先用 `Select-String -Path public\privacy.html -Pattern "集點卡|聯絡方式"` 找位置。並用 `git status`、`git log --oneline -5` 確認自助報到相關檔案是否已 commit（`App.tsx`、`LoyaltyAdmin.tsx`、`CheckInDialog.tsx`、`useCheckinLink.ts`、`account.css`、`loyalty-admin.css`）。
+2. **LINE 內建瀏覽器問題（尚未向使用者驗證）**：玩家若在 LINE 裡直接點連結，Google 登入可能被擋（Google 不允許內嵌瀏覽器登入）。請使用者實測；對策是提醒玩家「用 Chrome／Safari 開啟」，必要時在報到頁加提示。
+3. **視覺改版（使用者想要，順序未定）**：溫暖桌遊俱樂部風格（奶油白 #F5F0E5、森林綠 #456B50、焦糖 #B78A5A、深墨綠 #34463C）。建議順序：設計變數檔 → 頂端導覽列（加「聚會與集點」入口）→ 首頁與遊戲卡片 → 集點卡獨立頁面。**不要現在搬資料夾或加路由**。
+4. **「已玩」即時更新**（目前評分後要重新整理）：需要看 `useGameRatings.ts`、`usePersonalCollection.ts`。
 
 ## 想做清單（使用者 2026-10-24 提出，尚未排序）
 
@@ -76,13 +76,12 @@
 
 **一次一階段，前一階段測試完才進下一階段。**
 
-1. 使用者回報上面「進行中」第 2 項的測試結果；有問題先修。
-2. **自助報到**：先給資料庫 SQL（`gatherings` 加 `checkin_token`、`checkin_open`、`capacity`；`gathering_attendees` 加 `source`；報到與管理函式），使用者在 Supabase 跑完，再給前端（`useInviteLink.ts` 改成吃 `?join=token`、`LoyaltyAdmin.tsx` 加開關／上限／連結／來源標示／移除）。
-3. 補 `privacy.html`、更新兩份 .md。
-4. 視覺改版（見上）；「已玩」即時更新；站上拖曳調整排名；排序功能。
-5. 上傳規則書 PDF（存到 Supabase **私有** bucket，網站公開、規則書有著作權，不可用公開 bucket；`game_documents` 已預留 `source_type='upload'`、`storage_path`、`ai_indexed`；刪除遊戲時 `on delete cascade` 只刪資料列、**不會刪 Storage 檔案**；先統計實際 PDF 數量與大小）。
-6. **AI 規則助手（仍是最重要的長期目標；PDF 文字擷取、切段並保留頁碼，先決定支援全部桌遊或先 10～20 款）**、揪團／行事曆、帳號刪除流程（目前要管理者在 Supabase 手動處理，`player_profiles`、`player_contacts` 的刪除目前只有管理者能做）。順序請與使用者確認。
-7. 詳細視窗的「AI 查詢」分頁等 AI 規則助手做出來再加。
+1. 補 `privacy.html`、確認 commit 狀態（見「進行中」1）。
+2. 請使用者用手機實測：玩家第一次點報到連結（從 LINE 開啟）能不能完成 Google 登入、設定暱稱與聯絡方式、報到。
+3. 視覺改版（見上）；「已玩」即時更新；站上拖曳調整排名；排序功能。
+4. 上傳規則書 PDF（存到 Supabase **私有** bucket，網站公開、規則書有著作權，不可用公開 bucket；`game_documents` 已預留 `source_type='upload'`、`storage_path`、`ai_indexed`；刪除遊戲時 `on delete cascade` 只刪資料列、**不會刪 Storage 檔案**；先統計實際 PDF 數量與大小）。
+5. **AI 規則助手（仍是最重要的長期目標；PDF 文字擷取、切段並保留頁碼，先決定支援全部桌遊或先 10～20 款）**、揪團／行事曆、帳號刪除流程（目前要管理者在 Supabase 手動處理，`player_profiles`、`player_contacts` 的刪除目前只有管理者能做）。順序請與使用者確認。
+6. 詳細視窗的「AI 查詢」分頁等 AI 規則助手做出來再加。
 
 **接續時請這樣開場：**
 1. 問使用者在哪台電腦，`git pull`、`git status`。
@@ -133,6 +132,10 @@
 - 集點資格由資料庫函式 `loyalty_day_status` 判斷（`exempt` 或「出席＋當天勾選的遊戲都評分完整」）；`gathering_attendees` 的 INSERT／DELETE／UPDATE 只有管理者；玩家不能自己改出席或免評分。
 - 評分過或勾過「我玩了」就視為已玩（觸發器）；取消勾選不會取消已玩。
 - 管理者聚會視窗的玩家清單來自 `player_profiles`，聯絡方式來自 `player_contacts`（管理者才讀得到）。
+
+- **兩種連結不同**：`?card=日期`（集點卡連結）只是「登入後打開我的集點卡並標出那天」的捷徑，**不會讓任何人變成出席者**；`?join=隨機碼`（報到連結）才會把玩家列入出席名單，受開關、當天、上限限制，隨機碼只有管理者讀得到。已報到的人在聚會結束後再點報到連結，函式會回 `already`，仍可打開集點卡。
+- **玩家只能透過 `join_gathering` 自己加入出席名單**；`gathering_attendees` 的寫入政策仍只有管理者。
+- **集點是即時計算，不會因為匯入新 CSV 而消失**：`loyalty_day_status` 只用 `gathering_attendees`、`gathering_games`、`gathering_plays`、`game_play_sessions`、`game_ratings`（皆以 `bgg_name` 文字對應，沒有外鍵到 `board_games`），不讀 `board_games`。遊戲被移到垃圾桶或永久刪除，點數不變；但畫面上該遊戲的名稱會退回顯示 `bgg_name`、且找不到「去評分」按鈕。**真正的風險是在 Notion 改 `bggName`**（舊名稱的紀錄不會跟著換）。兌換紀錄永久保留，點數事後變少時只會顯示 ⚠。
 
 ## 開場前先確認
 
