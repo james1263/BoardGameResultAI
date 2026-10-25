@@ -69,7 +69,7 @@ export default function GameCard({
           type="button"
           onClick={() => onOpen(game)}
         >
-          查看規則 <span aria-hidden="true">→</span>
+          詳細資料 <span aria-hidden="true">→</span>
         </button>
       </div>
     </article>
