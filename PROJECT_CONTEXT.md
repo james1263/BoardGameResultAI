@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案交接文件
 
 > 給接手的 AI 閱讀。**請先讀 `QUICKSTART.md`（懶人包），再讀本文件。**
-> 最後更新：2026-10-24（附錄 K 為最新；由 git 歷史與各聊天室版本合併還原；本文第 1～10 節是 2026-10-22 晚的完整版，**後面的附錄 A～K 較新，與本文衝突時以附錄為準，越後面越新**）
+> 最後更新：2026-10-25（附錄 O 為最新；本文第 1～10 節是 2026-10-22 的底稿，**後面的附錄 A～O 較新，與本文衝突時以附錄為準，越後面越新**）。2026-10-25 做過一次精簡：移除已作廢的「待測／尚未做」狀態與重複表格，內容與決定不變。
 
 ## 1. 專案簡介
 
@@ -17,173 +17,132 @@
 
 - 前端：React + TypeScript + Vite。
 - **後端：Supabase（免費方案，區域首爾 ap-northeast-2）**，提供資料庫、登入、檔案儲存（Storage）。專案 ID `hgeuockbjrzayfdylavq`，Project URL `https://hgeuockbjrzayfdylavq.supabase.co`（給前端的是**根網址**，不要加 `/rest/v1/`）。Publishable key 在 Supabase 後台 Project Settings → API Keys（公開用的 key，可放前端）。**Secret key / service_role 絕對不能放進網站或貼給任何人，目前完全沒用到。**
-- 部署：GitHub 倉庫連到 Vercel，**正式分支是 `master`**，push 後自動建置。其他分支（例如 `wip-cover-upload`）只會產生預覽部署，不影響正式網站。
+- 部署：GitHub 倉庫連到 Vercel，**正式分支是 `master`**，push 後自動建置。其他分支只會產生預覽部署，不影響正式網站。
 - **環境變數**：本機放 `.env.local`（已加入 `.gitignore`，**不在 Git 裡**），變數名 `VITE_SUPABASE_URL`、`VITE_SUPABASE_PUBLISHABLE_KEY`。Vercel 後台 Environment Variables 也已設定，Environments 為 Production、Preview、Development。
   - **地雷**：Vercel 對 `VITE_` 開頭的變數不允許存成 Secret，必須選 **Config**（公開用，沒問題）。
   - 環境變數只在「新的部署」才生效；變數名稱錯一個字母，網站會悄悄退回本機備用資料，很難發現。
-- 主要檔案：
-  - `src/App.tsx`：`App`（向 Supabase 讀資料、失敗時退回本機資料）→ `Library`（主畫面，接收 `boardGames` 作為 props）；另有 `CoverImage`、`getCoverSources`、`rowToGame`（snake_case → camelCase）、`fetchBoardGames`。`Library` 內使用 `useSession` 判斷是否登入，詳細視窗登入後顯示「上傳／更換封面」。
-  - `src/AdminPanel.tsx`：頁尾的管理者登入／登出，登入後多一個「匯入 CSV」視窗：選檔 → 預覽（新增／更新、新增名單、將被刪除名單、封面對應結果）→「確認匯入」（upsert、上傳封面、刪除 CSV 沒有的遊戲與雲端封面）。含 `toRow`（前端欄位 → 資料庫欄位）與 `matchCovers`（依檔名模糊對應封面）。
-  - `src/GameDocuments.tsx`：遊戲詳細視窗裡的規則書／FAQ 區塊（props：`bggName`、`isAdmin`）。讀取 `game_documents`，顯示外部連結（只接受 http(s) 網址）；登入後有新增表單與刪除按鈕。`App.tsx` 在詳細視窗的 `<div className="notice">` 上方放入，並以 `key={selectedGame.bggName}` 重置狀態。
+- 主要檔案（拆檔後的完整結構見附錄 I-1、QUICKSTART）：
+  - `src/App.tsx`：`App`（向 Supabase 讀資料、失敗時退回本機資料）→ `Library`（主畫面）。
+  - `src/AdminPanel.tsx`：頁尾的管理者登入／登出，登入後多一個「匯入 CSV」視窗：選檔 → 預覽 →「確認匯入」。含 `toRow`（前端欄位 → 資料庫欄位）與 `matchCovers`（依檔名模糊對應封面）。行為見附錄 L-1。
+  - `src/GameDocuments.tsx`：詳細視窗「規則」分頁的規則書／FAQ 等連結（只接受 http(s) 網址）；管理者可新增與刪除。
   - `src/lib/supabase.ts`：建立 Supabase 連線。
-  - `src/lib/parseCsv.ts`：在瀏覽器解析 CSV（移植自 `generate_boardgames.py`：欄位檢查、`cleanText`、數字、類型切陣列、人數轉數字陣列、`makeCoverSlug`、檢查 `bggName`／`coverSlug` 不重複）。`makeCoverSlug` 已 `export`（`AdminPanel.tsx` 用來比對封面檔名）。
-  - `src/lib/useSession.ts`：React hook，回傳目前登入的 session（沒登入為 `null`）。
+  - `src/lib/parseCsv.ts`：在瀏覽器解析 CSV（欄位檢查、`cleanText`、數字、類型切陣列、人數轉數字陣列、`makeCoverSlug`、檢查 `bggName`／`coverSlug` 不重複）。`makeCoverSlug` 已 `export`。
+  - `src/lib/useSession.ts`：回傳目前登入的 session（沒登入為 `null`）。
   - `src/lib/uploadCover.ts`：把圖片縮成寬度最多 600px、轉成 webp（品質 0.85）後，以 `{coverSlug}.webp` 上傳到 `covers` bucket（`upsert: true`，`cacheControl: 60`）。
-  - `src/App.css`：樣式（含檢視模式、管理者登入）。
   - `src/data/boardGames.generated.ts`：本機備用資料與 `BoardGame` 型別（**不要手動改、不要刪**，型別仍被其他檔案匯入）。
-  - `generate_boardgames.py`、`make_supabase_import.py`：舊的資料更新流程，**已被網站匯入取代，僅留作備份與規則參考**（不在 Git 裡）。
+  - `generate_boardgames.py`、`make_supabase_import.py`：舊的資料更新流程，**已被網站匯入取代，僅留作備份**（不在 Git 裡）。
   - `public/covers/`：舊的封面圖（108 個檔，已在 Git 裡），繼續當備援。
-- 指令（PowerShell 用 `npm.cmd`）：`npm.cmd run dev`（`http://localhost:5173/`，改 `.env.local` 後要重開；終端機關掉或按 `Ctrl + C` 後 `localhost:5173` 會連不上，重新執行即可）、`npm.cmd run build`（成功顯示 `✓ built in ...`；「chunks larger than 500 kB」是提醒，可忽略）。
-- **目前的資料更新流程**：Notion → 匯出 CSV → 網站頁尾「管理者登入」→「匯入 CSV」→ 看預覽（尤其是紅字「將被刪除」名單）→「確認匯入」。**CSV 沒有的遊戲會被刪除。**不需要 push（資料在雲端）。
-- **push 注意**：不要用 `git add .`。只加入需要的檔案：`.gitignore`、`package.json`、`package-lock.json`、`src`、`public`、兩份交接文件。**不要上傳**：`boardgame_source.zip`、`supabase_import.sql`、`make_supabase_import.py`、`boardgames.csv`、`categories_check.txt`、`covers_needed.txt`、`list_categories.py`、`generate_boardgames.backup.py`、`.env.local`。
-- Windows 的 `LF will be replaced by CRLF` 警告可忽略。PowerShell 用 `Get-Content` 顯示 UTF-8 中文會變亂碼，只是終端機顯示問題，檔案本身正常。
+- 指令（PowerShell 用 `npm.cmd`）：`npm.cmd run dev`（`http://localhost:5173/`，改 `.env.local` 後要重開）、`npm.cmd run build`（成功顯示 `✓ built in ...`；「chunks larger than 500 kB」是提醒，可忽略）。
+- **目前的資料更新流程**：Notion → 匯出 CSV → 網站頁尾「管理者登入」→「匯入 CSV」→ 看預覽 →「確認匯入」。**CSV 沒有的遊戲會被移到垃圾桶（不再刪除，見附錄 L-1）。**不需要 push（資料在雲端）。
+- **push 注意**：不要用 `git add .`，逐檔 add。**不要上傳**：`boardgame_source.zip`、`supabase_import.sql`、`make_supabase_import.py`、`boardgames.csv`、`categories_check.txt`、`covers_needed.txt`、`list_categories.py`、`generate_boardgames.backup.py`、`.env.local`、`App.css.bak`、兩份交接文件。
+- Windows 的 `LF will be replaced by CRLF` 警告可忽略。PowerShell 用 `Get-Content` 顯示 UTF-8 中文會變亂碼，只是終端機顯示問題。
 
 ## 3. 資料庫、儲存與權限（Supabase）
 
 資料表 `public.board_games`（主鍵 `bgg_name`，`cover_slug` 唯一）。欄位為前端 `BoardGame` 型別的 snake_case 版本：
 
-`bgg_name, name, cover_slug, link_bgg, link_rulebook_zh, link_rulebook_en, link_faq, category(text[]), bgg_score, bgg_difficulty, bgg_time, min_players, max_players, best_players(int[]), recommend_players(int[]), ranking_engine, classic_game_ranking, score_rank, player_impact_ranking, change_ranking, unique_ranking, communication_ranking, like_degree, change_degree, communication_degree, player_impact_degree, unique_degree, complexity_degree, like_emoji, speed_emoji, communication_emoji, unique_emoji, player_impact_emoji, complexity_emoji, change_emoji, created_at`
+`bgg_name, name, cover_slug, link_bgg, link_rulebook_zh, link_rulebook_en, link_faq, category(text[]), bgg_score, bgg_difficulty, bgg_time, min_players, max_players, best_players(int[]), recommend_players(int[]), ranking_engine, classic_game_ranking, score_rank, player_impact_ranking, change_ranking, unique_ranking, communication_ranking, like_degree, change_degree, communication_degree, player_impact_degree, unique_degree, complexity_degree, like_emoji, speed_emoji, communication_emoji, unique_emoji, player_impact_emoji, complexity_emoji, change_emoji, created_at`，之後新增 `removed_at`、`removed_reason`、`description`（見附錄 K、M、N）。
 
-- 缺值為 `NULL`（數字）或空字串（文字）。**主鍵用 `bgg_name` 而不是 `id`**，因為 `id` 會隨 CSV 順序位移；前端的 `id` 只是讀取後依排序給的流水號，**不可用來對應圖片或使用者資料**。
-- **資料表 RLS 已啟用，共 4 條規則**：SELECT（`anon`、`authenticated` 都可讀）；INSERT／UPDATE／DELETE 只給 `authenticated`。
-- **Storage**：公開 bucket `covers`（任何人可讀圖），並已建立 4 條 `storage.objects` 規則：SELECT 給 `anon`、`authenticated`；INSERT／UPDATE／DELETE 只給 `authenticated`（限 `bucket_id = 'covers'`）。檔名為 `{coverSlug}.webp`。
-- **`public.game_documents`（規則書／FAQ 等文件，一款遊戲可有多份）**：`id`(uuid)、`bgg_name`（外鍵 → `board_games.bgg_name`，`on delete cascade on update cascade`）、`doc_type`（`rulebook`／`faq`／`errata`／`other`）、`language`（`zh`／`en`／`other`）、`title`、`source_type`（`external`／`upload`）、`external_url`、`storage_path`、`ai_indexed`(boolean，預設 false)、`created_at`。檢查條件：external 必須有網址、upload 必須有路徑。RLS 與 `board_games` 相同（所有人可讀，只有 `authenticated` 可新增／修改／刪除）。**目前只使用 external**；`board_games` 的 `link_rulebook_zh/en`、`link_faq` 欄位保留但不再使用。刪除遊戲會連帶刪除文件資料列，但**不會刪 Storage 檔案**（日後做上傳時要處理）。
-- **管理者帳號**：已在 Authentication → Users 手動建立 1 個帳號（Auto Confirm），**已關閉「Allow new users to sign up」**。因此目前「已登入者 = 使用者本人」，寫入規則才安全。
-- ⚠️ **未來若開放朋友登入（留言、報名、想玩清單），他們也會是 `authenticated`，就能改桌遊資料、規則書連結與封面。** 屆時必須把 `board_games`、`game_documents` 與 Storage 的 INSERT／UPDATE／DELETE 規則都改成只認管理者（例如比對管理者的 user id 或另建角色表）。
-- ⚠️ 免費方案：專案閒置一週會自動暫停（資料不會消失，但暫停期間網站讀不到資料，需到後台恢復）。檔案儲存免費額度約 1 GB（各來源寫 500 MB～1 GB，請以官方頁面為準）；封面已壓縮，但之後存規則書 PDF 要注意。
+- 缺值為 `NULL`（數字）或空字串（文字）。**主鍵用 `bgg_name` 而不是 `id`**，因為 `id` 會隨 CSV 順序位移；前端的 `id` 只是流水號，**不可用來對應圖片或使用者資料**。
+- **RLS 已啟用**：SELECT 所有人可讀；INSERT／UPDATE／DELETE 只給管理者（`is_admin()`，見附錄 G、I-2）。
+- **Storage**：公開 bucket `covers`（任何人可讀圖），寫入規則只認管理者。檔名為 `{coverSlug}.webp`（必須是 ASCII，見 M-4）。
+- **`public.game_documents`（規則書／FAQ 等文件，一款遊戲可有多份）**：`id`(uuid)、`bgg_name`（外鍵 → `board_games.bgg_name`，`on delete cascade on update cascade`）、`doc_type`（現有 `rulebook`／`faq`／`errata`／`intro`／`video`／`other`，見 N-4）、`language`（`zh`／`en`／`other`）、`title`、`source_type`（`external`／`upload`）、`external_url`、`storage_path`、`ai_indexed`(boolean，預設 false)、`created_at`。檢查條件：external 必須有網址、upload 必須有路徑。**目前只使用 external**；`board_games` 的 `link_rulebook_zh/en`、`link_faq` 欄位保留但不再使用。刪除遊戲會連帶刪除文件資料列，但**不會刪 Storage 檔案**（日後做上傳時要處理）。
+- **管理者帳號**：Authentication → Users 手動建立的 1 個帳號；管理者身分以 `admin_users` ＋ `is_admin()` 判斷，**登入不等於管理者**。「Allow new users to sign up」目前**已開啟**（玩家用 Google 登入），所以所有寫入政策必須只認管理者或本人。
+- ⚠️ 免費方案：專案閒置一週會自動暫停（資料不會消失，需到後台恢復）。檔案儲存免費額度約 1 GB（請以官方頁面為準）；之後存規則書 PDF 要注意。
 
 ## 4. 前端資料欄位（`BoardGame` 型別）
 
 - `id`、`name`（中文名，來自 CSV「屬性」）、`bggName`、`slug`、`coverSlug`、`links{bgg,rulebookZh,rulebookEn,faq}`、`category[]`、`bggScore/bggDifficulty/bggTime`、`minPlayers/maxPlayers`、`bestPlayers/recommendPlayers`（兩者獨立，不要合併）、`rankingEngine`、`classicGameRanking`（前端稱「常玩遊戲排名」，CSV 欄位「老遊戲想玩綜合評分」）、`scoreRank`（「綜合分數排名」，直接用 CSV 的「分數_排名」）、四個其他排名（保留但**不排序、不顯示**）、七個 `*Degree`、七個 `*Emoji`（`like/speed/communication/unique/playerImpact/complexity/change`）。
-- CSV 必要欄位（缺任何一個，預覽會直接報錯、不會寫入）：`屬性`、`bggName`、`類型`、`bgg網站`、`BGG分數`、`BGG時間`、`BGG難度`、`Ranking engine`、`分數_排名`、`人數上限`、`人數下限`、`推薦人數`、`最佳人數`、`喜歡度`、`快速性`、`溝通性`、`獨特性`、`玩家影響性`、`複雜性`、`變化性`。欄位順序不重要、多的欄位會被忽略；**檔名不重要**。
+- CSV 必要欄位（缺任何一個，預覽會直接報錯、不會寫入）：`屬性`、`bggName`、`類型`、`bgg網站`、`BGG分數`、`BGG時間`、`BGG難度`、`Ranking engine`、`分數_排名`、`人數上限`、`人數下限`、`推薦人數`、`最佳人數`、`喜歡度`、`快速性`、`溝通性`、`獨特性`、`玩家影響性`、`複雜性`、`變化性`。欄位順序不重要、多的欄位會被忽略；**檔名不重要**。選填：`簡介`（見 N-3）。
 - CSV：107 筆、35 欄；「類型」以逗號分隔切成陣列；「墨敵賽」無網路資料，BGG 分數與難度保留 `null`，顯示「未提供」，**不要編造**。
-- 類型共 49 種：大項 3 個（策略、派對、陣營），其餘為小項。類型清單由資料自動整理，新增類型只要重新匯入即可自動出現（需重新整理網頁）。
+- 類型共 49 種：大項 3 個（策略、派對、陣營），其餘為小項。類型清單由資料自動整理（只有三個大項按鈕是寫死的）。
 - **不要揭露「綜合分數排名」的計算方式**（Notion 中由數個排名相加），也不要在前端重算。
-- **封面圖**：`coverSlug` 由 `bggName` 轉換（NFKD、小寫、去重音、非字母數字底線換 `-`、去頭尾 `-`）。顯示順序：Supabase Storage `{coverSlug}.webp`（上傳後網址加 `?v=` 版本參數以立即換圖）→ `public/covers/{coverSlug}.webp|jpg|png` → 🎲。所以可以慢慢補圖。Console 裡的大量 404 是正常的。
+- **封面圖**：`coverSlug` 由 `bggName` 轉換（見 M-4 的 ASCII 安全版）。顯示順序：Supabase Storage `{coverSlug}.webp`（上傳後網址加 `?v=` 版本參數以立即換圖）→ `public/covers/{coverSlug}.webp|jpg|png` → 🎲。Console 裡的大量 404 是正常的。
 
-## 5. 目前已完成的功能
+## 5. 功能現況（細節見各附錄）
 
-**已實測：**
-- 搜尋、篩選抽屜（難度、最佳／推薦人數、遊戲時間、類型）。類型：三個大項按鈕 + 可搜尋的「更多類型」，**多選為 AND**。
-- 缺資料提示、排序（Ranking engine、常玩遊戲排名、綜合分數排名、名稱、BGG 分數／難度／時間、最佳／推薦人數；升降冪；重設排序，缺值固定排最後）。
-- 卡片與**刻意精簡的詳細視窗**（BGG 分數、封面、名稱、BGG 連結、七項 Emoji、開發中提示）。**使用者明確不要**再放排名、人數、類型、時間、難度。
-- 檢視模式切換：清單 `list`、一排 4 `grid-4`、一排 9 `grid-9`，存 `localStorage`（key `boardgame-view-mode`）。清單檢視實際畫面使用者**尚未回報截圖**；「代辦清單」被當成首頁桌遊列表（使用者未反對）。
-- 資料來源為 Supabase（讀取失敗退回本機資料）。
-- **管理者登入／登出**（頁尾）：已實測並 push。
-- **匯入 CSV**：預覽（新增、更新、新增名單、將被刪除名單）已實測；「確認匯入」（以 `bgg_name` upsert，匯入前有 `window.confirm`）已實測成功。已移除原本的「前 3 款檢查」。
-- **詳細視窗「上傳／更換封面」**（登入後才出現）：已實測成功，圖片自動壓縮成 webp 上傳，上傳後卡片與視窗立即換圖。
-
-**已實測並上線（2026-10-22，分支 `wip-cover-upload` 已合併進 `master`）：**
-- **匯入 CSV 時附封面圖**：預覽可多選圖片，檔名不必和 `bggName` 完全相同，英文或中文名皆可。比對順序（`matchCovers`）：完全相同的封面代號 → 去掉括號後相同／中文名相同 → 名稱開頭相同；同時符合多款則略過並提醒使用者把檔名寫完整。預覽列出「檔名 → 遊戲」，找不到對應的圖片只留在瀏覽器、不會上傳。
-- **CSV 沒有的遊戲會被刪除**：預覽以紅字列名單，確認視窗再列一次，一次刪超過 5 款需輸入「刪除」；刪除遊戲時一併刪除 Storage 的 `{cover_slug}.webp`（本次 CSV 仍使用的封面代號除外）。順序為 upsert → 上傳封面 → 刪除。完成訊息會回報上傳張數、刪除遊戲數與封面數、失敗項目。
-- 匯入視窗最大高度 90vh、可捲動。
-
-**規則書／FAQ 連結（已實測並上線）**：詳細視窗顯示該遊戲的文件連結（類型、語言、標題，點擊於新分頁開啟）；沒有時顯示「尚未提供規則書或 FAQ 連結。」；登入後可新增（類型、語言、標題可不填、網址）與刪除連結。訪客只能看。上傳 PDF 與 AI 索引尚未做。
-
-**未 commit 的本機試作（不要 push）**：`src/lib/usePersonalCollection.ts`（hook：`collection`、`getEntry`、`updateEntry`；localStorage key `boardgame-personal-collection`，以 `bggName` 為鍵，內容 `{wantToPlay, played, note}`，三項都沒有內容就刪除該筆），以及 `App.tsx`／`App.css` 裡可能已加入的「MY NOTES」區塊。使用者實測前改變想法（需要全站統計，localStorage 做不到），故暫停；Phase 3（訪客本機＋登入後同步）會再利用它。使用者已決定「備註」先不做。實際狀態請用 `git status` 確認。
+- 搜尋、篩選抽屜（難度、最佳／推薦人數、遊戲時間、類型；類型多選為 AND）、缺資料提示、排序（Ranking engine、常玩遊戲排名、綜合分數排名、名稱、BGG 分數／難度／時間、最佳／推薦人數；升降冪；缺值固定排最後）、檢視模式（清單 `list`、一排 4 `grid-4`、一排 9 `grid-9`，存 `localStorage` 鍵 `boardgame-view-mode`）。
+- 詳細視窗**刻意精簡**：使用者明確不要再放排名、人數、類型、時間、難度。分頁結構見 N-2。
+- 管理者登入／登出、匯入 CSV（含附封面圖，比對順序 `matchCovers`：完全相同的封面代號 → 去括號後相同／中文名相同 → 名稱開頭相同；同時符合多款則略過並提醒）、詳細視窗上傳／更換封面、規則書／FAQ 連結：均已實測上線。
+- 玩家功能（Phase 2～4）、垃圾桶、遊玩紀錄、公開評分、社群統計、排行榜：見附錄。
+- 「代辦清單」被當成首頁桌遊列表（使用者未反對）。
 
 ## 6. 長期願景與優先順序（使用者已排定）
 
-> 近期項目完成前，不要動工以下功能。
-
-- **最重要：AI 規則助手**：使用者上傳中英文規則書 PDF、FAQ PDF、圖示 PDF、規則網站；遇到易錯規則時給提示並**標明出處（哪本、第幾頁）**，找不到可靠依據要明說。**訪客也能問，但不能改設定**；訪客提問會產生 API 費用，要設計每人每日次數限制。需要：PDF 儲存與切段（保留頁碼）、AI 金鑰放後端（不能放前端）、先搜尋再回答。Supabase 可提供儲存與資料庫，AI 呼叫需另外的後端函式。
+- **最重要：AI 規則助手**：使用者上傳中英文規則書 PDF、FAQ PDF、圖示 PDF、規則網站；遇到易錯規則時給提示並**標明出處（哪本、第幾頁）**，找不到可靠依據要明說。**訪客也能問，但不能改設定**；訪客提問會產生 API 費用，要設計每人每日次數限制。需要：PDF 儲存與切段（保留頁碼）、AI 金鑰放後端、先搜尋再回答。Supabase 可提供儲存與資料庫，AI 呼叫需另外的後端函式。
 - **主要**：討論與 FAQ（官方／管理員筆記 vs 玩家留言要能區分）、揪團報名（「想玩」與「報名」不要混為一談）、行事曆與布告欄。
-- **次要**：完整帳號系統、**總遊玩次數記錄**（會影響「常玩遊戲排名」，是否改為自動計算尚未決定）。
+- **次要**：完整帳號系統、總遊玩次數記錄（會影響「常玩遊戲排名」，是否改為自動計算尚未決定）。
 
 ## 6-1. 社群功能規劃（使用者已確認，2026-10-22）
 
 **背景決定**
-- 使用者想要：全站「想玩」每月排行榜（防洗榜、各月份紀錄保留）、公開評分（取代留言板）、集點卡。對象先是使用者的朋友圈，但保留讓其他人加入的可能；不想手動替朋友建帳號，希望註冊簡單。
-- **不採用匿名帳號**：Supabase 匿名使用者的資料庫角色也是 `authenticated`（以 `is_anonymous` 區分），會直接套用目前「所有 authenticated 可寫入」的政策；且清除瀏覽資料就能再建新帳號，無法一人一帳（LINE 做得到是因為綁手機號碼）。匿名帳號能做到的（免註冊、記自己的東西）用 `localStorage` 訪客模式也做得到，更簡單。
-- **採用**：訪客不登入也能瀏覽，並把想玩、已玩、集點存在本機；**登入玩家（Email 免密碼 Magic Link）才能公開評分與參與每月投票**，登入後可換裝置同步。Google 登入列為之後的便利功能。登入不是多一把鑰匙，而是「你的評分與投票才計入社群榜單」。
-- 一人多帳號 Email 驗證無法完全阻止；先靠「每人每款一筆評分／每月一票＋資料庫唯一限制＋RLS」，規模變大再加 CAPTCHA、異常偵測。
-- 容量不是問題（幾個數字和日期很小），要小心的是權限與濫用。
+- 使用者想要：公開評分（取代留言板）、集點卡、全站想玩統計。對象先是使用者的朋友圈，但保留讓其他人加入的可能；不想手動替朋友建帳號，希望註冊簡單。
+- **不採用匿名帳號**：Supabase 匿名使用者的資料庫角色也是 `authenticated`，會套用「所有 authenticated」的政策；且清除瀏覽資料就能再建新帳號，無法一人一帳。匿名帳號能做到的用 `localStorage` 訪客模式也做得到。
+- **採用**：訪客不登入也能瀏覽，並把想玩、已玩存在本機；**登入玩家才能公開評分與計入社群統計**，登入後可換裝置同步。登入方式最後採 **Google**（原規劃 Email Magic Link，見附錄 G）。
+- 一人多帳號無法完全阻止；先靠「每人每款一筆＋資料庫唯一限制＋RLS」，規模變大再加 CAPTCHA、異常偵測。
 
 **階段（一次一階段，前一階段測試完才進下一階段）**
 
-1. **Phase 1｜管理權限與資料安全（最優先）**：確認並重做 `board_games`、`game_documents`、Storage `covers` 的寫入政策，只有管理者可新增／修改／刪除；前端管理功能也只對管理者顯示。注意：前端隱藏不是防護，必須改資料庫政策與 Storage 政策；管理者判斷不能只看「有沒有登入」；不要把 `service_role` 放前端；不要清除或重建現有資料，先檢查現有政策再改，改完確認管理者仍可操作。建議做法（接手 AI 請對照 Supabase 當下文件確認）：`public.admin_users` 表＋`public.is_admin()`（`security definer`、設好 `search_path`），政策使用 `is_admin()`；讀取政策維持 `anon`、`authenticated` 可讀。需要使用者提供管理者帳號的 User UID（Authentication → Users，非密碼）。**完成前不得開放註冊或任何人登入。**
-2. **Phase 2｜Email 免密碼登入**：Supabase Auth Magic Link；玩家資料表（暱稱、公開玩家 ID，不公開 Email 或真實姓名）；管理者身分與玩家身分分開判斷。
-3. **Phase 3｜訪客紀錄與雲端同步**：訪客想玩、已玩、集點存 `localStorage`；首次登入把本機資料合併到雲端，避免重複，衝突時有明確合併規則（待與使用者討論）；個人想玩／已玩預設只有本人可見。
-4. **Phase 4｜公開評分**：六項評分（喜歡度、玩家影響性、溝通性、變化性、獨特性、適合留下來程度；使用者原定 1～5 分）＋整體 1～10 分。每位登入玩家每款遊戲一筆有效評分（唯一限制 `(user_id, bgg_name)`），可修改。公開社群平均與評分人數；評分人數太少時顯示「評分累積中」（門檻建議 5 人，未定）。與使用者自己的 Emoji 評價並排，不與「綜合分數排名」混用。
-5. **Phase 5｜每月想玩排行榜**：與個人「想玩清單」分開，使用者明確投票才計票。唯一限制 `(月份, user_id, bgg_name)`；每位玩家每月票數上限（建議 5，待定）；以不同玩家人數排序，不看點擊次數；各月份榜單保留可回顧；月份以月初日期記錄。
-6. **Phase 6｜集點卡與成就**：依遊玩紀錄（遊玩數量、不同遊戲數、每月挑戰、徽章），集點存資料庫並可追溯；已登入玩家跨裝置保留。與「常玩遊戲排名」（需遊玩次數）的關係尚未決定。
+1. **Phase 1｜管理權限與資料安全** ✅
+2. **Phase 2｜玩家登入與暱稱** ✅（`player_profiles`，暱稱公開、不公開 Email）
+3. **Phase 3｜想玩／已玩／備註與雲端同步** ✅
+4. **Phase 4｜公開評分** ✅（見 M-3、N-1）
+5. **原 Phase 5（每月投票）** 改為「社群統計」✅ 與排行榜（附錄 D、O）
+6. **Phase 6｜集點卡與成就**：依遊玩紀錄與完整評分累積，存資料庫並可追溯；已登入玩家跨裝置保留。與「常玩遊戲排名」的關係尚未決定。
 
-**建議的資料表（僅為構想，目前都不存在）**：`admin_users`、`player_profiles`、`user_game_status`、`game_ratings`、`monthly_want_to_play`，之後再加 `game_play_sessions`、`player_points`、`player_achievements`。每張表都要設計 RLS（個人狀態只有本人可讀寫；社群評分與排行榜公開可讀；不能改別人的資料）。
+**其他設計決定**：不做公開留言板（可日後加選填短評）。評分一律公開，不放進玩家設定。評分項目沿用使用者的用語，不要把「玩家影響性」改名成「玩家互動」。複雜度、快速性是遊戲屬性、不列入評分；運氣成分、教學難易、配件品質等先不加。
 
-**其他設計決定**：不做公開留言板（管理負擔大、使用者判斷不一定有人留）；可日後加選填短評。評分一律公開，不放進玩家設定。評分項目沿用使用者的用語，不要把「玩家影響性」改名成「玩家互動」（意義不同）。複雜度、快速性是遊戲屬性、不是好壞，不列入評分；運氣成分、教學難易、配件品質等先不加，之後視需求做成選填。
+## 7. 路線圖
 
-## 7. 路線圖與下一步
-
-**已完成**：篩選與缺資料、封面圖、檢視模式、後端（Supabase）、資料搬到雲端、單一管理者帳號與寫入權限、管理者登入、網站匯入 CSV（含自動刪除）、封面改存 Storage 並可在網站上傳、匯入時附封面圖、規則書／FAQ 外部連結。
-
-**進行中**：社群功能規劃已確認，尚未動工（見第 6-1 節）。
-
-**接下來（一次做一項）：**
-1. **Phase 1 管理權限與資料安全**（先向使用者要管理者 User UID）。
-2. Phase 2 Email 免密碼登入與玩家暱稱。
-3. Phase 3 訪客本機紀錄與登入後同步。
-4. Phase 4 公開評分。
-5. Phase 5 每月想玩排行榜。
-6. Phase 6 集點卡與成就。
-7. 其餘（順序請與使用者確認）：上傳規則書 PDF（私有 bucket，注意著作權與容量；刪除遊戲時 `on delete cascade` 只刪資料列、不刪 Storage 檔案）、新到貨標示（需 Notion／CSV「入手日期」欄位）、**AI 規則助手（仍是最重要的長期目標）**：PDF 文字擷取、切段並保留頁碼、更新 `ai_indexed`，需先決定支援全部桌遊或先 10～20 款；之後討論／揪團／行事曆。
+**已完成**：上述 Phase 1～4、社群統計、排行榜（程式已提供，待確認）、垃圾桶、遊玩紀錄、詳細視窗分頁、簡介。
+**接下來**：見附錄 O-6（集點卡 → 上傳規則書 PDF → AI 規則助手 RAG；想做清單見附錄 L）。
 
 ## 8. 與使用者合作的規則（重要）
 
-- 使用者是**程式初學者**，用**繁體中文**，請**一次只處理一個步驟**。
-- 提供：明確檔案路徑；**完整可用程式碼，或精準修改位置**（用 `Ctrl + F` 搜尋某段文字）；指令解釋；測試方式。只給「貼在某行下面」的片段容易貼錯；改函式時優先請使用者整個換掉並提醒縮排。
-- **你碰不到使用者的本機檔案**，也收不到 CSV。需要資訊就給 PowerShell 指令請他貼結果，或請他貼截圖。使用者常貼截圖回報。
-- **要改 `App.tsx`、`AdminPanel.tsx` 前，請使用者貼出目前版本**（這份文件記載的結構可能已過期）。
+- 使用者是**程式初學者**，用**繁體中文**。（2026-10-23 起使用者明說：預設會照步驟執行，可一次給多個步驟；他回「好」就代表完成；遇到問題他會自己停下來問。舊版「一次一個步驟」已作廢。）
+- 提供：明確檔案路徑；**完整可用程式碼，或精準修改位置**（用 `Ctrl + F` 搜尋）；指令解釋；測試方式。量大時給整份檔案或請他「整段刪掉換成」。
+- **每個指令都標清楚貼在哪裡**（VS Code 終端機或 Supabase SQL Editor）。
+- **你碰不到使用者的本機檔案**，也收不到 CSV。需要資訊就給 PowerShell／SQL 指令請他貼結果，或請他貼截圖。
+- **大改 `App.tsx`、`AdminPanel.tsx`、`PlayerPanel.tsx`、`GameDocuments.tsx`、`src/components/*` 前，請使用者貼出目前版本**；判斷現況前先用 `git status`／`git log` 確認，不要憑貼來的內容下結論。
 - 每階段改完用 `npm.cmd run build`，再實測畫面。build 成功不等於畫面正確。
-- 不要破壞現有功能與 107 款資料；已正常運作的功能不要隨意改動。
-- **不要要求使用者貼出密碼、Secret key、service_role key、資料庫密碼。**
-- 近期項目完成前，不要加入 AI 功能、留言、揪團。
+- 不要破壞現有功能與 107 款資料。**不要要求使用者貼出密碼、Secret key、service_role key、資料庫密碼。**
+- 影響資料、隱私的設計決策，先提方案並列「建議預設值」，等他回「照建議」再動工。
 
 ## 9. 待確認事項
 
-- CSV 匯入的刪除行為已依使用者要求實作（CSV 沒有的遊戲與其雲端封面會被刪除，見第 5 節）。地雷：在 Notion 改 `bggName` 會讓舊的被刪（含封面）、新的當新遊戲（封面要重傳）；新舊 `cover_slug` 相同會撞唯一限制；拿到不完整的 CSV 會刪掉其他遊戲，匯入前務必看紅字名單。若日後想改成「預設不刪」或加勾選，可再調整。
-- 規則書 PDF 是否要上傳、是否用私有 bucket、著作權處理；AI 規則助手要支援全部桌遊還是先 10～20 款、後端與模型選擇、訪客提問次數限制方式。
+- 規則書 PDF 是否上傳、私有 bucket、著作權處理；AI 規則助手支援全部桌遊或先 10～20 款、後端與模型選擇、訪客提問次數限制方式。
 - 清單檢視、9 個一排的實際外觀是否滿意（清單檢視尚無截圖）。
-- 「代辦清單」是否真的指首頁桌遊列表。
-- 規則書檔案要放哪裡、AI 規則助手的後端與模型選擇、訪客提問次數限制方式。
-- 總遊玩次數記錄完成後，常玩遊戲排名是否改為自動計算。
-- 開放朋友登入時，要重做資料表與 Storage 的寫入權限（見第 3 節）。
+- 總遊玩次數完成後，常玩遊戲排名是否改為自動計算。
 - `陣營` 與 `策略` 可同時出現在同一款遊戲，目前允許。
-- 每月想玩的每人票數上限（建議 5）、評分量表（六項 1～5、整體 1～10）、評分人數門檻（建議 5）、訪客資料與雲端資料的合併規則。
-- Google 登入是否做、做的時機。
-- 帳號刪除與資料保留政策（登入玩家的 Email 屬個人資料，需清楚處理）。
-- 上傳到 Git 的兩份交接文件與試作檔案目前的 commit 狀態需用 `git status` 確認。
+- 帳號刪除與資料保留政策（目前要管理者在 Supabase 手動處理）。
+- `makeCoverSlug` 新版是否已套用並重新匯入（見 M-4）。
+- 排序功能要排什麼（使用者說之後再想）。
 
-## 10. 多台電腦作業（外面的電腦／家裡的電腦）
+## 10. 多台電腦作業
 
-**哪些東西會自動同步（不用搬）**：Supabase 的資料表、登入帳號、Storage 封面（都在雲端）；GitHub 上的程式碼與 `public/covers/`。
-
-**哪些東西不會同步（要自己處理）**：`.env.local`（要重建）、`boardgames.csv`（從 Notion 重新匯出）、舊的 Python 腳本與 `supabase_import.sql` 等（已不需要）、**沒有 commit／push 的修改**。
+**自動同步**：Supabase 的資料表、登入帳號、Storage 封面；GitHub 上的程式碼與 `public/covers/`。
+**不會同步**：`.env.local`（要重建）、`boardgames.csv`（從 Notion 重新匯出）、**沒有 commit／push 的修改**。
 
 **在新電腦第一次設定：**
-1. 安裝 Git、Node.js（LTS 版）、VS Code（Python 已不需要）。第一次用 Git 需設定姓名與 email（`git config --global user.name "..."`、`git config --global user.email "..."`），push 時會跳出 GitHub 登入視窗。
-2. 在舊電腦的專案資料夾執行 `git remote get-url origin` 取得倉庫網址（或到 GitHub 倉庫頁面 Code → HTTPS）。
-3. 在新電腦選一個資料夾，執行 `git clone <倉庫網址>`，然後 `cd` 進專案資料夾。
-4. 確認在 `master` 分支（`git branch`）。`wip-cover-upload` 已合併，可忽略。
-5. 執行 `npm.cmd install`。
-6. 在專案根目錄建立 `.env.local`（純文字，內容兩行，不加引號）：
+1. 安裝 Git、Node.js（LTS 版）、VS Code。第一次用 Git 需設定姓名與 email（`git config --global user.name "..."`、`git config --global user.email "..."`），push 時會跳出 GitHub 登入視窗。
+2. 在舊電腦專案資料夾執行 `git remote get-url origin` 取得倉庫網址。
+3. 新電腦選一個資料夾，執行 `git clone <倉庫網址>`，然後 `cd` 進專案資料夾；確認在 `master` 分支。
+4. 執行 `npm.cmd install`。
+5. 專案根目錄建立 `.env.local`（純文字，兩行，不加引號）：
    ```
    VITE_SUPABASE_URL=https://hgeuockbjrzayfdylavq.supabase.co
    VITE_SUPABASE_PUBLISHABLE_KEY=（從 Supabase 後台 Project Settings → API Keys 複製 Publishable key）
    ```
    **只能用 Publishable key，絕對不要用 Secret／service_role key。**
-7. 執行 `npm.cmd run dev`，打開 `http://localhost:5173/`，確認顯示 107 款、能登入管理者。
+6. 執行 `npm.cmd run dev`，打開 `http://localhost:5173/`，確認顯示 107 款、能登入管理者。
 
-**日常習慣：**
-- 開始工作前先 `git pull`；結束前 `git add`（指定檔案）→ `git commit` → `git push`，下一台電腦才拿得到。
-- 不要兩台電腦同時改同一批檔案；未完成的工作用分支（如 `wip-cover-upload`）存，測試成功再合併進 `master`。
-- 新電腦上的專案路徑可能不是 `D:\BoardGameResultAI`，指令請以實際路徑為準。
-
+**日常習慣：**開始前先 `git pull`；結束前 `git add`（指定檔案）→ `git commit` → `git push`。不要兩台電腦同時改同一批檔案；未完成的工作用分支存。
 
 ---
 
 ## 附錄｜Phase 3 之後的紀錄（2026-10-22）
 
-> 這一章是貼在 `PROJECT_CONTEXT.md` 最底部的新增內容，記錄 Phase 3 與之後的設計、資料庫結構與決定。上面舊章節若與這裡衝突，以這裡為準。
+> 記錄 Phase 3 的設計、資料庫結構與決定。上面舊章節若與這裡衝突，以這裡為準。
 
 ### A. 資料庫：`public.user_game_status`
 
@@ -197,276 +156,169 @@
 | `updated_at` | timestamptz | 前端每次寫入時更新 |
 | `want_first_at` | timestamptz | 第一次勾「想玩」的時間，**由觸發器寫入、之後不變** |
 | `played_first_at` | timestamptz | 第一次勾「已玩」的時間，同上 |
-| `play_count` | integer，預設 0，0～999 | 遊玩次數，**尚無畫面使用** |
+| `play_count` | integer，預設 0，0～999 | 沒有日期的遊玩次數（見 M-2） |
 
 - 主鍵 `(user_id, bgg_name)`，重試同步不會產生重複資料。
-- RLS 已開啟；`select`／`insert`／`update`／`delete` 四條政策都是 `user_id = (select auth.uid())`，角色 `authenticated`；`anon` 的權限已撤銷。
-- 觸發器 `user_game_status_set_times`（`before insert or update`，函式 `public.set_user_game_status_times()`，`set search_path = ''`）：新增時依勾選狀態寫入首次時間；更新時 `coalesce(old.值, 新勾選才寫 now())`，所以**取消再重新勾選不會改變首次時間**，前端傳進來的值也會被蓋掉。
-- 因此取消勾選時**不刪除那一列**（才能保住首次時間）；前端讀取時略過「想玩、已玩、備註全空」的列。
-- 現有紀錄建立觸發器前，已用 `updated_at` 補上首次時間（`Rising Sun` 的兩個時間因此等於 `updated_at`，屬預期）。
-- 驗證過：政策 4 條齊全、`anon` 不在權限清單、測試列的首次時間早於 `updated_at`（觸發器有運作）。
+- RLS 四條政策都是 `user_id = (select auth.uid())`，角色 `authenticated`；`anon` 無權限。
+- 觸發器 `user_game_status_set_times`（`before insert or update`，函式 `public.set_user_game_status_times()`，`set search_path = ''`）：新增時依勾選狀態寫入首次時間；更新時 `coalesce(old.值, 新勾選才寫 now())`，所以**取消再重新勾選不會改變首次時間**，前端傳進來的值會被蓋掉。
+- 因此取消勾選時**不刪除那一列**；前端讀取時略過「想玩、已玩、備註全空」的列。
+- 建立觸發器前的舊紀錄已用 `updated_at` 補上首次時間（`Rising Sun` 的兩個時間因此等於 `updated_at`，屬預期）。
 
 ### B. 前端結構（Phase 3 之後）
 
-- `src/lib/usePersonalCollection.ts`（已 push）：
+- `src/lib/usePersonalCollection.ts`：
   - 型別 `PersonalEntry { wantToPlay, played, note }`、`PersonalCollection = Record<bggName, PersonalEntry>`。
   - 訪客：`localStorage` 鍵 `boardgame-personal-collection`；登入後以雲端為準並**不再寫 localStorage**。
   - 回傳：`entries`、`getEntry`、`updateEntry`、`isLoggedIn`、`canEdit`、`status`（`guest`／`loading`／`ready`／`error`）、`errorMessage`、`clearError`、`reload`、`needsMerge`、`localCount`、`mergeStatus`、`mergeLocalIntoCloud`、`declineMerge`。
-  - 登入後更新採「先改畫面、再寫雲端，失敗還原並顯示提示」；雲端讀取完成前不能改（避免蓋掉資料）。
+  - 登入後更新採「先改畫面、再寫雲端，失敗還原並顯示提示」；雲端讀取完成前不能改。
   - 首次合併規則：兩邊聯集；想玩／已玩任一邊有勾就有；備註雲端已有就保留雲端；雲端寫入成功才清空本機；失敗保留本機並可重試；「不加入」只在該次工作階段有效。
-- `src/App.tsx`：`StatusButtons`（封面 `overlay` 與詳細視窗 `inline` 兩種版型）、`PersonalNote`（離開欄位才儲存）、合併視窗（沿用 `modal-backdrop`／`admin-modal`）、錯誤提示條 `personal-toast`；`Library` 內 `const personal = usePersonalCollection()`。
-- `src/MyList.tsx`：「我的清單」右側抽屜（`mylist-*` 樣式，z-index 1100／1200）；用 `renderCover` 屬性借用 `App.tsx` 的 `CoverImage`，避免循環匯入。
-- 樣式都附加在 `src/App.css` 最底部，依功能分區註解（想玩／已玩、我的清單、我的紀錄篩選、新遊戲標示）。
+- `StatusButtons`（封面 `overlay` 與詳細視窗 `inline` 兩種版型）、`PersonalNote`（離開欄位才儲存）、合併視窗 `MergeDialog`、錯誤提示條 `PersonalToast`。
+- `src/MyList.tsx`：右側抽屜（`mylist-*` 樣式，z-index 1100／1200），用 `renderCover` 屬性借用 `CoverImage`，避免循環匯入。畫面名稱已改「我的桌遊」（O-3）。
 
-### C. 進行中的兩項（程式碼已提供，狀態待確認）
+### C. 「我的紀錄」篩選與新遊戲標示（已完成）
 
-**「我的紀錄」篩選**
-- `type MineGroup = 'want' | 'untouched' | 'played'`；分組函式 `getMineGroup(entry)`：有想玩→`want`；否則有已玩→`played`；否則→`untouched`（三區不重複）。
-- `Library` 狀態：`groupByMine`（是否顯示區塊標題）、`hiddenGroups`（被眼睛隱藏的區塊）；`displayedItems`（`header`／`game` 混合陣列）、`displayedGameCount`。
-- 順序：搜尋與既有篩選 → 排序（`filteredGames`）→ 依眼睛隱藏 → 若開啟分區則分組（空區不顯示標題；標題顯示數量；區內沿用原排序）。
-- 篩選按鈕徽章會計入 `groupByMine` 與 `hiddenGroups`；「清除篩選」會一併重設。
-- 抽屜新增 `mine-filter` 區（三顆眼睛按鈕＋「依我的紀錄分區顯示」勾選）；主畫面卡片迴圈由 `filteredGames.map` 改為 `displayedItems.map`。
+- `type MineGroup = 'want' | 'untouched' | 'played'`；`getMineGroup(entry)`：有想玩→`want`；否則有已玩→`played`；否則→`untouched`。`Library` 狀態 `groupByMine`、`hiddenGroups`；`displayedItems`（`header`／`game` 混合陣列）、`displayedGameCount`。順序：搜尋與篩選 → 排序 → 依眼睛隱藏 → 若開啟分區則分組。篩選抽屜 `mine-filter` 區（三顆眼睛按鈕＋「依我的紀錄分區顯示」）；篩選徽章與「清除篩選」都會計入。
+- 新遊戲標示：`board_games.created_at` 在 30 天內（`NEW_GAME_DAYS = 30`、`isNewGame()`）顯示橘色外框＋NEW 標籤。**現有遊戲的 `created_at` 要先補成 `2026-09-01T00:00:00+00`**，否則全部會變「新」。
 
-**新遊戲標示**
-- `board_games.created_at`（timestamptz）已存在；現有遊戲要先補成 `2026-09-01T00:00:00+00`，否則 30 天內全部會變成「新」。
-- `App.tsx`：`LibraryGame = BoardGame & { createdAt?: string | null }`；`rowToGame` 帶入 `createdAt: row.created_at`；`NEW_GAME_DAYS = 30`；`isNewGame()`；卡片加 `is-new` class 與 `new-badge`。
-- 樣式：橘色外框（`#f0a22e`）＋左下角 NEW 標籤，9 個一排與清單檢視縮小。
+### D. 社群統計（已完成，見 O-1）
 
-### D. 已決定、尚未實作的功能
-
-- **社群統計**（取代原 Phase 5 每月投票）：直接用大家的想玩／已玩清單；顯示每款遊戲「目前人數」與月／季／年「期間新增」（以 `want_first_at`／`played_first_at` 計算，每人每款只算第一次）；只顯示彙總人數、不公開個別清單；訪客不計入；以 `security definer` 資料庫函式回傳彙總數字，不開放別人的列；人數少可被推測，已寫進 `privacy.html`。
-- **遊玩次數**：欄位 `play_count` 已建；先做簡單計數器；若要「每月玩幾次」，另建遊玩紀錄表（日期事後補不回來）。
-- **評分**：Phase 4，每人每款一筆、可修改；開始前確認量表與人數門檻（建議 5）。
-- **不加「讚」按鈕**（建議；使用者未反對）。
+- 直接用大家的想玩／已玩清單；每款顯示「目前人數」與月／季／年「期間新增」（以 `want_first_at`／`played_first_at` 計算，每人每款只算第一次）；只顯示彙總人數；訪客不計入；以 `security definer` 資料庫函式回傳彙總數字，不開放別人的列；人數少可被推測，已寫進 `privacy.html`。
+- **不加「讚」按鈕**（♥ 已代表想玩，且與評分「喜歡度」重複）。
 
 ### E. Git 事故紀錄（避免重演）
 
-- 2026-10-22：使用者在 TortoiseGit 以 Amend 方式「修改上一次提交」，把含 `App.tsx`／`App.css`／`usePersonalCollection.ts` 的提交（`6c24208`，已在 `origin/master`）換成只含兩份文件的提交（`e200fae`），造成 `master` 與 `origin/master` 分岔。
-- 修法：先備份檔案到 `$HOME\backup-mylist`、`git branch backup-e200fae e200fae`，再 `git reset --mixed origin/master`（不動工作資料夾），之後逐檔 add 提交。
+- 2026-10-22：使用者在 TortoiseGit 以 Amend 修改上一次提交，把含程式的提交換成只含文件的提交，造成 `master` 與 `origin/master` 分岔。修法：備份檔案與分支後 `git reset --mixed origin/master`（不動工作資料夾），再逐檔 add 提交。
 - 之後請使用者用命令列 commit，不要在 TortoiseGit 使用 Amend。
-
-### F. 測試紀錄（Phase 3）
-
-- 資料庫：政策與權限查詢通過。
-- 線上：訪客勾選、備註、登入後合併、Table Editor 對列數、重新整理後保留、登出後消失、換裝置同步，使用者回報通過。
-- 「不加入」、離線同步失敗與重試、換裝置登入：已列出測試步驟，使用者回報通過。
-- 隱私權政策已更新並提交（上線後可再開 `/privacy.html` 確認）。
 
 ---
 
 ## 附錄 G／H｜遺失待補（2026-10-23 還原時註記）
 
-> **這兩節在 git 歷史與所有版本裡都找不到**：附錄 I 開頭寫「接在 H 節之後」，但 G、H 只存在於從未 commit、後來被覆蓋的檔案版本。下面只是從 `QUICKSTART.md` 的描述**重建的摘要**，不是原文。若原文還在其他聊天室，請貼回補上。
+> 這兩節在 git 歷史與所有版本裡都找不到，下面是從 `QUICKSTART.md` 描述**重建的摘要**，不是原文。
 
-### G（重建摘要）｜Phase 1／2 完成紀錄
-- Phase 1：`admin_users` ＋ `is_admin()`；`board_games`、`game_documents`、Storage `covers` 的寫入政策全部只認管理者（登入不等於管理者）。
+### G（重建摘要）｜Phase 1／2
+- Phase 1：`admin_users` ＋ `is_admin()`；`board_games`、`game_documents`、Storage `covers` 的寫入政策全部只認管理者。
 - Phase 2：`player_profiles`（暱稱公開、不含 Email）、`src/PlayerPanel.tsx`、`public/privacy.html`；改用 Google 登入（Google Cloud 專案 `board-game-site`，OAuth 已發布為正式版、只用基本範圍）；已開啟 Supabase 註冊。
-- 細節以 `QUICKSTART.md` 為準。
 
-### H（重建摘要）｜詳細視窗圓點改版（2026-10-23 完成）
-- 五個區塊小標 01～05。
-- 六項評分全用圓點：3 欄 × 2 列、各項不同顏色，圓點數 ＝ emoji 個數。
-- 想玩／已玩兩個橫排按鈕、遊玩次數一列（`PlayCounter`）、備註。
-- 頂部 `BoardGameGeek ↗` ＋ `☆ 8.2 BGG SCORE`。
-- 遊玩次數計數器設計（2026-10-22 使用者決定）：詳細視窗內 －／數字／＋（0～999）；按「已玩」不會增加次數（次數為 0 時才設為 1）；次數與「已玩」狀態各自獨立（次數歸 0 不取消已玩、取消已玩不清次數）；訪客存 `localStorage`，登入合併時取較大值；維持「先改畫面再寫雲端」；暫不做每月遊玩紀錄。
+### H（重建摘要）｜詳細視窗圓點改版（2026-10-23）
+- 五個區塊小標 01～05；六項評分全用圓點（3 欄 × 2 列、各項不同顏色，圓點數＝emoji 個數）；想玩／已玩橫排按鈕、遊玩次數一列（`PlayCounter`）、備註；頂部 `BoardGameGeek ↗` ＋ `☆ 8.2 BGG SCORE`。（之後又改為四分頁，見 N-2。）
+- 遊玩次數計數器設計（使用者決定）：－／數字／＋（0～999）；按「已玩」不會增加次數（次數為 0 時才設為 1）；次數與「已玩」狀態各自獨立；訪客存 `localStorage`，登入合併時取較大值。
 
 ---
 
-## 附錄 I｜拆檔與垃圾桶（2026-10-23，接在 H 節之後；與上面衝突時以這裡為準）
+## 附錄 I｜拆檔與垃圾桶（2026-10-23；與上面衝突時以這裡為準）
 
-### I-1. 拆檔（使用者回「好」，視為完成）
-- `src/App.css` 變成入口檔，以 `@import` 載入 `src/styles/`：`base`、`topbar`、`hero`、`library`、`filter`、`cards`、`modal`、`admin`、`mylist`、`footer`（已 push，提交 `0317534`）。同選擇器的多層覆蓋規則已合併成最終版，刪了 9 條確定沒用到的規則（`.notice`、`.rating-content`、`.modal-bgg-link`、`.modal-head-text`、`.personal-box`、`.game-modal .eyebrow` 等）。H 節所說「App.css 底部堆疊覆蓋規則」已不存在。
-- `src/App.tsx` 分兩批拆開（約 1450 → 約 700 行），`Library` 只留狀態、篩選與排序、`displayedItems`：
-  - `src/lib/`：`libraryTypes.ts`（`LibraryGame`、`SortKey`、`ViewMode`、`MineGroup`、`getMineGroup`、常數）、`gameFormat.ts`、`fetchBoardGames.ts`（含 `BoardGameRow`、`rowToGame`）、`personalApi.ts`（`PersonalApi` 型別）、`useTrashActions.ts`。
-  - `src/components/`：`Icons`、`CoverImage`、`StatusButtons`、`RatingDots`、`PlayCounter`、`PersonalNote`、`TopBar`、`ViewToggle`、`FilterDrawer`、`GameCard`、`GameModal`、`MergeDialog`、`PersonalToast`、`TrashSection`。
-  - 行為不變，只有兩處搬家：「更多類型」的計算進 `FilterDrawer`；Esc 關閉進 `GameModal`（視窗開著才監聽）。`categories` 等 `useMemo` 的相依改為 `[boardGames]`（因為垃圾桶會改變清單）。
-- B 節提到的 `PersonalEntry`／`StatusButtons`／`PlayCounter` 等仍存在，只是不在 `App.tsx` 內。
+### I-1. 拆檔（完成）
+- `src/App.css` 變成入口檔，以 `@import` 載入 `src/styles/`（順序有影響，不要調換）：`base`、`topbar`、`hero`、`library`、`filter`、`cards`、`modal`、`admin`、`mylist`、`footer`、`trash`、`docs`，之後加 `backtotop`、`tabs`、`ratings`、`leaderboard`。
+- `src/App.tsx` 拆開後，`Library` 只留狀態、篩選與排序、`displayedItems`：
+  - `src/lib/`：`libraryTypes.ts`（`LibraryGame`、`SortKey`、`ViewMode`、`MineGroup`、`getMineGroup`、常數）、`gameFormat.ts`、`fetchBoardGames.ts`（含 `BoardGameRow`、`rowToGame`）、`personalApi.ts`、`useTrashActions.ts`。
+  - `src/components/`：`Icons`、`CoverImage`、`StatusButtons`、`RatingDots`、`PlayCounter`、`PersonalNote`、`TopBar`、`ViewToggle`、`FilterDrawer`、`GameCard`、`GameModal`、`MergeDialog`、`PersonalToast`、`TrashSection`（之後又加了 `BackToTop`、`RatingSection`、`PlaySessions`、`DescriptionEditor`、`Leaderboard`）。
+  - 「更多類型」的計算進 `FilterDrawer`；Esc 關閉進 `GameModal`。`categories` 等 `useMemo` 的相依為 `[boardGames]`（因為垃圾桶會改變清單）。
 - `PlayerPanel.tsx`：登入後只顯示一顆暱稱按鈕（`.player-chip`），登出放進暱稱視窗。
 
-### I-2. 垃圾桶（程式已提供，待測）
-- **決定（使用者）**：所有人（含訪客）都看得到垃圾桶；只有管理者能移入、還原、永久刪除。資料庫**不改政策**；`board_games` 現有四條政策（已用 `pg_policies` 確認）：Anyone can read（anon, authenticated；`true`）、Admin insert／update／delete（`is_admin()`）。曾建議的「讀取政策拆兩條」**不執行**。
+### I-2. 垃圾桶（已實測通過，見 K-1）
+- **決定（使用者）**：所有人（含訪客）都看得到垃圾桶；只有管理者能移入、還原、永久刪除。資料庫**不改政策**：`board_games` 現有四條政策：Anyone can read（anon, authenticated；`true`）、Admin insert／update／delete（`is_admin()`）。曾建議的「讀取政策拆兩條」**不執行**。
 - 資料庫：`board_games.removed_at timestamptz`（空值＝正常；有值＝在垃圾桶）。
-- 前端：`removedAt` 進入 `LibraryGame`；`Library` 以 `allGames` 分出 `boardGames`（主畫面、篩選、計數、我的清單都只用這個）與 `trashedGames`；`App` 持有 `games` 狀態，`updateGames` 在移入／還原／刪除成功後更新畫面。
-- 移到垃圾桶：詳細視窗右下角小字（管理者），先確認，`update ... select('bgg_name')` 確認真的有更新才改畫面（RLS 擋掉時會回 0 列並提示）。
-- `TrashSection`：頁面最下方、橫幅之後；預設收合；0 款時整區不顯示；訪客只看封面、名稱、移除日期；管理者多「還原」「永久刪除」。
-- 永久刪除：刪 `board_games` 該列與 Storage `{coverSlug}.webp`（別款還在用同封面代號則保留）；**不清 `user_game_status`**（沿用「不加外鍵」）；封面刪除後無法復原。
-- 詳細視窗 05 區改單行：「規則書與 FAQ」＋小字「尚未提供相關連結」＋右側 `›`（`.game-docs-row` 等，樣式在 `src/styles/docs.css`）；管理者新增／刪除連結保留。垃圾桶樣式在 `src/styles/trash.css`。
-- **尚未做**：CSV 匯入配合垃圾桶（見 QUICKSTART「進行中」第 3 點）：upsert 不含 `removed_at`，不會復活垃圾桶遊戲；但「CSV 沒有」名單含垃圾桶遊戲，確認後會被永久刪除。建議改為「移到垃圾桶」。
-- 待測清單：管理者移入／還原；訪客看得到垃圾桶但沒有按鈕、沒有「移到垃圾桶」；移入後主畫面「顯示 N / 總數」與篩選選項更新；第 05 區單行；封面上傳、我的清單不受影響。通過後 commit：`git add src/App.tsx src/App.css src/GameDocuments.tsx src/components src/lib src/styles`，訊息「新增垃圾桶（移除／還原／永久刪除），規則書區改單行」。
-
-### I-3. 小問題
-- 頁尾上方 AI 助手橫幅的標題比說明文字更靠右（使用者截圖）；可能是拆 CSS 時漏規則，待對照舊版。
+- 前端：`Library` 以 `allGames` 分出 `boardGames`（主畫面、篩選、計數、我的桌遊都只用這個）與 `trashedGames`；`App` 持有 `games` 狀態，`updateGames` 在移入／還原／刪除成功後更新畫面。
+- 移到垃圾桶：詳細視窗小字（管理者），先確認，`update ... select('bgg_name')` 確認真的有更新才改畫面（RLS 擋掉時會回 0 列並提示）。
+- `TrashSection`：頁面最下方；預設收合；0 款時整區不顯示（設計如此）；訪客只看封面、名稱、移除日期、原因；管理者多「還原」「永久刪除」「編輯原因」。
+- 永久刪除：刪 `board_games` 該列與 Storage `{coverSlug}.webp`（別款還在用同封面代號則保留）；**不清 `user_game_status`**；封面刪除後無法復原。
+- 詳細視窗規則書與 FAQ 區為單行樣式（`.game-docs-row`，樣式在 `docs.css`）；垃圾桶樣式在 `trash.css`。
 
 ---
 
-## 附錄 J｜早期版本（2026-10-21）中後來被精簡掉的細節
+## 附錄 J｜早期版本（2026-10-21）中仍有用的細節
 
-> 從最舊的交接文件撈回。當時尚無後端，部分描述已過時（例如「沒有後端」「資料來自 Python 產生器」）；只保留仍可能有用的資料欄位與實作細節。
+> 完整欄位以 `boardGames.generated.ts` 與第 4 節為準；原本的欄位對照表已刪除（與第 4 節重複）。
 
-### 3.1 CSV 結構（`boardgames.csv`）
-
+### 3.1 CSV 結構
 - 107 筆、35 個欄位，無重複桌遊；中文名稱在「屬性」欄，BGG 網址在「bgg網站」欄。
-- 「類型」以逗號分隔，切成陣列做篩選。目前共 **49 種類型**：大項 3 個（策略 77 款、派對 23 款、陣營 8 款），其餘 46 種為小項（卡牌驅動 22、區控 18、工擺 17、爬軌 16、引擎構築 13…）。**類型來自使用者的 Notion，之後新增類型只要重新匯出 CSV 並重新產生，網站會自動出現新類型**（網站類型清單由資料自動整理，不是寫死；只有三個大項按鈕是寫死的）。
-- 「推薦人數」「最佳人數」為逗號分隔數字，轉成數字陣列。
-- **注意**：「最佳人數 」欄位名稱尾端可能有空白，產生器已用 `clean_text` 處理欄位名稱。
-- 缺值：「墨敵賽」沒有網路資料，BGG 分數與難度為空，保留 `null`、顯示「未提供」，**不要編造數值或網址**。
-
-### 3.2 `BoardGame`（依 `generate_boardgames.py` 的 `output_type`）
-
-| 欄位 | 型別 | CSV 來源欄位 | 說明 |
-|---|---|---|---|
-| `id` | number | （自動編號） | 依 CSV 列順序，**會因插入／調換列而位移，不可用來對應圖片或使用者資料** |
-| `name` | string | 屬性 | 桌遊中文名稱 |
-| `bggName` | string | bggName | BGG 英文名稱（不可重複；穩定識別用） |
-| `slug` | string | （自動） | `game-{id}` |
-| `coverSlug` | string | （由 bggName 轉換） | 封面圖片檔名，見 3.5 |
-| `links` | object | bgg網站 | `bgg`、`rulebookZh`、`rulebookEn`、`faq`（後三者目前為空字串） |
-| `category` | string[] | 類型 | |
-| `bggScore` / `bggDifficulty` / `bggTime` | number \| null | BGG分數／BGG難度／BGG時間 | 各有缺值 |
-| `minPlayers` / `maxPlayers` | number \| null | 人數下限／人數上限 | |
-| `bestPlayers` / `recommendPlayers` | number[] | 最佳人數／推薦人數 | 兩者獨立，不要合併 |
-| `rankingEngine` | number \| null | Ranking engine | |
-| `classicGameRanking` | number \| null | 老遊戲想玩綜合評分 | 前端名稱「常玩遊戲排名」 |
-| `scoreRank` | number \| null | 分數_排名 | 前端名稱「綜合分數排名」，**已確認寫入產生檔** |
-| `playerImpactRanking` / `changeRanking` / `uniqueRanking` / `communicationRanking` | number \| null | 各排名欄位 | 資料保留，**不排序、不顯示** |
-| `likeDegree` 等六個 `*Degree` | number \| null | 數字評分 | 保留原值 |
-| 七個 `*Emoji` | string | 喜歡度／快速性／溝通性／獨特性／玩家影響性／複雜性／變化性 | 直接讀 CSV 的 Emoji，沒有則顯示「未提供」 |
-
-> 完整欄位以 `boardGames.generated.ts` 為準。
+- 類型共 **49 種**：大項 3 個（策略 77 款、派對 23 款、陣營 8 款），其餘 46 種為小項（卡牌驅動 22、區控 18、工擺 17、爬軌 16、引擎構築 13…）。**類型來自使用者的 Notion，新增類型只要重新匯入，網站會自動出現。**
+- 「推薦人數」「最佳人數」為逗號分隔數字，轉成數字陣列。「最佳人數 」欄位名稱尾端可能有空白，已用 `cleanText` 處理。
+- 缺值：「墨敵賽」沒有網路資料，BGG 分數與難度保留 `null`、顯示「未提供」，**不要編造**。
 
 ### 3.3 排名欄位的決定（使用者已決定）
-
 - 排序只保留三個：Ranking engine、**常玩遊戲排名**（`classicGameRanking`）、**綜合分數排名**（`scoreRank`），皆由小到大。其餘四個排名不加入排序。
-- 「綜合分數排名」在 Notion 中由數個排名相加而成，但**不要向使用者揭露計算方式**，也不要在前端重新計算，直接使用 CSV 的 `分數_排名`。
-- 未來「總遊玩次數記錄」完成後，常玩遊戲排名要改成繼續用 CSV，還是由遊玩紀錄自動算出，**尚未決定**。
+- 「綜合分數排名」在 Notion 中由數個排名相加而成，**不要向使用者揭露計算方式**，也不要在前端重算。
+- 常玩遊戲排名之後要繼續用 CSV，還是由遊玩紀錄自動算出，**尚未決定**。
 
-### 3.5 封面圖片（已實作機制）
+### 3.5 封面圖片
+- 圖片放在 `public/covers/`，檔名 = `coverSlug` + 副檔名（`.webp`、`.jpg`、`.png`，網站依序嘗試）。例：`Camel Up (Second Edition)` → `camel-up-second-edition`。
+- 用 `bggName` 而不是 `id` 對應圖片，是為了 CSV 順序改變時圖片不會對錯；**更新 CSV 只改文字資料，不會動封面圖片**。
+- `CoverImage` 找不到圖片時顯示 🎲，所以可以慢慢補圖。
 
-- 圖片放在 `public/covers/`，檔名 = `coverSlug` + 副檔名（`.webp`、`.jpg`、`.png` 皆可，網站依序嘗試）。
-- `coverSlug` 由產生器的 `make_cover_slug(bggName)` 產生：小寫、去重音符號、非字母數字改成 `-`。例：`Camel Up (Second Edition)` → `camel-up-second-edition`。產生器會檢查 `coverSlug` 不重複。
-- 用 `bggName` 而不是 `id` 對應圖片，是為了 CSV 插入或調換順序時圖片不會對錯；**更新 CSV 只改文字資料，不會動 `public/covers/` 裡的圖片**。
-- 網站端是 `CoverImage` 元件：找不到圖片時顯示原本的 🎲，所以可以一款一款慢慢補圖。卡片與詳細視窗都使用它。
-- 樣式：`.game-art .cover-image` 絕對定位填滿（`object-fit: cover`）；因為圖片區原本太高，曾建議在 `App.css` 加 `.game-art { height: 130px; ... }`，**最終採用的高度未確認**。
-
-### 重要實作細節（舊版 4 節）
-
-- `compareNullableNumbers()`：缺失資料（null）固定排最後，不受升降冪影響。
+### 實作細節
+- `compareNullableNumbers()`：缺值（null）固定排最後，不受升降冪影響。
 - `formatNumber()`：null／undefined 顯示「未提供」。
 - `formatPlayers()`：人數連續時顯示範圍（例如 `2–4 人`），否則以頓號列出。
 - 預設排序：`rankingEngine`，升冪。
-- **App.tsx 最後一次被完整貼給 AI 的版本，早於**重設排序、缺資料提示、類型分組與 AND 邏輯、封面圖片這幾次修改。要改 `App.tsx` 前，請先請使用者貼出目前版本，不要憑舊版推測。
 
-### 檢視模式切換的使用者原話（舊版 7 節）
-使用者原話：「我的代辦清單還要增加一下檢視畫面，可以變成清單或者一排 4 個的檢視畫面或者一排 9 個的檢視畫面或者其他檢視畫面。」
-
+### 使用者原話（檢視模式）
+「我的代辦清單還要增加一下檢視畫面，可以變成清單或者一排 4 個的檢視畫面或者一排 9 個的檢視畫面或者其他檢視畫面。」
 
 ---
 
-## 附錄 K｜垃圾桶實測完成與 App.css 入口檔（2026-10-24；與上面衝突時以這裡為準）
+## 附錄 K｜垃圾桶實測完成與 App.css 入口檔（2026-10-24）
 
 ### K-1. 垃圾桶：已實測通過
-- 使用者回報垃圾桶測試已完成（管理者移入／還原、訪客只看不能操作等），**附錄 I-2 的「待測」狀態作廢**。
-- 資料庫 `board_games.removed_at` 欄位已確認存在（`select removed_at from public.board_games limit 1;` 無錯誤，回傳 NULL）。
-- 垃圾桶為 0 款時整區隱藏，是設計如此。
-- 垃圾桶相關政策仍**不改**：`board_games` 讀取政策維持「Anyone can read＝`true`」。
+- 管理者移入／還原、訪客只看不能操作等均通過；`board_games.removed_at` 已確認存在。垃圾桶相關政策仍**不改**。
 
 ### K-2. `App.css` 入口檔（本機曾是舊檔）
-- 2026-10-24 發現：使用者本機 `src/App.css` 仍是拆檔前的舊整份（開頭是 `:root { font-family... }`，約 1500 行），`src/styles/` 的 12 個檔雖然存在但**沒被載入**，所以垃圾桶區與第 05 區單行的樣式沒生效。原因不明（可能某台電腦沒 pull，或被舊檔覆蓋）。
-- 已修正：`src/App.css` 換成 12 行 `@import`（順序固定）：
-  `base → topbar → hero → library → filter → cards → modal → admin → mylist → footer → trash → docs`
-- build 通過，CSS 由 30.53 KB 變 29.67 KB；使用者看過畫面回「好」。舊檔備份為 `App.css.bak`（不要 add）。
-- 待確認：已 commit／push（建議訊息：「App.css 改為入口檔，載入拆分後的樣式檔」）；並用 `git log --oneline -- src/App.css` 查舊檔何時被換回。
-- 教訓：使用者貼來的檔案可能是舊版；判斷現況前先用 `git status`／`git log`／`Get-Content ... -First 15` 確認，不要憑貼來的內容下結論。
+- 2026-10-24 發現：使用者本機 `src/App.css` 仍是拆檔前的舊整份（約 1500 行），`src/styles/` 的檔案沒被載入，所以垃圾桶與單行樣式沒生效。已換成只有 `@import` 的入口檔，build 通過、畫面使用者回「好」。舊檔備份為 `App.css.bak`（不要 add）。
+- 待確認：該修改是否已 commit／push；可用 `git log --oneline -- src/App.css` 查舊檔何時被換回。
+- 教訓：使用者貼來的檔案可能是舊版；判斷現況前先用 `git status`／`git log`／`Get-Content ... -First 15` 確認。
 
 ### K-3. AI 助手橫幅
-- 截圖顯示橫幅內的文字（COMING NEXT、標題、說明）是**整塊置中**，不是標題偏右。
-- 建議在 `src/styles/footer.css` 的 `.assistant-copy` 加 `flex: 1; text-align: left;`。使用者回「好」，是否真的修改要用 `git diff` 確認；不改也不影響功能。
+- 橫幅內的文字是整塊置中。建議在 `src/styles/footer.css` 的 `.assistant-copy` 加 `flex: 1; text-align: left;`；是否真的修改要用 `git diff` 確認，不改也不影響功能。
 
-### K-4. 下一步
-1. 確認 git 狀態與 `App.css` 提交。
-2. **CSV 匯入配合垃圾桶**：「CSV 沒有的遊戲」改為設定 `removed_at`（移到垃圾桶），不再永久刪除；要動 `AdminPanel.tsx`，先請使用者貼目前完整版本；預覽、確認文字與「超過 5 款要輸入刪除」保護一併調整；已在垃圾桶的遊戲不重複列入；CSV 內有、資料庫在垃圾桶的遊戲是否自動還原，先提方案給使用者決定。
-3. `public/privacy.html` 補「遊玩次數」一句。
-4. 再往 Phase 4（公開評分）。
+---
 
-附錄 L｜CSV 匯入改為移到垃圾桶、使用者新增的想做清單（2026-10-24；與上面衝突時以這裡為準）
-L-1. CSV 匯入配合垃圾桶（程式已提供，待測）
-改動只在 src/AdminPanel.tsx：讀取資料庫時多讀 removed_at；「CSV 沒有的遊戲」不再刪除，改為 update ... set removed_at = now()（只動 removed_at 為空的），不刪 board_games 資料列、不刪 Storage 封面。
-預覽分三類：
-removed：資料庫正常、CSV 沒有 → 這次會移到垃圾桶（紅字列名單）。
-trashedInCsv：已在垃圾桶、CSV 有 → 資料會更新（upsert 不帶 removed_at，所以仍留在垃圾桶），要放回請用垃圾桶的「還原」。
-alreadyTrashed：已在垃圾桶、CSV 也沒有 → 維持原狀。
-保護：一次移到垃圾桶超過 5 款，要輸入「移除」兩個字（原本是「刪除」）。順序仍是 upsert → 上傳封面 → 移到垃圾桶。
-設計決定（建議預設，使用者未反對才算數）：CSV 裡有、但垃圾桶裡的遊戲不自動還原（避免把管理者刻意移除、例如賣掉的遊戲又放回來）。若想自動還原，只要在 toRow 加 removed_at: null。
-永久刪除仍只在垃圾桶區由管理者手動做（封面也在那時才刪）。
-玩家的想玩／已玩紀錄以 bgg_name 對應，CSV 改 bggName 仍會讓玩家紀錄失聯。
-L-2. 使用者的想做清單（2026-10-24 提出，尚未排序、尚未動工）
+## 附錄 L｜CSV 匯入改為移到垃圾桶、想做清單（2026-10-24）
 
-標「使用者原話」的是使用者自己列的；標「貼上的建議」的是使用者貼上來的 AI 建議（含優先順序表），使用者只是列入考慮，不算已決定。
+### L-1. CSV 匯入配合垃圾桶（已實測完成）
+- 改動在 `src/AdminPanel.tsx`：讀取資料庫時多讀 `removed_at`；「CSV 沒有的遊戲」不再刪除，改為 `update ... set removed_at = now()`（只動 `removed_at` 為空的），不刪資料列、不刪 Storage 封面。
+- 預覽分三類：`removed`（資料庫正常、CSV 沒有 → 這次會移到垃圾桶，紅字名單）、`trashedInCsv`（已在垃圾桶、CSV 有 → 資料更新但**仍留在垃圾桶**，要放回請用「還原」）、`alreadyTrashed`（已在垃圾桶、CSV 也沒有 → 維持原狀）。
+- 保護：一次移到垃圾桶超過 5 款，要輸入「移除」。順序：upsert → 上傳封面 → 移到垃圾桶。
+- 設計決定（建議預設，使用者未反對）：CSV 裡有、但垃圾桶裡的遊戲**不自動還原**。若想自動還原，在 `toRow` 加 `removed_at: null`。
+- 永久刪除只在垃圾桶區由管理者手動做。
+- 地雷：在 Notion 改 `bggName` → 舊的進垃圾桶、新的當新遊戲（封面要重傳）；新舊 `cover_slug` 相同會撞唯一限制；**玩家的想玩／已玩／評分紀錄以 `bgg_name` 對應，改 `bggName` 會讓紀錄失聯**（資料還在、畫面不顯示）。
+- 下次匯入後，請使用者執行 `select bgg_name, created_at from public.board_games order by created_at desc limit 5;`，確認舊遊戲的 `created_at` 沒被重設。
 
-小功能（可先做）
+### L-2. 使用者的想做清單（尚未排序、尚未動工）
 
-一鍵回到頁面頂端的按鈕。
-垃圾桶可以註明「售出原因」（需新增欄位，例如 board_games.removed_reason，並在移入時輸入）。
-新增排序功能（使用者原話只寫這句；可能是想玩清單的排序，見下，待確認）。
-新增「私人／大家的分數表」＝ Phase 4 公開評分（使用者之前說過的六項評分，私人分數只有本人看、大家的分數是社群平均）。
+標「使用者原話」的是使用者自己列的；標「貼上的建議」的是使用者貼上來的 AI 建議，只是列入考慮，不算已決定。
 
-把「我的清單」升級成「我的桌遊」個人管理中心（使用者原話）
+**小功能**：新增排序功能（使用者原話只寫這句，待確認要排什麼）。（回到頂端、垃圾桶售出原因、私人／大家的分數表＝Phase 4 都已完成。）
 
-想玩：可標記「近期想玩」「下次聚會想玩」；一鍵從想玩移到已玩，或兩者同時保留；可依加入時間、排名、遊戲時間排序；「把我之前說的排行加進去」（待確認指哪個排行，可能是常玩遊戲排名／綜合分數排名）。
-已玩清單與遊玩紀錄（第二階段）：遊玩次數、最近一次遊玩日期；每次遊玩記錄玩家人數、對手或朋友、勝負；心得（例如「四人最好玩」「規則很難教」）；個人評分與 BGG 評分分開顯示；同一款遊戲可累積多筆遊玩紀錄。這會用到新的遊玩紀錄表（日期事後補不回來，要做就越早越好）。
-統計：累積遊玩次數與總遊玩時數、最常玩遊戲、最喜歡的類型、最常玩的玩家人數、每月遊玩次數趨勢。
-貼上的建議：名稱改為「我的桌遊」、抽屜分頁「想玩」「已玩」，完整管理頁再放「遊玩紀錄」「我的統計」。
+**把「我的清單」升級成「我的桌遊」個人管理中心（使用者原話）**
+- 想玩：可標記「近期想玩」「下次聚會想玩」；一鍵從想玩移到已玩，或兩者同時保留；可依加入時間、排名、遊戲時間排序；「把我之前說的排行加進去」（＝常玩遊戲排名，已確認）。
+- 已玩與遊玩紀錄：遊玩次數、最近一次日期（已有）；每次遊玩記錄對手或朋友、勝負、心得；個人評分與 BGG 評分分開顯示。
+- 統計：累積遊玩次數與總時數、最常玩遊戲、最喜歡的類型、最常玩的玩家人數、每月遊玩次數趨勢。
+- 貼上的建議：抽屜分頁「想玩」「已玩」，完整管理頁再放「遊玩紀錄」「我的統計」。
 
-集點卡（使用者原話，規則較複雜）
+**集點卡（使用者原話，規則較複雜）**
+- 玩家要先填完評分表單才能集點（完整評分＝七項全非空，見 N-1）；管理者設定「今天參加的人」，被設定的人才有權限填表。
+- 使用者想過用區域網路或藍牙判斷附近有誰；**建議不要**（網頁無法可靠偵測），改用管理者勾選名單，或每場聚會產生一次性代碼／QR。
+- 同一個月來兩次，下次免費：集滿 2 點就自動產生一張無期限兌換券；當月沒集滿，到下個月 1 日自動取消那 1 點。（建議集點「讀取時才依月份計算」，不用排程工作。）
+- 一天可能玩多款遊戲，但一天要把自己玩過的所有遊戲都填完，一天只算一點。
+- 規則要在畫面上寫清楚。管理者看得到所有人的集點狀況；玩家只看得到自己的。
+- 前置：聚會場次（誰參加）、集點與兌換券資料表；RLS：玩家只能讀自己的、管理者讀全部、點數只能由資料庫函式寫入。
 
-玩家要先填完評分表單（喜歡度、溝通性、獨特性、玩家影響性、變化、想留在架上的程度）才能集點；管理者設定「今天參加的人」，被設定的人才有權限填表，避免自己主動集點或隨便填表。
-使用者想過用區域網路或藍牙判斷附近有誰；建議不要（網頁無法可靠偵測附近的人），改用管理者勾選名單，或每場聚會產生一組一次性代碼／QR，由玩家輸入。
-同一個月來兩次，下次免費：集滿 2 點就自動產生一張無期限兌換券；當月沒集滿，到下個月 1 日自動取消那 1 點。（建議做法：集點「讀取時才依月份計算」，不用排程工作。）
-一天可能玩多款遊戲，但一天要把自己玩過的所有遊戲都填完，一天只算一點。
-規則要在畫面上寫清楚。管理者看得到所有人的集點狀況；玩家只看得到自己的，彼此看不到。
-前置：需要 Phase 4 評分表、聚會場次（誰參加）、集點與兌換券資料表；RLS 要設計成「玩家只能讀自己的、管理者讀全部、點數只能由資料庫函式寫入」。
+**揪團與聚會規劃（第三階段，使用者原話）**：從想玩清單挑聚會候選遊戲；設定日期、人數、地點、遊戲時間；朋友報名與候補；顯示參加者共同想玩的遊戲；依當天人數推薦桌遊。
 
-揪團與聚會規劃（第三階段，使用者原話）
+**「今天想玩什麼？」推薦（貼上的建議）**：問玩家人數、預計時間（30／60／90 分鐘內、不限）、難度，從想玩清單或全部挑選；用現有的最佳人數、推薦人數、時間、難度、排名資料就能做第一版，不需要 AI。
 
-從想玩清單挑聚會候選遊戲；設定日期、人數、地點、遊戲時間；朋友報名與候補；顯示參加者共同想玩的遊戲；依當天人數推薦合適的桌遊。
+### L-3. 沒登入時的紀錄會跨瀏覽器嗎？
+- 不會。沒登入時只存在該瀏覽器的 `localStorage`；登入 Google 才會同步到 Supabase。
+- 沒登入時做的紀錄：先在原瀏覽器登入，出現合併視窗時按「加入我的帳號」，之後在別的瀏覽器登入即可看到。
+- 清除瀏覽資料或換電腦前，沒登入的紀錄會消失，可考慮在畫面上多提醒一次。
 
-「今天想玩什麼？」推薦（貼上的建議）
+### L-5. AI 規則助手必須用 RAG；拖曳排名（2026-10-24 晚）
+- **RAG（使用者明確要求）**：回答只能根據檢索到的規則書／FAQ 片段；必須列出出處（哪本、第幾頁，最好附引用片段）；找不到可靠依據時要明說，不可憑空回答。技術方向（待決定）：PDF 擷取文字、切段並保留頁碼、檢索（Supabase 可用 pgvector；中文要注意斷詞，可能需向量＋關鍵字混合）；AI 金鑰只放後端；訪客提問要有每日次數限制；規則書 PDF 存私有 bucket。
+- **拖曳調整排名＋匯出 Notion CSV**：使用者想要，說「晚點再嘗試」，細節見 L-6。
 
-問玩家人數、預計時間（30／60／90 分鐘內、不限）、難度（簡單／中等／困難／不限）、從想玩清單或全部挑選；用現有的最佳人數、推薦人數、時間、難度、排名資料就能做第一版，不需要 AI。之後可加「大家都沒玩過」「很久沒玩」「最符合四人聚會」。
-
-貼上的建議優先順序（僅供參考）
-
-P0：改名「我的桌遊」、想玩／已玩清單與同步（已有）。
-P1：遊玩次數與最後遊玩日期、個人心得與評分、從清單挑今日遊戲。
-P2：遊玩紀錄與統計圖表。
-P3：聚會、揪團、報名與候補。
-不建議一次大改資料庫；做到某項時再討論資料表。
-L-3. 使用者的疑問：沒登入時的紀錄會跨瀏覽器嗎？
-不會。 沒登入時，想玩／已玩／備註只存在那個瀏覽器自己的 localStorage（鍵 boardgame-personal-collection），換成 Firefox 看不到 Chrome 的紀錄。
-有登入 Google 就會同步：紀錄存在 Supabase 雲端，換瀏覽器、換裝置，登入同一個 Google 帳號就看得到。
-如果紀錄是「沒登入」時做的：先在原本的瀏覽器登入，出現合併視窗時按「加入我的帳號」，紀錄就會上傳雲端；之後在 Firefox 登入即可看到。
-清除瀏覽資料或換電腦前，沒登入的紀錄會消失，這是訪客模式的限制，可考慮在畫面上多提醒一次。
-L-4. 下一步建議
-測試 CSV 匯入改版（見 QUICKSTART）。
-補 public/privacy.html「遊玩次數」一句。
-小功能一批：回到頂端、垃圾桶售出原因、排序（先確認「排序」要排什麼）。
-再與使用者討論：「我的桌遊」改名與遊玩紀錄表設計（越早建紀錄表越好），之後 Phase 4 評分 → 集點卡 → 揪團。
-
-### L-5. 補充（2026-10-24 晚）：CSV 匯入實測完成、拖曳排名、RAG 要求
-- **CSV 匯入改為移到垃圾桶：使用者回報測試完成**，L-1 的「待測」作廢。`privacy.html` 已補「遊玩次數」並更新日期。
-- **拖曳調整排名＋匯出 Notion CSV（使用者想要，尚未動工）**
-  - 目的：不想每次在 Notion 逐筆改排名數字；在網站上拖曳，自動更新那 5～6 項排名，再產生可匯入 Notion 的 .csv。
-  - 移位規則（建議）：標準清單重排。往上移一格＝與上一名交換；一次移多格＝中間的每一款順移一格。
-  - 建議的第一版：管理者專用的「排名編輯」頁，**一次只編輯一個排名欄位**，列表依該排名排序，拖曳後按「儲存」才一次寫入資料庫；另有「匯出 CSV」。
-  - 待使用者確認：①那 5～6 項排名是哪幾個？目前資料庫只存 Ranking engine、常玩遊戲排名、玩家影響性、變化、獨特性、溝通性（後四個「不顯示」），喜歡度、想留在架上的排名還不在資料庫，要新增欄位；②「綜合分數排名」由 Notion 算出，**網站不重算、不揭露算法**，匯出 CSV 只帶手動維護的排名欄；③Notion 匯入 CSV 要用哪一欄比對（通常是標題欄「屬性」，要確認）；④排名有缺值（null）的遊戲怎麼排。
-  - 風險：網站改過排名後，若又先匯入 Notion 舊 CSV，網站的排名會被覆蓋。固定流程：網站拖曳 → 匯出 CSV 匯入 Notion → 之後才可再從 Notion 匯出 CSV 回網站。畫面上要警告。
-- **AI 規則助手必須用 RAG（使用者明確要求）**
-  - 回答只能根據檢索到的規則書／FAQ 片段；必須列出出處（哪本、第幾頁，最好附引用片段）；找不到可靠依據時要明說「找不到」，不可憑空回答。
-  - 技術方向（待決定）：PDF 擷取文字、切段並保留頁碼、建立檢索（Supabase 可用 pgvector；中文檢索要注意斷詞，可能需向量＋關鍵字混合）；AI 金鑰只放後端；訪客提問要有每日次數限制。規則書 PDF 存在私有 bucket。
-
-### L-6. 拖曳排名編輯：已確認事項與建議設計（2026-10-24；使用者說「晚點再嘗試」，尚未動工）
-**已確認**
-- 要拖曳的 6 個排名（Notion 欄名＝`parseCsv.ts` 欄名＝資料庫欄位）：
+### L-6. 拖曳排名編輯：已確認事項與建議設計（尚未動工）
+**已確認**：要拖曳的 6 個排名（Notion 欄名＝`parseCsv.ts` 欄名＝資料庫欄位），**6 欄都已存在，不需改資料庫**，現有的 Admin update 政策就夠用：
 
 | Notion／CSV 欄名 | 資料庫欄位 | 前端欄位 |
 |---|---|---|
@@ -477,108 +329,115 @@ L-4. 下一步建議
 | 玩家影響性排名 | `player_impact_ranking` | `playerImpactRanking` |
 | 變化排名 | `change_ranking` | `changeRanking` |
 
-- 6 欄**都已存在**，不需改資料庫；現有 `board_games` 的 Admin update 政策（`is_admin()`）就夠用。（先前說有兩項不在資料庫是錯的。）
-- 功能只給管理者，目的是更新使用者自己的 CSV。「把我之前說的排行」＝常玩遊戲排名。
-- 「綜合分數排名」（`分數_排名`）由 Notion 算，網站不重算、不揭露算法；網站拖曳儲存後，它要等「匯出 CSV → 匯入 Notion → 從 Notion 匯出完整 CSV → 匯入網站」才會更新。
+- 功能只給管理者，目的是更新使用者自己的 CSV。「綜合分數排名」由 Notion 算，網站不重算、不揭露算法；網站拖曳儲存後，它要等「匯出 CSV → 匯入 Notion → 從 Notion 匯出完整 CSV → 匯入網站」才會更新。
 
 **建議設計（使用者尚未回「照建議」）**
-- 入口：管理者登入後頁尾多「排名編輯」，開全螢幕視窗；下拉選 6 個排名之一，列表依該排名排序。
-- 拖曳用新套件 `@dnd-kit`（手機可拖）。換位規則：每一列保留原本的排名數字，拖完只有被影響的幾款變動；拖一格＝與鄰居交換，拖多格＝中間順移一格。
+- 入口：管理者登入後頁尾多「排名編輯」，全螢幕視窗；下拉選 6 個排名之一，列表依該排名排序。
+- 拖曳用 `@dnd-kit`（手機可拖）。拖一格＝與鄰居交換，拖多格＝中間順移一格；每列保留原本的排名數字，只有被影響的幾款變動。
 - 沒有排名數字（null）的遊戲放最下面「未排名」，第一版不能拖。
 - 先顯示「將更新 N 款」，按「儲存」才批次寫入；未儲存離開要提醒。
-- 匯出 CSV：欄位為「屬性」「bggName」加上述 6 欄（欄名同 Notion），全部遊戲、目前資料庫的數字，UTF-8 含 BOM；檔名如 `boardgame-rankings-日期.csv`。
-- 畫面上要提醒固定流程與風險：網站改過排名後，若先匯入舊的 Notion CSV，網站排名會被覆蓋。
+- 匯出 CSV：欄位為「屬性」「bggName」加上述 6 欄（欄名同 Notion），UTF-8 含 BOM；檔名如 `boardgame-rankings-日期.csv`。
+- 畫面要提醒：網站改過排名後，若先匯入舊的 Notion CSV，網站排名會被覆蓋。
 
 **注意與待確認**
-- `parseCsv.ts` 的必要欄位只含 `Ranking engine` 與 `分數_排名`；其他 4 個排名欄位若 CSV 沒有，會被當成 `null` 並覆蓋資料庫。匯出給 Notion 的排名 CSV 缺少「類型」等必要欄位，匯入網站會被擋下（安全），但提醒不要誤用；日後可考慮把 6 欄都加入必要欄位檢查（小改動）。
+- `parseCsv.ts` 的必要欄位只含 `Ranking engine` 與 `分數_排名`；其他 4 個排名欄位若 CSV 沒有，會被當成 `null` 並覆蓋資料庫。日後可考慮把 6 欄都加入必要欄位檢查。
 - 待使用者在 Notion 確認：「合併」匯入 CSV 是否用標題欄「屬性」對應遊戲（建議先用小 CSV 試）；排名為空的遊戲怎麼排。
-- 開工前仍要請使用者貼目前的 `AdminPanel.tsx`、`fetchBoardGames.ts`（`parseCsv.ts` 已看過、不用再貼）。
-
+- 開工前請使用者貼目前的 `AdminPanel.tsx`、`fetchBoardGames.ts`。
 
 ---
 
-## 附錄 M｜小功能、遊玩紀錄、Phase 4 資料表、封面代號修正（2026-10-24 下午；與上面衝突時以這裡為準）
+## 附錄 M｜遊玩紀錄、Phase 4 資料表、封面代號修正（2026-10-24 下午）
 
 ### M-1. 已完成並實測
-- **回到頂端按鈕**：`src/components/BackToTop.tsx`、`src/styles/backtotop.css`（`App.css` 已加 `@import`）；往下捲超過一屏才出現，固定右下角。
-- **垃圾桶移除原因**：`board_games.removed_reason`（text，≤200 字，已建立）。管理者「移到垃圾桶」時用 `window.prompt` 填原因（可留空，取消則不移動）；垃圾桶區顯示「原因：○○」（訪客也看得到）；還原時清空原因與 `removed_at`。`useTrashActions.setRemovedAt` 多一個 `removedReason` 參數。
-- **排序功能**：使用者說「先跳過，之後再想」，尚未定義要排什麼。
-- **privacy.html**：已加入遊玩紀錄（日期、人數、心得）說明，日期 2026-10-24。
+- **回到頂端按鈕**：`BackToTop.tsx`、`backtotop.css`；往下捲超過一屏才出現。
+- **垃圾桶移除原因**：`board_games.removed_reason`（≤200 字）。管理者移入時用 `window.prompt` 填原因（可留空，取消則不移動）；垃圾桶區顯示「原因：○○」；還原時清空原因與 `removed_at`；`useTrashActions.editReason(game)` 與 `TrashSection` 的「編輯原因」按鈕（`App.tsx` 要傳 `onEditReason={trash.editReason}`）。
+- **privacy.html**：已加入遊玩紀錄說明。
 
 ### M-2. 遊玩紀錄 `game_play_sessions`（已上線）
 - 欄位：`id`(uuid)、`user_id`（預設 `auth.uid()`，`on delete cascade`）、`bgg_name`、`played_on`(date，預設今天)、`player_count`(1～99，可空)、`note`(≤200)、`created_at`。**不對 `board_games` 加外鍵。**
-- RLS 四條政策皆為 `user_id = (select auth.uid())`，角色 `authenticated`；`anon` 無權限；已撤銷 `authenticated` 的 `truncate, references, trigger`。已驗證。
-- **次數定義（使用者提出的設計，重要）**：`user_game_status.play_count` ＝「沒有日期的次數」（舊累積＋手動 −／＋）；有日期的次數＝該遊戲在 `game_play_sessions` 的筆數；**畫面總次數＝兩者相加**。新增紀錄只寫紀錄表並把遊戲標為已玩（`updateEntry(..., { skipPlayedRule: true })`，避免次數 0 時被設成 1 而多算）；刪除紀錄只刪那一筆，不動 `play_count`、不取消已玩。計數器 － 只減 `play_count`，為 0 時反灰。
-- 前端：`src/lib/useGamePlaySessions.ts`（**不帶參數**，在 `Library` 呼叫一次，登入後一次讀取該使用者全部紀錄，提供 `getSessions(bggName)`、`getSummary(bggName)`、`addSession(bggName, input)`、`deleteSession(id)`、`reload`、`status`、`busy`；`todayLocal()` 用本機日期）。`GameModal` 與 `MyList` 都收 `playSessions` 屬性共用。`PlaySessions.tsx`（新增表單與列表）、`PlayCounter.tsx`（收 `datedCount`，顯示總次數）。`MyList` 每款顯示「玩過 N 次 · 最近：日期」。
-- 只有登入玩家能用，訪客不存本機。
-- 已知限制：①Supabase 單次查詢預設最多 1000 筆，接近時要改分頁；②若有日期紀錄、次數 0，又手動取消再勾「已玩」，舊規則會把 `play_count` 設成 1，總次數多 1（罕見）。
+- RLS 四條政策皆為 `user_id = (select auth.uid())`，角色 `authenticated`；`anon` 無權限；已撤銷 `authenticated` 的 `truncate, references, trigger`。
+- **次數定義（使用者設計，重要）**：`user_game_status.play_count` ＝「沒有日期的次數」；有日期的次數＝該遊戲在 `game_play_sessions` 的筆數；**畫面總次數＝兩者相加**。新增紀錄只寫紀錄表並把遊戲標為已玩（`updateEntry(..., { skipPlayedRule: true })`）；刪除紀錄只刪那一筆，不動 `play_count`、不取消已玩。計數器 － 只減 `play_count`，為 0 時反灰。
+- 前端：`src/lib/useGamePlaySessions.ts`（不帶參數，在 `Library` 呼叫一次，提供 `getSessions`、`getSummary`、`addSession`、`deleteSession`、`reload`、`status`、`busy`；`todayLocal()` 用本機日期）。`GameModal` 與 `MyList` 都收 `playSessions` 屬性。`PlaySessions.tsx`、`PlayCounter.tsx`（收 `datedCount`）。只有登入玩家能用，訪客不存本機。
+- 已知限制：①單次查詢預設最多 1000 筆，接近時要改分頁；②若有日期紀錄、次數 0，又手動取消再勾「已玩」，舊規則會把 `play_count` 設成 1，總次數多 1（罕見）。
 
-### M-3. Phase 4 公開評分：資料庫已建立，前端尚未開始
-- 使用者確認的設計：整體評分 1～10（**必填**）；六項 1～5（喜歡度、玩家影響性、溝通性、變化性、獨特性、適合留下來程度，**選填可留白**）；每人每款一筆、可修改；公開門檻 5 人；**第一版不做私人分數**；未登入可看公開彙總，登入才能評分。
-- 資料表 `public.game_ratings`：主鍵 `(user_id, bgg_name)`；欄位 `overall`、`like_score`、`player_impact_score`、`communication_score`、`change_score`、`unique_score`、`keep_score`、`created_at`、`updated_at`（觸發器 `game_ratings_set_updated_at` 自動更新）。RLS 四條政策皆只允許本人；`anon` 無權限；`authenticated` 只有 DELETE／INSERT／SELECT／UPDATE。**已驗證。**
-- **個別評分只有本人看得到。公開的只有彙總**：函式 `public.get_rating_summaries()`（`security definer`、`set search_path = ''`，授權 `anon`、`authenticated`）回傳每款 `rating_count`、`overall_avg` 與六項平均；**門檻在資料庫判斷**：整體不到 5 人不回傳平均，六項各自計算人數、各自不到 5 人就不回傳。門檻 5 寫死在函式裡，要改用 `create or replace function`。目前回傳 0 列（還沒人評分）。
+### M-3. Phase 4 公開評分：資料庫
+- 設計（使用者確認）：整體 1～10；六項 1～5（喜歡度、玩家影響性、溝通性、變化性、獨特性、適合留下來程度）；每人每款一筆、可修改；公開門檻 5 人；**第一版不做私人分數**；未登入可看公開彙總，登入才能評分。（必填／選填的最終版本見 N-1。）
+- 資料表 `public.game_ratings`：主鍵 `(user_id, bgg_name)`；欄位 `overall`、`like_score`、`player_impact_score`、`communication_score`、`change_score`、`unique_score`、`keep_score`、`created_at`、`updated_at`（觸發器 `game_ratings_set_updated_at`）。RLS 四條政策皆只允許本人；`anon` 無權限。
+- **個別評分只有本人看得到，公開的只有彙總**：函式 `public.get_rating_summaries()`（`security definer`、`set search_path = ''`，授權 `anon`、`authenticated`）回傳每款 `rating_count`、`overall_avg` 與六項平均；**門檻在資料庫判斷**（整體不到 5 人不回傳平均，六項各自計算）。門檻 5 寫死在函式裡，要改用 `create or replace function`。
 - 評分隨帳號 `on delete cascade` 刪除，刪帳號後平均會變動，屬預期。
-- **下一步（前端）**：`useGameRatings.ts`（讀自己的評分＋公開彙總，各讀一次、在 `Library` 共用）、`RatingForm.tsx`、詳細視窗評分區塊（未達 5 人顯示「評分累積中（N 人）」；與使用者自己的 Emoji 評價並排，**不要與「綜合分數排名」混用**）、更新 `privacy.html`。可沿用 `RatingDots.tsx`（圓點，色表 `RATING_DOT_COLORS` 以標籤文字為鍵）。
-- 前端建好後別忘了：新增評分、彙總公開、人數少可能被推測，要寫進 `privacy.html`。
 
 ### M-4. 封面上傳失敗：`Invalid key: 兵臨城下.webp`
-- 原因：Supabase Storage 的物件名稱不接受中日文。舊 `makeCoverSlug` 保留所有 Unicode 字母，所以 `bggName` 含中日文的遊戲，`cover_slug` 也含中日文，上傳失敗。已知受影響：「蒼天之死 (Death of Heaven)」「Death Note 人狼」「冷たい彼女が目覚める前に (Embalming Girl)」「新幕 桜降る代に決闘を 基本セット…」，另有「兵臨城下」相關（查詢結果可能被截斷，修完後再查）。
-- 修法（已提供，**待確認使用者是否已套用**）：`src/lib/parseCsv.ts` 的 `makeCoverSlug` 改為：純英數字結果維持原代號（現有封面不受影響）；含中日文者保留英數字部分再加 `shortHash(原名稱)`（FNV-1a 8 位十六進位，同名永遠同代號）；完全沒有英數字則為 `game-<hash>`。
-- 套用後：重新匯入同一份 CSV 覆蓋 `cover_slug`（預覽看「更新」數正常、紅字名單沒多出來再確認），再執行 `select bgg_name, cover_slug from public.board_games where cover_slug !~ '^[a-z0-9_-]+$';`，**應為 0 列**。
-- `AdminPanel.tsx` 的 `matchCovers`：完整中文檔名（如「方舟動物園.jpg」）仍可對應（檔名與遊戲名稱轉成同一個雜湊代號）；只寫部分中文名的前綴比對會失效，這種改在詳細視窗上傳。
+- 原因：Supabase Storage 的物件名稱不接受中日文；舊 `makeCoverSlug` 保留所有 Unicode 字母。已知受影響：「蒼天之死 (Death of Heaven)」「Death Note 人狼」「冷たい彼女が目覚める前に (Embalming Girl)」「新幕 桜降る代に決闘を 基本セット…」，另有「兵臨城下」相關。
+- 修法（已提供，**待確認使用者是否已套用**）：`parseCsv.ts` 的 `makeCoverSlug` 改為：純英數字結果維持原代號（現有封面不受影響）；含中日文者保留英數字部分再加 `shortHash(原名稱)`（FNV-1a 8 位十六進位）；完全沒有英數字則為 `game-<hash>`。
+- 套用後：重新匯入同一份 CSV 覆蓋 `cover_slug`，再執行 `select bgg_name, cover_slug from public.board_games where cover_slug !~ '^[a-z0-9_-]+$';`，**應為 0 列**。
+- `matchCovers`：完整中文檔名仍可對應；只寫部分中文名的前綴比對會失效，這種改在詳細視窗上傳。
 - 教訓：任何要當檔名或 Storage key 的字串都必須是 ASCII。
 
-### M-5. 垃圾桶「編輯原因」（程式已提供，**build 尚有一個錯誤待修**）
-- `useTrashActions.editReason(game)`（prompt 預填目前原因，留空＝清除）；`TrashSection` 新增 `onEditReason` 屬性與「編輯原因」按鈕（沿用 `trash-restore` 樣式）；`App.tsx` 的 `<TrashSection` 要傳 `onEditReason={trash.editReason}`。
-- 2026-10-24 17:21 的 build 錯誤：`App.tsx` 漏傳 `onEditReason`。使用者之前把按鈕貼進了還原按鈕的標籤裡（結構錯亂），已教他整段 `trash-actions` 區塊換掉。
-
 ### M-6. 權限收斂
-- 已對 `game_play_sessions` 執行 `revoke truncate, references, trigger ... from authenticated`。`game_ratings` 建表時已一併處理。
-- `user_game_status` 查出 `authenticated` 多了 `REFERENCES`、`TRIGGER`、`TRUNCATE`（Supabase 預設值，`anon` 無權限）。已提供 `revoke truncate, references, trigger on public.user_game_status from authenticated;`，使用者回報「做完了」。**若想確認，請用 `information_schema.role_table_grants` 再查。**
-- 之後新建任何資料表，建表 SQL 都要順手加這行 revoke。
+- 已對 `game_play_sessions`、`user_game_status` 執行 `revoke truncate, references, trigger ... from authenticated`（Supabase 預設會多給這三項）；`game_ratings` 建表時已一併處理。可用 `information_schema.role_table_grants` 再確認。
+- **之後新建任何資料表，建表 SQL 都要順手加這行 revoke，並確認 `anon` 無權限。**
 
 ### M-7. 協作注意
-- 使用者貼程式碼時常貼錯位置（這次發生過兩次：把 `const list = ...` 換成別行、把新按鈕貼進原標籤裡）。**修改量大時，直接給整份檔案，或請他「整段刪掉換成」，不要只寫「在某行下面加」。** 先請他貼 `Get-Content ... -TotalCount 25` 或截圖確認結構。
-- 使用者說「好」表示照做完成。他不一定每項都貼測試結果，重要項目要再問一次。
-
-### M-8. 下一步
-1. 修 `onEditReason` 錯誤、build、測試、commit。
-2. 確認 `makeCoverSlug` 已換新版並重新匯入 CSV、查詢為 0 列。
-3. Phase 4 前端（M-3）。
-4. 之後的想做清單見附錄 L（我的桌遊改版、集點卡、揪團、「今天想玩什麼」、拖曳排名編輯 L-6、RAG 規則助手 L-5）。
+- 使用者貼程式碼時常貼錯位置。**修改量大時，直接給整份檔案，或請他「整段刪掉換成」。**
+- 使用者說「好」表示照做完成，但不一定貼測試結果，重要項目要再問一次。
 
 ---
 
-## 附錄 N｜公開評分、分頁改版、簡介、規則分頁（2026-10-25；與上面衝突時以這裡為準）
+## 附錄 N｜公開評分、分頁改版、簡介、規則分頁（2026-10-25）
 
 ### N-1. Phase 4 公開評分（前端已完成並上線）
-- 檔案：`src/lib/useGameRatings.ts`（在 `Library` 呼叫一次，讀公開彙總 `get_rating_summaries()` 與自己的評分，提供 `getSummary`／`getMine`／`saveRating`／`deleteRating`）、`src/components/RatingSection.tsx`（匯出 `CommunitySummary` 與預設的 `RatingSection`）、`src/styles/ratings.css`（樣式一律 `rate-` 開頭，避免和 `modal.css` 的 `.rating-label` 撞名）。
-- 七項：**整體 1～10（必填）、適合留下來程度 1～5（必填）**，其餘五項（喜歡度、玩家影響性、溝通性、變化性、獨特性）選填、預設收合。畫面顯示「已填 N / 7 項」。
+- 檔案：`src/lib/useGameRatings.ts`（在 `Library` 呼叫一次，讀公開彙總與自己的評分，提供 `getSummary`／`getMine`／`saveRating`／`deleteRating`）、`src/components/RatingSection.tsx`（匯出 `CommunitySummary` 與預設的 `RatingSection`）、`src/styles/ratings.css`（樣式一律 `rate-` 開頭，避免和 `modal.css` 的 `.rating-label` 撞名）。
+- 七項：**整體 1～10（必填）、適合留下來程度 1～5（必填）**，其餘五項選填、預設收合；畫面顯示「已填 N / 7 項」。
 - **集點卡條件（日後用）**：七項全部非空才算完整評分，由資料庫函式判斷，不另存標記。
-- 資料庫：`game_ratings.keep_score` 已設為 `not null`（若沒做，補執行 `alter table public.game_ratings alter column keep_score set not null;`）。
-- 未滿 5 人顯示「評分累積中（N 人）」；六項各自判斷、各自未達門檻就顯示「累積中」。前端沒有六項各自的人數欄位。
-- `privacy.html` 已加入評分說明（第一、二、三節）。
+- `game_ratings.keep_score` 已設為 `not null`（若沒做，補執行 `alter table public.game_ratings alter column keep_score set not null;`）。
+- 未滿 5 人顯示「評分累積中（N 人）」；六項各自判斷、各自未達門檻顯示「累積中」。
+- 社群平均與使用者自己的 Emoji 評價並排，**不要與「綜合分數排名」混用**。`privacy.html` 已加入評分說明。
 
 ### N-2. 詳細視窗分頁（`GameModal.tsx`、`src/styles/tabs.css`）
 - 頂部固定（封面、名稱、BGG 連結、BGG 分數、類型、分頁列），只有內容區捲動；手機全螢幕。
 - 四個分頁：**概覽**（簡介、遊戲屬性、大家的評分摘要、管理者的封面上傳與「移到垃圾桶」）、**評分**、**我的桌遊**（想玩／已玩、遊玩次數、遊玩紀錄、備註）、**規則**（規則書與 FAQ、中文介紹、影片連結；管理者的新增表單）。
-- AI 查詢分頁**等 AI 規則助手做出來再加**（現在放只有「開發中」的分頁會讓訪客以為壞掉）。
-- `GameModal` 的 `game` 型別是 `LibraryGame`；`App.tsx` 的 `selectedGame` 也是 `LibraryGame`。
-- 小地方：簡介編輯的樣式（`.desc-*`）被貼進了 `src/styles/topbar.css`，不影響使用；`.modal-links` 等在 `tabs.css`。
+- AI 查詢分頁**等 AI 規則助手做出來再加**。
+- `GameModal` 的 `game` 型別是 `LibraryGame`。簡介編輯的樣式（`.desc-*`）被貼進了 `topbar.css`，不影響使用。
 
 ### N-3. 遊戲簡介
-- 資料庫 `board_games.description text not null default ''`，檢查 ≤ 300 字。
-- CSV 欄名「簡介」，**選填**：沒有這欄、或該款簡介空白，都**不會覆蓋**資料庫原有的簡介（`AdminPanel.tsx` 匯入的「步驟 0」只對有簡介的款數另外 upsert）；CSV 無法清空簡介，要清請在網站編輯或 Table Editor。
-- 管理者在「概覽」可新增、編輯、刪除簡介：`src/components/DescriptionEditor.tsx`、`src/lib/saveDescription.ts`（`update ... select('bgg_name')` 確認真的有更新；寫入權限由資料庫的管理者政策把關）。
-- 使用者說簡介太耗時間，**先跳過、晚點再寫**。AI 擬簡介草稿的流程與著作權說明：不要翻譯或改寫 BGG 簡介，只寫「這款在玩什麼」一到兩句自己的話；不確定的遊戲不要硬寫。
+- `board_games.description text not null default ''`，檢查 ≤ 300 字。
+- CSV 欄名「簡介」，**選填**：沒有這欄或該款空白，都**不會覆蓋**資料庫原有簡介（`AdminPanel.tsx` 匯入的「步驟 0」只對有簡介的款數另外 upsert）；CSV 無法清空簡介，要清請在網站編輯或 Table Editor。
+- 管理者在「概覽」可新增、編輯、刪除：`DescriptionEditor.tsx`、`saveDescription.ts`（`update ... select('bgg_name')` 確認真的有更新）。
+- 使用者說簡介太耗時間，**先跳過、晚點再寫**。若請 AI 擬草稿：不要翻譯或改寫 BGG 簡介，只寫「這款在玩什麼」一到兩句自己的話；不確定的遊戲不要硬寫。
 
 ### N-4. 規則分頁的文件連結（`game_documents`）
-- `doc_type` 現有：`rulebook`、`faq`、`errata`、`intro`（中文介紹）、`video`（影片）、`other`。
-- 資料庫檢查：`game_documents_doc_type_check` 已加入 `intro`、`video`；**`game_documents_video_not_indexed`：影片的 `ai_indexed` 永遠不能是 true。**
-- **RAG 原則（使用者要求）**：AI 規則助手**不可以從影片查規則**；RAG 只能讀 `ai_indexed = true` 的文件。中文介紹（`intro`）網路文章有著作權疑慮，是否索引，做 RAG 時再決定；較安全的用法是把連結當「延伸閱讀」附在答案旁。
-- 檔案：`src/lib/useGameDocuments.ts`（讀取、新增、刪除，`GameModal` 呼叫一次再傳給 `GameDocuments`）、`src/GameDocuments.tsx`（收 `api` 與 `isAdmin`，分三組顯示）。
+- `doc_type` 現有：`rulebook`、`faq`、`errata`、`intro`（中文介紹）、`video`（影片）、`other`。`game_documents_video_not_indexed`：影片的 `ai_indexed` 永遠不能是 true。
+- **RAG 原則（使用者要求）**：AI 規則助手**不可以從影片查規則**；RAG 只能讀 `ai_indexed = true` 的文件。中文介紹（`intro`）有著作權疑慮，是否索引做 RAG 時再決定；較安全的用法是把連結當「延伸閱讀」。
+- 檔案：`src/lib/useGameDocuments.ts`（`GameModal` 呼叫一次再傳給 `GameDocuments`）、`src/GameDocuments.tsx`（收 `api` 與 `isAdmin`，分三組顯示）。
 
-### N-5. 下一步
-1. 社群統計（想玩／已玩人數與期間新增，見 QUICKSTART 下一步第 4 點）。
-2. 上傳規則書 PDF（私有 bucket）→ AI 規則助手（RAG）。
-3. 想做清單：我的桌遊改版、集點卡、揪團、拖曳排名編輯、簡介補寫。
+---
+
+## 附錄 O｜社群統計完成、排行榜、「我的桌遊」改名（2026-10-25）
+
+### O-1. 社群統計：已完成
+- 使用者回報已 commit 並 push。`src/lib/useCommunityStats.ts` 提供 `CommunityStatsApi.getStats(bggName)`，欄位含 `wantCount`、`playedCount`、`wantMonth`／`wantQuarter`／`wantYear`、`playedMonth`／`playedQuarter`／`playedYear`。
+
+### O-2. 排行榜（程式已提供，**待使用者套用、build、實測、commit**）
+- 新增：`src/lib/leaderboards.ts`（`rankGames`：同分並列，例如 1、1、3，只保留前 10 名）、`src/components/Leaderboard.tsx`、`src/styles/leaderboard.css`（樣式 `lb-` 開頭；`App.css` 加 `@import './styles/leaderboard.css';`）。
+- 修改：`TopBar.tsx`（整份換掉，多「排行榜」按鈕，新屬性 `onOpenLeaderboard`）、`MyList.tsx`（兩處改名）、`App.tsx`（四處：`import Leaderboard`、`isLeaderboardOpen` 狀態、`TopBar` 傳 `onOpenLeaderboard`、在 `<BackToTop />` 上方放 `<Leaderboard ... renderCover={...} />`，點榜單遊戲會關閉抽屜並開啟詳細視窗）。
+- 四個榜：**想玩、已玩**（可切「全部／本月／本季／本年」；全部＝目前總人數，其餘＝期間新增人數，右側小字顯示目前總人數）、**整體評分、適合留下來**（用 `ratings.getSummary`，平均四捨五入到小數 1 位，右側顯示評分人數；**需滿 5 人才上榜**）。
+- 沿用「我的桌遊」抽屜樣式（`mylist-*`），只新增 `lb-tabs`、`lb-periods`、`lb-rank`、`lb-value`。隱私：只用彙總人數與平均，不顯示個別玩家；訪客不計入。
+- 測試重點：頂端兩個按鈕在窄螢幕是否擠在一起（擠就改圖示）；評分榜目前應為空；點榜單遊戲能開詳細視窗。
+- 建議 commit：`git add src/lib/leaderboards.ts src/components/Leaderboard.tsx src/components/TopBar.tsx src/MyList.tsx src/App.tsx src/App.css src/styles/leaderboard.css`，訊息「新增排行榜；我的清單改名我的桌遊」。
+
+### O-3. 小改動
+- 「我的清單」畫面名稱改為「我的桌遊」（`MyList.tsx` 的 `aria-label` 與 `<h2>`、頂端按鈕文字）；檔名仍是 `MyList.tsx`。
+- 卡片按鈕「查看規則」改為「詳細資料」（`GameCard.tsx`）。**狀態**：`GameCard.tsx` 與 `public/privacy.html` 已 `git add`，**尚未 commit，差異未驗證**。請使用者貼 `git diff --cached --stat`、`git diff --cached src/components/GameCard.tsx`、`git diff --cached public/privacy.html`（`privacy.html` 可能只是換行字元差異）。
+
+### O-4. `privacy.html` 待補
+- 在「三、公開評分與社群統計」的 `<ul>` 加：「網站的排行榜只依各遊戲的彙總人數（想玩、已玩、評分平均）排名，不顯示任何玩家的個別紀錄，也不顯示是誰標記或評分。」
+- 先用 `Select-String -Path public\privacy.html -Pattern "排行榜"` 確認有沒有加過。
+
+### O-5. 協作注意
+- 使用者曾把 PowerShell 指令貼進 Supabase SQL Editor 而報錯。**每個指令都要明寫貼在哪裡。**
+- 上一次聊天室因免費額度中斷；接手時不要假設上一則回覆的步驟已完成，先問實際狀態。
+
+### O-6. 下一步
+1. 確認排行榜、`GameCard`、`privacy.html` 的實際狀態並 commit。
+2. **集點卡（Phase 6）**。開工前請使用者在 Supabase SQL Editor 貼兩個查詢結果：①`player_profiles` 的欄位；②管理者函式名稱（`is_admin` 等）。規則見 L-2。
+3. 之後：上傳規則書 PDF（私有 bucket）→ AI 規則助手（RAG）；想做清單見附錄 L。
