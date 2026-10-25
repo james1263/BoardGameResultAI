@@ -1,0 +1,354 @@
+/* 聚會與集點（管理者視窗）：桌遊俱樂部風格
+   色票：奶油 #f5f0e5／森林綠 #456b50／焦糖 #b78a5a／墨綠 #34463c */
+
+.admin-modal.loy-admin {
+  width: min(720px, calc(100vw - 24px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  background: #f8f3e6;
+  color: #34463c;
+}
+
+/* 標題列 */
+.lga-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.lga-head-icon {
+  display: grid;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(69, 107, 80, 0.14);
+  font-size: 1.3rem;
+}
+
+.lga-head-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.lga-head-text h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.lga-head-text p {
+  margin: 2px 0 0;
+  color: #7b8a7f;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+}
+
+.lga-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(69, 107, 80, 0.16);
+  color: #456b50;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.lga-close {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #34463c;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.lga-close:hover {
+  background: rgba(52, 70, 60, 0.1);
+}
+
+/* 步驟標題 */
+.lga-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 1.02rem;
+}
+
+.lga-step span {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: #456b50;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.lga-section {
+  margin-top: 18px;
+}
+
+/* 卡片 */
+.lga-card {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(52, 70, 60, 0.14);
+  border-radius: 14px;
+  background: #fffdf6;
+}
+
+/* 新增聚會 */
+.lga-new {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+}
+
+.lga-new input {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(52, 70, 60, 0.22);
+  border-radius: 10px;
+  background: #fff;
+  color: #34463c;
+  font: inherit;
+}
+
+.lga-search {
+  grid-template-columns: 1fr;
+  margin-top: 6px;
+}
+
+.lga-primary {
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #456b50;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lga-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lga-outline,
+.lga-danger {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.lga-outline {
+  border: 1px solid #456b50;
+  color: #456b50;
+}
+
+.lga-danger {
+  border: 1px solid rgba(160, 60, 50, 0.5);
+  color: #a03c32;
+}
+
+.lga-outline:disabled,
+.lga-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 近期聚會 */
+.lga-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lga-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(52, 70, 60, 0.14);
+  border-radius: 12px;
+  background: #fffdf6;
+  color: #34463c;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lga-row.active {
+  border-color: #456b50;
+  box-shadow: 0 0 0 2px rgba(69, 107, 80, 0.2);
+}
+
+.lga-date {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  width: 48px;
+  padding: 4px 0;
+  border-radius: 10px;
+  background: rgba(183, 138, 90, 0.18);
+  color: #8a5f33;
+  line-height: 1.15;
+}
+
+.lga-date strong {
+  font-size: 1.25rem;
+}
+
+.lga-row-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lga-row-main small {
+  color: #7b8a7f;
+}
+
+.lga-status {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(69, 107, 80, 0.16);
+  color: #456b50;
+  font-size: 0.78rem;
+}
+
+.lga-status.done {
+  background: rgba(52, 70, 60, 0.1);
+  color: #6b7a70;
+}
+
+/* 聚會詳情 */
+.lga-detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lga-detail-head h3 {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.lga-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lga-sub {
+  margin: 16px 0 4px;
+  font-size: 0.95rem;
+}
+
+/* 參加者：圓形頭像標籤 */
+.lga-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lga-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid rgba(52, 70, 60, 0.16);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.lga-chip.on {
+  border-color: #456b50;
+  background: rgba(69, 107, 80, 0.08);
+}
+
+.lga-chip-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: #34463c;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lga-avatar {
+  display: grid;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: #b78a5a;
+  color: #fff;
+  font-weight: 700;
+}
+
+.lga-chip.on .lga-avatar {
+  background: #456b50;
+}
+
+.lga-chip-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lga-check {
+  color: #456b50;
+  font-weight: 700;
+}
+
+.lga-exempt {
+  padding: 4px 8px;
+  border: 1px dashed rgba(183, 138, 90, 0.8);
+  border-radius: 8px;
+  background: transparent;
+  color: #8a5f33;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.lga-exempt.on {
+  border-style: solid;
+  background: rgba(183, 138, 90, 0.2);
+  font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  .lga-new {
+    grid-template-columns: 1fr;
+  }
+
+  .lga-chips {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

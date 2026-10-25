@@ -12,6 +12,7 @@ export default function PlayerPanel() {
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isOpen, setIsOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [nickname, setNickname] = useState('')
   const [message, setMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -48,7 +49,16 @@ export default function PlayerPanel() {
   }
 
   async function handleLogout() {
+    setIsMenuOpen(false)
+    setIsOpen(false)
     await supabase.auth.signOut()
+  }
+
+  function openNicknameDialog() {
+    setIsMenuOpen(false)
+    setNickname(profile?.nickname ?? '')
+    setMessage('')
+    setIsOpen(true)
   }
 
   async function handleSave(event: FormEvent) {
@@ -100,22 +110,39 @@ export default function PlayerPanel() {
     )
   }
 
-  // 還在檢查身分，或是管理者（管理者由 AdminPanel 負責）
+  // 還在檢查身分，或是管理者（管理者的登出在頂端列）
   if (!checked || isAdmin) return null
 
   return (
     <>
-      <button
-        className="player-chip"
-        type="button"
-        onClick={() => {
-          setNickname(profile?.nickname ?? '')
-          setMessage('')
-          setIsOpen(true)
-        }}
-      >
-        {profile ? profile.nickname : '設定暱稱'}
-      </button>
+      <div className="account-menu">
+        <button
+          className="player-chip"
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={isMenuOpen}
+          onClick={() => setIsMenuOpen((open) => !open)}
+        >
+          {profile ? profile.nickname : '設定暱稱'} ▾
+        </button>
+
+        {isMenuOpen && (
+          <>
+            <div
+              className="account-backdrop"
+              onClick={() => setIsMenuOpen(false)}
+            />
+            <div className="account-popover" role="menu">
+              <button type="button" role="menuitem" onClick={openNicknameDialog}>
+                {profile ? '修改暱稱' : '設定暱稱'}
+              </button>
+              <button type="button" role="menuitem" onClick={handleLogout}>
+                登出
+              </button>
+            </div>
+          </>
+        )}
+      </div>
 
       {isOpen && (
         <div className="modal-backdrop" onClick={() => setIsOpen(false)}>

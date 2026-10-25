@@ -6,7 +6,7 @@ import type { RatingsApi } from './lib/useGameRatings'
 import LoyaltyCard from './components/LoyaltyCard'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
-type Tab = 'want' | 'played' | 'loyalty'
+export type Tab = 'want' | 'played' | 'loyalty'
 
 export default function MyList({
   boardGames,
@@ -14,6 +14,8 @@ export default function MyList({
   playSessions,
   ratings,
   isOpen,
+  initialTab,
+  focusDate,
   onClose,
   onOpenGame,
   renderCover,
@@ -23,11 +25,13 @@ export default function MyList({
   playSessions: PlaySessionsApi
   ratings: RatingsApi
   isOpen: boolean
+  initialTab?: Tab
+  focusDate?: string | null
   onClose: () => void
   onOpenGame: (game: BoardGame, tab?: 'ratings') => void
   renderCover: (game: BoardGame) => ReactNode
 }) {
-  const [tab, setTab] = useState<Tab>('want')
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'want')
 
   const wantGames = useMemo(
     () => boardGames.filter((game) => personal.entries[game.bggName]?.wantToPlay),
@@ -90,6 +94,7 @@ export default function MyList({
               ratings={ratings}
               personal={personal}
               playSessions={playSessions}
+              focusDate={focusDate}
               onOpenGame={onOpenGame}
             />
           ) : (

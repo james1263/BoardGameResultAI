@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { usePersonalCollection } from '../lib/usePersonalCollection'
 import {
@@ -23,16 +23,19 @@ export default function LoyaltyCard({
   ratings,
   personal,
   playSessions,
+  focusDate,
   onOpenGame,
 }: {
   boardGames: BoardGame[]
   ratings: RatingsApi
   personal: PersonalApi
   playSessions: PlaySessionsApi
+  focusDate?: string | null
   onOpenGame: (game: BoardGame, tab?: 'ratings') => void
 }) {
   const loyalty = useMyLoyalty()
   const [busyKey, setBusyKey] = useState<string | null>(null)
+  const scrolledRef = useRef(false)
 
   const gameMap = useMemo(
     () => new Map(boardGames.map((game) => [game.bggName, game])),
@@ -91,6 +94,16 @@ export default function LoyaltyCard({
     setBusyKey(null)
   }
 
+  // 從邀請連結進來時，自動捲到連結指定的那一天
+  function focusRef(date: string) {
+    return (element: HTMLLIElement | null) => {
+      if (element && focusDate === date && !scrolledRef.current) {
+        scrolledRef.current = true
+        element.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }
+    }
+  }
+
   function renderStamp(date: string, done: boolean) {
     const { month, day } = splitDate(date)
     return (
@@ -109,7 +122,13 @@ export default function LoyaltyCard({
         ? '還沒有這天的遊玩紀錄：到遊戲的「我的桌遊」分頁新增，日期選這一天'
         : `評分完整 ${day.ratedCount} / ${day.gameCount} 款，每款都填完七項才算`
     return (
-      <li key={day.date} className={`lc-day ${day.qualified ? 'done' : ''}`}>
+      <li
+        key={day.date}
+        ref={focusRef(day.date)}
+        className={`lc-day ${day.qualified ? 'done' : ''} ${
+          focusDate === day.date ? 'focus' : ''
+        }`}
+      >
         {renderStamp(day.date, day.qualified)}
         <div className="lc-day-main">
           <p className="lc-day-date">{formatDay(day.date)}</p>
@@ -140,7 +159,13 @@ export default function LoyaltyCard({
     }
 
     return (
-      <li key={day.date} className={`lc-day ${qualified ? 'done' : ''}`}>
+      <li
+        key={day.date}
+        ref={focusRef(day.date)}
+        className={`lc-day ${qualified ? 'done' : ''} ${
+          focusDate === day.date ? 'focus' : ''
+        }`}
+      >
         {renderStamp(day.date, qualified)}
         <div className="lc-day-main">
           <p className="lc-day-date">{formatDay(day.date)}</p>

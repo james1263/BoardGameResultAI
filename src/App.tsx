@@ -18,6 +18,7 @@ import { usePersonalCollection } from './lib/usePersonalCollection'
 import { useGamePlaySessions } from './lib/useGamePlaySessions'
 import { useGameRatings } from './lib/useGameRatings'
 import { useCommunityStats } from './lib/useCommunityStats'
+import { useInviteLink } from './lib/useInviteLink'
 import { fetchBoardGames } from './lib/fetchBoardGames'
 import {
   type LibraryGame,
@@ -74,6 +75,24 @@ function Library({
   const communityStats = useCommunityStats()
   const [isMyListOpen, setIsMyListOpen] = useState(false)
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
+  // 管理者傳的集點卡連結：登入後自動打開自己的集點卡
+  const {
+    pending: invitePending,
+    focusDate: inviteDate,
+    isLoggedIn: inviteLoggedIn,
+    consume: consumeInvite,
+    login: inviteLogin,
+  } = useInviteLink()
+  const [inviteKey, setInviteKey] = useState(0)
+  const [inviteFocus, setInviteFocus] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!invitePending || !inviteLoggedIn) return
+    setInviteFocus(inviteDate)
+    setInviteKey((count) => count + 1)
+    setIsMyListOpen(true)
+    consumeInvite()
+  }, [invitePending, inviteLoggedIn, inviteDate, consumeInvite])
   const [nowMs] = useState(() => Date.now())
 
   function isNewGame(game: LibraryGame): boolean {
@@ -454,6 +473,18 @@ function Library({
 
   return (
     <div className="app">
+      {invitePending && !inviteLoggedIn && (
+        <div className="invite-banner">
+          <span>你收到了集點卡連結，登入後會直接打開你的集點卡。</span>
+          <button
+            type="button"
+            className="invite-banner-btn"
+            onClick={() => void inviteLogin()}
+          >
+            用 Google 登入
+          </button>
+        </div>
+      )}
       <TopBar
         myListCount={myListCount}
         onOpenMyList={() => setIsMyListOpen(true)}
@@ -680,6 +711,9 @@ function Library({
       )}
 
       <MyList
+        key={inviteKey}
+        initialTab={inviteKey > 0 ? 'loyalty' : undefined}
+        focusDate={inviteFocus}
         boardGames={boardGames}
         personal={personal}
         playSessions={playSessions}

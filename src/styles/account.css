@@ -1,0 +1,80 @@
+/* 頂端列固定在最上方（捲到哪裡都看得到登入／登出） */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  background: rgba(245, 240, 229, 0.94);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+/* 玩家帳號選單：暱稱 ▾ → 修改暱稱／登出 */
+.account-menu {
+  position: relative;
+}
+
+.account-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 940;
+}
+
+.account-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 950;
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+  padding: 6px;
+  border: 1px solid rgba(52, 70, 60, 0.2);
+  border-radius: 12px;
+  background: #fbf6e9;
+  box-shadow: 0 10px 24px rgba(52, 70, 60, 0.18);
+}
+
+.account-popover button {
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #34463c;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.account-popover button:hover {
+  background: rgba(69, 107, 80, 0.12);
+}
+
+/* 邀請連結：還沒登入時的提示 */
+.invite-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #34463c;
+  color: #f6efd9;
+  font-size: 0.9rem;
+}
+
+.invite-banner-btn {
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #f6efd9;
+  color: #34463c;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* 從邀請連結進來時，標出指定的那一天 */
+.lc-day.focus {
+  outline: 2px solid #b78a5a;
+  outline-offset: 3px;
+  border-radius: 14px;
+}
