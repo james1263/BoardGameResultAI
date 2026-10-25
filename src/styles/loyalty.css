@@ -167,3 +167,107 @@
   margin: 0;
   padding-left: 18px;
 }
+
+/* ===== 集點卡 v2（貼在 loyalty.css 最底下） ===== */
+.loy-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.loy-tab {
+  padding: 6px 14px;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.loy-tab.active {
+  background: rgba(100, 149, 237, 0.2);
+  border-color: rgba(100, 149, 237, 0.8);
+  font-weight: 600;
+}
+
+.loy-picker-results,
+.loy-picked {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+}
+
+.loy-picker-results li,
+.loy-picked li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+  font-size: 0.85rem;
+}
+
+.loy-mini-btn,
+.loy-rate-btn {
+  padding: 4px 10px;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.loy-mini-btn:disabled,
+.loy-rate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loy-gathering {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+  font-size: 0.85rem;
+}
+
+.loy-games {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.loy-game {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid rgba(128, 128, 128, 0.25);
+  border-radius: 8px;
+}
+
+.loy-game-name {
+  flex: 1;
+  min-width: 120px;
+  font-weight: 600;
+}
+
+.loy-game-check {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.loy-game-state {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.loy-game-done {
+  color: #2e8b57;
+}

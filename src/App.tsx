@@ -66,6 +66,7 @@ function Library({
   const trash = useTrashActions(allGames, onGamesChange)
   const [searchText, setSearchText] = useState('')
   const [selectedGame, setSelectedGame] = useState<LibraryGame | null>(null)
+  const [selectedTab, setSelectedTab] = useState<'overview' | 'ratings' | 'mine' | 'rules'>('overview')
   const isAdmin = useIsAdmin()
   const personal = usePersonalCollection()
   const playSessions = useGamePlaySessions()
@@ -639,6 +640,7 @@ function Library({
         <GameModal
           game={selectedGame}
           coverVersion={coverVersions[selectedGame.coverSlug] ?? 0}
+          initialTab={selectedTab}
           isAdmin={isAdmin}
           personal={personal}
           playSessions={playSessions}
@@ -670,7 +672,10 @@ function Library({
           onTrash={async () => {
             if (await trash.trashGame(selectedGame)) setSelectedGame(null)
           }}
-          onClose={() => setSelectedGame(null)}
+          onClose={() => {
+            setSelectedGame(null)
+            setSelectedTab('overview')
+          }}
         />
       )}
 
@@ -678,10 +683,12 @@ function Library({
         boardGames={boardGames}
         personal={personal}
         playSessions={playSessions}
+        ratings={ratings}
         isOpen={isMyListOpen}
         onClose={() => setIsMyListOpen(false)}
-        onOpenGame={(game) => {
+        onOpenGame={(game, tab) => {
           setCoverMessage('')
+          setSelectedTab(tab ?? 'overview')
           setSelectedGame(game)
           setIsMyListOpen(false)
         }}

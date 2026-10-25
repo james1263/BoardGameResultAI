@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import type { BoardGame } from './data/boardGames.generated'
 import { usePersonalCollection } from './lib/usePersonalCollection'
 import type { PlaySessionsApi } from './lib/useGamePlaySessions'
+import type { RatingsApi } from './lib/useGameRatings'
 import LoyaltyCard from './components/LoyaltyCard'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
@@ -11,6 +12,7 @@ export default function MyList({
   boardGames,
   personal,
   playSessions,
+  ratings,
   isOpen,
   onClose,
   onOpenGame,
@@ -19,9 +21,10 @@ export default function MyList({
   boardGames: BoardGame[]
   personal: PersonalApi
   playSessions: PlaySessionsApi
+  ratings: RatingsApi
   isOpen: boolean
   onClose: () => void
-  onOpenGame: (game: BoardGame) => void
+  onOpenGame: (game: BoardGame, tab?: 'ratings') => void
   renderCover: (game: BoardGame) => ReactNode
 }) {
   const [tab, setTab] = useState<Tab>('want')
@@ -82,7 +85,13 @@ export default function MyList({
 
         <div className="mylist-body">
           {tab === 'loyalty' ? (
-            <LoyaltyCard />
+            <LoyaltyCard
+              boardGames={boardGames}
+              ratings={ratings}
+              personal={personal}
+              playSessions={playSessions}
+              onOpenGame={onOpenGame}
+            />
           ) : (
             <>
               {!personal.isLoggedIn && (

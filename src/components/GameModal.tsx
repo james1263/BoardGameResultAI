@@ -39,6 +39,7 @@ export default function GameModal({
   onCoverUpload,
   onTrash,
   isTrashing,
+  initialTab,
   onClose,
 }: {
   game: LibraryGame
@@ -54,9 +55,10 @@ export default function GameModal({
   onCoverUpload: (event: ChangeEvent<HTMLInputElement>) => void
   onTrash: () => void
   isTrashing: boolean
+  initialTab?: TabKey
   onClose: () => void
 }) {
-  const [tab, setTab] = useState<TabKey>('overview')
+  const [tab, setTab] = useState<TabKey>(initialTab ?? 'overview')
   const docsApi = useGameDocuments(game.bggName)
 
   useEffect(() => {

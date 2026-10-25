@@ -1,0 +1,428 @@
+/* 玩家集點卡：印章風格（新檔，樣式都用 lc- 開頭） */
+.lc {
+  --lc-paper: #fbf6e9;
+  --lc-paper-2: #f3ead2;
+  --lc-ink: #3a3526;
+  --lc-muted: #8b8468;
+  --lc-green: #4f6f52;
+  --lc-green-dark: #2f4a3a;
+  --lc-stamp: #b5452d;
+  --lc-kraft: #d8c49a;
+  --lc-line: rgba(58, 53, 38, 0.18);
+  --lc-serif: 'Noto Serif TC', 'Source Han Serif TC', 'Songti TC', 'PMingLiU',
+    serif;
+
+  padding: 14px;
+  border-radius: 16px;
+  background:
+    radial-gradient(rgba(58, 53, 38, 0.05) 1px, transparent 1px) 0 0 / 14px 14px,
+    var(--lc-paper);
+  color: var(--lc-ink);
+}
+
+.lc-error,
+.lc-warning {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(181, 69, 45, 0.12);
+  font-size: 0.85rem;
+}
+
+/* 標題橫幅 */
+.lc-banner {
+  position: relative;
+  overflow: hidden;
+  padding: 18px 16px 16px;
+  border-radius: 14px;
+  background: var(--lc-green-dark);
+  color: #f6efd9;
+  text-align: center;
+}
+
+.lc-banner::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1.5px dashed rgba(246, 239, 217, 0.45);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.lc-banner-kicker {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  opacity: 0.75;
+}
+
+.lc-banner-title {
+  margin: 4px 0 2px;
+  font-family: var(--lc-serif);
+  font-size: 1.5rem;
+  letter-spacing: 0.12em;
+}
+
+.lc-banner-sub {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.lc-banner-mark {
+  position: absolute;
+  right: 14px;
+  bottom: -10px;
+  font-size: 4rem;
+  opacity: 0.12;
+  line-height: 1;
+}
+
+/* 點數與免費券 */
+.lc-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.lc-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border: 2px solid var(--lc-kraft);
+  border-radius: 12px;
+  background: #fffdf5;
+}
+
+.lc-stat-ticket {
+  border-style: dashed;
+  border-color: var(--lc-stamp);
+}
+
+.lc-stat-label {
+  font-size: 0.78rem;
+  color: var(--lc-muted);
+}
+
+.lc-stat-num {
+  font-family: var(--lc-serif);
+  font-size: 2rem;
+  line-height: 1.1;
+  color: var(--lc-green-dark);
+}
+
+.lc-stat-ticket .lc-stat-num {
+  color: var(--lc-stamp);
+}
+
+.lc-stat-num small {
+  margin-left: 2px;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+/* 本月進度：2 個印章格 → 免費券 */
+.lc-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.lc-slots {
+  display: flex;
+  gap: 8px;
+}
+
+.lc-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 2px dashed var(--lc-muted);
+  border-radius: 50%;
+  color: var(--lc-muted);
+  font-weight: 700;
+}
+
+.lc-slot.filled {
+  border: 3px double var(--lc-stamp);
+  color: var(--lc-stamp);
+  background: rgba(181, 69, 45, 0.08);
+  transform: rotate(-8deg);
+}
+
+.lc-progress-arrow {
+  color: var(--lc-muted);
+}
+
+.lc-reward {
+  padding: 8px 12px;
+  border: 2px dashed var(--lc-muted);
+  border-radius: 8px;
+  color: var(--lc-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.lc-reward.ready {
+  border-color: var(--lc-stamp);
+  background: rgba(181, 69, 45, 0.1);
+  color: var(--lc-stamp);
+}
+
+.lc-progress-note {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--lc-muted);
+}
+
+/* 區塊標題 */
+.lc-section {
+  margin-top: 18px;
+}
+
+.lc-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-family: var(--lc-serif);
+  font-size: 1rem;
+  color: var(--lc-green-dark);
+}
+
+.lc-heading::after {
+  content: '';
+  flex: 1;
+  border-top: 1.5px dashed var(--lc-kraft);
+}
+
+.lc-steps {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lc-steps li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 0.85rem;
+}
+
+.lc-steps b {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--lc-green);
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.lc-rules {
+  margin: 0;
+  padding: 8px 12px 8px 26px;
+  border: 1.5px dashed var(--lc-kraft);
+  border-radius: 10px;
+  background: var(--lc-paper-2);
+  font-size: 0.8rem;
+  color: var(--lc-muted);
+}
+
+.lc-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--lc-muted);
+}
+
+/* 近期紀錄：印章＋內容 */
+.lc-days,
+.lc-tickets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lc-day {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border: 2px solid var(--lc-kraft);
+  border-radius: 12px;
+  background: #fffdf5;
+}
+
+.lc-day.done {
+  border-color: var(--lc-green);
+}
+
+.lc-stamp {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  border: 3px double var(--lc-muted);
+  border-radius: 50%;
+  color: var(--lc-muted);
+  font-family: var(--lc-serif);
+  line-height: 1.1;
+  transform: rotate(-8deg);
+  opacity: 0.8;
+}
+
+.lc-day.done .lc-stamp {
+  border-color: var(--lc-stamp);
+  color: var(--lc-stamp);
+  background: rgba(181, 69, 45, 0.07);
+  opacity: 1;
+}
+
+.lc-stamp-month {
+  font-size: 0.65rem;
+}
+
+.lc-stamp-day {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.lc-stamp-text {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+}
+
+.lc-day-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.lc-day-date {
+  margin: 0;
+  font-weight: 700;
+}
+
+.lc-day-status {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: var(--lc-muted);
+}
+
+.lc-day.done .lc-day-status {
+  color: var(--lc-green);
+  font-weight: 600;
+}
+
+/* 當天遊戲 */
+.lc-games {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.lc-game {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 8px 0;
+  border-top: 1px dashed var(--lc-line);
+}
+
+.lc-game-name {
+  flex: 1 1 100%;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.lc-played {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border: 1.5px solid var(--lc-green);
+  border-radius: 999px;
+  color: var(--lc-green-dark);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.lc-game-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lc-game-state {
+  font-size: 0.78rem;
+  color: var(--lc-stamp);
+}
+
+.lc-game-state.done {
+  color: var(--lc-green);
+}
+
+.lc-btn,
+.lc-refresh {
+  padding: 4px 12px;
+  border: 1.5px solid var(--lc-green-dark);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lc-green-dark);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.lc-btn:hover,
+.lc-refresh:hover {
+  background: var(--lc-green-dark);
+  color: #f6efd9;
+}
+
+.lc-refresh {
+  display: block;
+  margin: 16px auto 0;
+}
+
+/* 兌換歷史：票券 */
+.lc-ticket {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 2px dashed var(--lc-stamp);
+  border-radius: 10px;
+  background: #fffdf5;
+  font-size: 0.82rem;
+}
+
+.lc-ticket-title {
+  font-weight: 700;
+  color: var(--lc-stamp);
+}
+
+.lc-ticket-date {
+  color: var(--lc-muted);
+}
