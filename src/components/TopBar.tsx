@@ -3,9 +3,11 @@ import PlayerPanel from '../PlayerPanel'
 export default function TopBar({
   myListCount,
   onOpenMyList,
+  onOpenLeaderboard,
 }: {
   myListCount: number
   onOpenMyList: () => void
+  onOpenLeaderboard: () => void
 }) {
   return (
     <header className="topbar">
@@ -21,9 +23,16 @@ export default function TopBar({
         <button
           type="button"
           className="mylist-button"
+          onClick={onOpenLeaderboard}
+        >
+          排行榜
+        </button>
+        <button
+          type="button"
+          className="mylist-button"
           onClick={onOpenMyList}
         >
-          我的清單
+          我的桌遊
           {myListCount > 0 && (
             <span className="mylist-count">{myListCount}</span>
           )}

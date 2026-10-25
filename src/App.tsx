@@ -11,6 +11,7 @@ import {
 } from './data/boardGames.generated'
 import AdminPanel from './AdminPanel'
 import MyList from './MyList'
+import Leaderboard from './components/Leaderboard'
 import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
 import { usePersonalCollection } from './lib/usePersonalCollection'
@@ -71,6 +72,7 @@ function Library({
   const ratings = useGameRatings()
   const communityStats = useCommunityStats()
   const [isMyListOpen, setIsMyListOpen] = useState(false)
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
   const [nowMs] = useState(() => Date.now())
 
   function isNewGame(game: LibraryGame): boolean {
@@ -454,6 +456,7 @@ function Library({
       <TopBar
         myListCount={myListCount}
         onOpenMyList={() => setIsMyListOpen(true)}
+        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
       />
 
       <main>
@@ -693,7 +696,28 @@ function Library({
           />
         )}
       />
-
+      <Leaderboard
+        boardGames={boardGames}
+        communityStats={communityStats}
+        ratings={ratings}
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
+        onOpenGame={(game) => {
+          setCoverMessage('')
+          setSelectedGame(game)
+          setIsLeaderboardOpen(false)
+        }}
+        renderCover={(game) => (
+          <CoverImage
+            key={`${game.coverSlug}-${coverVersions[game.coverSlug] ?? 0}`}
+            version={coverVersions[game.coverSlug] ?? 0}
+            slug={game.coverSlug}
+            alt={game.name}
+            className="mylist-cover"
+            fallback={<span aria-hidden="true">🎲</span>}
+          />
+        )}
+      />
       <BackToTop />
       {personal.needsMerge && <MergeDialog personal={personal} />}
 
