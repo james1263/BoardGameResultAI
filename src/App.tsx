@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useRef,
   useEffect,
   useMemo,
   useState,
@@ -20,6 +21,7 @@ import { useGameRatings } from './lib/useGameRatings'
 import { useCommunityStats } from './lib/useCommunityStats'
 import { useInviteLink } from './lib/useInviteLink'
 import { useCheckinLink } from './lib/useCheckinLink'
+import InAppBrowserNotice from './components/InAppBrowserNotice'
 import CheckInDialog from './components/CheckInDialog'
 import { fetchBoardGames } from './lib/fetchBoardGames'
 import {
@@ -108,6 +110,41 @@ function Library({
     clearCheckin()
     if (!date) return
     setInviteFocus(date)
+    setInviteKey((count) => count + 1)
+    setIsMyListOpen(true)
+  }
+  // 剛評完分的遊戲自動算「已玩」（資料庫已先標好，這裡讓畫面即時更新）
+  const ratedBeforeRef = useRef<Set<string> | null>(null)
+  useEffect(() => {
+    if (ratings.status !== 'ready') {
+      ratedBeforeRef.current = null
+      return
+    }
+    const rated = new Set(
+      boardGames
+        .filter((game) => ratings.getMine(game.bggName) !== null)
+        .map((game) => game.bggName),
+    )
+    const before = ratedBeforeRef.current
+    ratedBeforeRef.current = rated
+    if (before === null || personal.status !== 'ready') return
+    for (const name of rated) {
+      if (!before.has(name) && !personal.getEntry(name).played) {
+        personal.updateEntry(name, { played: true }, { skipPlayedRule: true })
+      }
+    }
+  }, [
+    ratings.status,
+    ratings.getMine,
+    boardGames,
+    personal.status,
+    personal.getEntry,
+    personal.updateEntry,
+  ])
+
+  // 頂端導覽「集點卡」：直接打開我的桌遊的集點卡分頁
+  function openMyLoyalty() {
+    setInviteFocus(null)
     setInviteKey((count) => count + 1)
     setIsMyListOpen(true)
   }
@@ -522,10 +559,12 @@ function Library({
           onClose={clearCheckin}
         />
       )}
+      <InAppBrowserNotice />
       <TopBar
         myListCount={myListCount}
         onOpenMyList={() => setIsMyListOpen(true)}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+        onOpenLoyalty={openMyLoyalty}
       />
 
       <main>

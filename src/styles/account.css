@@ -215,3 +215,14 @@
   color: #8a5f33;
   font-weight: 600;
 }
+
+/* 「請改用瀏覽器開啟」提示：要蓋過所有視窗 */
+.modal-backdrop.inapp-backdrop {
+  z-index: 1200;
+}
+
+.pd-steps {
+  margin: 0 0 14px;
+  padding-left: 22px;
+  line-height: 1.8;
+}

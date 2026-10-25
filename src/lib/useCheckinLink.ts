@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { supabase } from './supabase'
+import { signInWithGoogle } from './googleLogin'
 import { useSession } from './useSession'
 
 const KEY = 'boardgame-checkin-token'
@@ -49,10 +49,7 @@ export function useCheckinLink() {
   }, [])
 
   const login = useCallback(async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    })
+    await signInWithGoogle()
   }, [])
 
   return { token, isLoggedIn: session !== null, clear, login }

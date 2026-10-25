@@ -361,24 +361,13 @@ export default function LoyaltyAdmin() {
     setBusy(false)
   }
 
-  // 產生連結：玩家打開後，登入就會直接看到自己的集點卡
-  async function copyLink(date: string) {
-    const link = `${window.location.origin}/?card=${date}`
-    try {
-      await navigator.clipboard.writeText(link)
-      setMessage(`已複製連結，可以直接傳給玩家：${link}`)
-    } catch {
-      window.prompt('請複製這個連結：', link)
-    }
-  }
-
   // 自助報到：建立連結、開關、人數上限、重設連結
   async function createCheckin(gatheringId: string) {
     setBusy(true)
     setMessage('')
     const { data, error } = await supabase
       .from('gathering_checkins')
-      .insert({ gathering_id: gatheringId })
+      .insert({ gathering_id: gatheringId, is_open: true })
       .select('gathering_id, token, is_open, capacity')
       .single()
 
@@ -457,12 +446,12 @@ export default function LoyaltyAdmin() {
   }
 
   async function copyJoinLink(token: string) {
-    const link = `${window.location.origin}/?join=${token}`
+    const link = `${window.location.origin}/?join=${token}&openExternalBrowser=1`
     try {
       await navigator.clipboard.writeText(link)
-      setMessage(`已複製報到連結，可以傳給今天來玩的人：${link}`)
+      setMessage(`已複製聚會連結，可以傳給今天來玩的人：${link}`)
     } catch {
-      window.prompt('請複製這個報到連結：', link)
+      window.prompt('請複製這個聚會連結：', link)
     }
   }
 
@@ -607,8 +596,11 @@ export default function LoyaltyAdmin() {
 
   return (
     <>
-      <button className="mylist-button" type="button" onClick={openModal}>
-        聚會與集點
+      <button className="sb-item" type="button" onClick={openModal}>
+        <span className="sb-ico" aria-hidden="true">
+          🎴
+        </span>
+        <span>聚會與集點</span>
       </button>
 
       {isOpen &&
@@ -753,14 +745,6 @@ export default function LoyaltyAdmin() {
                         <div className="lga-detail-actions">
                           <button
                             type="button"
-                            className="lga-outline"
-                            disabled={busy}
-                            onClick={() => copyLink(selected.gatheredOn)}
-                          >
-                            🔗 複製集點卡連結
-                          </button>
-                          <button
-                            type="button"
                             className="lga-danger"
                             disabled={busy}
                             onClick={() => deleteGathering(selected)}
@@ -770,12 +754,12 @@ export default function LoyaltyAdmin() {
                         </div>
                       </div>
 
-                      <h4 className="lga-sub">自助報到</h4>
+                      <h4 className="lga-sub">聚會連結（報到＋集點卡）</h4>
                       {!selectedCheckin ? (
                         <>
                           <p className="loy-admin-note">
-                            建立連結後，玩家登入並按「我來了」，就會自動列入出席名單。
-                            預設是關閉的，要按「開放報到」才生效；只有聚會當天（台北時間）可以報到，隔天自動失效。
+                            一個連結就夠了：把連結傳給今天要來的人，他們登入（沒有帳號會自動建立）並按「我來了」，就會列入出席名單，並直接打開這場聚會的集點卡。
+                            建立後預設為開放；只有聚會當天（台北時間）可以報到，已經報到的人之後仍可用同一個連結回到集點卡。
                           </p>
                           <button
                             type="button"
@@ -783,7 +767,7 @@ export default function LoyaltyAdmin() {
                             disabled={busy}
                             onClick={() => createCheckin(selected.id)}
                           >
-                            ＋ 建立報到連結
+                            ＋ 建立聚會連結
                           </button>
                         </>
                       ) : (
@@ -812,7 +796,7 @@ export default function LoyaltyAdmin() {
                               disabled={busy}
                               onClick={() => copyJoinLink(selectedCheckin.token)}
                             >
-                              🔗 複製報到連結
+                              🔗 複製聚會連結
                             </button>
                             <button
                               type="button"
@@ -850,7 +834,7 @@ export default function LoyaltyAdmin() {
                             {selectedCheckin.capacity !== null
                               ? `，上限 ${selectedCheckin.capacity} 人`
                               : '，不限人數'}
-                            。上限包含你手動加入的人；你手動加入時可以超過上限（會先跳確認）。
+                            。人數上限可以不設；設了的話，包含你手動加入的人，你手動加入時可以超過上限（會先跳確認）。
                           </p>
                         </>
                       )}

@@ -1,0 +1,205 @@
+/* 新的頂端導覽列（桌面：頂端；手機：底部導覽）
+   不要在 .sitebar 加 backdrop-filter／transform／filter，
+   否則裡面 position: fixed 的視窗會被關在裡面。 */
+.sitebar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-bar);
+  background: var(--c-paper);
+  border-bottom: 1px solid var(--c-line);
+}
+
+.sb-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 20px;
+}
+
+.sb-brand {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  color: var(--c-ink);
+  text-decoration: none;
+}
+
+.sb-logo {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(69, 107, 80, 0.14);
+  font-size: 1.3rem;
+}
+
+.sb-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.sb-brand-text strong {
+  font-size: 1.05rem;
+}
+
+.sb-brand-text small {
+  color: var(--c-ink-soft);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+}
+
+.sb-nav {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.sb-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c-ink-soft);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sb-item:hover {
+  background: rgba(69, 107, 80, 0.1);
+  color: var(--c-ink);
+}
+
+.sb-item.active {
+  color: var(--c-forest);
+}
+
+.sb-item.active::after {
+  position: absolute;
+  right: 14px;
+  bottom: 2px;
+  left: 14px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--c-forest);
+  content: '';
+}
+
+.sb-count {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--c-caramel);
+  color: #fff;
+  font-size: 0.74rem;
+}
+
+.sb-account {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 帳號區的按鈕（暱稱、登入、登出）統一外觀 */
+.sb-account .player-chip,
+.sb-account .admin-link,
+.sb-logout {
+  max-width: 170px;
+  padding: 8px 14px;
+  overflow: hidden;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--c-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sb-account .player-chip:hover,
+.sb-account .admin-link:hover,
+.sb-logout:hover {
+  border-color: var(--c-forest);
+}
+
+/* 手機：導覽移到底部 */
+@media (max-width: 760px) {
+  .sb-inner {
+    gap: 10px;
+    padding: 8px 12px;
+  }
+
+  .sb-brand-text small {
+    display: none;
+  }
+
+  .sb-account {
+    margin-left: auto;
+  }
+
+  .sb-nav {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: var(--z-bar);
+    justify-content: space-around;
+    gap: 0;
+    margin: 0;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--c-line);
+    background: var(--c-paper);
+    box-shadow: 0 -4px 16px rgba(52, 70, 60, 0.08);
+  }
+
+  .sb-item {
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 2px;
+    border-radius: var(--radius-s);
+    font-size: 0.72rem;
+  }
+
+  .sb-item.active::after {
+    right: 30%;
+    bottom: 0;
+    left: 30%;
+  }
+
+  .sb-ico {
+    font-size: 1.25rem;
+  }
+
+  .sb-count {
+    position: absolute;
+    top: 0;
+    right: 18%;
+    min-width: 18px;
+    height: 18px;
+    font-size: 0.68rem;
+  }
+
+  /* 底部導覽不要蓋住頁面最後的內容 */
+  body {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+}

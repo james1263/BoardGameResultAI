@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { supabase } from './supabase'
+import { signInWithGoogle } from './googleLogin'
 import { useSession } from './useSession'
 
 const KEY = 'boardgame-invite-card'
@@ -42,10 +42,7 @@ export function useInviteLink() {
   }, [])
 
   const login = useCallback(async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    })
+    await signInWithGoogle()
   }, [])
 
   const focusDate =

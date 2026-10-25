@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from './lib/supabase'
 import { useSession } from './lib/useSession'
+import { signInWithGoogle } from './lib/googleLogin'
 import { useAdminCheck } from './lib/useIsAdmin'
 
 type Profile = { nickname: string; public_id: string }
@@ -66,10 +67,7 @@ export default function PlayerPanel() {
   }, [userId, checked, isAdmin])
 
   async function handleGoogleLogin() {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    })
+    await signInWithGoogle()
   }
 
   async function handleLogout() {
