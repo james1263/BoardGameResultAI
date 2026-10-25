@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案交接文件
 
 > 給接手的 AI 閱讀。**請先讀 `QUICKSTART.md`（懶人包），再讀本文件。**
-> 最後更新：2026-10-25（附錄 O 為最新；本文第 1～10 節是 2026-10-22 的底稿，**後面的附錄 A～O 較新，與本文衝突時以附錄為準，越後面越新**）。2026-10-25 做過一次精簡：移除已作廢的「待測／尚未做」狀態與重複表格，內容與決定不變。
+> 最後更新：2026-10-25 晚（附錄 P 為最新；本文第 1～10 節是 2026-10-22 的底稿，**後面的附錄 A～P 較新，與本文衝突時以附錄為準，越後面越新**）。2026-10-25 做過一次精簡：移除已作廢的「待測／尚未做」狀態與重複表格，內容與決定不變。
 
 ## 1. 專案簡介
 
@@ -88,14 +88,14 @@
 3. **Phase 3｜想玩／已玩／備註與雲端同步** ✅
 4. **Phase 4｜公開評分** ✅（見 M-3、N-1）
 5. **原 Phase 5（每月投票）** 改為「社群統計」✅ 與排行榜（附錄 D、O）
-6. **Phase 6｜集點卡與成就**：依遊玩紀錄與完整評分累積，存資料庫並可追溯；已登入玩家跨裝置保留。與「常玩遊戲排名」的關係尚未決定。
+6. **Phase 6｜集點卡與成就**：依遊玩紀錄與完整評分累積，存資料庫並可追溯；已登入玩家跨裝置保留。與「常玩遊戲排名」的關係尚未決定。**第一版已上線、v2 修改中，見附錄 P。**
 
 **其他設計決定**：不做公開留言板（可日後加選填短評）。評分一律公開，不放進玩家設定。評分項目沿用使用者的用語，不要把「玩家影響性」改名成「玩家互動」。複雜度、快速性是遊戲屬性、不列入評分；運氣成分、教學難易、配件品質等先不加。
 
 ## 7. 路線圖
 
-**已完成**：上述 Phase 1～4、社群統計、排行榜（程式已提供，待確認）、垃圾桶、遊玩紀錄、詳細視窗分頁、簡介。
-**接下來**：見附錄 O-6（集點卡 → 上傳規則書 PDF → AI 規則助手 RAG；想做清單見附錄 L）。
+**已完成**：上述 Phase 1～4、社群統計、排行榜（已套用，commit 待確認）、集點卡第一版（已 push）、垃圾桶、遊玩紀錄、詳細視窗分頁、簡介。
+**接下來**：見附錄 P-6（集點卡 v2 → 上傳規則書 PDF → AI 規則助手 RAG；想做清單見附錄 L）。
 
 ## 8. 與使用者合作的規則（重要）
 
@@ -209,10 +209,10 @@
 ## 附錄 I｜拆檔與垃圾桶（2026-10-23；與上面衝突時以這裡為準）
 
 ### I-1. 拆檔（完成）
-- `src/App.css` 變成入口檔，以 `@import` 載入 `src/styles/`（順序有影響，不要調換）：`base`、`topbar`、`hero`、`library`、`filter`、`cards`、`modal`、`admin`、`mylist`、`footer`、`trash`、`docs`，之後加 `backtotop`、`tabs`、`ratings`、`leaderboard`。
+- `src/App.css` 變成入口檔，以 `@import` 載入 `src/styles/`（順序有影響，不要調換）：`base`、`topbar`、`hero`、`library`、`filter`、`cards`、`modal`、`admin`、`mylist`、`footer`、`trash`、`docs`，之後加 `backtotop`、`tabs`、`ratings`、`leaderboard`、`loyalty`。
 - `src/App.tsx` 拆開後，`Library` 只留狀態、篩選與排序、`displayedItems`：
   - `src/lib/`：`libraryTypes.ts`（`LibraryGame`、`SortKey`、`ViewMode`、`MineGroup`、`getMineGroup`、常數）、`gameFormat.ts`、`fetchBoardGames.ts`（含 `BoardGameRow`、`rowToGame`）、`personalApi.ts`、`useTrashActions.ts`。
-  - `src/components/`：`Icons`、`CoverImage`、`StatusButtons`、`RatingDots`、`PlayCounter`、`PersonalNote`、`TopBar`、`ViewToggle`、`FilterDrawer`、`GameCard`、`GameModal`、`MergeDialog`、`PersonalToast`、`TrashSection`（之後又加了 `BackToTop`、`RatingSection`、`PlaySessions`、`DescriptionEditor`、`Leaderboard`）。
+  - `src/components/`：`Icons`、`CoverImage`、`StatusButtons`、`RatingDots`、`PlayCounter`、`PersonalNote`、`TopBar`、`ViewToggle`、`FilterDrawer`、`GameCard`、`GameModal`、`MergeDialog`、`PersonalToast`、`TrashSection`（之後又加了 `BackToTop`、`RatingSection`、`PlaySessions`、`DescriptionEditor`、`Leaderboard`、`CommunityStats`、`LoyaltyCard`）。
   - 「更多類型」的計算進 `FilterDrawer`；Esc 關閉進 `GameModal`。`categories` 等 `useMemo` 的相依為 `[boardGames]`（因為垃圾桶會改變清單）。
 - `PlayerPanel.tsx`：登入後只顯示一顆暱稱按鈕（`.player-chip`），登出放進暱稱視窗。
 
@@ -417,7 +417,7 @@
 ### O-1. 社群統計：已完成
 - 使用者回報已 commit 並 push。`src/lib/useCommunityStats.ts` 提供 `CommunityStatsApi.getStats(bggName)`，欄位含 `wantCount`、`playedCount`、`wantMonth`／`wantQuarter`／`wantYear`、`playedMonth`／`playedQuarter`／`playedYear`。
 
-### O-2. 排行榜（程式已提供，**待使用者套用、build、實測、commit**）
+### O-2. 排行榜（程式已提供；2026-10-25 晚確認 `TopBar.tsx` 已含排行榜按鈕＝已套用，**commit 與窄螢幕實測待確認**）
 - 新增：`src/lib/leaderboards.ts`（`rankGames`：同分並列，例如 1、1、3，只保留前 10 名）、`src/components/Leaderboard.tsx`、`src/styles/leaderboard.css`（樣式 `lb-` 開頭；`App.css` 加 `@import './styles/leaderboard.css';`）。
 - 修改：`TopBar.tsx`（整份換掉，多「排行榜」按鈕，新屬性 `onOpenLeaderboard`）、`MyList.tsx`（兩處改名）、`App.tsx`（四處：`import Leaderboard`、`isLeaderboardOpen` 狀態、`TopBar` 傳 `onOpenLeaderboard`、在 `<BackToTop />` 上方放 `<Leaderboard ... renderCover={...} />`，點榜單遊戲會關閉抽屜並開啟詳細視窗）。
 - 四個榜：**想玩、已玩**（可切「全部／本月／本季／本年」；全部＝目前總人數，其餘＝期間新增人數，右側小字顯示目前總人數）、**整體評分、適合留下來**（用 `ratings.getSummary`，平均四捨五入到小數 1 位，右側顯示評分人數；**需滿 5 人才上榜**）。
@@ -437,7 +437,135 @@
 - 使用者曾把 PowerShell 指令貼進 Supabase SQL Editor 而報錯。**每個指令都要明寫貼在哪裡。**
 - 上一次聊天室因免費額度中斷；接手時不要假設上一則回覆的步驟已完成，先問實際狀態。
 
-### O-6. 下一步
-1. 確認排行榜、`GameCard`、`privacy.html` 的實際狀態並 commit。
-2. **集點卡（Phase 6）**。開工前請使用者在 Supabase SQL Editor 貼兩個查詢結果：①`player_profiles` 的欄位；②管理者函式名稱（`is_admin` 等）。規則見 L-2。
-3. 之後：上傳規則書 PDF（私有 bucket）→ AI 規則助手（RAG）；想做清單見附錄 L。
+### O-6. 下一步（已被附錄 P-6 取代）
+見附錄 P-6。
+
+---
+
+## 附錄 P｜集點卡第一版、使用者的三點修改、v2 方案（2026-10-25 晚）
+
+### P-1. 目前狀態（接手先確認）
+- 集點卡第一版：使用者回報**已 commit、push**。逐項測試結果（聚會日、出席、遊玩紀錄、七項評分、兌換）**沒有明確回報**；他看過畫面後直接提出三個設計問題。測試用的聚會日與兌換紀錄是否已清除**未知**（兌換紀錄沒有刪除功能，要用 SQL 清）。
+- 排行榜：`TopBar.tsx`（2026-10-25 晚上傳版本）已有 `onOpenLeaderboard` 與「排行榜」按鈕，代表已套用；commit、窄螢幕是否擠在一起未確認。
+- `GameCard.tsx`（詳細資料）與 `privacy.html`：先前已 `git add`、未 commit，現況未驗證。
+- 上一個聊天室因免費額度中斷，**回覆停在 v2 方案提出、等使用者回「照建議」**；之後 AI 還沒動工 v2。
+
+### P-2. 第一版內容
+- 檔案：`src/lib/useLoyalty.ts`（`useMyLoyalty` 與型別、`toSummary`／`toDay`／`toRedemption`、`formatDay`、`formatDateTime`、`todayLocal`）、`src/components/LoyaltyCard.tsx`（玩家端：摘要四格、規則說明、我的聚會日、兌換紀錄、重新整理）、`src/LoyaltyAdmin.tsx`（管理者視窗，用 `createPortal`）、`src/MyList.tsx`（多第三個分頁「🎟 集點卡」，頂部 tab 型別 `'want' | 'played' | 'loyalty'`）、`src/AdminPanel.tsx`（加 `import LoyaltyAdmin` 與 `{isAdmin && <LoyaltyAdmin />}`，位於頁尾登出按鈕上方）、`src/styles/loyalty.css`（樣式 `loy-` 開頭；`App.css` 末尾已 `@import './styles/loyalty.css';`）。
+- 資料庫（從前端程式推得；**建表與函式的 SQL 在上一個聊天室，不在文件裡**）：
+  - 資料表：`gatherings`（`id`、`gathered_on` date，同一天唯一，重複新增會回錯誤碼 23505、`note` ≤200 字）、`gathering_attendees`（`gathering_id`、`user_id`）、`loyalty_redemptions`（`id`、`user_id`、`redeemed_at`，沒有刪除功能）；管理者另讀 `player_profiles(id, nickname)`。
+  - 函式（RPC）：玩家用 `get_my_loyalty_summary`、`get_my_loyalty_days`；管理者用 `admin_get_loyalty_overview`、`admin_get_loyalty_days(p_user)`、`admin_redeem_voucher(p_user)`（回傳剩餘可用張數）。摘要欄位：`total_points`、`month_points`、`earned_vouchers`、`redeemed`、`available_vouchers`、`over_redeemed`；每日欄位：`day_date`、`game_count`、`rated_count`、`has_session`、`qualified`。
+  - **改動前務必請使用者在 Supabase SQL Editor 匯出實際定義**（查詢見 P-6）。
+- 第一版規則：管理者把到場的人列入某聚會日；該玩家當天要有「遊玩紀錄」（日期＝聚會日），且當天玩過的每款遊戲都要七項評分齊全，才得 1 點；一天只算 1 點；同月 2 點得 1 張免費券（無期限）；當月只有 1 點到下月 1 日不再計入；點數**即時計算**（改評分或刪遊玩紀錄會讓點數變動）；兌換紀錄永久保留；已兌換張數超過累積時顯示 ⚠（`over_redeemed`）。
+- 管理者視窗（第一版）：單一長視窗，由上而下：1 新增聚會日、2 勾選當天參加的人（只列有暱稱的玩家，勾選立即儲存）、3 大家的集點狀況（總表、明細、兌換）。入口是頁尾一顆「聚會與集點」。
+
+### P-3. 使用者提出的三點問題（原話整理）
+1. 管理者的「聚會與集點」應在頁面最上面，不要每次都滑到最下面；點開後除了勾選當天參加的人，**還要能勾選當天玩的遊戲**；「大家集點狀況」要放第二個小分頁，第一個分頁只處理聚會設定。
+2. 玩家點「集點卡」後，應能**針對今天玩的遊戲**評分，而不是任意一款都能評；除非當天這些遊戲他以前都評分過。
+3. `privacy.html` 要補集點卡說明。
+
+### P-4. v2 建議方案（**使用者尚未回「照建議」**；動工前先確認）
+- 新資料表 `gathering_games`（聚會日、遊戲 `bgg_name`）；管理者在聚會設定裡搜尋並勾選當天玩的遊戲。RLS：寫入只認 `is_admin()`，讀取登入玩家即可；建表後加 `revoke truncate, references, trigger ... from authenticated`，確認 `anon` 無權限；**不對 `board_games` 加外鍵**（沿用慣例）。
+- 玩家端：被勾選出席後，聚會日展開會看到當天遊戲清單；每款有「我玩了」勾選（系統自動建立當天的遊玩紀錄，玩家不用自己填日期），並顯示評分狀態（未評分／已評分）；「去評分」開啟該款詳細視窗並**停在「評分」分頁**，沿用現有評分表單。
+- 點數規則：出席＋標記玩過的每一款都有完整七項評分，才得 1 點；沒標記玩過的遊戲不需評分；**某款以前就評分過，這次直接算完成**（卡片顯示「已評分過，不用再填」），評分仍可隨時修改；管理者沒設遊戲清單的**舊聚會日沿用第一版規則**，避免已測資料失效。
+- 管理者端：「聚會與集點」按鈕搬到頁面最上方列（只有管理者看得到），頁尾那顆拿掉；視窗兩個分頁：**聚會設定**（新增／刪除聚會日、勾選出席者、搜尋並勾選當天遊戲）與**集點狀況**（總表、明細、兌換）。
+- 需修改的資料庫函式：`get_my_loyalty_days`、`admin_get_loyalty_days`、總表與摘要函式（`qualified`／`game_count`／`rated_count` 的判斷改依 `gathering_games` 與「我玩了」）。
+
+### P-5. 2026-10-25 晚收到的檔案帶來的實作提醒
+- `TopBar.tsx`：屬性只有 `myListCount`、`onOpenMyList`、`onOpenLeaderboard`；內有 `PlayerPanel`。要放管理者按鈕時，可在 `TopBar` 內用 `useIsAdmin` 判斷並渲染 `LoyaltyAdmin`（`LoyaltyAdmin` 內是 `createPortal` 視窗＋觸發按鈕，樣式 `admin-link` 在頂端列可能要另調）。窄螢幕目前已有兩顆按鈕，再加第三顆要注意擠壓（改圖示或收進選單）。
+- `GameModal.tsx`：`const [tab, setTab] = useState<TabKey>('overview')`，**沒有 `initialTab` 屬性**；四分頁 key 為 `overview`／`ratings`／`mine`／`rules`。要做「去評分直接開評分分頁」須新增 `initialTab`（或由 `App.tsx` 傳入），且 `App.tsx`／`MyList.tsx`／`Leaderboard.tsx` 的 `onOpenGame` 要能帶分頁參數。檔案也匯入了 `CommunityStats`（`src/components/CommunityStats.tsx`）。
+- `useGameRatings.ts`：`MyRating = { overall } & Record<六項, number|null>`；`getMine(bggName)` 回傳自己的評分或 `null`；`saveRating`、`deleteRating`；`status` 為 `guest／loading／ready／error`。「完整評分」＝七項皆非空（`overall` 加六項）。**此 hook 只在 `Library` 呼叫一次**，`LoyaltyCard` 若要顯示評分狀態應由上層傳入 `ratings`，不要自己再呼叫一次。
+- `useGamePlaySessions.ts`：`addSession(bggName, { playedOn, playerCount, note })` **沒有防重複**；同一款同一天可重複新增。v2「我玩了」要自行處理：先檢查 `getSessions(bggName)` 有無該日期紀錄，或在資料庫加限制。**待決定**：取消「我玩了」時，要不要刪掉當天紀錄（會連玩家自己手動新增的同日紀錄一起刪，需要區分來源）。
+- 兩個檔案都各有一份 `todayLocal()`（`useGamePlaySessions.ts`、`useLoyalty.ts`），行為相同，不影響使用。
+
+### P-6. 下一步（照順序）
+1. 使用者回「照建議」或指定修改 P-4。
+2. 使用者提供：①在 VS Code 終端機（PowerShell）執行 `Select-String -Path public\privacy.html -Pattern "<h2|<h3|</ul>|集點|排行榜"` 的結果；②在 **Supabase SQL Editor** 執行並貼結果：
+   ```sql
+   select table_name, column_name, data_type, is_nullable
+   from information_schema.columns
+   where table_schema = 'public'
+     and table_name in ('gatherings','gathering_attendees','loyalty_redemptions')
+   order by table_name, ordinal_position;
+
+   select proname, pg_get_functiondef(oid) as definition
+   from pg_proc
+   where pronamespace = 'public'::regnamespace
+     and proname in ('get_my_loyalty_summary','get_my_loyalty_days',
+                     'admin_get_loyalty_overview','admin_get_loyalty_days',
+                     'admin_redeem_voucher');
+   ```
+   ③貼目前的 `src/App.tsx` 與 `src/AdminPanel.tsx`（還需要 `MyList.tsx`、`LoyaltyCard.tsx`、`LoyaltyAdmin.tsx` 時，以使用者本機為準，先確認沒有被改過）。
+3. AI 先給**資料庫 SQL**（貼 Supabase SQL Editor），再給前端整份檔案（每步標明貼在哪裡、檔名）。
+4. 實測（需要管理者帳號＋另一個 Google 玩家帳號）→ `npm.cmd run build` → 逐檔 `git add` → commit → push。
+5. 補 `privacy.html`。之後依序：上傳規則書 PDF（私有 bucket）→ AI 規則助手（RAG）。
+
+### P-7. `privacy.html` 待補的句子
+- 集點卡（草擬，等 v2 規則定案後放進「三、公開評分與社群統計」附近或新增一節）：「集點卡：管理者會記錄每次聚會的日期、出席名單與當天玩的遊戲。點數依你自己的遊玩紀錄與評分即時計算，兌換紀錄會保留。只有你本人和管理者看得到你的點數與兌換紀錄，其他玩家看不到。」
+- 排行榜（附錄 O-4）。兩句都先用 `Select-String` 確認有沒有加過。
+
+### P-8. 協作注意
+- 使用者在 claude.ai 免費額度下工作，聊天室容易中斷；交接文件要隨時是最新，接手時**先問實際狀態，不要假設上一則回覆已完成**。
+- 他這次一次提出三個設計問題，我方回應是先列方案、請他確認再動工，這個流程維持。
+---
+
+## 附錄 Q｜2026-10-26：集點卡 v2 完成、免評分、邀請連結、聯絡方式、自助報到規格
+
+> 這一節是接在附錄 P 之後的新紀錄。使用者每次都用「回報結果＋貼截圖」的方式測試；改檔案請給完整檔案或明確的「搜尋這行、換成這段」。
+
+### Q-1　本輪完成（均已在使用者機器上測過的部分標 ✓）
+
+| 項目 | 說明 |
+|---|---|
+| 集點卡 v2 ✓ | 管理者「聚會與集點」兩個分頁；指定當天遊戲；玩家勾「我玩了」並評分；舊聚會日沿用舊規則。已 commit（`集點卡 v2：指定遊戲、兩個分頁、印章風`）。 |
+| 免評分例外 | `gathering_attendees.exempt boolean not null default false`；`loyalty_day_status` 回傳的 `qualified` 改為 `exempt or (有遊戲且全部評分完整)`；RLS 政策 `admin update attendees`（只有 `is_admin()` 可 UPDATE）。 |
+| 邀請連結 | `?card=YYYY-MM-DD`。`src/lib/useInviteLink.ts` 讀取網址參數後存進 `localStorage`（登入跳轉不會遺失）並立刻清掉網址參數。`App.tsx` 在已登入時開啟 `MyList`（`key={inviteKey}`、`initialTab='loyalty'`、`focusDate`），`LoyaltyCard` 捲到那一天並加 `.focus` 外框。未登入時頂端顯示 `.invite-banner`。 |
+| 自動標已玩 | 觸發器函式 `public.mark_played_from_activity()`（security definer、`set search_path=''`、內部 `exception when others then null`，不會讓評分失敗），掛在 `game_ratings`（insert／update 後）與 `gathering_plays`（insert 後）；並已一次補齊舊資料。前端不會即時更新，需重新整理。 |
+| 玩家登出選單 | `PlayerPanel.tsx`：暱稱 ▾ →「修改暱稱與聯絡方式／登出」。 |
+| 聯絡方式 | 新資料表 `public.player_contacts(user_id pk → auth.users on delete cascade, contact_name 1～40 字, updated_at)`；RLS：本人或管理者可 SELECT、本人可 INSERT／UPDATE、僅管理者可 DELETE；`anon` 無任何權限（已用 `information_schema.role_table_grants` 驗證）；已 `revoke truncate, references, trigger from authenticated`。 |
+| 暱稱視窗修正 | 原因是 `.topbar` 的 `backdrop-filter` 讓 `position: fixed` 的遮罩被關在頂端列內。已移除 `backdrop-filter`，並讓視窗以 `createPortal` 掛到 `document.body`；`.modal-backdrop { z-index: 1100 }`。視窗改為寬 440px、輸入框高 48px、字級 16px（避免手機自動放大）、可捲動。 |
+| 管理者視窗改版 | `LoyaltyAdmin.tsx` + `src/styles/loyalty-admin.css`（類別前綴 `lga-`）：新增聚會、近期聚會列、聚會詳情（頭像標籤、免評分、複製連結、刪除）、指定遊戲；每位玩家下方顯示聯絡方式；新增玩家搜尋（暱稱或聯絡方式）。 |
+| 隱私說明 | `privacy.html` 已補集點卡與聯絡方式兩句。 |
+
+### Q-2　新增或變動的檔案
+
+- 新增：`src/lib/useInviteLink.ts`、`src/styles/loyalty-card.css`、`src/styles/loyalty-admin.css`、`src/styles/account.css`
+- 修改：`src/App.tsx`（`useInviteLink`、橫幅、`MyList` 的 `key`／`initialTab`／`focusDate`）、`src/App.css`（`@import` 三個新 css，順序：`loyalty-card` → `loyalty-admin` → `account`）、`src/MyList.tsx`、`src/components/LoyaltyCard.tsx`、`src/components/TopBar.tsx`、`src/lib/useLoyalty.ts`、`src/PlayerPanel.tsx`、`src/LoyaltyAdmin.tsx`
+- `account.css` 內也放了 `.lc-day.focus` 與集點卡文字靠左的覆蓋樣式（最後載入）。
+
+### Q-3　自助報到規格（使用者已選方案 A，尚未動工）
+
+**目標**：管理者傳一個連結給當天來玩的人，玩家登入後按「我來了」就成為出席者，不必管理者逐一勾選。
+
+**使用者擔心**：連結被亂傳、同一人重複登入。結論：同一帳號只會是同一筆出席（主鍵），風險是「不同的 Google 帳號」；因為網站開放註冊，所以要靠開關、上限、管理者檢視與移除。
+
+**規則**
+1. 每場聚會有獨立隨機報到連結（`?join=<token>`），不是日期；token 不可猜。
+2. `checkin_open`（預設 false）由管理者開關；**聚會當天（台北時間）結束後自動視為關閉**，由函式判斷，不靠排程。
+3. `capacity`（可為 null＝不限）：連結報到＋管理者現場加入的總人數；連結報到時在資料庫函式內加鎖計數（避免同時報到超額）。管理者手動加入可以超過，但前端要跳確認。
+4. 同一帳號同一場只能一筆。玩家需已有暱稱（`player_profiles`）；是否要求聯絡方式：建議要求，缺少時提示先填寫。
+5. `gathering_attendees` 加 `source text not null default 'admin' check (source in ('admin','self'))`；管理者名單顯示「自己報到／管理者加入」，可一鍵移除（移除後名額釋出）。
+6. 玩家**不能直接 INSERT** `gathering_attendees`；只能呼叫 `security definer` 函式（例如 `join_gathering(p_token text)`），函式內檢查：已登入、有暱稱、開放中、日期是今天、未額滿、未重複，成功回傳聚會日期與狀態文字。
+7. 管理者函式或政策：產生／重設 token、開關、設定上限。
+8. 報到成功後，前端直接打開該玩家的集點卡並標出那一天（沿用 `focusDate`）。
+9. 現場報到碼（4 位數）**先不做**，遇到陌生人再加，不需重做資料庫。
+10. 舊的 `?card=日期` 連結保留，給已在名單的人。
+11. 完成後補 `privacy.html`：出席可由玩家自己報到、管理者可移除。
+
+**開工前要先取得**：`gatherings`、`gathering_attendees` 的欄位定義與現有 RLS 政策（QUICKSTART「進行中」第 1 項有查詢語法）、目前的 `src/App.tsx`。
+
+### Q-4　視覺改版方向（使用者想要，順序未定）
+
+- 風格：溫暖桌遊俱樂部。色票：奶油 `#F5F0E5`、森林綠 `#456B50`（另一份建議用 `#365B40`）、焦糖 `#B78A5A`、深墨綠 `#34463C`。印章與會員卡只用在集點卡與少量裝飾。
+- 首頁想法：插畫主視覺＋「今天，想玩哪一款？」＋搜尋＋類型快速篩選＋「最新加入」「最受歡迎」排序；保留完整收藏。
+- 導覽列想法：桌遊收藏／排行榜／聚會與集點／我的桌遊＋頭像選單。
+- 集點卡：使用者喜歡獨立頁面；另一份建議提到「會員卡主視覺＋兩個圓形印章＋票券＋聚會足跡」。
+- **決定**：不做路由與資料夾大搬家（`pages/`、`routes.tsx`），維持目前結構；先建設計變數檔，再逐頁換外觀。
+- 順序建議：設計變數 → 導覽列 → 首頁與遊戲卡片 → 集點卡獨立頁面。
+
+### Q-5　已知限制與待辦
+
+- 評分或「我玩了」後，「已玩」要重新整理才更新（資料庫已標好）。要即時更新需要看 `useGameRatings.ts`、`usePersonalCollection.ts`。
+- 使用者的 `loyalty-card` 版面在窄螢幕的呈現，仍要在手機寬度確認。
+- `privacy.html` 尚未提到自助報到與免評分。
+- 「窄螢幕頂端按鈕是否擠在一起」尚未確認。
