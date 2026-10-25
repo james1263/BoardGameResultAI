@@ -9,6 +9,8 @@ import PlayCounter from './PlayCounter'
 import PersonalNote from './PersonalNote'
 import PlaySessions from './PlaySessions'
 import DescriptionEditor from './DescriptionEditor'
+import CommunityStats from './CommunityStats'
+import type { CommunityStatsApi } from '../lib/useCommunityStats'
 import RatingSection, { CommunitySummary } from './RatingSection'
 import { useGameDocuments } from '../lib/useGameDocuments'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
@@ -31,6 +33,7 @@ export default function GameModal({
   playSessions,
   ratings,
   onSaveDescription,
+  communityStats,
   isUploadingCover,
   coverMessage,
   onCoverUpload,
@@ -44,6 +47,7 @@ export default function GameModal({
   personal: PersonalApi
   playSessions: PlaySessionsApi
   ratings: RatingsApi
+  communityStats: CommunityStatsApi
   onSaveDescription: (text: string) => Promise<boolean>
   isUploadingCover: boolean
   coverMessage: string
@@ -179,6 +183,13 @@ export default function GameModal({
                   bggName={game.bggName}
                   api={ratings}
                   detailed={false}
+                />
+              </div>
+              <div className="modal-section">
+                <h3 className="modal-section-title">COMMUNITY ACTIVITY</h3>
+                <CommunityStats
+                  bggName={game.bggName}
+                  api={communityStats}
                 />
               </div>
 

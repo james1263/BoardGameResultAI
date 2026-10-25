@@ -99,3 +99,31 @@
 .docs-group .game-docs-item {
   justify-content: flex-start;
 }
+
+.stats-block {
+  display: grid;
+  gap: 8px;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: 2.5em auto 1fr;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.stats-label {
+  color: #5a6655;
+}
+
+.stats-count {
+  font-size: 15px;
+  color: #25352d;
+}
+
+.stats-new {
+  font-size: 11px;
+  color: #818879;
+  text-align: right;
+}

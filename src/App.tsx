@@ -16,6 +16,7 @@ import { uploadCover } from './lib/uploadCover'
 import { usePersonalCollection } from './lib/usePersonalCollection'
 import { useGamePlaySessions } from './lib/useGamePlaySessions'
 import { useGameRatings } from './lib/useGameRatings'
+import { useCommunityStats } from './lib/useCommunityStats'
 import { fetchBoardGames } from './lib/fetchBoardGames'
 import {
   type LibraryGame,
@@ -68,6 +69,7 @@ function Library({
   const personal = usePersonalCollection()
   const playSessions = useGamePlaySessions()
   const ratings = useGameRatings()
+  const communityStats = useCommunityStats()
   const [isMyListOpen, setIsMyListOpen] = useState(false)
   const [nowMs] = useState(() => Date.now())
 
@@ -638,6 +640,7 @@ function Library({
           personal={personal}
           playSessions={playSessions}
           ratings={ratings}
+          communityStats={communityStats}
           isUploadingCover={isUploadingCover}
           coverMessage={coverMessage}
           onCoverUpload={handleCoverUpload}
