@@ -194,3 +194,24 @@
 .lc-day-main p {
   text-align: left;
 }
+
+/* 報到視窗：比暱稱視窗低一層，兩個同時出現時先看到暱稱視窗 */
+.modal-backdrop.checkin-backdrop {
+  z-index: 1050;
+}
+
+.pd-text {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.pd-ok {
+  color: #2f6a41;
+  font-weight: 600;
+}
+
+.pd-warn {
+  color: #8a5f33;
+  font-weight: 600;
+}

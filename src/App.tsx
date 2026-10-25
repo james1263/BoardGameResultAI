@@ -19,6 +19,8 @@ import { useGamePlaySessions } from './lib/useGamePlaySessions'
 import { useGameRatings } from './lib/useGameRatings'
 import { useCommunityStats } from './lib/useCommunityStats'
 import { useInviteLink } from './lib/useInviteLink'
+import { useCheckinLink } from './lib/useCheckinLink'
+import CheckInDialog from './components/CheckInDialog'
 import { fetchBoardGames } from './lib/fetchBoardGames'
 import {
   type LibraryGame,
@@ -93,6 +95,22 @@ function Library({
     setIsMyListOpen(true)
     consumeInvite()
   }, [invitePending, inviteLoggedIn, inviteDate, consumeInvite])
+
+  // 管理者傳的報到連結：登入後按「我來了」就列入出席名單
+  const {
+    token: checkinToken,
+    isLoggedIn: checkinLoggedIn,
+    clear: clearCheckin,
+    login: checkinLogin,
+  } = useCheckinLink()
+
+  function handleCheckedIn(date: string | null) {
+    clearCheckin()
+    if (!date) return
+    setInviteFocus(date)
+    setInviteKey((count) => count + 1)
+    setIsMyListOpen(true)
+  }
   const [nowMs] = useState(() => Date.now())
 
   function isNewGame(game: LibraryGame): boolean {
@@ -484,6 +502,25 @@ function Library({
             用 Google 登入
           </button>
         </div>
+      )}
+      {checkinToken && !checkinLoggedIn && (
+        <div className="invite-banner">
+          <span>你收到了聚會報到連結，請先登入，登入後再按「我來了」。</span>
+          <button
+            type="button"
+            className="invite-banner-btn"
+            onClick={() => void checkinLogin()}
+          >
+            用 Google 登入
+          </button>
+        </div>
+      )}
+      {checkinToken && checkinLoggedIn && (
+        <CheckInDialog
+          token={checkinToken}
+          onDone={handleCheckedIn}
+          onClose={clearCheckin}
+        />
       )}
       <TopBar
         myListCount={myListCount}

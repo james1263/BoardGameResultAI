@@ -363,3 +363,46 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* 自助報到 */
+.lga-checkin-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.lga-toggle {
+  padding: 8px 14px;
+  border: 1.5px solid rgba(52, 70, 60, 0.3);
+  border-radius: 999px;
+  background: #fff;
+  color: #5c6d62;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lga-toggle.on {
+  border-color: #456b50;
+  background: #456b50;
+  color: #fff;
+}
+
+.lga-toggle:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.lga-cap {
+  align-items: center;
+}
+
+.lga-self {
+  display: inline-block;
+  margin: 0 4px 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(183, 138, 90, 0.2);
+  color: #8a5f33;
+  font-size: 0.72rem;
+}

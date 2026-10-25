@@ -30,6 +30,7 @@ type Detail = {
   days: LoyaltyDay[]
   redemptions: Redemption[]
 }
+type Checkin = { token: string; isOpen: boolean; capacity: number | null }
 type AdminTab = 'setup' | 'status'
 
 type OverviewRaw = {
@@ -87,6 +88,9 @@ export default function LoyaltyAdmin() {
   const [newNote, setNewNote] = useState('')
   const [gameSearch, setGameSearch] = useState('')
   const [playerSearch, setPlayerSearch] = useState('')
+  const [checkins, setCheckins] = useState<Record<string, Checkin>>({})
+  const [selfAttendees, setSelfAttendees] = useState<Record<string, string[]>>({})
+  const [capacityDraft, setCapacityDraft] = useState('')
   const [detail, setDetail] = useState<Detail | null>(null)
 
   const gameNameMap = useMemo(
@@ -96,14 +100,14 @@ export default function LoyaltyAdmin() {
 
   async function loadAll() {
     setLoading(true)
-    const [g, a, p, o, gg, bg, ct] = await Promise.all([
+    const [g, a, p, o, gg, bg, ct, ck] = await Promise.all([
       supabase
         .from('gatherings')
         .select('id, gathered_on, note')
         .order('gathered_on', { ascending: false }),
       supabase
         .from('gathering_attendees')
-        .select('gathering_id, user_id, exempt'),
+        .select('gathering_id, user_id, exempt, source'),
       supabase.from('player_profiles').select('id, nickname').order('nickname'),
       supabase.rpc('admin_get_loyalty_overview'),
       supabase.from('gathering_games').select('gathering_id, bgg_name'),
@@ -113,10 +117,13 @@ export default function LoyaltyAdmin() {
         .is('removed_at', null)
         .order('name'),
       supabase.from('player_contacts').select('user_id, contact_name'),
+      supabase
+        .from('gathering_checkins')
+        .select('gathering_id, token, is_open, capacity'),
     ])
 
     const failed =
-      g.error ?? a.error ?? p.error ?? o.error ?? gg.error ?? bg.error ?? ct.error
+      g.error ?? a.error ?? p.error ?? o.error ?? gg.error ?? bg.error ?? ct.error ?? ck.error
     setMessage(failed ? '讀取失敗：' + failed.message : '')
 
     setGatherings(
@@ -127,16 +134,36 @@ export default function LoyaltyAdmin() {
 
     const attendeeMap: Record<string, string[]> = {}
     const exemptMap: Record<string, string[]> = {}
+    const selfMap: Record<string, string[]> = {}
     for (const row of (a.data ?? []) as {
       gathering_id: string
       user_id: string
       exempt: boolean
+      source: string
     }[]) {
       ;(attendeeMap[row.gathering_id] ??= []).push(row.user_id)
       if (row.exempt) (exemptMap[row.gathering_id] ??= []).push(row.user_id)
+      if (row.source === 'self') (selfMap[row.gathering_id] ??= []).push(row.user_id)
     }
     setAttendees(attendeeMap)
     setExempts(exemptMap)
+    setSelfAttendees(selfMap)
+
+    setCheckins(
+      Object.fromEntries(
+        (
+          (ck.data ?? []) as {
+            gathering_id: string
+            token: string
+            is_open: boolean
+            capacity: number | null
+          }[]
+        ).map((row) => [
+          row.gathering_id,
+          { token: row.token, isOpen: row.is_open, capacity: row.capacity },
+        ]),
+      ),
+    )
 
     const gameMap: Record<string, string[]> = {}
     for (const row of (gg.data ?? []) as {
@@ -244,6 +271,17 @@ export default function LoyaltyAdmin() {
     userId: string,
     checked: boolean,
   ) {
+    const capacity = checkins[gatheringId]?.capacity ?? null
+    if (
+      checked &&
+      capacity !== null &&
+      (attendees[gatheringId] ?? []).length >= capacity &&
+      !window.confirm(
+        `這場聚會的人數上限是 ${capacity} 人，目前已經滿了。要由你手動加入、超過上限嗎？`,
+      )
+    )
+      return
+
     setBusy(true)
     setMessage('')
 
@@ -270,6 +308,12 @@ export default function LoyaltyAdmin() {
         }
       })
       if (!checked) {
+        setSelfAttendees((current) => ({
+          ...current,
+          [gatheringId]: (current[gatheringId] ?? []).filter(
+            (id) => id !== userId,
+          ),
+        }))
         setExempts((current) => ({
           ...current,
           [gatheringId]: (current[gatheringId] ?? []).filter(
@@ -325,6 +369,100 @@ export default function LoyaltyAdmin() {
       setMessage(`已複製連結，可以直接傳給玩家：${link}`)
     } catch {
       window.prompt('請複製這個連結：', link)
+    }
+  }
+
+  // 自助報到：建立連結、開關、人數上限、重設連結
+  async function createCheckin(gatheringId: string) {
+    setBusy(true)
+    setMessage('')
+    const { data, error } = await supabase
+      .from('gathering_checkins')
+      .insert({ gathering_id: gatheringId })
+      .select('gathering_id, token, is_open, capacity')
+      .single()
+
+    if (error) {
+      setMessage('建立報到連結失敗：' + error.message)
+    } else if (data) {
+      setCheckins((current) => ({
+        ...current,
+        [gatheringId]: {
+          token: data.token,
+          isOpen: data.is_open,
+          capacity: data.capacity,
+        },
+      }))
+      setCapacityDraft('')
+    }
+    setBusy(false)
+  }
+
+  async function updateCheckin(
+    gatheringId: string,
+    patch: { is_open?: boolean; capacity?: number | null; token?: string },
+    doneMessage = '',
+  ) {
+    setBusy(true)
+    setMessage('')
+    const { data, error } = await supabase
+      .from('gathering_checkins')
+      .update(patch)
+      .eq('gathering_id', gatheringId)
+      .select('gathering_id, token, is_open, capacity')
+      .single()
+
+    if (error) {
+      setMessage('更新報到設定失敗：' + error.message)
+    } else if (data) {
+      setCheckins((current) => ({
+        ...current,
+        [gatheringId]: {
+          token: data.token,
+          isOpen: data.is_open,
+          capacity: data.capacity,
+        },
+      }))
+      if (doneMessage) setMessage(doneMessage)
+    }
+    setBusy(false)
+  }
+
+  async function saveCapacity(gatheringId: string) {
+    const raw = capacityDraft.trim()
+    const value = raw === '' ? null : Number(raw)
+    if (value !== null && (!Number.isInteger(value) || value < 1 || value > 500)) {
+      setMessage('人數上限請填 1～500 的整數，或留空表示不限。')
+      return
+    }
+    await updateCheckin(
+      gatheringId,
+      { capacity: value },
+      value === null ? '已改成不限人數。' : `人數上限已設為 ${value} 人。`,
+    )
+  }
+
+  async function resetCheckinToken(gatheringId: string) {
+    if (
+      !window.confirm(
+        '重設後，舊的報到連結會立刻失效（已經報到的人不受影響）。確定要重設嗎？',
+      )
+    )
+      return
+    await updateCheckin(
+      gatheringId,
+      { token: crypto.randomUUID().replaceAll('-', '') },
+      '已重設，請重新複製新的報到連結。',
+    )
+  }
+
+  async function copyJoinLink(token: string) {
+    const link = `${window.location.origin}/?join=${token}`
+    try {
+      await navigator.clipboard.writeText(link)
+      setMessage(`已複製報到連結，可以傳給今天來玩的人：${link}`)
+    } catch {
+      window.prompt('請複製這個報到連結：', link)
     }
   }
 
@@ -443,6 +581,8 @@ export default function LoyaltyAdmin() {
   const selectedAttendees = selected ? (attendees[selected.id] ?? []) : []
   const selectedExempts = selected ? (exempts[selected.id] ?? []) : []
   const selectedGames = selected ? (gatheringGames[selected.id] ?? []) : []
+  const selectedSelf = selected ? (selfAttendees[selected.id] ?? []) : []
+  const selectedCheckin = selected ? (checkins[selected.id] ?? null) : null
 
   const playerQuery = playerSearch.trim().toLocaleLowerCase()
   const visiblePlayers = playerQuery
@@ -572,6 +712,9 @@ export default function LoyaltyAdmin() {
                                 onClick={() => {
                                   setSelectedId(g.id === selectedId ? null : g.id)
                                   setPlayerSearch('')
+                                  setCapacityDraft(
+                                    String(checkins[g.id]?.capacity ?? ''),
+                                  )
                                 }}
                               >
                                 <span className="lga-date">
@@ -626,6 +769,91 @@ export default function LoyaltyAdmin() {
                           </button>
                         </div>
                       </div>
+
+                      <h4 className="lga-sub">自助報到</h4>
+                      {!selectedCheckin ? (
+                        <>
+                          <p className="loy-admin-note">
+                            建立連結後，玩家登入並按「我來了」，就會自動列入出席名單。
+                            預設是關閉的，要按「開放報到」才生效；只有聚會當天（台北時間）可以報到，隔天自動失效。
+                          </p>
+                          <button
+                            type="button"
+                            className="lga-outline"
+                            disabled={busy}
+                            onClick={() => createCheckin(selected.id)}
+                          >
+                            ＋ 建立報到連結
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="lga-checkin-row">
+                            <button
+                              type="button"
+                              className={`lga-toggle ${
+                                selectedCheckin.isOpen ? 'on' : ''
+                              }`}
+                              disabled={busy}
+                              aria-pressed={selectedCheckin.isOpen}
+                              onClick={() =>
+                                updateCheckin(selected.id, {
+                                  is_open: !selectedCheckin.isOpen,
+                                })
+                              }
+                            >
+                              {selectedCheckin.isOpen
+                                ? '● 報到開放中（按一下關閉）'
+                                : '○ 報到已關閉（按一下開放）'}
+                            </button>
+                            <button
+                              type="button"
+                              className="lga-outline"
+                              disabled={busy}
+                              onClick={() => copyJoinLink(selectedCheckin.token)}
+                            >
+                              🔗 複製報到連結
+                            </button>
+                            <button
+                              type="button"
+                              className="lga-danger"
+                              disabled={busy}
+                              onClick={() => resetCheckinToken(selected.id)}
+                            >
+                              重設連結
+                            </button>
+                          </div>
+                          <div className="lga-new lga-cap">
+                            <span>人數上限</span>
+                            <input
+                              type="number"
+                              min={1}
+                              max={500}
+                              placeholder="留空＝不限"
+                              value={capacityDraft}
+                              onChange={(event) =>
+                                setCapacityDraft(event.target.value)
+                              }
+                            />
+                            <button
+                              type="button"
+                              className="lga-outline"
+                              disabled={busy}
+                              onClick={() => saveCapacity(selected.id)}
+                            >
+                              儲存上限
+                            </button>
+                          </div>
+                          <p className="loy-admin-note">
+                            目前 {selectedAttendees.length} 人出席（自己報到{' '}
+                            {selectedSelf.length} 人）
+                            {selectedCheckin.capacity !== null
+                              ? `，上限 ${selectedCheckin.capacity} 人`
+                              : '，不限人數'}
+                            。上限包含你手動加入的人；你手動加入時可以超過上限（會先跳確認）。
+                          </p>
+                        </>
+                      )}
 
                       <h4 className="lga-sub">
                         參加者（{selectedAttendees.length} / {players.length}）
@@ -693,6 +921,9 @@ export default function LoyaltyAdmin() {
                                 <span className="lga-contact">
                                   {contacts[player.id] ?? '未填聯絡方式'}
                                 </span>
+                                {selectedSelf.includes(player.id) && (
+                                  <span className="lga-self">自己報到</span>
+                                )}
                                 {attending && (
                                   <button
                                     type="button"
