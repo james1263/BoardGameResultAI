@@ -546,3 +546,39 @@ L-4. 下一步建議
 2. 確認 `makeCoverSlug` 已換新版並重新匯入 CSV、查詢為 0 列。
 3. Phase 4 前端（M-3）。
 4. 之後的想做清單見附錄 L（我的桌遊改版、集點卡、揪團、「今天想玩什麼」、拖曳排名編輯 L-6、RAG 規則助手 L-5）。
+
+---
+
+## 附錄 N｜公開評分、分頁改版、簡介、規則分頁（2026-10-25；與上面衝突時以這裡為準）
+
+### N-1. Phase 4 公開評分（前端已完成並上線）
+- 檔案：`src/lib/useGameRatings.ts`（在 `Library` 呼叫一次，讀公開彙總 `get_rating_summaries()` 與自己的評分，提供 `getSummary`／`getMine`／`saveRating`／`deleteRating`）、`src/components/RatingSection.tsx`（匯出 `CommunitySummary` 與預設的 `RatingSection`）、`src/styles/ratings.css`（樣式一律 `rate-` 開頭，避免和 `modal.css` 的 `.rating-label` 撞名）。
+- 七項：**整體 1～10（必填）、適合留下來程度 1～5（必填）**，其餘五項（喜歡度、玩家影響性、溝通性、變化性、獨特性）選填、預設收合。畫面顯示「已填 N / 7 項」。
+- **集點卡條件（日後用）**：七項全部非空才算完整評分，由資料庫函式判斷，不另存標記。
+- 資料庫：`game_ratings.keep_score` 已設為 `not null`（若沒做，補執行 `alter table public.game_ratings alter column keep_score set not null;`）。
+- 未滿 5 人顯示「評分累積中（N 人）」；六項各自判斷、各自未達門檻就顯示「累積中」。前端沒有六項各自的人數欄位。
+- `privacy.html` 已加入評分說明（第一、二、三節）。
+
+### N-2. 詳細視窗分頁（`GameModal.tsx`、`src/styles/tabs.css`）
+- 頂部固定（封面、名稱、BGG 連結、BGG 分數、類型、分頁列），只有內容區捲動；手機全螢幕。
+- 四個分頁：**概覽**（簡介、遊戲屬性、大家的評分摘要、管理者的封面上傳與「移到垃圾桶」）、**評分**、**我的桌遊**（想玩／已玩、遊玩次數、遊玩紀錄、備註）、**規則**（規則書與 FAQ、中文介紹、影片連結；管理者的新增表單）。
+- AI 查詢分頁**等 AI 規則助手做出來再加**（現在放只有「開發中」的分頁會讓訪客以為壞掉）。
+- `GameModal` 的 `game` 型別是 `LibraryGame`；`App.tsx` 的 `selectedGame` 也是 `LibraryGame`。
+- 小地方：簡介編輯的樣式（`.desc-*`）被貼進了 `src/styles/topbar.css`，不影響使用；`.modal-links` 等在 `tabs.css`。
+
+### N-3. 遊戲簡介
+- 資料庫 `board_games.description text not null default ''`，檢查 ≤ 300 字。
+- CSV 欄名「簡介」，**選填**：沒有這欄、或該款簡介空白，都**不會覆蓋**資料庫原有的簡介（`AdminPanel.tsx` 匯入的「步驟 0」只對有簡介的款數另外 upsert）；CSV 無法清空簡介，要清請在網站編輯或 Table Editor。
+- 管理者在「概覽」可新增、編輯、刪除簡介：`src/components/DescriptionEditor.tsx`、`src/lib/saveDescription.ts`（`update ... select('bgg_name')` 確認真的有更新；寫入權限由資料庫的管理者政策把關）。
+- 使用者說簡介太耗時間，**先跳過、晚點再寫**。AI 擬簡介草稿的流程與著作權說明：不要翻譯或改寫 BGG 簡介，只寫「這款在玩什麼」一到兩句自己的話；不確定的遊戲不要硬寫。
+
+### N-4. 規則分頁的文件連結（`game_documents`）
+- `doc_type` 現有：`rulebook`、`faq`、`errata`、`intro`（中文介紹）、`video`（影片）、`other`。
+- 資料庫檢查：`game_documents_doc_type_check` 已加入 `intro`、`video`；**`game_documents_video_not_indexed`：影片的 `ai_indexed` 永遠不能是 true。**
+- **RAG 原則（使用者要求）**：AI 規則助手**不可以從影片查規則**；RAG 只能讀 `ai_indexed = true` 的文件。中文介紹（`intro`）網路文章有著作權疑慮，是否索引，做 RAG 時再決定；較安全的用法是把連結當「延伸閱讀」附在答案旁。
+- 檔案：`src/lib/useGameDocuments.ts`（讀取、新增、刪除，`GameModal` 呼叫一次再傳給 `GameDocuments`）、`src/GameDocuments.tsx`（收 `api` 與 `isAdmin`，分三組顯示）。
+
+### N-5. 下一步
+1. 社群統計（想玩／已玩人數與期間新增，見 QUICKSTART 下一步第 4 點）。
+2. 上傳規則書 PDF（私有 bucket）→ AI 規則助手（RAG）。
+3. 想做清單：我的桌遊改版、集點卡、揪團、拖曳排名編輯、簡介補寫。
