@@ -13,6 +13,7 @@ import {
 } from './lib/parseCsv'
 import { uploadCover } from './lib/uploadCover'
 import { useIsAdmin } from './lib/useIsAdmin'
+import LoyaltyAdmin from './LoyaltyAdmin'
 
 type RemovedGame = {
     bggName: string
@@ -401,6 +402,7 @@ export default function AdminPanel() {
                             匯入 CSV
                         </button>
                     )}
+                    {isAdmin && <LoyaltyAdmin />}
                     <button className="admin-link" type="button" onClick={handleLogout}>
                         登出
                     </button>

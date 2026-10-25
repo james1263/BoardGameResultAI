@@ -1,0 +1,169 @@
+.loy-card h3,
+.loy-admin h3 {
+  margin: 18px 0 8px;
+  font-size: 0.95rem;
+}
+
+.loy-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.loy-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 4px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 10px;
+}
+
+.loy-stat strong {
+  font-size: 1.4rem;
+}
+
+.loy-stat span {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.loy-warning,
+.loy-error {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 140, 0, 0.15);
+  font-size: 0.85rem;
+}
+
+.loy-rules {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px dashed rgba(128, 128, 128, 0.4);
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+.loy-rules h3 {
+  margin-top: 0;
+}
+
+.loy-rules ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.loy-days {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.loy-day {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+  font-size: 0.85rem;
+}
+
+.loy-day-date {
+  font-weight: 600;
+}
+
+.loy-day-ok .loy-day-text {
+  color: #2e8b57;
+}
+
+.loy-refresh {
+  margin-top: 14px;
+  padding: 6px 12px;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.admin-modal.loy-admin {
+  width: min(760px, 94vw);
+  max-width: none;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.loy-admin-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.loy-admin-row input[type='text'] {
+  flex: 1;
+  min-width: 140px;
+}
+
+.loy-admin-message {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(100, 149, 237, 0.15);
+  white-space: pre-wrap;
+}
+
+.loy-admin-note {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.loy-admin-players {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px;
+}
+
+.loy-admin-tablewrap {
+  overflow-x: auto;
+}
+
+.loy-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.loy-admin-table th,
+.loy-admin-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.loy-admin-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.loy-flag {
+  margin-left: 4px;
+  color: #e67e00;
+}
+
+.loy-admin-detail {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+.loy-admin-detail ul {
+  margin: 0;
+  padding-left: 18px;
+}
