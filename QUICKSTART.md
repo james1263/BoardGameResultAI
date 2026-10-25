@@ -1,6 +1,6 @@
 # 桌遊規則助手 — 懶人包（給下一個 AI）
 
-> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`（最底下有附錄，越後面越新）。   最後更新：2026-10-26（附錄 Q）
+> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`（已依主題整理成 11 節，不再有 A～Q 附錄）。   最後更新：2026-10-26
 
 ## 這是什麼
 
@@ -8,8 +8,8 @@
 
 - 線上網址：https://board-game-result-ai.vercel.app/（GitHub `master` 分支 → Vercel 自動部署）
 - 技術：React + TypeScript + Vite + **Supabase（資料庫、登入、檔案儲存，免費方案，首爾）**
-- 本機路徑：`D:\BoardGameResultAI`（Windows、PowerShell、用 `npm.cmd`）。使用者會在多台電腦作業，路徑可能不同，見 `PROJECT_CONTEXT.md` 第 10 節。
-- **程式結構**：`src/App.css` 是入口檔，只有 `@import`，依序載入 `src/styles/`：`base`、`topbar`、`hero`、`library`、`filter`、`cards`、`modal`、`admin`、`mylist`、`footer`、`trash`、`docs`，之後又加了 `backtotop`、`tabs`、`ratings`、`leaderboard`、`loyalty`、`loyalty-card`（集點卡印章風）、`loyalty-admin`（管理者視窗）、`account`（頂端列固定、暱稱視窗、邀請橫幅；**最後載入，可覆蓋前面的樣式**）（**順序有影響，不要調換；實際清單以本機 `App.css` 為準**）。`src/App.tsx` 只留 `Library` 的狀態與篩選／排序邏輯，畫面拆成 `src/components/`：`TopBar`、`ViewToggle`、`FilterDrawer`、`GameCard`、`GameModal`、`MergeDialog`、`PersonalToast`、`TrashSection`、`CoverImage`、`StatusButtons`、`RatingDots`、`RatingSection`、`PlayCounter`、`PlaySessions`、`PersonalNote`、`DescriptionEditor`、`BackToTop`、`Leaderboard`（排行榜）、`CommunityStats`、`LoyaltyCard`（集點卡）、`Icons`；型別與工具在 `src/lib/`：`libraryTypes.ts`、`gameFormat.ts`、`fetchBoardGames.ts`、`personalApi.ts`、`useTrashActions.ts`、`usePersonalCollection.ts`、`useGamePlaySessions.ts`、`useGameRatings.ts`、`useGameDocuments.ts`、`useCommunityStats.ts`、`leaderboards.ts`、`useLoyalty.ts`、`saveDescription.ts`、`useIsAdmin.ts`、`useSession.ts`、`useInviteLink.ts`（集點卡邀請連結）、`uploadCover.ts`、`parseCsv.ts`、`supabase.ts`。另有 `AdminPanel.tsx`、`PlayerPanel.tsx`、`MyList.tsx`（畫面上叫「我的桌遊」）、`LoyaltyAdmin.tsx`（管理者「聚會與集點」視窗）、`GameDocuments.tsx`。
+- 本機路徑：`D:\BoardGameResultAI`（Windows、PowerShell、用 `npm.cmd`）。使用者會在多台電腦作業，路徑可能不同，見 `PROJECT_CONTEXT.md` 第 11 節。
+- **程式結構**：`src/App.css` 是入口檔，只有 `@import`，依序載入 `src/styles/`：`base`、`topbar`、`hero`、`library`、`filter`、`cards`、`modal`、`admin`、`mylist`、`footer`、`trash`、`docs`，之後又加了 `backtotop`、`tabs`、`ratings`、`leaderboard`、`loyalty`、`loyalty-card`（集點卡印章風）、`loyalty-admin`（管理者視窗）、`account`（暱稱視窗、邀請橫幅、各視窗層級；**可覆蓋前面的樣式**）、`sitebar`（新頂端導覽列）；另外 `tokens`（設計變數）放在 `App.css` 最前面（**順序有影響，不要調換；實際清單以本機 `App.css` 為準**）。`src/App.tsx` 只留 `Library` 的狀態與篩選／排序邏輯，畫面拆成 `src/components/`：`TopBar`、`ViewToggle`、`FilterDrawer`、`GameCard`、`GameModal`、`MergeDialog`、`PersonalToast`、`TrashSection`、`CoverImage`、`StatusButtons`、`RatingDots`、`RatingSection`、`PlayCounter`、`PlaySessions`、`PersonalNote`、`DescriptionEditor`、`BackToTop`、`Leaderboard`（排行榜）、`CommunityStats`、`LoyaltyCard`（集點卡）、`CheckInDialog`（報到視窗）、`InAppBrowserNotice`（請改用瀏覽器開啟）、`Icons`；型別與工具在 `src/lib/`：`libraryTypes.ts`、`gameFormat.ts`、`fetchBoardGames.ts`、`personalApi.ts`、`useTrashActions.ts`、`usePersonalCollection.ts`、`useGamePlaySessions.ts`、`useGameRatings.ts`、`useGameDocuments.ts`、`useCommunityStats.ts`、`leaderboards.ts`、`useLoyalty.ts`、`saveDescription.ts`、`useIsAdmin.ts`、`useSession.ts`、`useInviteLink.ts`（集點卡邀請連結）、`useCheckinLink.ts`（聚會報到連結）、`googleLogin.ts`（所有 Google 登入入口，偵測 LINE 等內建瀏覽器）、`uploadCover.ts`、`parseCsv.ts`、`supabase.ts`。另有 `AdminPanel.tsx`、`PlayerPanel.tsx`、`MyList.tsx`（畫面上叫「我的桌遊」）、`LoyaltyAdmin.tsx`（管理者「聚會與集點」視窗）、`GameDocuments.tsx`。
 - 桌遊資料存在 Supabase 的 `board_games` 資料表；網站讀取失敗時才退回本機 `boardGames.generated.ts`。
 - 資料更新流程：Notion 匯出 CSV → 網站頁尾登入管理者 →「匯入 CSV」→ 預覽 →「確認匯入」。
 
@@ -25,7 +25,7 @@
 - **他貼來的檔案可能是舊版**（2026-10-24 他貼了舊的整份 `App.css`）。判斷現況前，先用 `git status`、`git log`、`Get-Content ... | Select-Object -First 15` 這類指令確認實際狀態，不要憑貼來的內容就說「已改好」或「還沒改」。
 - 改完 `npm.cmd run build` 並實測。不要破壞 107 款資料和現有功能。不要揭露「綜合分數排名」的計算方式。
 - **不要叫他貼密碼、Secret／service_role key、Google Client Secret。**
-- push 前先 `git status`，**逐檔 `git add`，不要 `git add .`**。**請他用命令列 commit，不要在 TortoiseGit 用 Amend／修改上一次提交**（已發生過一次，見 `PROJECT_CONTEXT.md` E 節）。
+- push 前先 `git status`，**逐檔 `git add`，不要 `git add .`**。**請他用命令列 commit，不要在 TortoiseGit 用 Amend／修改上一次提交**（已發生過一次，見 `PROJECT_CONTEXT.md` 第 2 節）。
 - 不要 add 的雜項：`新增 文字文件.txt`、`trash-step/`、`App.css.bak`、其他 `.zip`、解壓殘留資料夾；`PROJECT_CONTEXT.md`、`QUICKSTART.md` 只在使用者要求時才 commit（2026-10-26 他要求過一次）；`boardgames.csv` 若顯示 deleted，不要 commit（`git restore boardgames.csv`）。
 
 ## 已完成
@@ -50,43 +50,43 @@
 - **✅ 玩家登出選單**：暱稱 ▾ →「修改暱稱與聯絡方式／登出」；頂端列固定在最上方（管理者的登出在頂端列）。
 - **✅ 聯絡方式（LINE／FB 名字）**：獨立資料表 `player_contacts`（只有本人和管理者可讀，anon 無權限，已驗證）；玩家第一次登入或尚未填寫時會跳出設定視窗（必填、可「稍後再說」）；管理者的聚會視窗與集點狀況表會顯示聯絡方式。
 - **✅ 管理者聚會視窗**：改成俱樂部風格；出席者以頭像標籤呈現；新增「搜尋玩家」（可用暱稱或 LINE／FB 名字搜尋）。
-- **✅ 自助報到（2026-10-26，使用者已測試通過）**：管理者在聚會詳情按「建立報到連結」→ 開關「開放報到」、人數上限（留空＝不限）、複製 `?join=隨機碼` 連結、重設連結；出席名單標示「自己報到」。玩家點連結→（未登入先登入）→ `CheckInDialog`「我來了」→ 呼叫資料庫函式 `join_gathering(p_token)`（security definer，檢查：登入、token 有效、已報到則回 already、開放中、**台北時間聚會當天**、有暱稱、有聯絡方式、未額滿；鎖住該場聚會防止超額）→ 成功後打開集點卡並標出那一天。資料表 `gathering_checkins`（只有管理者可讀寫，anon 無權限）；`gathering_attendees.source`（admin／self）。管理者手動加入超過上限會先跳確認。前端：`src/lib/useCheckinLink.ts`、`src/components/CheckInDialog.tsx`、`LoyaltyAdmin.tsx`、`App.tsx`。
+- **✅ 自助報到（2026-10-26，使用者已測試通過；之後改成「單一聚會連結」，見「進行中」1）**：管理者在聚會詳情按「建立報到連結」→ 開關「開放報到」、人數上限（留空＝不限）、複製 `?join=隨機碼` 連結、重設連結；出席名單標示「自己報到」。玩家點連結→（未登入先登入）→ `CheckInDialog`「我來了」→ 呼叫資料庫函式 `join_gathering(p_token)`（security definer，檢查：登入、token 有效、已報到則回 already、開放中、**台北時間聚會當天**、有暱稱、有聯絡方式、未額滿；鎖住該場聚會防止超額）→ 成功後打開集點卡並標出那一天。資料表 `gathering_checkins`（只有管理者可讀寫，anon 無權限）；`gathering_attendees.source`（admin／self）。管理者手動加入超過上限會先跳確認。前端：`src/lib/useCheckinLink.ts`、`src/components/CheckInDialog.tsx`、`LoyaltyAdmin.tsx`、`App.tsx`。
 - **✅ `privacy.html` 已補**：排行榜、集點卡、聯絡方式（聯絡方式那句請確認已 commit）。
 
 ## 進行中（開場先問使用者）
 
-1. **`privacy.html` 要補自助報到那一句**（出席可由玩家用報到連結自行報到、管理者可手動加入與移除；管理者看得到暱稱與聯絡方式）。先用 `Select-String -Path public\privacy.html -Pattern "集點卡|聯絡方式"` 找位置。並用 `git status`、`git log --oneline -5` 確認自助報到相關檔案是否已 commit（`App.tsx`、`LoyaltyAdmin.tsx`、`CheckInDialog.tsx`、`useCheckinLink.ts`、`account.css`、`loyalty-admin.css`）。
-2. **LINE 內建瀏覽器問題（尚未向使用者驗證）**：玩家若在 LINE 裡直接點連結，Google 登入可能被擋（Google 不允許內嵌瀏覽器登入）。請使用者實測；對策是提醒玩家「用 Chrome／Safari 開啟」，必要時在報到頁加提示。
-3. **視覺改版（使用者想要，順序未定）**：溫暖桌遊俱樂部風格（奶油白 #F5F0E5、森林綠 #456B50、焦糖 #B78A5A、深墨綠 #34463C）。建議順序：設計變數檔 → 頂端導覽列（加「聚會與集點」入口）→ 首頁與遊戲卡片 → 集點卡獨立頁面。**不要現在搬資料夾或加路由**。
-4. **「已玩」即時更新**（目前評分後要重新整理）：需要看 `useGameRatings.ts`、`usePersonalCollection.ts`。
+1. **本輪已提供、待使用者套用與測試（2026-10-26）**：①LINE 等內建瀏覽器登入提示（`googleLogin.ts`、`InAppBrowserNotice.tsx`；`useInviteLink`、`useCheckinLink`、`PlayerPanel` 都改走 `signInWithGoogle()`）；②**兩種連結合併成一個「聚會連結」**（管理者只複製 `?join=…&openExternalBrowser=1`；建立時預設開放；`LoyaltyAdmin` 拿掉「複製集點卡連結」）；③**評分後「已玩」即時更新**（App.tsx 的 effect，只處理新評分）；④**視覺改版第一步**：`tokens.css`、`sitebar.css`、新 `TopBar.tsx`（桌面頂端導覽、手機底部導覽；玩家看到「集點卡」，管理者看到「聚會與集點」）。App.tsx 需要四處修改（見對話或請使用者貼目前版本再確認）；`App.css` 需 `@import './styles/tokens.css';`（最前面）與 `@import './styles/sitebar.css';`（最後面）。
+2. **請使用者實測**：LINE 內點連結（是否出現提示、`openExternalBrowser=1` 是否讓 LINE 直接開外部瀏覽器）；手機寬度的底部導覽（`BackToTop` 是否被蓋住）；評分後「已玩」是否即時出現。
+3. **`privacy.html` 要補聚會報到那一句**（出席可由玩家用聚會連結自行報到、管理者可手動加入與移除；管理者看得到暱稱與聯絡方式）與免評分說明。先用 `Select-String -Path public\privacy.html -Pattern "集點卡|聯絡方式"` 找位置。
+4. **視覺改版下一步**：首頁與遊戲卡片，**需要使用者貼 `base.css`、`hero.css`、`library.css`、`cards.css` 與目前的 `App.tsx`** 才能動工。
+5. 使用者問過：誤改 `bggName` 的補救（見 `PROJECT_CONTEXT.md` 第 5 節），以及要不要檢查兩個集點彙總函式（`get_my_loyalty_summary`、`admin_get_loyalty_overview` 的定義，用 `pg_get_functiondef` 匯出）——尚未提供。
 
 ## 想做清單（使用者 2026-10-24 提出，尚未排序）
 
-詳細內容與原話整理在 `PROJECT_CONTEXT.md` 附錄 L。重點：
+詳細內容與原話整理在 `PROJECT_CONTEXT.md` 第 9 節。重點：
 - 小功能：新增排序（待確認排什麼；使用者說先跳過）。
 - 「我的桌遊」升級：近期／下次聚會想玩、想玩一鍵移到已玩、依加入時間／排名／時間排序、統計（總次數、總時數、最常玩、每月趨勢）。
-- 集點卡：**v2 已上線**（見「已完成」與附錄 Q）；下一步是自助報到。原始需求（完整評分七項、管理者指定參加者、同月 2 點換免費券、一天只算一點、管理者看全部、玩家只看自己）仍有效；**不建議用藍牙／區網偵測**。
+- 集點卡：**v2 已上線**（見「已完成」與 `PROJECT_CONTEXT.md` 第 7 節）；下一步是自助報到。原始需求（完整評分七項、管理者指定參加者、同月 2 點換免費券、一天只算一點、管理者看全部、玩家只看自己）仍有效；**不建議用藍牙／區網偵測**。
 - 揪團與聚會規劃（第三階段）、「今天想玩什麼？」依人數／時間／難度推薦（用現有資料即可，不需 AI）。
 - 訪客紀錄不會跨瀏覽器（只在該瀏覽器的 `localStorage`）；登入 Google 才會雲端同步。
-- **站上拖曳調整排名＋匯出 CSV 給 Notion（使用者說「晚點再嘗試」，尚未動工）**：管理者專用；6 個排名欄位都已在資料庫，不需改資料庫（對照表見附錄 L-6）；「綜合分數排名」仍由 Notion 算；**使用者尚未回「照建議」**。
-- **AI 規則助手必須用 RAG（使用者明確要求）**：只根據檢索到的規則書片段回答，列出出處（哪本、第幾頁）；找不到依據要明說。**不可從影片查規則**；只讀 `ai_indexed = true` 的文件。見附錄 L-5、N-4。
+- **站上拖曳調整排名＋匯出 CSV 給 Notion（使用者說「晚點再嘗試」，尚未動工）**：管理者專用；6 個排名欄位都已在資料庫，不需改資料庫（對照表見 `PROJECT_CONTEXT.md` 第 9 節）；「綜合分數排名」仍由 Notion 算；**使用者尚未回「照建議」**。
+- **AI 規則助手必須用 RAG（使用者明確要求）**：只根據檢索到的規則書片段回答，列出出處（哪本、第幾頁）；找不到依據要明說。**不可從影片查規則**；只讀 `ai_indexed = true` 的文件。見 `PROJECT_CONTEXT.md` 第 6、9 節。
 - 遊戲簡介補寫：使用者說太耗時，晚點再寫。
 
 ## 下一步（照順序）
 
 **一次一階段，前一階段測試完才進下一階段。**
 
-1. 補 `privacy.html`、確認 commit 狀態（見「進行中」1）。
-2. 請使用者用手機實測：玩家第一次點報到連結（從 LINE 開啟）能不能完成 Google 登入、設定暱稱與聯絡方式、報到。
-3. 視覺改版（見上）；「已玩」即時更新；站上拖曳調整排名；排序功能。
-4. 上傳規則書 PDF（存到 Supabase **私有** bucket，網站公開、規則書有著作權，不可用公開 bucket；`game_documents` 已預留 `source_type='upload'`、`storage_path`、`ai_indexed`；刪除遊戲時 `on delete cascade` 只刪資料列、**不會刪 Storage 檔案**；先統計實際 PDF 數量與大小）。
-5. **AI 規則助手（仍是最重要的長期目標；PDF 文字擷取、切段並保留頁碼，先決定支援全部桌遊或先 10～20 款）**、揪團／行事曆、帳號刪除流程（目前要管理者在 Supabase 手動處理，`player_profiles`、`player_contacts` 的刪除目前只有管理者能做）。順序請與使用者確認。
-6. 詳細視窗的「AI 查詢」分頁等 AI 規則助手做出來再加。
+1. 確認「進行中」第 1、2 項已套用並測試；補 `privacy.html`、commit。
+2. 視覺改版：首頁與遊戲卡片 → 集點卡獨立頁面 → 管理者視窗與排行榜統一風格 → 手機版全面檢查。
+3. 站上拖曳調整排名；排序功能。
+4. 上傳規則書 PDF（**私有** bucket）→ **AI 規則助手（RAG，最重要的長期目標）**→ 揪團／行事曆、帳號刪除流程。順序請與使用者確認。
+5. 詳細視窗的「AI 查詢」分頁等 AI 規則助手做出來再加。
 
 **接續時請這樣開場：**
 1. 問使用者在哪台電腦，`git pull`、`git status`。
 2. 先處理「進行中」的確認。**不要假設上一則回覆的步驟已完成**（聊天室額度曾中斷過數次）。
-3. 新資料表的 RLS 寫入政策**一律用 `auth.uid()` 等於本人，或 `is_admin()`，不要寫成「所有 authenticated」**；改 `App.tsx` 前請他貼目前版本。
+3. 新資料表的 RLS 寫入政策**一律用 `auth.uid()` 等於本人，或 `is_admin()`**；改 `App.tsx` 前請他貼目前版本（他貼來的可能是舊版）。
 
 ## CSV 匯入的行為（重要）
 
@@ -97,7 +97,7 @@
 - 永久刪除（含雲端封面）只在垃圾桶區由管理者手動做；**封面刪除後無法復原**。
 - 地雷：在 Notion 改 `bggName` → 舊的進垃圾桶、新的當新遊戲（封面要重傳）；新舊 `cover_slug` 相同會撞唯一限制。
 - 玩家的想玩／已玩／評分紀錄以 `bgg_name` 對應，**CSV 改 `bggName` 會讓玩家對那款的紀錄失聯**。
-- `makeCoverSlug` 已改為 ASCII 安全版（見附錄 M-4）；**是否已套用並重新匯入、`cover_slug !~ '^[a-z0-9_-]+$'` 查詢是否為 0 列，尚未確認**。
+- `makeCoverSlug` 已改為 ASCII 安全版（見 `PROJECT_CONTEXT.md` 第 4 節）；**是否已套用並重新匯入、`cover_slug !~ '^[a-z0-9_-]+$'` 查詢是否為 0 列，尚未確認**。
 - 下次匯入 CSV 後，請使用者執行 `select bgg_name, created_at from public.board_games order by created_at desc limit 5;`，確認舊遊戲的 `created_at` 沒被重設；若被重設，要調整匯入程式。
 
 ## 關鍵決定與地雷
@@ -121,7 +121,7 @@
 - `BoardGame` 型別仍由 `src/data/boardGames.generated.ts` 匯出，**不要刪這個檔案**。
 - Brevo 帳號已註冊但目前沒用到。
 - 垃圾桶 0 款時整區隱藏是設計如此，不是壞掉。
-- **Storage 檔名必須是 ASCII**（見附錄 M-4）。
+- **Storage 檔名必須是 ASCII**（見 `PROJECT_CONTEXT.md` 第 4 節）。
 - **次數定義**：`play_count`＝沒日期的次數，總次數＝它＋遊玩紀錄筆數；不要混為一個數字存回資料庫。
 - **新建資料表一律加**：`revoke truncate, references, trigger on 表名 from authenticated;`，並確認 `anon` 無權限。
 - **給使用者改程式碼時**：量大就給整份檔案，不要只寫「貼在某行下面」（他多次貼錯位置）。
@@ -133,7 +133,7 @@
 - 評分過或勾過「我玩了」就視為已玩（觸發器）；取消勾選不會取消已玩。
 - 管理者聚會視窗的玩家清單來自 `player_profiles`，聯絡方式來自 `player_contacts`（管理者才讀得到）。
 
-- **兩種連結不同**：`?card=日期`（集點卡連結）只是「登入後打開我的集點卡並標出那天」的捷徑，**不會讓任何人變成出席者**；`?join=隨機碼`（報到連結）才會把玩家列入出席名單，受開關、當天、上限限制，隨機碼只有管理者讀得到。已報到的人在聚會結束後再點報到連結，函式會回 `already`，仍可打開集點卡。
+- **連結（2026-10-26 起合併成一個）**：管理者只傳 `?join=隨機碼` 的聚會連結（報到＋集點卡）；`?card=日期` 仍支援但介面已不提供。`?card=日期`（集點卡連結）只是「登入後打開我的集點卡並標出那天」的捷徑，**不會讓任何人變成出席者**；`?join=隨機碼`（報到連結）才會把玩家列入出席名單，受開關、當天、上限限制，隨機碼只有管理者讀得到。已報到的人在聚會結束後再點報到連結，函式會回 `already`，仍可打開集點卡。
 - **玩家只能透過 `join_gathering` 自己加入出席名單**；`gathering_attendees` 的寫入政策仍只有管理者。
 - **集點是即時計算，不會因為匯入新 CSV 而消失**：`loyalty_day_status` 只用 `gathering_attendees`、`gathering_games`、`gathering_plays`、`game_play_sessions`、`game_ratings`（皆以 `bgg_name` 文字對應，沒有外鍵到 `board_games`），不讀 `board_games`。遊戲被移到垃圾桶或永久刪除，點數不變；但畫面上該遊戲的名稱會退回顯示 `bgg_name`、且找不到「去評分」按鈕。**真正的風險是在 Notion 改 `bggName`**（舊名稱的紀錄不會跟著換）。兌換紀錄永久保留，點數事後變少時只會顯示 ⚠。
 
