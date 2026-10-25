@@ -9,8 +9,8 @@ import PlayCounter from './PlayCounter'
 import PersonalNote from './PersonalNote'
 import PlaySessions from './PlaySessions'
 import DescriptionEditor from './DescriptionEditor'
-import { isSafeUrl, useGameDocuments } from '../lib/useGameDocuments'
 import RatingSection, { CommunitySummary } from './RatingSection'
+import { useGameDocuments } from '../lib/useGameDocuments'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import type { RatingsApi } from '../lib/useGameRatings'
 
@@ -18,6 +18,7 @@ const TABS = [
   { key: 'overview', label: '概覽' },
   { key: 'ratings', label: '評分' },
   { key: 'mine', label: '我的桌遊' },
+  { key: 'rules', label: '規則' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -53,12 +54,6 @@ export default function GameModal({
 }) {
   const [tab, setTab] = useState<TabKey>('overview')
   const docsApi = useGameDocuments(game.bggName)
-  const introDocs = docsApi.docs.filter(
-    (doc) => doc.doc_type === 'intro' && isSafeUrl(doc.external_url),
-  )
-  const videoDocs = docsApi.docs.filter(
-    (doc) => doc.doc_type === 'video' && isSafeUrl(doc.external_url),
-  )
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -104,45 +99,16 @@ export default function GameModal({
               }
             />
             <div className="modal-head-info">
-              <div className="modal-links">
-                {game.links.bgg && (
-                  <a
-                    className="bgg-link"
-                    href={game.links.bgg}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    BoardGameGeek ↗
-                  </a>
-                )}
-                {introDocs.map((doc, index) => (
-                  <a
-                    className="bgg-link"
-                    key={doc.id}
-                    href={doc.external_url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {doc.title ||
-                      `中文介紹${introDocs.length > 1 ? index + 1 : ''}`}{' '}
-                    ↗
-                  </a>
-                ))}
-                {videoDocs.map((doc, index) => (
-                  <a
-                    className="bgg-link"
-                    key={doc.id}
-                    href={doc.external_url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    ▶{' '}
-                    {doc.title ||
-                      `影片${videoDocs.length > 1 ? index + 1 : ''}`}{' '}
-                    ↗
-                  </a>
-                ))}
-              </div>
+              {game.links.bgg && (
+                <a
+                  className="bgg-link"
+                  href={game.links.bgg}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  BoardGameGeek ↗
+                </a>
+              )}
               <h2 id="modal-title">{game.name}</h2>
               <div className="modal-score-line">
                 {game.bggScore == null ? (
@@ -194,6 +160,7 @@ export default function GameModal({
                 isAdmin={isAdmin}
                 onSave={onSaveDescription}
               />
+
               <div className="modal-section">
                 <h3 className="modal-section-title">GAME ATTRIBUTES</h3>
                 <div className="rating-list">
@@ -212,15 +179,6 @@ export default function GameModal({
                   bggName={game.bggName}
                   api={ratings}
                   detailed={false}
-                />
-              </div>
-
-              <div className="modal-section">
-                <h3 className="modal-section-title">GAME RESOURCES</h3>
-                <GameDocuments
-                  key={game.bggName}
-                  api={docsApi}
-                  isAdmin={isAdmin}
                 />
               </div>
 
@@ -302,6 +260,16 @@ export default function GameModal({
                 )}
               </div>
             </>
+          )}
+
+          {tab === 'rules' && (
+            <div className="modal-section">
+              <GameDocuments
+                key={game.bggName}
+                api={docsApi}
+                isAdmin={isAdmin}
+              />
+            </div>
           )}
         </div>
       </section>

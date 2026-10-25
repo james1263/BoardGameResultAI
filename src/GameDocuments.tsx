@@ -22,10 +22,15 @@ const LANGUAGE_LABELS: Record<DocLanguage, string> = {
   other: '其他語言',
 }
 
+const GROUPS: { title: string; types: DocType[] }[] = [
+  { title: 'RULEBOOKS & FAQ', types: ['rulebook', 'faq', 'errata', 'other'] },
+  { title: '中文介紹', types: ['intro'] },
+  { title: '影片', types: ['video'] },
+]
+
 function docLabel(doc: GameDocument): string {
-  // 中文介紹：直接用標題，沒填標題就顯示「中文介紹」
   if (doc.doc_type === 'intro') return doc.title || '中文介紹'
-  if (doc.doc_type === 'video') return doc.title || '影片'
+  if (doc.doc_type === 'video') return '▶ ' + (doc.title || '影片')
   return `${DOC_TYPE_LABELS[doc.doc_type]}（${LANGUAGE_LABELS[doc.language]}）${doc.title ? '：' + doc.title : ''}`
 }
 
@@ -44,12 +49,6 @@ export default function GameDocuments({
   const [url, setUrl] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [formError, setFormError] = useState('')
-
-  // 中文介紹顯示在視窗頂部；訪客這裡只列規則書等文件，管理者全部都列（才能刪除）
-  const otherDocs = docs.filter(
-    (doc) => doc.doc_type !== 'intro' && doc.doc_type !== 'video',
-  )
-  const listedDocs = isAdmin ? docs : otherDocs
 
   async function handleAdd(event: FormEvent) {
     event.preventDefault()
@@ -79,49 +78,58 @@ export default function GameDocuments({
 
   return (
     <div className="game-docs">
-      <p className="eyebrow">RULEBOOKS &amp; FAQ</p>
-
       {isLoading && <p>載入文件中…</p>}
       {loadError && <p className="admin-error">{loadError}</p>}
 
-      {!isLoading && !loadError && otherDocs.length === 0 && (
-        <p className="game-docs-empty">尚未提供規則書或 FAQ 連結。</p>
+      {!isLoading && !loadError && docs.length === 0 && (
+        <p className="game-docs-empty">
+          尚未提供規則書、中文介紹或影片連結。
+        </p>
       )}
 
-      {listedDocs.length > 0 && (
-        <ul>
-          {listedDocs.map((doc) => (
-            <li className="game-docs-item" key={doc.id}>
-              {doc.source_type === 'external' && isSafeUrl(doc.external_url) ? (
-                <a
-                  className="bgg-link"
-                  href={doc.external_url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {docLabel(doc)} ↗
-                </a>
-              ) : (
-                <span>{docLabel(doc)}</span>
-              )}
+      {GROUPS.map((group) => {
+        const items = docs.filter((doc) => group.types.includes(doc.doc_type))
+        if (items.length === 0) return null
 
-              {isAdmin && (
-                <button
-                  className="admin-link"
-                  type="button"
-                  onClick={() => handleDelete(doc)}
-                >
-                  刪除
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+        return (
+          <div className="docs-group" key={group.title}>
+            <h4 className="docs-group-title">{group.title}</h4>
+            <ul>
+              {items.map((doc) => (
+                <li className="game-docs-item" key={doc.id}>
+                  {doc.source_type === 'external' &&
+                  isSafeUrl(doc.external_url) ? (
+                    <a
+                      className="bgg-link"
+                      href={doc.external_url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {docLabel(doc)} ↗
+                    </a>
+                  ) : (
+                    <span>{docLabel(doc)}</span>
+                  )}
+
+                  {isAdmin && (
+                    <button
+                      className="admin-link"
+                      type="button"
+                      onClick={() => handleDelete(doc)}
+                    >
+                      刪除
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      })}
 
       {isAdmin && (
         <form className="doc-form" onSubmit={handleAdd}>
-          <strong>新增文件連結</strong>
+          <strong>新增連結</strong>
 
           <label className="admin-field">
             <span>類型</span>
@@ -136,8 +144,8 @@ export default function GameDocuments({
               <option value="rulebook">規則書</option>
               <option value="faq">FAQ</option>
               <option value="errata">勘誤</option>
-              <option value="intro">中文介紹（顯示在視窗頂部）</option>
-              <option value="video">影片（顯示在視窗頂部，AI 不會參考）</option>
+              <option value="intro">中文介紹</option>
+              <option value="video">影片（AI 不會參考）</option>
               <option value="other">其他</option>
             </select>
           </label>
@@ -157,9 +165,7 @@ export default function GameDocuments({
           </label>
 
           <label className="admin-field">
-            <span>
-              標題（可不填；中文介紹會直接顯示這個標題，例如：巴哈介紹）
-            </span>
+            <span>標題（可不填；中文介紹與影片會直接顯示這個標題）</span>
             <input
               type="text"
               value={title}

@@ -11,6 +11,11 @@ type Draft = {
   scores: Record<RatingKey, number | null>
 }
 
+// 細評收合區：除了「適合留下來程度」以外的五項（選填）
+const OPTIONAL_FIELDS = RATING_FIELDS.filter((field) => field.key !== 'keep')
+const KEEP_LABEL =
+  RATING_FIELDS.find((field) => field.key === 'keep')?.label ?? '適合留下來程度'
+
 function toDraft(mine: MyRating | null): Draft {
   return {
     overall: mine?.overall ?? null,
@@ -31,8 +36,13 @@ function sameAsSaved(draft: Draft, mine: MyRating | null): boolean {
   return RATING_FIELDS.every((f) => draft.scores[f.key] === mine[f.key])
 }
 
-function hasAnyDetail(draft: Draft): boolean {
-  return RATING_FIELDS.some((f) => draft.scores[f.key] != null)
+function hasOptionalDetail(draft: Draft): boolean {
+  return OPTIONAL_FIELDS.some((f) => draft.scores[f.key] != null)
+}
+
+function filledCount(draft: Draft): number {
+  const detail = RATING_FIELDS.filter((f) => draft.scores[f.key] != null).length
+  return detail + (draft.overall != null ? 1 : 0)
 }
 
 export function CommunitySummary({
@@ -88,11 +98,14 @@ export default function RatingSection({
 }) {
   const mine = api.getMine(bggName)
   const [draft, setDraft] = useState<Draft>(() => toDraft(mine))
-  const [showDetail, setShowDetail] = useState(() => hasAnyDetail(toDraft(mine)))
+  const [showDetail, setShowDetail] = useState(() =>
+    hasOptionalDetail(toDraft(mine)),
+  )
 
   const isGuest = api.status === 'guest'
   const canEdit = api.status === 'ready' && !api.busy
   const dirty = !sameAsSaved(draft, mine)
+  const requiredDone = draft.overall != null && draft.scores.keep != null
 
   function setOverall(value: number) {
     setDraft((d) => ({ ...d, overall: value }))
@@ -101,13 +114,16 @@ export default function RatingSection({
   function setScore(key: RatingKey, value: number) {
     setDraft((d) => ({
       ...d,
-      // 再按一次同一個分數＝清空（六項選填）
-      scores: { ...d.scores, [key]: d.scores[key] === value ? null : value },
+      // 再按一次同一個分數＝清空（只有選填項目可以清空）
+      scores: {
+        ...d.scores,
+        [key]: key !== 'keep' && d.scores[key] === value ? null : value,
+      },
     }))
   }
 
   async function handleSave() {
-    if (draft.overall == null) return
+    if (draft.overall == null || draft.scores.keep == null) return
     await api.saveRating(bggName, { overall: draft.overall, ...draft.scores })
   }
 
@@ -153,16 +169,32 @@ export default function RatingSection({
               ))}
             </div>
 
+            <p className="rate-label">{KEEP_LABEL}（1～5，必填）</p>
+            <div className="rate-scale rate-scale-5">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={draft.scores.keep === n ? 'is-selected' : ''}
+                  aria-pressed={draft.scores.keep === n}
+                  disabled={!canEdit}
+                  onClick={() => setScore('keep', n)}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+
             <button
               type="button"
               className="rate-toggle"
               onClick={() => setShowDetail((open) => !open)}
             >
-              {showDetail ? '收合六項細評 ▴' : '填寫六項細評（選填）▾'}
+              {showDetail ? '收合其他五項細評 ▴' : '填寫其他五項細評（選填）▾'}
             </button>
 
             {showDetail &&
-              RATING_FIELDS.map((field) => (
+              OPTIONAL_FIELDS.map((field) => (
                 <div className="rate-row" key={field.key}>
                   <p className="rate-label">{field.label}</p>
                   <div className="rate-scale rate-scale-5">
@@ -184,11 +216,16 @@ export default function RatingSection({
                 </div>
               ))}
 
+            <p className="rate-note" style={{ marginTop: 10 }}>
+              已填 {filledCount(draft)} / 7 項
+              {filledCount(draft) === 7 ? '（完整評分）' : ''}
+            </p>
+
             <div className="rate-actions">
               <button
                 type="button"
                 className="rate-save"
-                disabled={!canEdit || draft.overall == null || !dirty}
+                disabled={!canEdit || !requiredDone || !dirty}
                 onClick={handleSave}
               >
                 {api.busy ? '處理中…' : mine ? '更新評分' : '送出評分'}
