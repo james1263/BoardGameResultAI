@@ -343,6 +343,17 @@
   font-weight: 600;
 }
 
+/* 聯絡方式（LINE／FB 名字），只有管理者看得到 */
+.lga-contact {
+  display: block;
+  padding: 0 4px 2px;
+  overflow: hidden;
+  color: #7b8a7f;
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 520px) {
   .lga-new {
     grid-template-columns: 1fr;

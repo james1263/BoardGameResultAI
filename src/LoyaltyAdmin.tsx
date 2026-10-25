@@ -79,12 +79,14 @@ export default function LoyaltyAdmin() {
     Record<string, string[]>
   >({})
   const [players, setPlayers] = useState<Player[]>([])
+  const [contacts, setContacts] = useState<Record<string, string>>({})
   const [allGames, setAllGames] = useState<GameOption[]>([])
   const [overview, setOverview] = useState<OverviewRow[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [newDate, setNewDate] = useState(todayLocal)
   const [newNote, setNewNote] = useState('')
   const [gameSearch, setGameSearch] = useState('')
+  const [playerSearch, setPlayerSearch] = useState('')
   const [detail, setDetail] = useState<Detail | null>(null)
 
   const gameNameMap = useMemo(
@@ -94,7 +96,7 @@ export default function LoyaltyAdmin() {
 
   async function loadAll() {
     setLoading(true)
-    const [g, a, p, o, gg, bg] = await Promise.all([
+    const [g, a, p, o, gg, bg, ct] = await Promise.all([
       supabase
         .from('gatherings')
         .select('id, gathered_on, note')
@@ -110,9 +112,11 @@ export default function LoyaltyAdmin() {
         .select('bgg_name, name')
         .is('removed_at', null)
         .order('name'),
+      supabase.from('player_contacts').select('user_id, contact_name'),
     ])
 
-    const failed = g.error ?? a.error ?? p.error ?? o.error ?? gg.error ?? bg.error
+    const failed =
+      g.error ?? a.error ?? p.error ?? o.error ?? gg.error ?? bg.error ?? ct.error
     setMessage(failed ? '讀取失敗：' + failed.message : '')
 
     setGatherings(
@@ -150,6 +154,13 @@ export default function LoyaltyAdmin() {
       })),
     )
     setPlayers((p.data ?? []) as Player[])
+    setContacts(
+      Object.fromEntries(
+        ((ct.data ?? []) as { user_id: string; contact_name: string }[]).map(
+          (row) => [row.user_id, row.contact_name],
+        ),
+      ),
+    )
     setOverview(((o.data ?? []) as OverviewRaw[]).map(toOverview))
     setLoading(false)
   }
@@ -433,6 +444,15 @@ export default function LoyaltyAdmin() {
   const selectedExempts = selected ? (exempts[selected.id] ?? []) : []
   const selectedGames = selected ? (gatheringGames[selected.id] ?? []) : []
 
+  const playerQuery = playerSearch.trim().toLocaleLowerCase()
+  const visiblePlayers = playerQuery
+    ? players.filter(
+        (player) =>
+          player.nickname.toLocaleLowerCase().includes(playerQuery) ||
+          (contacts[player.id] ?? '').toLocaleLowerCase().includes(playerQuery),
+      )
+    : players
+
   const searchText = gameSearch.trim().toLocaleLowerCase()
   const gameMatches = searchText
     ? allGames
@@ -549,9 +569,10 @@ export default function LoyaltyAdmin() {
                                 className={`lga-row ${
                                   g.id === selectedId ? 'active' : ''
                                 }`}
-                                onClick={() =>
+                                onClick={() => {
                                   setSelectedId(g.id === selectedId ? null : g.id)
-                                }
+                                  setPlayerSearch('')
+                                }}
                               >
                                 <span className="lga-date">
                                   <small>{Number(month)} 月</small>
@@ -614,13 +635,27 @@ export default function LoyaltyAdmin() {
                         適合中途離開、來不及評分的玩家，開啟後這一天直接算 1 點。
                         玩家只看得到自己的出席。
                       </p>
+                      {players.length > 0 && (
+                        <div className="lga-new lga-search">
+                          <input
+                            type="search"
+                            placeholder="搜尋玩家（暱稱、LINE／FB 名字）…"
+                            value={playerSearch}
+                            onChange={(event) =>
+                              setPlayerSearch(event.target.value)
+                            }
+                          />
+                        </div>
+                      )}
                       {players.length === 0 ? (
                         <p className="loy-admin-note">
                           還沒有玩家設定暱稱。
                         </p>
+                      ) : visiblePlayers.length === 0 ? (
+                        <p className="loy-admin-note">找不到符合的玩家。</p>
                       ) : (
                         <ul className="lga-chips">
-                          {players.map((player) => {
+                          {visiblePlayers.map((player) => {
                             const attending = selectedAttendees.includes(
                               player.id,
                             )
@@ -655,6 +690,9 @@ export default function LoyaltyAdmin() {
                                     <span className="lga-check">✓</span>
                                   )}
                                 </button>
+                                <span className="lga-contact">
+                                  {contacts[player.id] ?? '未填聯絡方式'}
+                                </span>
                                 {attending && (
                                   <button
                                     type="button"
@@ -766,6 +804,9 @@ export default function LoyaltyAdmin() {
                             <tr key={row.userId}>
                               <td>
                                 {row.nickname}
+                                <small className="lga-contact">
+                                  {contacts[row.userId] ?? '未填聯絡方式'}
+                                </small>
                                 {row.overRedeemed && (
                                   <span
                                     className="loy-flag"

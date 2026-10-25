@@ -1,14 +1,19 @@
-/* 頂端列固定在最上方（捲到哪裡都看得到登入／登出） */
+/* 頂端列固定在最上方（捲到哪裡都看得到登入／登出）
+   注意：不要在這裡加 backdrop-filter／transform／filter，
+   否則裡面 position: fixed 的視窗遮罩會被關在頂端列裡，只露出一小條。 */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 900;
-  background: rgba(245, 240, 229, 0.94);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  background: rgba(245, 240, 229, 0.98);
 }
 
-/* 玩家帳號選單：暱稱 ▾ → 修改暱稱／登出 */
+/* 所有彈出視窗都要蓋過頂端列 */
+.modal-backdrop {
+  z-index: 1100;
+}
+
+/* 玩家帳號選單：暱稱 ▾ → 修改暱稱與聯絡方式／登出 */
 .account-menu {
   position: relative;
 }
@@ -26,7 +31,7 @@
   z-index: 950;
   display: flex;
   flex-direction: column;
-  min-width: 150px;
+  min-width: 190px;
   padding: 6px;
   border: 1px solid rgba(52, 70, 60, 0.2);
   border-radius: 12px;
@@ -35,18 +40,115 @@
 }
 
 .account-popover button {
-  padding: 10px 12px;
+  padding: 12px;
   border: 0;
   border-radius: 8px;
   background: transparent;
   color: #34463c;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   text-align: left;
   cursor: pointer;
 }
 
 .account-popover button:hover {
   background: rgba(69, 107, 80, 0.12);
+}
+
+/* 暱稱與聯絡方式視窗 */
+.admin-modal.player-dialog {
+  box-sizing: border-box;
+  width: min(440px, calc(100vw - 24px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 24px 22px 18px;
+  background: #fbf6e9;
+  color: #34463c;
+  text-align: left;
+}
+
+.player-dialog h2 {
+  margin: 0 0 16px;
+  font-size: 1.3rem;
+}
+
+.pd-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.pd-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.pd-field input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1.5px solid rgba(52, 70, 60, 0.3);
+  border-radius: 12px;
+  background: #fff;
+  color: #34463c;
+  font: inherit;
+  font-size: 1rem; /* 16px 以上，手機瀏覽器才不會自動放大 */
+}
+
+.pd-field input:focus {
+  border-color: #456b50;
+  outline: 3px solid rgba(69, 107, 80, 0.2);
+}
+
+.pd-hint {
+  color: #7b8a7f;
+  font-size: 0.82rem;
+}
+
+.pd-error {
+  margin: 0 0 12px;
+  color: #a03c32;
+  font-size: 0.9rem;
+}
+
+.pd-save {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: #456b50;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pd-save:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.pd-secondary {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pd-secondary button {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #5c6d62;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.pd-secondary button:hover {
+  background: rgba(52, 70, 60, 0.08);
 }
 
 /* 邀請連結：還沒登入時的提示 */
@@ -77,4 +179,18 @@
   outline: 2px solid #b78a5a;
   outline-offset: 3px;
   border-radius: 14px;
+}
+
+/* 集點卡：說明文字、規則、近期紀錄一律靠左 */
+.lc-steps li,
+.lc-steps li span,
+.lc-rules,
+.lc-rules li,
+.lc-empty,
+.lc-error,
+.lc-warning,
+.lc-progress-note,
+.lc-day-main,
+.lc-day-main p {
+  text-align: left;
 }
