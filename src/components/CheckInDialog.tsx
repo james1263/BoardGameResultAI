@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import type { BoardGame } from '../data/boardGames.generated'
 import { supabase } from '../lib/supabase'
 import { PROFILE_SAVED_EVENT } from '../lib/googleLogin'
+import { useSession } from '../lib/useSession'
+import { useVip, VIP_CHANGED_EVENT } from '../lib/useVip'
+import { RATING_FIELDS, type RatingsApi } from '../lib/useGameRatings'
+import VipJoinDialog from './VipJoinDialog'
 
 type JoinRow = { result_status: string; result_date: string | null }
+type DayInfo = { exempt: boolean; games: string[]; error: string }
 
 const MESSAGES: Record<string, string> = {
   joined: '報到成功！你已經列入今天的出席名單。',
@@ -24,17 +30,30 @@ const SUCCESS = new Set(['joined', 'already'])
 
 export default function CheckInDialog({
   token,
+  boardGames,
+  ratings,
+  onRate,
   onDone,
   onClose,
 }: {
   token: string
+  boardGames: BoardGame[]
+  ratings: RatingsApi
+  onRate: (game: BoardGame) => void
   onDone: (date: string | null) => void
   onClose: () => void
 }) {
+  const session = useSession()
+  const userId = session?.user?.id ?? null
+  const vip = useVip()
+
   const [busy, setBusy] = useState(true)
   const [status, setStatus] = useState<string | null>(null)
   const [date, setDate] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [info, setInfo] = useState<DayInfo | null>(null)
+  const [wasNeeded, setWasNeeded] = useState<boolean | null>(null)
+  const [isVipOpen, setIsVipOpen] = useState(false)
   const statusRef = useRef<string | null>(null)
   const startedRef = useRef(false)
   const onDoneRef = useRef(onDone)
@@ -60,6 +79,10 @@ export default function CheckInDialog({
     statusRef.current = row.result_status
     setStatus(row.result_status)
     setDate(row.result_date)
+    if (row.result_status === 'joined' || row.result_status === 'already') {
+      // 報到可能順便升成 VIP，通知畫面重新檢查
+      window.dispatchEvent(new Event(VIP_CHANGED_EVENT))
+    }
   }, [token])
 
   // 視窗一打開就自動報到
@@ -79,15 +102,99 @@ export default function CheckInDialog({
     return () => window.removeEventListener(PROFILE_SAVED_EVENT, handleSaved)
   }, [handleJoin])
 
-  // 報到成功：稍等一下自動打開集點卡
-  useEffect(() => {
-    if (status === null || !SUCCESS.has(status)) return
-    const timer = window.setTimeout(() => onDoneRef.current(date), 1200)
-    return () => window.clearTimeout(timer)
-  }, [status, date])
-
   const succeeded = status !== null && SUCCESS.has(status)
   const canRetry = status === null || RETRYABLE.has(status)
+
+  // 報到成功後，讀取我在這一天被列入的聚會：指定遊戲、是否免評分
+  useEffect(() => {
+    if (!succeeded || !date || !userId) return
+    let cancelled = false
+
+    async function loadDay(day: string, uid: string) {
+      const g = await supabase
+        .from('gatherings')
+        .select('id')
+        .eq('gathered_on', day)
+      const allIds = ((g.data ?? []) as { id: string }[]).map((row) => row.id)
+      if (g.error || allIds.length === 0) {
+        if (!cancelled) {
+          setInfo({ exempt: false, games: [], error: g.error?.message ?? '' })
+        }
+        return
+      }
+
+      const a = await supabase
+        .from('gathering_attendees')
+        .select('gathering_id, exempt')
+        .eq('user_id', uid)
+        .in('gathering_id', allIds)
+      const mine = (
+        (a.data ?? []) as { gathering_id: string; exempt: boolean }[]
+      )
+      const myIds = mine.map((row) => row.gathering_id)
+
+      const gg =
+        myIds.length > 0
+          ? await supabase
+              .from('gathering_games')
+              .select('gathering_id, bgg_name')
+              .in('gathering_id', myIds)
+          : { data: [], error: null }
+
+      if (cancelled) return
+      const games = Array.from(
+        new Set(
+          ((gg.data ?? []) as { bgg_name: string }[]).map((row) => row.bgg_name),
+        ),
+      )
+      setInfo({
+        exempt: mine.some((row) => row.exempt),
+        games,
+        error: a.error?.message ?? gg.error?.message ?? '',
+      })
+    }
+
+    void loadDay(date, userId)
+    return () => {
+      cancelled = true
+    }
+  }, [succeeded, date, userId])
+
+  const ratingsReady = ratings.status === 'ready'
+
+  // 七項評分都填了才算完整（跟集點卡同一個標準）
+  function isComplete(bggName: string): boolean {
+    const mine = ratings.getMine(bggName)
+    if (!mine || !(mine.overall > 0)) return false
+    return RATING_FIELDS.every((field) => mine[field.key] != null)
+  }
+
+  const resolved = info !== null && ratingsReady
+  const doneCount = info ? info.games.filter(isComplete).length : 0
+  const needRating =
+    info !== null &&
+    !info.error &&
+    !info.exempt &&
+    info.games.length > 0 &&
+    doneCount === 0
+
+  // 第一次算出結果時記住「一開始需不需要評分」
+  useEffect(() => {
+    if (resolved && wasNeeded === null) setWasNeeded(needRating)
+  }, [resolved, wasNeeded, needRating])
+
+  const showRate = resolved && (wasNeeded ?? needRating)
+
+  // 一開始就不用評分（免評分、以前評過、沒有指定遊戲）：稍等一下直接到集點卡
+  useEffect(() => {
+    if (!resolved || wasNeeded !== false) return
+    const timer = window.setTimeout(() => onDoneRef.current(date), 1200)
+    return () => window.clearTimeout(timer)
+  }, [resolved, wasNeeded, date])
+
+  const gameMap = new Map(boardGames.map((game) => [game.bggName, game]))
+  const canContinue = !!info && (info.exempt || doneCount > 0 || !!info.error)
+  const needVip = showRate && vip.checked && !vip.isVip
 
   return createPortal(
     <div className="modal-backdrop checkin-backdrop">
@@ -110,35 +217,91 @@ export default function CheckInDialog({
 
         {error && <p className="pd-error">{error}</p>}
 
-        {succeeded ? (
-          <button
-            className="pd-save"
-            type="button"
-            onClick={() => onDone(date)}
-          >
-            打開我的集點卡
-          </button>
-        ) : canRetry ? (
-          <>
+        {succeeded && !resolved && <p className="pd-text">正在準備評分…</p>}
+
+        {succeeded && resolved && !showRate && (
+          <p className="pd-text">正在帶你到集點卡…</p>
+        )}
+
+        {succeeded && showRate && (
+          <div className="ci-rate">
+            <p className="pd-text">
+              <b>下一步：評分。</b>
+              從下面挑一款你今天玩過的遊戲，把七項評分都填完，評完就自動算你玩過，也才能蓋章。
+            </p>
+
+            {needVip ? (
+              <>
+                <p className="pd-warn">評分是 VIP 朋友的功能，請先輸入通關密碼。</p>
+                <button
+                  className="pd-save"
+                  type="button"
+                  onClick={() => setIsVipOpen(true)}
+                >
+                  輸入密碼加入 VIP
+                </button>
+              </>
+            ) : (
+              <ul className="ci-games">
+                {info!.games.map((bggName) => {
+                  const game = gameMap.get(bggName)
+                  const done = isComplete(bggName)
+                  return (
+                    <li className="ci-game" key={bggName}>
+                      <span className="ci-game-name">{game?.name ?? bggName}</span>
+                      <span className={`ci-game-state ${done ? 'done' : ''}`}>
+                        {done ? '✓ 已評分' : '未評分'}
+                      </span>
+                      {game && (
+                        <button
+                          type="button"
+                          className="ma-btn"
+                          onClick={() => onRate(game)}
+                        >
+                          {done ? '查看／修改' : '去評分'}
+                        </button>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+
             <button
               className="pd-save"
               type="button"
-              disabled={busy}
-              onClick={handleJoin}
+              disabled={!canContinue}
+              onClick={() => onDone(date)}
             >
-              {busy ? '報到中…' : '我來了'}
+              {canContinue ? '前往集點卡' : '至少評完一款才能繼續'}
             </button>
-            <div className="pd-secondary">
-              <button type="button" onClick={onClose}>
-                取消
-              </button>
-            </div>
-          </>
-        ) : (
-          <button className="pd-save" type="button" onClick={onClose}>
-            關閉
-          </button>
+          </div>
         )}
+
+        {!succeeded &&
+          (canRetry ? (
+            <>
+              <button
+                className="pd-save"
+                type="button"
+                disabled={busy}
+                onClick={handleJoin}
+              >
+                {busy ? '報到中…' : '我來了'}
+              </button>
+              <div className="pd-secondary">
+                <button type="button" onClick={onClose}>
+                  取消
+                </button>
+              </div>
+            </>
+          ) : (
+            <button className="pd-save" type="button" onClick={onClose}>
+              關閉
+            </button>
+          ))}
+
+        {isVipOpen && <VipJoinDialog onClose={() => setIsVipOpen(false)} />}
       </div>
     </div>,
     document.body,

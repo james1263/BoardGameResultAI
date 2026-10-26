@@ -558,7 +558,7 @@ function Library({
       )}
       {checkinToken && !checkinLoggedIn && (
         <div className="invite-banner">
-          <span>你收到了聚會報到連結，請先登入，登入後再按「我來了」。</span>
+          <span>你收到了聚會報到連結，請先用 Google 登入，登入後會自動幫你報到。</span>
           <button
             type="button"
             className="invite-banner-btn"
@@ -571,6 +571,13 @@ function Library({
       {checkinToken && checkinLoggedIn && (
         <CheckInDialog
           token={checkinToken}
+          boardGames={boardGames}
+          ratings={ratings}
+          onRate={(game) => {
+            setCoverMessage('')
+            setSelectedTab('ratings')
+            setSelectedGame(game)
+          }}
           onDone={handleCheckedIn}
           onClose={clearCheckin}
         />

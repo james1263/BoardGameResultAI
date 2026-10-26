@@ -418,3 +418,34 @@
 .modal-backdrop.vip-join-backdrop {
   z-index: 1300;
 }
+
+.ci-games {
+  margin: 10px 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.ci-game {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e8e1cf;
+}
+
+.ci-game-name {
+  flex: 1;
+  min-width: 120px;
+  font-weight: 700;
+}
+
+.ci-game-state {
+  font-size: 12px;
+  color: #818879;
+}
+
+.ci-game-state.done {
+  color: #456b50;
+  font-weight: 700;
+}
