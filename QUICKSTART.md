@@ -1,6 +1,6 @@
 # 桌遊規則助手 — 懶人包（給下一個 AI）
 
-> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`（已依主題整理成 11 節，不再有 A～Q 附錄）。   最後更新：2026-10-26 深夜
+> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`（已依主題整理成 11 節，不再有 A～Q 附錄）。   最後更新：2026-10-26 深夜（視覺改版第二階段進行中）
 
 ## 這是什麼
 
@@ -52,7 +52,7 @@
 - **✅ 管理者聚會視窗**：改成俱樂部風格；出席者以頭像標籤呈現；新增「搜尋玩家」（可用暱稱或 LINE／FB 名字搜尋）。
 - **✅ 自助報到（2026-10-26，使用者已測試通過；之後改成「單一聚會連結」，見「進行中」1）**：管理者在聚會詳情按「建立報到連結」→ 開關「開放報到」、人數上限（留空＝不限）已改為必填）、複製 `?join=隨機碼` 連結、重設連結；出席名單標示「自己報到」。玩家點連結→（未登入先登入）→ `CheckInDialog`「我來了」→ 呼叫資料庫函式 `join_gathering(p_token)`（security definer，檢查：登入、token 有效、已報到則回 already、開放中、**台北時間聚會當天**、有暱稱、有聯絡方式、未額滿；鎖住該場聚會防止超額）→ 成功後打開集點卡並標出那一天。資料表 `gathering_checkins`（只有管理者可讀寫，anon 無權限）；`gathering_attendees.source`（admin／self）。管理者手動加入超過上限會先跳確認。前端：`src/lib/useCheckinLink.ts`、`src/components/CheckInDialog.tsx`、`LoyaltyAdmin.tsx`、`App.tsx`。
 - **✅ `privacy.html` 已補**：排行榜、集點卡、聯絡方式（聯絡方式那句請確認已 commit）。
-- **✅ VIP／管理中心／同日多場／排行榜名單（2026-10-26）**：見 `PROJECT_CONTEXT.md` 第 12 節。管理者導覽只有一顆「⚙ 管理」（成員與 VIP／聚會與集點／資料匯入）；建立連結前必填遊戲與人數上限（LoyaltyAdmin 用 UI 驗證，未呼叫 admin_create_gathering，該函式是否存在待查）；集點卡改成 1～4 步驟；排行榜可展開名單，並有「📊 統計表」（VIP 看遊戲總表，管理者另有成員×遊戲矩陣與 CSV）。
+- **✅ VIP／管理中心／同日多場／排行榜名單（2026-10-26）**：見 `PROJECT_CONTEXT.md` 第 12 節。管理者導覽只有一顆「⚙ 管理」（成員與 VIP／聚會與集點／資料匯入）；建立連結前必填遊戲與人數上限（LoyaltyAdmin 用 UI 驗證，未呼叫 admin_create_gathering；2026-10-26 查過該函式**不存在**，可忽略）；集點卡改成 1～4 步驟；排行榜可展開名單，並有「📊 統計表」（VIP 看遊戲總表，管理者另有成員×遊戲矩陣與 CSV）。
 - **✅ 2026-10-26 深夜（以 git log 為準）**：統計表打開時暫時隱藏排行榜抽屜（避免被蓋住）；統計表矩陣可依玩家、遊戲篩選；管理者可刪除成員帳號（`admin_delete_member`，要輸入暱稱確認，不能刪管理者）；`privacy.html` 已更新（VIP 名單、管理者可見內容、報到、帳號刪除）；回到頂端按鈕在手機避開底部導覽（760px 斷點、64px）；`supabase.ts` 明確設定 `persistSession`／`autoRefreshToken`／`navigator.storage.persist()`；VIP 密碼視窗層級修正（`.vip-join-backdrop` z-index 1300，原本被「我的桌遊」抽屜 1200 蓋住）。
 
 ## 進行中（開場先問使用者）
@@ -62,8 +62,32 @@
 3. **管理者規則**：聚會**一定要先指定至少一款遊戲＋填人數上限**才能建立／複製連結；上限**不可留空**（`gathering_checkins.capacity` 已設 NOT NULL，今天那場補成 6），隨時可改；已有連結的場次至少保留一款遊戲。
 4. **已移除 `gathering_plays`（「我玩了」資料表）**：`useLoyalty.ts`、`LoyaltyCard.tsx` 已清掉；資料庫已 `drop table`。`admin_delete_member` 已同步拿掉對它的刪除。
 5. **VIP 鎖定 SQL 仍未執行**（見舊說明：6 張表加 `restrictive` 政策 `"vip only"` ＋改 `get_rating_summaries()`），要等朋友都輸入密碼後才做；退路 `drop policy "vip only" on public.表名;`。
-- **待辦**：⓪ **先確認（我沒收到使用者回報）**：新版 `admin_delete_member` 與 `drop table public.gathering_plays cascade` 是否已執行（驗證：`select to_regclass('public.gathering_plays');` 應為 null）；`gathering_checkins.capacity` 的 NOT NULL 是否已設；`useLoyalty.ts`／`LoyaltyCard.tsx` 清理版與 `CheckInDialog` 的 `needVip` 修正是否已 push；用 `james-test` 試刪帳號是否成功。①手機實測（非 LINE 瀏覽器）完整報到流程；LINE 內開連結的行為；同一天兩場的集點卡 ②PWA：`public/manifest.webmanifest`、`icons/icon-192.png`／`icon-512.png`、`index.html` 的 manifest／theme-color／apple-touch-icon 三行**尚未做（缺圖示）** ③VIP 朋友名單畫面（函式 `get_vip_friends` 已建、UI 未做）、推薦牆 ④可選：報到成功時自動補一筆當天的遊玩紀錄（拿掉「我玩了」後不再自動補）⑤視覺改版（首頁、遊戲卡片、集點卡獨立頁）。
+- **待辦**：⓪ **（2026-10-26 深夜已確認 git 已 push、三個函式存在、LINE 實測沒問題；以下僅剩兩項驗證結果未收到：`to_regclass('public.gathering_plays')` 是否為 null、`capacity` 是否 NOT NULL）原清單**：新版 `admin_delete_member` 與 `drop table public.gathering_plays cascade` 是否已執行（驗證：`select to_regclass('public.gathering_plays');` 應為 null）；`gathering_checkins.capacity` 的 NOT NULL 是否已設；`useLoyalty.ts`／`LoyaltyCard.tsx` 清理版與 `CheckInDialog` 的 `needVip` 修正是否已 push；用 `james-test` 試刪帳號是否成功。①手機實測（非 LINE 瀏覽器）完整報到流程；LINE 內開連結的行為；同一天兩場的集點卡 ②PWA：`public/manifest.webmanifest`、`icons/icon-192.png`／`icon-512.png`、`index.html` 的 manifest／theme-color／apple-touch-icon 三行**尚未做（缺圖示）** ③VIP 朋友名單畫面（函式 `get_vip_friends` 已建、UI 未做）、推薦牆 ④可選：報到成功時自動補一筆當天的遊玩紀錄（拿掉「我玩了」後不再自動補）⑤視覺改版（首頁、遊戲卡片、集點卡獨立頁）。
 
+
+## 視覺改版進度（2026-10-26 深夜，第二階段進行中）
+
+**已確認狀態**：`git log` 顯示報到／集點新規則相關提交都已 push（最新 `cce279b`），工作樹乾淨；LINE 內開連結、報到流程使用者回報「沒有問題」；資料庫函式 `admin_delete_member`、`join_gathering`、`loyalty_day_status` 存在，**`admin_create_gathering` 不存在**（前端本來就沒用，可忽略）。`gathering_plays` 已移除與 `capacity` NOT NULL 的驗證結果使用者尚未貼。
+
+**首頁（已提供給使用者，使用者貼回的截圖顯示已套用）**
+- 決定：**收藏清單是首頁主角**，不做「最新加入」區塊（卡片已有 NEW）、**不做「最受歡迎」**（指標未定義）。主視覺縮成一條：左「今天，想玩哪一款？」、右搜尋框，下面一排類型膠囊（`hero.css` 整份換新、`library.css`／`cards.css`／`base.css` 小改，改用 `tokens.css` 變數）。
+- **類型膠囊 `components/CategoryChips.tsx`**：前三個固定**策略、派對、陣營**（主體），之後是已選的副類型，再來「更多類型 ▾」（跳出視窗，可搜尋、多選、AND 規則不變）、「清除類型」。數字是該類型遊戲總數。視窗用 `createPortal`，`.cat-backdrop` z-index 1100。樣式在 `hero.css` 最後面。
+- **排序 `components/SortControl.tsx`**：排序下拉＋升降冪＋「重設」搬到收藏標題列（`library.css` 最後面），不用開抽屜。
+- **`FilterDrawer.tsx` 已瘦身為「進階篩選」**：只剩難度、最佳／推薦人數、時間、我的紀錄；類型區與排序已拿掉（`App.tsx` 同步刪掉 `categorySearch`、`isSubCategoryOpen`、`categories`，`FilterDrawerProps` 不再有 `categories`、`selectedCategories`、`sortBy` 等）。`filter.css` 裡舊的 `.category-chip`／`.category-sub-toggle`／`.category-search` 沒人用，留著無害。
+- 標題列按鈕要從「☰ 篩選與排序」改成 **「☰ 更多篩選」**，並在 `filter.css` 補抽屜靠左樣式（使用者截圖顯示按鈕還沒改，**開場先確認**）。
+- 使用者的 `tokens.css` 現有變數：`--c-cream/paper/forest/forest-dark/caramel/ink/ink-soft/line/danger`、`--radius-s/m/l`、`--shadow-s/m`、`--z-bar/--z-modal`。
+
+**使用者回覆「1 2 3 4 5」＝下一批新增 5 個進階篩選全部都做（尚未動工）**，只用現有資料、不動資料庫：
+1. **「我們有幾個人」**：條件 `minPlayers ≤ N ≤ maxPlayers`（原本的最佳／推薦人數保留）。
+2. **遊戲時間「不超過 X 分鐘」**快速鈕：30／60／90／120。
+3. **難度三段**：輕度 `bggDifficulty ≤ 2`（30 款）、中度 `2 < d < 3`（28 款）、重度 `≥ 3`（48 款）、缺值 0（以上是 Supabase 查到的數字，未含垃圾桶）。三顆膠囊。
+4. **只看新遊戲（30 天內）／只看有封面**（封面是否存在需用 `CoverImage` 的載入結果，**要先想清楚怎麼判斷**，不行就只做「新遊戲」）。
+5. **我的紀錄加「有評分／沒評分」**（用 `ratings.getMine`，登入且評分讀取完成才有意義）。
+新增條件要同步：`activeFilterCount`、`clearFilters`、`filteredGames` 的 useMemo 依賴、`missingDataCount`（如有用到難度／時間）。
+
+**「我的桌遊」抽屜與頂端「集點卡」重複（使用者提出，已拿到 `MyList.tsx`、`mylist.css`、`LoyaltyCard.tsx`，尚未動工）**：已提出方案：拿掉頂端與手機底部導覽的「集點卡」（`TopBar.tsx` 的 `onOpenLoyalty`、`App.tsx` 的 `openMyLoyalty` 與 `inviteKey` 邏輯保留給報到／邀請連結用），只留「我的桌遊」；抽屜頂端加「我的俱樂部」摘要卡（暱稱、VIP 標示、想玩／已玩數、本月點數；點數資料來自 `useMyLoyalty()` 的 `summary`，只有 VIP 才有）；未登入時改成說明登入後能同步什麼、VIP 多什麼，附登入按鈕（用 `signInWithGoogle()`）；想玩／已玩為空時顯示說明與「去逛收藏」按鈕；管理者不顯示集點卡。手機底部導覽由 5 顆減為 4 顆。**使用者尚未回「照建議」**。
+
+**之後的視覺順序**：我的桌遊抽屜 → 排行榜空狀態（說明「為什麼是空的」：沒資料／未滿 5 人／未登入）→ 集點卡獨立頁面 → 管理者視窗統一風格 → 手機全面檢查（遊戲卡片手機版不要硬塞 4／9 欄，檢視模式與實際欄數分開）。
 
 ## 想做清單（使用者 2026-10-24 提出，尚未排序）
 
@@ -81,8 +105,8 @@
 
 **一次一階段，前一階段測試完才進下一階段。**
 
-1. 先完成「進行中」⓪ 的確認並手機實測完整報到流程。
-2. 視覺改版：首頁與遊戲卡片 → 集點卡獨立頁面 → 管理者視窗與排行榜統一風格 → 手機版全面檢查。
+1. （已完成）報到流程確認：git 已 push、LINE 實測沒問題。
+2. **視覺改版第二階段（見上方「視覺改版進度」）**：先確認「☰ 更多篩選」改名已套用 → 做 5 個新增篩選（使用者已回「1 2 3 4 5」）→ 我的桌遊抽屜與拿掉頂端集點卡（等「照建議」）→ 排行榜空狀態 → 集點卡獨立頁面 → 管理者視窗統一風格 → 手機全面檢查。
 3. 站上拖曳調整排名；排序功能。
 4. 上傳規則書 PDF（**私有** bucket）→ **AI 規則助手（RAG，最重要的長期目標）**→ 揪團／行事曆、帳號刪除流程。順序請與使用者確認。
 5. 詳細視窗的「AI 查詢」分頁等 AI 規則助手做出來再加。

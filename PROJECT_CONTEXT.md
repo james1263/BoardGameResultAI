@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案交接文件（精簡版）
 
 > 給接手的 AI 閱讀。**請先讀 `QUICKSTART.md`（懶人包），再讀本文件。**
-> 最後更新：2026-10-26（深夜）。這一版把已完成的功能整理成「依主題」的紀錄（取代舊的 A～Q 附錄），內容與決定不變；日期與細節若與 `QUICKSTART.md` 衝突，以 `QUICKSTART.md` 為準。
+> 最後更新：2026-10-26（深夜，視覺改版第二階段進行中）。這一版把已完成的功能整理成「依主題」的紀錄（取代舊的 A～Q 附錄），內容與決定不變；日期與細節若與 `QUICKSTART.md` 衝突，以 `QUICKSTART.md` 為準。
 
 ## 1. 專案簡介
 
@@ -64,7 +64,7 @@
 
 ## 6. 主要功能的決定與規則（已完成）
 
-- **搜尋／篩選／檢視**：篩選抽屜（難度、最佳／推薦人數、時間、類型；類型多選為 AND）、缺資料提示、排序、檢視模式（`list`／`grid-4`／`grid-9`，存 `localStorage` 鍵 `boardgame-view-mode`）。「我的紀錄」篩選：三顆眼睛（想玩／未標記／已玩）＋「依我的紀錄分區顯示」，`getMineGroup()`：有想玩→want，否則有已玩→played，否則 untouched。
+- **搜尋／篩選／檢視**：首頁類型膠囊（類型多選為 AND，前三個固定策略／派對／陣營）＋「進階篩選」抽屜（難度、最佳／推薦人數、時間、我的紀錄）、缺資料提示、標題列排序（`SortControl`）、檢視模式（`list`／`grid-4`／`grid-9`，存 `localStorage` 鍵 `boardgame-view-mode`）。「我的紀錄」篩選：三顆眼睛（想玩／未標記／已玩）＋「依我的紀錄分區顯示」，`getMineGroup()`：有想玩→want，否則有已玩→played，否則 untouched。
 - **詳細視窗（`GameModal.tsx`）**刻意精簡（使用者不要再放排名、人數、類型、時間、難度）：頂部固定，四個分頁：**概覽**（簡介、遊戲屬性、大家的評分摘要、管理者的封面上傳與「移到垃圾桶」）、**評分**、**我的桌遊**（想玩／已玩、次數、遊玩紀錄、備註）、**規則**（規則書／FAQ／中文介紹／影片連結，只接受 http(s)；管理者可新增）。AI 查詢分頁等 AI 規則助手做出來再加。卡片按鈕叫「詳細資料」。
 - **垃圾桶**：所有人看得到，只有管理者能移入（填原因）、還原、永久刪除、編輯原因；0 款時整區隱藏是設計如此。資料庫政策不改（Anyone can read；Admin insert／update／delete）。
 - **想玩／已玩（`usePersonalCollection.ts`）**：訪客存 `localStorage`（鍵 `boardgame-personal-collection`），登入後以雲端為準；登入後更新「先改畫面再寫雲端，失敗還原」；首次登入有合併視窗（兩邊聯集、備註保留雲端、次數取大值、雲端寫入成功才清本機）。訪客紀錄不會跨瀏覽器。遊玩次數計數器：－／＋（0～999），按「已玩」不加次數（次數為 0 時才設為 1）。
@@ -93,6 +93,7 @@
 - **決定**：不做路由與資料夾大搬家（不建 `pages/`、`routes.tsx`），維持現有結構；先建設計變數，再逐頁換外觀。
 - 順序：①設計變數 `tokens.css` ＋新頂端導覽列 `sitebar`（桌面頂端；手機底部導覽）✅已提供，待測 → ②首頁（插畫或大圖主視覺＋「今天，想玩哪一款？」＋搜尋＋類型快速篩選＋最新加入／最受歡迎）與遊戲卡片（**需要使用者貼 `base.css`、`hero.css`、`library.css`、`cards.css`、`App.tsx`**）→ ③集點卡獨立頁面（會員卡主視覺＋兩個圓形印章＋票券＋聚會足跡；規則收進可展開區塊）→ ④管理者視窗與排行榜統一風格、手機版全面檢查。
 - 使用者喜歡獨立的集點卡頁面與「聚會與集點」的卡片式管理介面；首頁參考圖是探索首頁（插畫主視覺、搜尋、類型快篩、4 欄遊戲卡片）。
+- **2026-10-26 深夜更新**：首頁已改成「收藏清單為主角」（不做最新加入、最受歡迎）；類型膠囊（策略、派對、陣營固定在前＋更多類型視窗）、排序搬到標題列、篩選抽屜瘦身成「進階篩選」、下一批新增 5 個篩選（人數、時間上限、難度三段、新遊戲、評分狀態）、我的桌遊抽屜改版方案——**完整內容與細節請看 `QUICKSTART.md` 的「視覺改版進度」**。
 
 ## 9. 長期願景、想做清單與待確認
 
@@ -126,7 +127,7 @@
 
 - **層級**：訪客（瀏覽、本機想玩／已玩）→ 一般登入（雲端同步、遊玩紀錄）→ VIP（評分、評分摘要、集點卡、聚會報到、名單、統計表、之後的推薦牆與 AI）→ 管理者。AI 只給 VIP，每日上限之後設計。
 - **資料表**：`vip_members`（`granted_by`＝password／checkin／admin；只有管理者可讀寫）、`vip_settings`（單列密碼雜湊，前端讀不到）、`vip_attempts`（嘗試紀錄，前端讀不到）；`player_profiles.hide_in_lists`；`gatherings.title`（場次名稱，唯一條件改為 `(gathered_on, title)`）。
-- **函式**（security definer、`set search_path=''`、anon 無權限）：`is_vip()`（管理者也算）、`redeem_vip_code`、`admin_set_vip_code`（至少 4 字）、`admin_set_vip`、`admin_list_members`、`get_vip_friends`（只有暱稱，UI 未做）、`admin_vip_lock_info`、`admin_clear_vip_lock`、`join_gathering`（不再自動升 VIP，非 VIP 須輸入通關密碼）、`admin_create_gathering`（原子建立聚會＋遊戲＋人數上限＋報到連結）（註：前端 LoyaltyAdmin 目前用直接 insert＋UI 驗證，並未呼叫此函式，是否存在待查）、`get_hide_in_lists`／`set_hide_in_lists`、`get_game_people`（VIP 只回暱稱且排除隱藏者，管理者含 LINE／FB）、`admin_get_all_ratings`（僅管理者）、`loyalty_day_status`（同日多場合併為 1 點）。
+- **函式**（security definer、`set search_path=''`、anon 無權限）：`is_vip()`（管理者也算）、`redeem_vip_code`、`admin_set_vip_code`（至少 4 字）、`admin_set_vip`、`admin_list_members`、`get_vip_friends`（只有暱稱，UI 未做）、`admin_vip_lock_info`、`admin_clear_vip_lock`、`join_gathering`（不再自動升 VIP，非 VIP 須輸入通關密碼）、`admin_create_gathering`（原子建立聚會＋遊戲＋人數上限＋報到連結）（註：前端 LoyaltyAdmin 目前用直接 insert＋UI 驗證，並未呼叫此函式；2026-10-26 查過該函式**不存在**，可忽略）、`get_hide_in_lists`／`set_hide_in_lists`、`get_game_people`（VIP 只回暱稱且排除隱藏者，管理者含 LINE／FB）、`admin_get_all_ratings`（僅管理者）、`loyalty_day_status`（同日多場合併為 1 點）。
 - **前端**：`lib/useVip.ts`（事件 `vip-changed`）、`lib/useGamePeople.ts`、`lib/adminEvents.ts`；`components/VipJoinDialog`、`VipLock`、`MemberAdmin`、`AdminCenter`、`StatsTables`；`LoyaltyAdmin` 改為嵌在管理中心的內容元件；`LoyaltyCard` 有 1～4 步驟與收合的規則；`Leaderboard` 可展開名單；樣式 `styles/vip.css`（最後載入）。
 - **未做／待執行**：換成 鎖定 SQL、PWA（缺圖示）、VIP 朋友名單、推薦牆、導覽改名與 AI 頁。
 - **疑點**：測試帳號集點卡曾顯示「已兌換 1、累積 0」的警告（若不是測試資料要查）；同一天兩場的集點卡尚未實測。
