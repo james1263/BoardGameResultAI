@@ -21,13 +21,12 @@ export type LoyaltyDay = {
 
 export type Redemption = { id: string; redeemedAt: string }
 
-// 玩家被列入的聚會日：當天的遊戲清單，以及自己勾了「我玩了」的遊戲
+// 玩家被列入的聚會日：當天指定的遊戲清單
 export type MyGathering = {
     id: string
     date: string
     title: string
     games: string[]
-    played: string[]
 }
 
 type SummaryRow = {
@@ -97,16 +96,12 @@ export function todayLocal(): string {
 function buildGatherings(
     gatherings: GatheringRow[],
     games: PairRow[],
-    plays: PairRow[],
 ): MyGathering[] {
     return gatherings.map((row) => ({
         id: row.id,
         date: row.gathered_on,
         title: row.title ?? '',
         games: games
-            .filter((item) => item.gathering_id === row.id)
-            .map((item) => item.bgg_name),
-        played: plays
             .filter((item) => item.gathering_id === row.id)
             .map((item) => item.bgg_name),
     }))
@@ -134,7 +129,7 @@ export function useMyLoyalty() {
 
         async function load(id: string) {
             try {
-                const [s, d, r, g, gg, gp] = await Promise.all([
+                const [s, d, r, g, gg] = await Promise.all([
                     supabase.rpc('get_my_loyalty_summary'),
                     supabase.rpc('get_my_loyalty_days'),
                     supabase
@@ -144,10 +139,6 @@ export function useMyLoyalty() {
                         .order('redeemed_at', { ascending: false }),
                     supabase.from('gatherings').select('id, gathered_on, title'),
                     supabase.from('gathering_games').select('gathering_id, bgg_name'),
-                    supabase
-                        .from('gathering_plays')
-                        .select('gathering_id, bgg_name')
-                        .eq('user_id', id),
                 ])
                 if (cancelled) return
 
@@ -157,7 +148,6 @@ export function useMyLoyalty() {
                     r.error?.message ??
                     g.error?.message ??
                     gg.error?.message ??
-                    gp.error?.message ??
                     ''
                 const summaryRow = (s.data as SummaryRow[] | null)?.[0]
 
@@ -169,7 +159,6 @@ export function useMyLoyalty() {
                     gatherings: buildGatherings(
                         (g.data ?? []) as GatheringRow[],
                         (gg.data ?? []) as PairRow[],
-                        (gp.data ?? []) as PairRow[],
                     ),
                     error: message,
                 })
@@ -194,50 +183,6 @@ export function useMyLoyalty() {
 
     const reload = useCallback(() => setReloadKey((key) => key + 1), [])
 
-    // 勾選／取消「我玩了」
-    const setPlayed = useCallback(
-        async (
-            gatheringId: string,
-            bggName: string,
-            played: boolean,
-        ): Promise<boolean> => {
-            if (!userId) return false
-
-            const result = played
-                ? await supabase.from('gathering_plays').insert({
-                    gathering_id: gatheringId,
-                    user_id: userId,
-                    bgg_name: bggName,
-                })
-                : await supabase
-                    .from('gathering_plays')
-                    .delete()
-                    .eq('gathering_id', gatheringId)
-                    .eq('user_id', userId)
-                    .eq('bgg_name', bggName)
-
-            // 23505＝已經勾過了，當作成功
-            if (result.error && result.error.code !== '23505') {
-                window.alert('更新失敗：' + result.error.message)
-                return false
-            }
-
-            setState((current) => {
-                if (!current || current.userId !== userId) return current
-                return {
-                    ...current,
-                    gatherings: current.gatherings.map((item) => {
-                        if (item.id !== gatheringId) return item
-                        const without = item.played.filter((name) => name !== bggName)
-                        return { ...item, played: played ? [...without, bggName] : without }
-                    }),
-                }
-            })
-            return true
-        },
-        [userId],
-    )
-
     const current = state && state.userId === userId ? state : null
 
     return {
@@ -249,6 +194,5 @@ export function useMyLoyalty() {
         gatherings: current?.gatherings ?? [],
         error: current?.error ?? '',
         reload,
-        setPlayed,
     }
 }

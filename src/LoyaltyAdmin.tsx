@@ -267,7 +267,7 @@ export default function LoyaltyAdmin() {
     async function deleteGathering(gathering: Gathering) {
         if (
             !window.confirm(
-                `確定刪除 ${gatheringName(gathering)} 的聚會嗎？這場的參加名單、遊戲清單與玩家的「我玩了」標記都會一起刪除，玩家的點數會跟著重新計算。`,
+                `確定刪除 ${gatheringName(gathering)} 的聚會嗎？這場的參加名單、遊戲清單都會一起刪除，玩家的點數會跟著重新計算。`,
             )
         )
             return
@@ -701,7 +701,7 @@ export default function LoyaltyAdmin() {
                         </div>
                         <p className="loy-admin-note">
                             同一天可以新增多場（場次名稱不能重複）。集點是「一天最多 1 點」：
-                            當天出席任何一場，並把出席各場的指定遊戲都評完分（或被設為免評分）就得 1 點。
+                            當天出席任何一場，並把任一款指定遊戲的七項評分填完整（或被設為免評分）就得 1 點。
                         </p>
                     </section>
 
