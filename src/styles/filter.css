@@ -231,17 +231,6 @@
   margin-bottom: 12px;
 }
 
-.category-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 18px;
-  border: 1px solid #d5d9cc;
-  border-radius: 999px;
-  background: #fff;
-  font-size: 14px;
-  cursor: pointer;
-}
-
 .category-chip input {
   display: none;
 }
@@ -250,27 +239,6 @@
   background: #5f7a52;
   border-color: #5f7a52;
   color: #fff;
-}
-
-.category-sub-toggle {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px dashed #d5d9cc;
-  border-radius: 10px;
-  background: transparent;
-  font-size: 14px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.category-search {
-  width: 100%;
-  box-sizing: border-box;
-  margin: 10px 0;
-  padding: 10px 12px;
-  border: 1px solid #d5d9cc;
-  border-radius: 10px;
-  font-size: 14px;
 }
 
 .category-empty {
@@ -383,4 +351,21 @@
   .filter-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.drawer-tip {
+  margin: 16px 0 0;
+  color: var(--c-ink-soft);
+  font-size: 12px;
+}
+
+/* 抽屜內文字靠左，不要置中 */
+.filter-drawer .filter-field,
+.filter-drawer .drawer-tip,
+.filter-drawer .mine-note {
+  text-align: left;
+}
+
+.filter-drawer .filter-field > span {
+  text-align: left;
 }

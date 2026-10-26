@@ -9,15 +9,15 @@
 .game-card {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #e9e6dc;
-  border-radius: 16px;
-  background: #fffefa;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-m);
+  background: var(--c-paper);
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
 .game-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 28px #25352d10;
+  box-shadow: var(--shadow-m);
 }
 
 .game-art {
@@ -265,8 +265,8 @@
 }
 
 .status-btn.on {
-  background: #3f7d58;
-  border-color: #3f7d58;
+  background: var(--c-forest);
+  border-color: var(--c-forest);
   color: #fff;
 }
 

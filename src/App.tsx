@@ -1,3 +1,5 @@
+import CategoryChips from './components/CategoryChips'
+import SortControl from './components/SortControl'
 import {
   useCallback,
   useRef,
@@ -229,17 +231,6 @@ function Library({
       // 儲存失敗也不影響使用
     }
   }
-
-  const [categorySearch, setCategorySearch] = useState('')
-  const [isSubCategoryOpen, setIsSubCategoryOpen] = useState(false)
-
-  const categories = useMemo(
-    () =>
-      Array.from(new Set(boardGames.flatMap((game) => game.category))).sort(
-        (a, b) => a.localeCompare(b, 'zh-Hant'),
-      ),
-    [boardGames],
-  )
 
   const difficulties = useMemo(
     () =>
@@ -532,7 +523,6 @@ function Library({
     setRecommendPlayerCount('')
     setMinTime('')
     setMaxTime('')
-    setCategorySearch('')
     setGroupByMine(false)
     setHiddenGroups([])
   }
@@ -592,29 +582,32 @@ function Library({
 
       <main>
         <section className="hero">
-          <p className="eyebrow">YOUR BOARD GAME LIBRARY</p>
-          <h1>
-            規則不用翻半天，
-            <br />
-            <span>桌遊揪夥在這邊。</span>
-          </h1>
-          <p className="hero-description">
-            收藏你的桌遊，快速找到遊戲規則。
-            <br />
-            未來也能直接詢問 AI，不再為規則爭論不休。
-          </p>
-
-          <label className="search-box">
-            <span aria-hidden="true">⌕</span>
-            <input
-              type="search"
-              placeholder="搜尋桌遊名稱，例如：璀璨寶石"
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              aria-label="搜尋桌遊名稱"
-            />
-            <span className="search-hint">搜尋</span>
-          </label>
+          <div className="hero-inner">
+            <div className="hero-copy">
+              <p className="eyebrow">YOUR BOARD GAME LIBRARY</p>
+              <h1>
+                今天，想玩<span>哪一款？</span>
+              </h1>
+            </div>
+            <label className="search-box">
+              <span aria-hidden="true">⌕</span>
+              <input
+                type="search"
+                placeholder="搜尋桌遊名稱，例如：璀璨寶石"
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                aria-label="搜尋桌遊名稱"
+              />
+              <span className="search-hint">搜尋</span>
+            </label>
+          </div>
+          <CategoryChips
+            games={boardGames}
+            selected={selectedCategories}
+            onToggle={toggleCategory}
+            onClear={() => setSelectedCategories([])}
+            resultCount={displayedGameCount}
+          />
         </section>
 
         <section className="library">
@@ -627,13 +620,24 @@ function Library({
               <span className="game-count">
                 顯示 {displayedGameCount} / {boardGames.length} 款
               </span>
+              <SortControl
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                sortDirection={sortDirection}
+                onToggleDirection={() =>
+                  setSortDirection((current) =>
+                    current === 'asc' ? 'desc' : 'asc',
+                  )
+                }
+                onReset={resetSort}
+              />
               <ViewToggle viewMode={viewMode} onChange={changeViewMode} />
               <button
                 className="filter-toggle-button"
                 type="button"
                 onClick={() => setIsFilterOpen(true)}
               >
-                ☰ 篩選與排序
+                ☰ 更多篩選
                 {activeFilterCount > 0 && (
                   <span className="filter-badge">{activeFilterCount}</span>
                 )}
@@ -650,7 +654,6 @@ function Library({
             difficulties={difficulties}
             times={times}
             playerCounts={playerCounts}
-            categories={categories}
             minDifficulty={minDifficulty}
             setMinDifficulty={setMinDifficulty}
             maxDifficulty={maxDifficulty}
@@ -663,21 +666,10 @@ function Library({
             setMinTime={setMinTime}
             maxTime={maxTime}
             setMaxTime={setMaxTime}
-            selectedCategories={selectedCategories}
-            toggleCategory={toggleCategory}
-            categorySearch={categorySearch}
-            setCategorySearch={setCategorySearch}
-            isSubCategoryOpen={isSubCategoryOpen}
-            setIsSubCategoryOpen={setIsSubCategoryOpen}
             hiddenGroups={hiddenGroups}
             toggleMineGroup={toggleMineGroup}
             groupByMine={groupByMine}
             setGroupByMine={setGroupByMine}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            sortDirection={sortDirection}
-            setSortDirection={setSortDirection}
-            resetSort={resetSort}
           />
 
           <p className="status-legend">
@@ -837,7 +829,7 @@ function Library({
         )}
       />
       <Leaderboard
-              canSeePeople={vip.isVip}
+        canSeePeople={vip.isVip}
         isAdmin={isAdmin}
         people={people}
         adminRatings={adminRatings}

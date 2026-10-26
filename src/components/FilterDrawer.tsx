@@ -1,11 +1,9 @@
 import type { ReactNode } from 'react'
 import {
-  MAIN_CATEGORIES,
   MINE_GROUPS,
   MINE_GROUP_LABELS,
   type MineGroup,
   type NumericFilter,
-  type SortKey,
 } from '../lib/libraryTypes'
 import { EyeIcon } from './Icons'
 
@@ -50,7 +48,6 @@ export type FilterDrawerProps = {
   difficulties: number[]
   times: number[]
   playerCounts: number[]
-  categories: string[]
 
   minDifficulty: NumericFilter
   setMinDifficulty: (value: NumericFilter) => void
@@ -65,23 +62,10 @@ export type FilterDrawerProps = {
   maxTime: NumericFilter
   setMaxTime: (value: NumericFilter) => void
 
-  selectedCategories: string[]
-  toggleCategory: (category: string) => void
-  categorySearch: string
-  setCategorySearch: (value: string) => void
-  isSubCategoryOpen: boolean
-  setIsSubCategoryOpen: (updater: (current: boolean) => boolean) => void
-
   hiddenGroups: MineGroup[]
   toggleMineGroup: (group: MineGroup) => void
   groupByMine: boolean
   setGroupByMine: (value: boolean) => void
-
-  sortBy: SortKey
-  setSortBy: (value: SortKey) => void
-  sortDirection: 'asc' | 'desc'
-  setSortDirection: (updater: (current: 'asc' | 'desc') => 'asc' | 'desc') => void
-  resetSort: () => void
 }
 
 export default function FilterDrawer(props: FilterDrawerProps) {
@@ -94,39 +78,11 @@ export default function FilterDrawer(props: FilterDrawerProps) {
     difficulties,
     times,
     playerCounts,
-    categories,
-    selectedCategories,
-    toggleCategory,
-    categorySearch,
-    setCategorySearch,
-    isSubCategoryOpen,
-    setIsSubCategoryOpen,
     hiddenGroups,
     toggleMineGroup,
     groupByMine,
     setGroupByMine,
-    sortBy,
-    setSortBy,
-    sortDirection,
-    setSortDirection,
-    resetSort,
   } = props
-
-  const subCategories = categories.filter(
-    (category) => !MAIN_CATEGORIES.includes(category),
-  )
-
-  const visibleSubCategories = subCategories.filter((category) =>
-    category
-      .toLocaleLowerCase()
-      .includes(categorySearch.trim().toLocaleLowerCase()),
-  )
-
-  const selectedSubCount = selectedCategories.filter(
-    (category) => !MAIN_CATEGORIES.includes(category),
-  ).length
-
-  const showSubCategories = isSubCategoryOpen || categorySearch.trim() !== ''
 
   return (
     <>
@@ -144,11 +100,11 @@ export default function FilterDrawer(props: FilterDrawerProps) {
           </button>
         </div>
 
-        <section className="filter-panel" aria-label="桌遊篩選與排序">
+        <section className="filter-panel" aria-label="桌遊進階篩選">
           <div className="filter-heading">
             <div>
               <p className="eyebrow">FIND YOUR GAME</p>
-              <h3>篩選與排序</h3>
+              <h3>進階篩選</h3>
             </div>
             <button
               className="clear-button"
@@ -199,73 +155,7 @@ export default function FilterDrawer(props: FilterDrawerProps) {
             />
           </div>
 
-          <div className="category-filter">
-            <div className="category-heading">
-              <span>桌遊類型</span>
-              <span className="category-hint">
-                可複選，需同時符合所有已選類型
-              </span>
-            </div>
-
-            <div className="category-main-options">
-              {MAIN_CATEGORIES.filter((category) =>
-                categories.includes(category),
-              ).map((category) => (
-                <label
-                  className={`category-chip ${
-                    selectedCategories.includes(category) ? 'selected' : ''
-                  }`}
-                  key={category}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes(category)}
-                    onChange={() => toggleCategory(category)}
-                  />
-                  <span>{category}</span>
-                </label>
-              ))}
-            </div>
-
-            <button
-              className="category-sub-toggle"
-              type="button"
-              onClick={() => setIsSubCategoryOpen((current) => !current)}
-            >
-              {showSubCategories ? '▾' : '▸'} 更多類型（
-              {subCategories.length}）
-              {selectedSubCount > 0 && ` · 已選 ${selectedSubCount}`}
-            </button>
-
-            {showSubCategories && (
-              <>
-                <input
-                  className="category-search"
-                  type="search"
-                  placeholder="搜尋類型，例如：區控"
-                  value={categorySearch}
-                  onChange={(event) => setCategorySearch(event.target.value)}
-                  aria-label="搜尋桌遊類型"
-                />
-
-                <div className="category-options">
-                  {visibleSubCategories.map((category) => (
-                    <label className="category-option" key={category}>
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(category)}
-                        onChange={() => toggleCategory(category)}
-                      />
-                      <span>{category}</span>
-                    </label>
-                  ))}
-                  {visibleSubCategories.length === 0 && (
-                    <p className="category-empty">找不到符合的類型</p>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+          <p className="drawer-tip">桌遊類型請在首頁上方的膠囊選擇。</p>
 
           <div className="mine-filter">
             <div className="category-heading">
@@ -302,49 +192,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
             <p className="mine-note">
               想玩的遊戲就算也玩過，仍歸在「想玩」區。
             </p>
-          </div>
-
-          <div className="sort-row">
-            <label className="filter-field sort-field">
-              <span>排序依據</span>
-              <select
-                value={sortBy}
-                onChange={(event) => setSortBy(event.target.value as SortKey)}
-              >
-                <option value="rankingEngine">Ranking engine</option>
-                <option value="classicGameRanking">常玩遊戲排名</option>
-                <option value="scoreRank">綜合分數排名</option>
-                <option value="name">桌遊名稱</option>
-                <option value="bggScore">BGG 分數</option>
-                <option value="bggDifficulty">BGG 難度</option>
-                <option value="bggTime">遊戲時間</option>
-                <option value="bestPlayers">最佳人數</option>
-                <option value="recommendPlayers">推薦人數</option>
-              </select>
-            </label>
-
-            <button
-              className="sort-direction-button"
-              type="button"
-              onClick={() =>
-                setSortDirection((current) =>
-                  current === 'asc' ? 'desc' : 'asc',
-                )
-              }
-              aria-label={
-                sortDirection === 'asc' ? '切換為降冪排序' : '切換為升冪排序'
-              }
-            >
-              {sortDirection === 'asc' ? '↑ 升冪' : '↓ 降冪'}
-            </button>
-            <button
-              className="sort-direction-button"
-              type="button"
-              onClick={resetSort}
-              disabled={sortBy === 'rankingEngine' && sortDirection === 'asc'}
-            >
-              重設排序
-            </button>
           </div>
         </section>
 

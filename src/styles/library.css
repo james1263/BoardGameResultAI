@@ -3,7 +3,7 @@
 .library {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 68px 24px 44px;
+  padding: 22px 24px 44px;
 }
 
 .section-heading {
@@ -11,7 +11,7 @@
   align-items: end;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 28px;
+  margin-bottom: 18px;
 }
 
 .section-heading .eyebrow {
@@ -195,13 +195,13 @@
 
 @media (max-width: 760px) {
   .library {
-    padding-top: 48px;
+    padding-top: 18px;
   }
 }
 
 @media (max-width: 520px) {
   .library {
-    padding: 42px 16px 32px;
+    padding: 16px 16px 32px;
   }
 
   .section-heading {
@@ -222,4 +222,46 @@
   .section-heading {
     flex-direction: column;
   }
+}
+
+/* 排序（收藏標題列） */
+.sort-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sort-control select {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sort-dir,
+.sort-reset {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sort-reset {
+  border-color: transparent;
+  background: transparent;
+  color: var(--c-ink-soft);
+  text-decoration: underline;
+}
+
+.sort-dir:hover {
+  border-color: var(--c-forest);
 }
