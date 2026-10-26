@@ -21,7 +21,8 @@ import { useGameRatings } from './lib/useGameRatings'
 import { useCommunityStats } from './lib/useCommunityStats'
 import { useInviteLink } from './lib/useInviteLink'
 import { useCheckinLink } from './lib/useCheckinLink'
-import { VIP_CHANGED_EVENT } from './lib/useVip'
+import { VIP_CHANGED_EVENT, useVip } from './lib/useVip'
+import { useGamePeople, useAdminRatings } from './lib/useGamePeople'
 import InAppBrowserNotice from './components/InAppBrowserNotice'
 import CheckInDialog from './components/CheckInDialog'
 import { fetchBoardGames } from './lib/fetchBoardGames'
@@ -78,6 +79,9 @@ function Library({
   const playSessions = useGamePlaySessions()
   const ratings = useGameRatings()
   const communityStats = useCommunityStats()
+  const vip = useVip()
+  const people = useGamePeople(vip.isVip)
+  const adminRatings = useAdminRatings(isAdmin)
   const [isMyListOpen, setIsMyListOpen] = useState(false)
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
   // 管理者傳的集點卡連結：登入後自動打開自己的集點卡
@@ -826,6 +830,10 @@ function Library({
         )}
       />
       <Leaderboard
+              canSeePeople={vip.isVip}
+        isAdmin={isAdmin}
+        people={people}
+        adminRatings={adminRatings}
         boardGames={boardGames}
         communityStats={communityStats}
         ratings={ratings}

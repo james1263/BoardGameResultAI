@@ -66,6 +66,26 @@ export default function PlayerPanel() {
     }
   }, [userId, checked, isAdmin])
 
+  const [hideInLists, setHideInLists] = useState(false)
+
+  useEffect(() => {
+    if (!userId || !checked || isAdmin) return
+    let cancelled = false
+    supabase.rpc('get_hide_in_lists').then(({ data, error }) => {
+      if (!cancelled && !error) setHideInLists(data === true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [userId, checked, isAdmin])
+
+  async function toggleHideInLists() {
+    const next = !hideInLists
+    setHideInLists(next)
+    const { error } = await supabase.rpc('set_hide_in_lists', { p_hide: next })
+    if (error) setHideInLists(!next)
+  }
+
   async function handleGoogleLogin() {
     await signInWithGoogle()
   }
@@ -105,16 +125,16 @@ export default function PlayerPanel() {
 
     const profileResult = profile
       ? await supabase
-          .from('player_profiles')
-          .update({ nickname: trimmedNickname })
-          .eq('id', userId)
-          .select('nickname, public_id')
-          .single()
+        .from('player_profiles')
+        .update({ nickname: trimmedNickname })
+        .eq('id', userId)
+        .select('nickname, public_id')
+        .single()
       : await supabase
-          .from('player_profiles')
-          .insert({ id: userId, nickname: trimmedNickname })
-          .select('nickname, public_id')
-          .single()
+        .from('player_profiles')
+        .insert({ id: userId, nickname: trimmedNickname })
+        .select('nickname, public_id')
+        .single()
 
     if (profileResult.error) {
       setIsSaving(false)
@@ -179,6 +199,13 @@ export default function PlayerPanel() {
               onClick={() => setIsMenuOpen(false)}
             />
             <div className="account-popover" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => void toggleHideInLists()}
+              >
+                {hideInLists ? '☐' : '☑'} 在 VIP 名單顯示我的暱稱
+              </button>
               <button type="button" role="menuitem" onClick={openDialog}>
                 {profile ? '修改暱稱與聯絡方式' : '設定暱稱'}
               </button>
