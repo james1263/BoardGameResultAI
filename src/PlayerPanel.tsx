@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from './lib/supabase'
 import { useSession } from './lib/useSession'
-import { signInWithGoogle } from './lib/googleLogin'
+import { PROFILE_SAVED_EVENT, signInWithGoogle } from './lib/googleLogin'
 import { useAdminCheck } from './lib/useIsAdmin'
 
 type Profile = { nickname: string; public_id: string }
@@ -144,6 +144,8 @@ export default function PlayerPanel() {
 
     setContact(trimmedContact)
     setIsOpen(false)
+    // 如果玩家是為了報到才來填資料，通知報到視窗自動接著報到
+    window.dispatchEvent(new Event(PROFILE_SAVED_EVENT))
   }
 
   if (!session) {

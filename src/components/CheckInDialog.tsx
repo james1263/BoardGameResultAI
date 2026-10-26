@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
+import { PROFILE_SAVED_EVENT } from '../lib/googleLogin'
 
 type JoinRow = { result_status: string; result_date: string | null }
 
@@ -34,8 +35,9 @@ export default function CheckInDialog({
   const [status, setStatus] = useState<string | null>(null)
   const [date, setDate] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const statusRef = useRef<string | null>(null)
 
-  async function handleJoin() {
+  const handleJoin = useCallback(async () => {
     setBusy(true)
     setError('')
     const { data, error: rpcError } = await supabase.rpc('join_gathering', {
@@ -52,9 +54,20 @@ export default function CheckInDialog({
       setError('報到失敗：沒有收到結果，請再試一次。')
       return
     }
+    statusRef.current = row.result_status
     setStatus(row.result_status)
     setDate(row.result_date)
-  }
+  }, [token])
+
+  // 玩家剛填完暱稱與聯絡方式：自動接著報到，不用再按一次「我來了」
+  useEffect(() => {
+    function handleSaved() {
+      if (statusRef.current === 'joined' || statusRef.current === 'already') return
+      void handleJoin()
+    }
+    window.addEventListener(PROFILE_SAVED_EVENT, handleSaved)
+    return () => window.removeEventListener(PROFILE_SAVED_EVENT, handleSaved)
+  }, [handleJoin])
 
   const succeeded = status !== null && SUCCESS.has(status)
   const canRetry = status === null || RETRYABLE.has(status)

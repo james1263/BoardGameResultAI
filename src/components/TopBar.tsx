@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import PlayerPanel from '../PlayerPanel'
-import LoyaltyAdmin from '../LoyaltyAdmin'
+import AdminCenter from './AdminCenter'
+import VipJoinDialog from './VipJoinDialog'
 import { supabase } from '../lib/supabase'
 import { useIsAdmin } from '../lib/useIsAdmin'
+import { useVip } from '../lib/useVip'
 
 export default function TopBar({
   myListCount,
@@ -15,6 +18,11 @@ export default function TopBar({
   onOpenLoyalty: () => void
 }) {
   const isAdmin = useIsAdmin()
+  const vip = useVip()
+  const [isVipDialogOpen, setIsVipDialogOpen] = useState(false)
+
+  const showJoinVip = vip.loggedIn && vip.checked && !vip.isVip && !isAdmin
+  const showVipTag = vip.isVip && !isAdmin
 
   function scrollToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -55,7 +63,9 @@ export default function TopBar({
             <span>排行榜</span>
           </button>
           {isAdmin ? (
-            <LoyaltyAdmin />
+            <>
+              <AdminCenter />
+            </>
           ) : (
             <button type="button" className="sb-item" onClick={onOpenLoyalty}>
               <span className="sb-ico" aria-hidden="true">
@@ -71,9 +81,22 @@ export default function TopBar({
             <span>我的桌遊</span>
             {myListCount > 0 && <span className="sb-count">{myListCount}</span>}
           </button>
+          {showJoinVip && (
+            <button
+              type="button"
+              className="sb-item"
+              onClick={() => setIsVipDialogOpen(true)}
+            >
+              <span className="sb-ico" aria-hidden="true">
+                🔑
+              </span>
+              <span>加入 VIP</span>
+            </button>
+          )}
         </nav>
 
         <div className="sb-account">
+          {showVipTag && <span className="vip-tag">VIP</span>}
           <PlayerPanel />
           {isAdmin && (
             <button
@@ -86,6 +109,10 @@ export default function TopBar({
           )}
         </div>
       </div>
+
+      {isVipDialogOpen && (
+        <VipJoinDialog onClose={() => setIsVipDialogOpen(false)} />
+      )}
     </header>
   )
 }

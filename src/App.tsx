@@ -21,6 +21,7 @@ import { useGameRatings } from './lib/useGameRatings'
 import { useCommunityStats } from './lib/useCommunityStats'
 import { useInviteLink } from './lib/useInviteLink'
 import { useCheckinLink } from './lib/useCheckinLink'
+import { VIP_CHANGED_EVENT } from './lib/useVip'
 import InAppBrowserNotice from './components/InAppBrowserNotice'
 import CheckInDialog from './components/CheckInDialog'
 import { fetchBoardGames } from './lib/fetchBoardGames'
@@ -113,6 +114,17 @@ function Library({
     setInviteKey((count) => count + 1)
     setIsMyListOpen(true)
   }
+  const hadCheckinRef = useRef(false)
+  useEffect(() => {
+    if (checkinToken) {
+      hadCheckinRef.current = true
+      return
+    }
+    if (hadCheckinRef.current) {
+      hadCheckinRef.current = false
+      window.dispatchEvent(new Event(VIP_CHANGED_EVENT))
+    }
+  }, [checkinToken])
   // 剛評完分的遊戲自動算「已玩」（資料庫已先標好，這裡讓畫面即時更新）
   const ratedBeforeRef = useRef<Set<string> | null>(null)
   useEffect(() => {

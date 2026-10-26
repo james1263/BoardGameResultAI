@@ -10,6 +10,8 @@ import {
 } from '../lib/useLoyalty'
 import { RATING_FIELDS, type RatingsApi } from '../lib/useGameRatings'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
+import { useVip } from '../lib/useVip'
+import VipLock from './VipLock'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 
@@ -34,6 +36,7 @@ export default function LoyaltyCard({
   onOpenGame: (game: BoardGame, tab?: 'ratings') => void
 }) {
   const loyalty = useMyLoyalty()
+  const vip = useVip()
   const [busyKey, setBusyKey] = useState<string | null>(null)
   const scrolledRef = useRef(false)
 
@@ -48,6 +51,10 @@ export default function LoyaltyCard({
         集點卡需要用 Google 登入才能使用，點數會記在你的帳號上。
       </p>
     )
+  }
+
+  if (vip.checked && !vip.isVip) {
+    return <VipLock feature="集點卡" />
   }
 
   if (loyalty.loading) return <p className="mylist-empty">讀取中…</p>
@@ -138,11 +145,14 @@ export default function LoyaltyCard({
     )
   }
 
-  function renderGatheringDay(day: LoyaltyDay, gathering: MyGathering) {
-    const marked = gathering.games.filter((name) =>
-      gathering.played.includes(name),
+  // 同一天可能有好幾場：合併成一張印章，點數仍然一天 1 點
+  function renderGatheringDay(day: LoyaltyDay, sessions: MyGathering[]) {
+    const marked = sessions.flatMap((session) =>
+      session.games
+        .filter((name) => session.played.includes(name))
+        .map((name) => ({ session, name })),
     )
-    const ratedCount = marked.filter(isComplete).length
+    const ratedCount = marked.filter((item) => isComplete(item.name)).length
     const qualified = ratingsReady
       ? marked.length > 0 && ratedCount === marked.length
       : day.qualified
@@ -171,49 +181,64 @@ export default function LoyaltyCard({
           <p className="lc-day-date">{formatDay(day.date)}</p>
           <p className="lc-day-status">{text}</p>
 
-          <ul className="lc-games">
-            {gathering.games.map((bggName) => {
-              const game = gameMap.get(bggName)
-              const isPlayed = gathering.played.includes(bggName)
-              const done = isPlayed && ratingsReady && isComplete(bggName)
-              return (
-                <li className="lc-game" key={bggName}>
-                  <span className="lc-game-name">{game?.name ?? bggName}</span>
-                  <label className="lc-played">
-                    <input
-                      type="checkbox"
-                      checked={isPlayed}
-                      disabled={busyKey !== null}
-                      onChange={(event) =>
-                        void togglePlayed(
-                          gathering,
-                          bggName,
-                          event.target.checked,
-                        )
-                      }
-                    />
-                    我玩了
-                  </label>
-                  {isPlayed && ratingsReady && (
-                    <span className="lc-game-actions">
-                      <span className={`lc-game-state ${done ? 'done' : ''}`}>
-                        {done ? '✓ 已評分，不用再填' : '未評分'}
-                      </span>
-                      {game && (
-                        <button
-                          type="button"
-                          className="lc-btn"
-                          onClick={() => onOpenGame(game, 'ratings')}
-                        >
-                          {done ? '查看／修改' : '去評分'}
-                        </button>
-                      )}
-                    </span>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
+          {sessions.map((session) => (
+            <div className="lc-session" key={session.id}>
+              {sessions.length > 1 && (
+                <p className="lc-session-title">{session.title || '聚會'}</p>
+              )}
+              {session.games.length === 0 ? (
+                <p className="lc-day-status">這一場沒有指定遊戲</p>
+              ) : (
+                <ul className="lc-games">
+                  {session.games.map((bggName) => {
+                    const game = gameMap.get(bggName)
+                    const isPlayed = session.played.includes(bggName)
+                    const done = isPlayed && ratingsReady && isComplete(bggName)
+                    return (
+                      <li className="lc-game" key={bggName}>
+                        <span className="lc-game-name">
+                          {game?.name ?? bggName}
+                        </span>
+                        <label className="lc-played">
+                          <input
+                            type="checkbox"
+                            checked={isPlayed}
+                            disabled={busyKey !== null}
+                            onChange={(event) =>
+                              void togglePlayed(
+                                session,
+                                bggName,
+                                event.target.checked,
+                              )
+                            }
+                          />
+                          我玩了
+                        </label>
+                        {isPlayed && ratingsReady && (
+                          <span className="lc-game-actions">
+                            <span
+                              className={`lc-game-state ${done ? 'done' : ''}`}
+                            >
+                              {done ? '✓ 已評分，不用再填' : '未評分'}
+                            </span>
+                            {game && (
+                              <button
+                                type="button"
+                                className="lc-btn"
+                                onClick={() => onOpenGame(game, 'ratings')}
+                              >
+                                {done ? '查看／修改' : '去評分'}
+                              </button>
+                            )}
+                          </span>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
+          ))}
         </div>
       </li>
     )
@@ -303,7 +328,7 @@ export default function LoyaltyCard({
           </li>
         </ol>
         <ul className="lc-rules">
-          <li>一天不管玩幾款，只算 1 點。</li>
+          <li>一天不管玩幾款、參加幾場，只算 1 點。</li>
           <li>當月只集到 1 點，到下個月 1 日就不再計入。</li>
           <li>點數依你目前的紀錄即時計算；兌換紀錄會永久保留。</li>
           <li>只有你本人和管理者看得到你的出席與點數，其他玩家看不到。</li>
@@ -317,11 +342,11 @@ export default function LoyaltyCard({
         ) : (
           <ul className="lc-days">
             {loyalty.days.map((day) => {
-              const gathering = loyalty.gatherings.find(
-                (item) => item.date === day.date,
-              )
-              return gathering && gathering.games.length > 0
-                ? renderGatheringDay(day, gathering)
+              const sessions = loyalty.gatherings
+                .filter((item) => item.date === day.date)
+                .sort((a, b) => a.title.localeCompare(b.title, 'zh-Hant'))
+              return sessions.some((item) => item.games.length > 0)
+                ? renderGatheringDay(day, sessions)
                 : renderLegacyDay(day)
             })}
           </ul>

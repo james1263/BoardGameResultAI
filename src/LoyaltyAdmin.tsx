@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './lib/supabase'
 import {
   toDay,
@@ -11,7 +10,7 @@ import {
   type Redemption,
 } from './lib/useLoyalty'
 
-type Gathering = { id: string; gatheredOn: string; note: string }
+type Gathering = { id: string; gatheredOn: string; title: string; note: string }
 type Player = { id: string; nickname: string }
 type GameOption = { bggName: string; name: string }
 type OverviewRow = {
@@ -67,8 +66,19 @@ function dayStatus(date: string): string {
   return date > today ? '尚未開始' : '已結束'
 }
 
+function gatheringName(g: Gathering): string {
+  return g.title ? `${formatDay(g.gatheredOn)} ${g.title}` : formatDay(g.gatheredOn)
+}
+
+function sortGatherings(list: Gathering[]): Gathering[] {
+  return [...list].sort(
+    (x, y) =>
+      y.gatheredOn.localeCompare(x.gatheredOn) ||
+      x.title.localeCompare(y.title, 'zh-Hant'),
+  )
+}
+
 export default function LoyaltyAdmin() {
-  const [isOpen, setIsOpen] = useState(false)
   const [tab, setTab] = useState<AdminTab>('setup')
   const [loading, setLoading] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -85,6 +95,7 @@ export default function LoyaltyAdmin() {
   const [overview, setOverview] = useState<OverviewRow[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [newDate, setNewDate] = useState(todayLocal)
+  const [newTitle, setNewTitle] = useState('')
   const [newNote, setNewNote] = useState('')
   const [gameSearch, setGameSearch] = useState('')
   const [playerSearch, setPlayerSearch] = useState('')
@@ -103,8 +114,9 @@ export default function LoyaltyAdmin() {
     const [g, a, p, o, gg, bg, ct, ck] = await Promise.all([
       supabase
         .from('gatherings')
-        .select('id, gathered_on, note')
-        .order('gathered_on', { ascending: false }),
+        .select('id, gathered_on, title, note')
+        .order('gathered_on', { ascending: false })
+        .order('title', { ascending: true }),
       supabase
         .from('gathering_attendees')
         .select('gathering_id, user_id, exempt, source'),
@@ -127,9 +139,19 @@ export default function LoyaltyAdmin() {
     setMessage(failed ? '讀取失敗：' + failed.message : '')
 
     setGatherings(
-      ((g.data ?? []) as { id: string; gathered_on: string; note: string }[]).map(
-        (row) => ({ id: row.id, gatheredOn: row.gathered_on, note: row.note }),
-      ),
+      (
+        (g.data ?? []) as {
+          id: string
+          gathered_on: string
+          title: string
+          note: string
+        }[]
+      ).map((row) => ({
+        id: row.id,
+        gatheredOn: row.gathered_on,
+        title: row.title ?? '',
+        note: row.note,
+      })),
     )
 
     const attendeeMap: Record<string, string[]> = {}
@@ -192,6 +214,12 @@ export default function LoyaltyAdmin() {
     setLoading(false)
   }
 
+  useEffect(() => {
+    void loadAll()
+    // 只在打開這個分頁時讀取一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   async function refreshOverview() {
     const { data, error } = await supabase.rpc('admin_get_loyalty_overview')
     if (error) {
@@ -201,41 +229,36 @@ export default function LoyaltyAdmin() {
     setOverview(((data ?? []) as OverviewRaw[]).map(toOverview))
   }
 
-  function openModal() {
-    setIsOpen(true)
-    setTab('setup')
-    setDetail(null)
-    void loadAll()
-  }
-
   async function addGathering() {
     if (!newDate) return
     setBusy(true)
     setMessage('')
     const { data, error } = await supabase
       .from('gatherings')
-      .insert({ gathered_on: newDate, note: newNote.trim() })
-      .select('id, gathered_on, note')
+      .insert({
+        gathered_on: newDate,
+        title: newTitle.trim(),
+        note: newNote.trim(),
+      })
+      .select('id, gathered_on, title, note')
       .single()
 
     if (error) {
       setMessage(
         error.code === '23505'
-          ? '這一天已經有聚會了，請直接選它。'
+          ? '這一天已經有相同場次名稱的聚會了，請直接選它，或換一個場次名稱（例如：早場、下午場、晚場）。'
           : '新增失敗：' + error.message,
       )
     } else if (data) {
       const created: Gathering = {
         id: data.id,
         gatheredOn: data.gathered_on,
+        title: data.title ?? '',
         note: data.note,
       }
-      setGatherings((current) =>
-        [created, ...current].sort((x, y) =>
-          y.gatheredOn.localeCompare(x.gatheredOn),
-        ),
-      )
+      setGatherings((current) => sortGatherings([created, ...current]))
       setSelectedId(created.id)
+      setNewTitle('')
       setNewNote('')
     }
     setBusy(false)
@@ -244,7 +267,7 @@ export default function LoyaltyAdmin() {
   async function deleteGathering(gathering: Gathering) {
     if (
       !window.confirm(
-        `確定刪除 ${formatDay(gathering.gatheredOn)} 的聚會嗎？這天的參加名單、遊戲清單與玩家的「我玩了」標記都會一起刪除，玩家的點數會跟著重新計算。`,
+        `確定刪除 ${gatheringName(gathering)} 的聚會嗎？這場的參加名單、遊戲清單與玩家的「我玩了」標記都會一起刪除，玩家的點數會跟著重新計算。`,
       )
     )
       return
@@ -427,7 +450,9 @@ export default function LoyaltyAdmin() {
     await updateCheckin(
       gatheringId,
       { capacity: value },
-      value === null ? '已改成不限人數。' : `人數上限已設為 ${value} 人。`,
+      value === null
+        ? '已改成不限人數（不限人數的聚會，報到時不會自動加入 VIP）。'
+        : `人數上限已設為 ${value} 人。`,
     )
   }
 
@@ -479,7 +504,7 @@ export default function LoyaltyAdmin() {
     const name = gameNameMap.get(bggName) ?? bggName
     if (
       !window.confirm(
-        `確定從這一天移除「${name}」嗎？玩家對它的「我玩了」標記會失效，點數會重新計算。`,
+        `確定從這一場移除「${name}」嗎？玩家對它的「我玩了」標記會失效，點數會重新計算。`,
       )
     )
       return
@@ -595,526 +620,457 @@ export default function LoyaltyAdmin() {
     : []
 
   return (
-    <>
-      <button className="sb-item" type="button" onClick={openModal}>
-        <span className="sb-ico" aria-hidden="true">
-          🎴
-        </span>
-        <span>聚會與集點</span>
-      </button>
+    <div className="loy-admin lga-embedded">
+      {loading && <p className="loy-admin-note">讀取中…</p>}
+      {message && <p className="loy-admin-message">{message}</p>}
 
-      {isOpen &&
-        createPortal(
-          <div className="modal-backdrop" onClick={() => setIsOpen(false)}>
-            <div
-              className="admin-modal loy-admin"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="lga-head">
-                <span className="lga-head-icon" aria-hidden="true">
-                  🎴
-                </span>
-                <div className="lga-head-text">
-                  <h2>聚會與集點</h2>
-                  <p>GATHERINGS &amp; REWARDS</p>
-                </div>
-                <span className="lga-badge">管理者</span>
-                <button
-                  type="button"
-                  className="lga-close"
-                  aria-label="關閉"
-                  onClick={() => setIsOpen(false)}
-                >
-                  ✕
-                </button>
-              </div>
+      <div className="loy-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'setup'}
+          className={`loy-tab ${tab === 'setup' ? 'active' : ''}`}
+          onClick={() => setTab('setup')}
+        >
+          聚會設定
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'status'}
+          className={`loy-tab ${tab === 'status' ? 'active' : ''}`}
+          onClick={() => setTab('status')}
+        >
+          集點狀況
+        </button>
+      </div>
 
-              {loading && <p className="loy-admin-note">讀取中…</p>}
-              {message && <p className="loy-admin-message">{message}</p>}
-
-              <div className="loy-tabs" role="tablist">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === 'setup'}
-                  className={`loy-tab ${tab === 'setup' ? 'active' : ''}`}
-                  onClick={() => setTab('setup')}
-                >
-                  聚會設定
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === 'status'}
-                  className={`loy-tab ${tab === 'status' ? 'active' : ''}`}
-                  onClick={() => setTab('status')}
-                >
-                  集點狀況
-                </button>
-              </div>
-
-              {tab === 'setup' && (
-                <>
-                  <section className="lga-card">
-                    <h3 className="lga-step">
-                      <span>1</span>新增聚會日
-                    </h3>
-                    <div className="lga-new">
-                      <input
-                        type="date"
-                        value={newDate}
-                        onChange={(event) => setNewDate(event.target.value)}
-                      />
-                      <input
-                        type="text"
-                        placeholder="備註（選填，200 字內）"
-                        maxLength={200}
-                        value={newNote}
-                        onChange={(event) => setNewNote(event.target.value)}
-                      />
-                      <button
-                        className="lga-primary"
-                        type="button"
-                        disabled={busy || !newDate}
-                        onClick={addGathering}
-                      >
-                        ＋ 新增聚會
-                      </button>
-                    </div>
-                  </section>
-
-                  <section className="lga-section">
-                    <h3 className="lga-step">
-                      <span>2</span>近期聚會
-                    </h3>
-                    {gatherings.length === 0 ? (
-                      <p className="loy-admin-note">還沒有聚會日。</p>
-                    ) : (
-                      <ul className="lga-list">
-                        {gatherings.map((g) => {
-                          const [, month, day] = g.gatheredOn.split('-')
-                          const status = dayStatus(g.gatheredOn)
-                          return (
-                            <li key={g.id}>
-                              <button
-                                type="button"
-                                className={`lga-row ${
-                                  g.id === selectedId ? 'active' : ''
-                                }`}
-                                onClick={() => {
-                                  setSelectedId(g.id === selectedId ? null : g.id)
-                                  setPlayerSearch('')
-                                  setCapacityDraft(
-                                    String(checkins[g.id]?.capacity ?? ''),
-                                  )
-                                }}
-                              >
-                                <span className="lga-date">
-                                  <small>{Number(month)} 月</small>
-                                  <strong>{Number(day)}</strong>
-                                </span>
-                                <span className="lga-row-main">
-                                  <strong>{g.note || '桌遊聚會'}</strong>
-                                  <small>
-                                    {formatDay(g.gatheredOn)}・
-                                    {(attendees[g.id] ?? []).length} 人・
-                                    {(gatheringGames[g.id] ?? []).length} 款
-                                  </small>
-                                </span>
-                                <span
-                                  className={`lga-status ${
-                                    status === '已結束' ? 'done' : ''
-                                  }`}
-                                >
-                                  {status}
-                                </span>
-                              </button>
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    )}
-                  </section>
-
-                  {selected && (
-                    <section className="lga-card lga-detail">
-                      <div className="lga-detail-head">
-                        <h3>
-                          聚會詳情 — {formatDay(selected.gatheredOn)}
-                        </h3>
-                        <div className="lga-detail-actions">
-                          <button
-                            type="button"
-                            className="lga-danger"
-                            disabled={busy}
-                            onClick={() => deleteGathering(selected)}
-                          >
-                            刪除這一天
-                          </button>
-                        </div>
-                      </div>
-
-                      <h4 className="lga-sub">聚會連結（報到＋集點卡）</h4>
-                      {!selectedCheckin ? (
-                        <>
-                          <p className="loy-admin-note">
-                            一個連結就夠了：把連結傳給今天要來的人，他們登入（沒有帳號會自動建立）並按「我來了」，就會列入出席名單，並直接打開這場聚會的集點卡。
-                            建立後預設為開放；只有聚會當天（台北時間）可以報到，已經報到的人之後仍可用同一個連結回到集點卡。
-                          </p>
-                          <button
-                            type="button"
-                            className="lga-outline"
-                            disabled={busy}
-                            onClick={() => createCheckin(selected.id)}
-                          >
-                            ＋ 建立聚會連結
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <div className="lga-checkin-row">
-                            <button
-                              type="button"
-                              className={`lga-toggle ${
-                                selectedCheckin.isOpen ? 'on' : ''
-                              }`}
-                              disabled={busy}
-                              aria-pressed={selectedCheckin.isOpen}
-                              onClick={() =>
-                                updateCheckin(selected.id, {
-                                  is_open: !selectedCheckin.isOpen,
-                                })
-                              }
-                            >
-                              {selectedCheckin.isOpen
-                                ? '● 報到開放中（按一下關閉）'
-                                : '○ 報到已關閉（按一下開放）'}
-                            </button>
-                            <button
-                              type="button"
-                              className="lga-outline"
-                              disabled={busy}
-                              onClick={() => copyJoinLink(selectedCheckin.token)}
-                            >
-                              🔗 複製聚會連結
-                            </button>
-                            <button
-                              type="button"
-                              className="lga-danger"
-                              disabled={busy}
-                              onClick={() => resetCheckinToken(selected.id)}
-                            >
-                              重設連結
-                            </button>
-                          </div>
-                          <div className="lga-new lga-cap">
-                            <span>人數上限</span>
-                            <input
-                              type="number"
-                              min={1}
-                              max={500}
-                              placeholder="留空＝不限"
-                              value={capacityDraft}
-                              onChange={(event) =>
-                                setCapacityDraft(event.target.value)
-                              }
-                            />
-                            <button
-                              type="button"
-                              className="lga-outline"
-                              disabled={busy}
-                              onClick={() => saveCapacity(selected.id)}
-                            >
-                              儲存上限
-                            </button>
-                          </div>
-                          <p className="loy-admin-note">
-                            目前 {selectedAttendees.length} 人出席（自己報到{' '}
-                            {selectedSelf.length} 人）
-                            {selectedCheckin.capacity !== null
-                              ? `，上限 ${selectedCheckin.capacity} 人`
-                              : '，不限人數'}
-                            。人數上限可以不設；設了的話，包含你手動加入的人，你手動加入時可以超過上限（會先跳確認）。
-                          </p>
-                        </>
-                      )}
-
-                      <h4 className="lga-sub">
-                        參加者（{selectedAttendees.length} / {players.length}）
-                      </h4>
-                      <p className="loy-admin-note">
-                        點名字即可勾選出席，立即儲存。出席的人下方有「免評分」：
-                        適合中途離開、來不及評分的玩家，開啟後這一天直接算 1 點。
-                        玩家只看得到自己的出席。
-                      </p>
-                      {players.length > 0 && (
-                        <div className="lga-new lga-search">
-                          <input
-                            type="search"
-                            placeholder="搜尋玩家（暱稱、LINE／FB 名字）…"
-                            value={playerSearch}
-                            onChange={(event) =>
-                              setPlayerSearch(event.target.value)
-                            }
-                          />
-                        </div>
-                      )}
-                      {players.length === 0 ? (
-                        <p className="loy-admin-note">
-                          還沒有玩家設定暱稱。
-                        </p>
-                      ) : visiblePlayers.length === 0 ? (
-                        <p className="loy-admin-note">找不到符合的玩家。</p>
-                      ) : (
-                        <ul className="lga-chips">
-                          {visiblePlayers.map((player) => {
-                            const attending = selectedAttendees.includes(
-                              player.id,
-                            )
-                            const exempt = selectedExempts.includes(player.id)
-                            return (
-                              <li
-                                key={player.id}
-                                className={`lga-chip ${
-                                  attending ? 'on' : ''
-                                }`}
-                              >
-                                <button
-                                  type="button"
-                                  className="lga-chip-main"
-                                  disabled={busy}
-                                  aria-pressed={attending}
-                                  onClick={() =>
-                                    toggleAttendee(
-                                      selected.id,
-                                      player.id,
-                                      !attending,
-                                    )
-                                  }
-                                >
-                                  <span className="lga-avatar">
-                                    {initialOf(player.nickname)}
-                                  </span>
-                                  <span className="lga-chip-name">
-                                    {player.nickname}
-                                  </span>
-                                  {attending && (
-                                    <span className="lga-check">✓</span>
-                                  )}
-                                </button>
-                                <span className="lga-contact">
-                                  {contacts[player.id] ?? '未填聯絡方式'}
-                                </span>
-                                {selectedSelf.includes(player.id) && (
-                                  <span className="lga-self">自己報到</span>
-                                )}
-                                {attending && (
-                                  <button
-                                    type="button"
-                                    className={`lga-exempt ${
-                                      exempt ? 'on' : ''
-                                    }`}
-                                    disabled={busy}
-                                    aria-pressed={exempt}
-                                    onClick={() =>
-                                      toggleExempt(
-                                        selected.id,
-                                        player.id,
-                                        !exempt,
-                                      )
-                                    }
-                                  >
-                                    {exempt ? '✓ 免評分（已給點）' : '免評分'}
-                                  </button>
-                                )}
-                              </li>
-                            )
-                          })}
-                        </ul>
-                      )}
-
-                      <h4 className="lga-sub">
-                        指定遊戲（{selectedGames.length} 款）
-                      </h4>
-                      <p className="loy-admin-note">
-                        玩家會在集點卡看到這份清單，自己勾「我玩了」並評分。
-                        加入第一款遊戲後，這一天就改用新規則；沒有加遊戲的舊聚會日，維持舊規則。
-                      </p>
-                      <div className="lga-new lga-search">
-                        <input
-                          type="text"
-                          placeholder="搜尋遊戲名稱…"
-                          value={gameSearch}
-                          onChange={(event) => setGameSearch(event.target.value)}
-                        />
-                      </div>
-                      {gameMatches.length > 0 && (
-                        <ul className="loy-picker-results">
-                          {gameMatches.map((game) => (
-                            <li key={game.bggName}>
-                              <span>{game.name}</span>
-                              <button
-                                type="button"
-                                className="loy-mini-btn"
-                                disabled={busy}
-                                onClick={() => addGame(selected.id, game.bggName)}
-                              >
-                                ＋ 加入
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {searchText && gameMatches.length === 0 && (
-                        <p className="loy-admin-note">找不到符合的遊戲。</p>
-                      )}
-
-                      {selectedGames.length === 0 ? (
-                        <p className="loy-admin-note">還沒有選遊戲。</p>
-                      ) : (
-                        <ul className="loy-picked">
-                          {selectedGames.map((bggName) => (
-                            <li key={bggName}>
-                              <span>{gameNameMap.get(bggName) ?? bggName}</span>
-                              <button
-                                type="button"
-                                className="loy-mini-btn"
-                                disabled={busy}
-                                onClick={() => removeGame(selected.id, bggName)}
-                              >
-                                移除
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </section>
-                  )}
-                </>
-              )}
-
-              {tab === 'status' && (
-                <>
-                  <h3 className="lga-step">
-                    <span>★</span>大家的集點狀況（對帳用）
-                  </h3>
-                  {overview.length === 0 ? (
-                    <p>還沒有任何人被列入聚會名單。</p>
-                  ) : (
-                    <div className="loy-admin-tablewrap">
-                      <table className="loy-admin-table">
-                        <thead>
-                          <tr>
-                            <th>暱稱</th>
-                            <th>本月</th>
-                            <th>總點數</th>
-                            <th>累積券</th>
-                            <th>已兌換</th>
-                            <th>可用</th>
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {overview.map((row) => (
-                            <tr key={row.userId}>
-                              <td>
-                                {row.nickname}
-                                <small className="lga-contact">
-                                  {contacts[row.userId] ?? '未填聯絡方式'}
-                                </small>
-                                {row.overRedeemed && (
-                                  <span
-                                    className="loy-flag"
-                                    title="已兌換超過目前累積"
-                                  >
-                                    ⚠
-                                  </span>
-                                )}
-                              </td>
-                              <td>{row.monthPoints}</td>
-                              <td>{row.totalPoints}</td>
-                              <td>{row.earnedVouchers}</td>
-                              <td>{row.redeemed}</td>
-                              <td>{row.availableVouchers}</td>
-                              <td className="loy-admin-actions">
-                                <button
-                                  type="button"
-                                  className="admin-link"
-                                  disabled={busy}
-                                  onClick={() => showDetail(row)}
-                                >
-                                  明細
-                                </button>
-                                <button
-                                  type="button"
-                                  className="admin-link"
-                                  disabled={busy || row.availableVouchers < 1}
-                                  onClick={() => redeem(row)}
-                                >
-                                  兌換
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  <p className="loy-admin-note">
-                    ⚠ 代表「已兌換的張數 &gt; 目前累積」，通常是玩家領券後改了評分或取消了標記。
-                  </p>
-                  <button
-                    className="loy-refresh"
-                    type="button"
-                    disabled={busy}
-                    onClick={refreshOverview}
-                  >
-                    重新整理
-                  </button>
-
-                  {detail && (
-                    <div className="loy-admin-detail">
-                      <h3>{detail.nickname} 的明細</h3>
-                      {detail.days.length === 0 ? (
-                        <p>沒有被列入任何聚會日。</p>
-                      ) : (
-                        <ul>
-                          {detail.days.map((day) => (
-                            <li key={day.date}>
-                              {formatDay(day.date)}：
-                              {day.qualified
-                                ? '✓ 得 1 點'
-                                : !day.hasSession
-                                  ? '還沒有標記玩過的遊戲（或沒有當天遊玩紀錄）'
-                                  : `評分完整 ${day.ratedCount} / ${day.gameCount} 款`}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <p>
-                        兌換紀錄：
-                        {detail.redemptions.length === 0
-                          ? '無'
-                          : detail.redemptions
-                              .map((item) => formatDateTime(item.redeemedAt))
-                              .join('、')}
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-
+      {tab === 'setup' && (
+        <>
+          <section className="lga-card">
+            <h3 className="lga-step">
+              <span>1</span>新增聚會
+            </h3>
+            <div className="lga-new">
+              <input
+                type="date"
+                value={newDate}
+                onChange={(event) => setNewDate(event.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="場次（選填，例如：早場、晚場）"
+                maxLength={20}
+                value={newTitle}
+                onChange={(event) => setNewTitle(event.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="備註（選填，200 字內）"
+                maxLength={200}
+                value={newNote}
+                onChange={(event) => setNewNote(event.target.value)}
+              />
               <button
-                className="admin-cancel"
+                className="lga-primary"
                 type="button"
-                onClick={() => setIsOpen(false)}
+                disabled={busy || !newDate}
+                onClick={addGathering}
               >
-                關閉
+                ＋ 新增聚會
               </button>
             </div>
-          </div>,
-          document.body,
-        )}
-    </>
+            <p className="loy-admin-note">
+              同一天可以新增多場（場次名稱不能重複）。集點是「一天最多 1 點」：
+              當天出席任何一場，並把出席各場的指定遊戲都評完分（或被設為免評分）就得 1 點。
+            </p>
+          </section>
+
+          <section className="lga-section">
+            <h3 className="lga-step">
+              <span>2</span>近期聚會
+            </h3>
+            {gatherings.length === 0 ? (
+              <p className="loy-admin-note">還沒有聚會日。</p>
+            ) : (
+              <ul className="lga-list">
+                {gatherings.map((g) => {
+                  const [, month, day] = g.gatheredOn.split('-')
+                  const status = dayStatus(g.gatheredOn)
+                  return (
+                    <li key={g.id}>
+                      <button
+                        type="button"
+                        className={`lga-row ${g.id === selectedId ? 'active' : ''}`}
+                        onClick={() => {
+                          setSelectedId(g.id === selectedId ? null : g.id)
+                          setPlayerSearch('')
+                          setCapacityDraft(String(checkins[g.id]?.capacity ?? ''))
+                        }}
+                      >
+                        <span className="lga-date">
+                          <small>{Number(month)} 月</small>
+                          <strong>{Number(day)}</strong>
+                        </span>
+                        <span className="lga-row-main">
+                          <strong>
+                            {[g.title, g.note].filter(Boolean).join('・') ||
+                              '桌遊聚會'}
+                          </strong>
+                          <small>
+                            {formatDay(g.gatheredOn)}・
+                            {(attendees[g.id] ?? []).length} 人・
+                            {(gatheringGames[g.id] ?? []).length} 款
+                          </small>
+                        </span>
+                        <span
+                          className={`lga-status ${status === '已結束' ? 'done' : ''}`}
+                        >
+                          {status}
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </section>
+
+          {selected && (
+            <section className="lga-card lga-detail">
+              <div className="lga-detail-head">
+                <h3>聚會詳情 — {gatheringName(selected)}</h3>
+                <div className="lga-detail-actions">
+                  <button
+                    type="button"
+                    className="lga-danger"
+                    disabled={busy}
+                    onClick={() => deleteGathering(selected)}
+                  >
+                    刪除這一場
+                  </button>
+                </div>
+              </div>
+
+              <h4 className="lga-sub">聚會連結（報到＋集點卡）</h4>
+              {!selectedCheckin ? (
+                <>
+                  <p className="loy-admin-note">
+                    一個連結就夠了：把連結傳給今天要來的人，他們登入（沒有帳號會自動建立）並按「我來了」，就會列入出席名單，並直接打開這場聚會的集點卡。
+                    建立後預設為開放；只有聚會當天（台北時間）可以報到，已經報到的人之後仍可用同一個連結回到集點卡。
+                    有設人數上限的聚會，報到成功會自動加入 VIP。
+                  </p>
+                  <button
+                    type="button"
+                    className="lga-outline"
+                    disabled={busy}
+                    onClick={() => createCheckin(selected.id)}
+                  >
+                    ＋ 建立聚會連結
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="lga-checkin-row">
+                    <button
+                      type="button"
+                      className={`lga-toggle ${selectedCheckin.isOpen ? 'on' : ''}`}
+                      disabled={busy}
+                      aria-pressed={selectedCheckin.isOpen}
+                      onClick={() =>
+                        updateCheckin(selected.id, {
+                          is_open: !selectedCheckin.isOpen,
+                        })
+                      }
+                    >
+                      {selectedCheckin.isOpen
+                        ? '● 報到開放中（按一下關閉）'
+                        : '○ 報到已關閉（按一下開放）'}
+                    </button>
+                    <button
+                      type="button"
+                      className="lga-outline"
+                      disabled={busy}
+                      onClick={() => copyJoinLink(selectedCheckin.token)}
+                    >
+                      🔗 複製聚會連結
+                    </button>
+                    <button
+                      type="button"
+                      className="lga-danger"
+                      disabled={busy}
+                      onClick={() => resetCheckinToken(selected.id)}
+                    >
+                      重設連結
+                    </button>
+                  </div>
+                  <div className="lga-new lga-cap">
+                    <span>人數上限</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={500}
+                      placeholder="留空＝不限"
+                      value={capacityDraft}
+                      onChange={(event) => setCapacityDraft(event.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="lga-outline"
+                      disabled={busy}
+                      onClick={() => saveCapacity(selected.id)}
+                    >
+                      儲存上限
+                    </button>
+                  </div>
+                  <p className="loy-admin-note">
+                    目前 {selectedAttendees.length} 人出席（自己報到{' '}
+                    {selectedSelf.length} 人）
+                    {selectedCheckin.capacity !== null
+                      ? `，上限 ${selectedCheckin.capacity} 人`
+                      : '，不限人數（報到時不會自動加入 VIP）'}
+                    。你手動加入時可以超過上限（會先跳確認）。
+                  </p>
+                </>
+              )}
+
+              <h4 className="lga-sub">
+                參加者（{selectedAttendees.length} / {players.length}）
+              </h4>
+              <p className="loy-admin-note">
+                點名字即可勾選出席，立即儲存。出席的人下方有「免評分」：
+                適合中途離開、來不及評分的玩家，開啟後這一天直接算 1 點。
+                玩家只看得到自己的出席。
+              </p>
+              {players.length > 0 && (
+                <div className="lga-new lga-search">
+                  <input
+                    type="search"
+                    placeholder="搜尋玩家（暱稱、LINE／FB 名字）…"
+                    value={playerSearch}
+                    onChange={(event) => setPlayerSearch(event.target.value)}
+                  />
+                </div>
+              )}
+              {players.length === 0 ? (
+                <p className="loy-admin-note">還沒有玩家設定暱稱。</p>
+              ) : visiblePlayers.length === 0 ? (
+                <p className="loy-admin-note">找不到符合的玩家。</p>
+              ) : (
+                <ul className="lga-chips">
+                  {visiblePlayers.map((player) => {
+                    const attending = selectedAttendees.includes(player.id)
+                    const exempt = selectedExempts.includes(player.id)
+                    return (
+                      <li
+                        key={player.id}
+                        className={`lga-chip ${attending ? 'on' : ''}`}
+                      >
+                        <button
+                          type="button"
+                          className="lga-chip-main"
+                          disabled={busy}
+                          aria-pressed={attending}
+                          onClick={() =>
+                            toggleAttendee(selected.id, player.id, !attending)
+                          }
+                        >
+                          <span className="lga-avatar">
+                            {initialOf(player.nickname)}
+                          </span>
+                          <span className="lga-chip-name">{player.nickname}</span>
+                          {attending && <span className="lga-check">✓</span>}
+                        </button>
+                        <span className="lga-contact">
+                          {contacts[player.id] ?? '未填聯絡方式'}
+                        </span>
+                        {selectedSelf.includes(player.id) && (
+                          <span className="lga-self">自己報到</span>
+                        )}
+                        {attending && (
+                          <button
+                            type="button"
+                            className={`lga-exempt ${exempt ? 'on' : ''}`}
+                            disabled={busy}
+                            aria-pressed={exempt}
+                            onClick={() =>
+                              toggleExempt(selected.id, player.id, !exempt)
+                            }
+                          >
+                            {exempt ? '✓ 免評分（已給點）' : '免評分'}
+                          </button>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+
+              <h4 className="lga-sub">指定遊戲（{selectedGames.length} 款）</h4>
+              <p className="loy-admin-note">
+                玩家會在集點卡看到這份清單，自己勾「我玩了」並評分。
+                加入第一款遊戲後，這一場就改用新規則；沒有加遊戲的舊聚會日，維持舊規則。
+              </p>
+              <div className="lga-new lga-search">
+                <input
+                  type="text"
+                  placeholder="搜尋遊戲名稱…"
+                  value={gameSearch}
+                  onChange={(event) => setGameSearch(event.target.value)}
+                />
+              </div>
+              {gameMatches.length > 0 && (
+                <ul className="loy-picker-results">
+                  {gameMatches.map((game) => (
+                    <li key={game.bggName}>
+                      <span>{game.name}</span>
+                      <button
+                        type="button"
+                        className="loy-mini-btn"
+                        disabled={busy}
+                        onClick={() => addGame(selected.id, game.bggName)}
+                      >
+                        ＋ 加入
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {searchText && gameMatches.length === 0 && (
+                <p className="loy-admin-note">找不到符合的遊戲。</p>
+              )}
+
+              {selectedGames.length === 0 ? (
+                <p className="loy-admin-note">還沒有選遊戲。</p>
+              ) : (
+                <ul className="loy-picked">
+                  {selectedGames.map((bggName) => (
+                    <li key={bggName}>
+                      <span>{gameNameMap.get(bggName) ?? bggName}</span>
+                      <button
+                        type="button"
+                        className="loy-mini-btn"
+                        disabled={busy}
+                        onClick={() => removeGame(selected.id, bggName)}
+                      >
+                        移除
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+        </>
+      )}
+
+      {tab === 'status' && (
+        <>
+          <h3 className="lga-step">
+            <span>★</span>大家的集點狀況（對帳用）
+          </h3>
+          {overview.length === 0 ? (
+            <p>還沒有任何人被列入聚會名單。</p>
+          ) : (
+            <div className="loy-admin-tablewrap">
+              <table className="loy-admin-table">
+                <thead>
+                  <tr>
+                    <th>暱稱</th>
+                    <th>本月</th>
+                    <th>總點數</th>
+                    <th>累積券</th>
+                    <th>已兌換</th>
+                    <th>可用</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {overview.map((row) => (
+                    <tr key={row.userId}>
+                      <td>
+                        {row.nickname}
+                        <small className="lga-contact">
+                          {contacts[row.userId] ?? '未填聯絡方式'}
+                        </small>
+                        {row.overRedeemed && (
+                          <span className="loy-flag" title="已兌換超過目前累積">
+                            ⚠
+                          </span>
+                        )}
+                      </td>
+                      <td>{row.monthPoints}</td>
+                      <td>{row.totalPoints}</td>
+                      <td>{row.earnedVouchers}</td>
+                      <td>{row.redeemed}</td>
+                      <td>{row.availableVouchers}</td>
+                      <td className="loy-admin-actions">
+                        <button
+                          type="button"
+                          className="admin-link"
+                          disabled={busy}
+                          onClick={() => showDetail(row)}
+                        >
+                          明細
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-link"
+                          disabled={busy || row.availableVouchers < 1}
+                          onClick={() => redeem(row)}
+                        >
+                          兌換
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="loy-admin-note">
+            ⚠ 代表「已兌換的張數 &gt; 目前累積」，通常是玩家領券後改了評分或取消了標記。
+          </p>
+          <button
+            className="loy-refresh"
+            type="button"
+            disabled={busy}
+            onClick={refreshOverview}
+          >
+            重新整理
+          </button>
+
+          {detail && (
+            <div className="loy-admin-detail">
+              <h3>{detail.nickname} 的明細</h3>
+              {detail.days.length === 0 ? (
+                <p>沒有被列入任何聚會日。</p>
+              ) : (
+                <ul>
+                  {detail.days.map((day) => (
+                    <li key={day.date}>
+                      {formatDay(day.date)}：
+                      {day.qualified
+                        ? '✓ 得 1 點'
+                        : !day.hasSession
+                          ? '還沒有標記玩過的遊戲（或沒有當天遊玩紀錄）'
+                          : `評分完整 ${day.ratedCount} / ${day.gameCount} 款`}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p>
+                兌換紀錄：
+                {detail.redemptions.length === 0
+                  ? '無'
+                  : detail.redemptions
+                      .map((item) => formatDateTime(item.redeemedAt))
+                      .join('、')}
+              </p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   )
 }

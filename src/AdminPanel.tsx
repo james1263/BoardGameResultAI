@@ -13,6 +13,7 @@ import {
 } from './lib/parseCsv'
 import { uploadCover } from './lib/uploadCover'
 import { useIsAdmin } from './lib/useIsAdmin'
+import { OPEN_CSV_IMPORT_EVENT } from './lib/adminEvents'
 
 type RemovedGame = {
     bggName: string
@@ -112,6 +113,12 @@ export default function AdminPanel() {
     const [importResult, setImportResult] = useState('')
     const [coverFiles, setCoverFiles] = useState<File[]>([])
     const isAdmin = useIsAdmin()
+
+    useEffect(() => {
+        const open = () => setIsImportOpen(true)
+        window.addEventListener(OPEN_CSV_IMPORT_EVENT, open)
+        return () => window.removeEventListener(OPEN_CSV_IMPORT_EVENT, open)
+    }, [])
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data }) => setSession(data.session))
