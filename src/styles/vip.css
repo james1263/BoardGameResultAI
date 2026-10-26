@@ -413,3 +413,8 @@
   white-space: normal;
   text-align: left;
 }
+
+/* 密碼視窗要在「我的桌遊」抽屜、報到視窗之上 */
+.modal-backdrop.vip-join-backdrop {
+  z-index: 1300;
+}

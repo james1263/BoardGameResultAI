@@ -37,7 +37,7 @@ export default function VipJoinDialog({ onClose }: { onClose: () => void }) {
     }
 
     return createPortal(
-        <div className="modal-backdrop" onClick={onClose}>
+        <div className="modal-backdrop vip-join-backdrop" onClick={onClose}>
             <form
                 className="admin-modal player-dialog"
                 onClick={(event) => event.stopPropagation()}

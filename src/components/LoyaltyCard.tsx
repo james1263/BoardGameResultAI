@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { usePersonalCollection } from '../lib/usePersonalCollection'
 import {
@@ -37,13 +37,63 @@ export default function LoyaltyCard({
 }) {
   const loyalty = useMyLoyalty()
   const vip = useVip()
-  const [busyKey, setBusyKey] = useState<string | null>(null)
   const scrolledRef = useRef(false)
+  const markedRef = useRef(new Set<string>())
 
   const gameMap = useMemo(
     () => new Map(boardGames.map((game) => [game.bggName, game])),
     [boardGames],
   )
+
+  const ratingsReady = ratings.status === 'ready'
+
+  // 七項評分都填了才算完整（overall 沒填時資料會是 0）
+  function isComplete(bggName: string): boolean {
+    const mine = ratings.getMine(bggName)
+    if (!mine || !(mine.overall > 0)) return false
+    return RATING_FIELDS.every((field) => mine[field.key] != null)
+  }
+
+  // 評分完整 = 玩過：自動寫入「我玩了」、補遊玩紀錄、標成已玩
+  async function markPlayed(gathering: MyGathering, bggName: string) {
+    const ok = await loyalty.setPlayed(gathering.id, bggName, true)
+    if (!ok) return
+
+    if (playSessions.status === 'ready') {
+      const exists = playSessions
+        .getSessions(bggName)
+        .some((item) => item.playedOn === gathering.date)
+      if (!exists) {
+        await playSessions.addSession(bggName, {
+          playedOn: gathering.date,
+          playerCount: null,
+          note: '',
+        })
+      }
+    }
+    if (!personal.getEntry(bggName).played) {
+      personal.updateEntry(bggName, { played: true }, { skipPlayedRule: true })
+    }
+    loyalty.reload()
+  }
+
+  // 玩家已經報到的聚會日裡，指定遊戲只要評分完整，就自動算「我玩了」
+  useEffect(() => {
+    if (!loyalty.isLoggedIn || loyalty.loading || !ratingsReady) return
+    const myDates = new Set(loyalty.days.map((day) => day.date))
+    for (const gathering of loyalty.gatherings) {
+      if (!myDates.has(gathering.date)) continue
+      for (const bggName of gathering.games) {
+        if (gathering.played.includes(bggName)) continue
+        if (!isComplete(bggName)) continue
+        const key = `${gathering.id}:${bggName}`
+        if (markedRef.current.has(key)) continue
+        markedRef.current.add(key)
+        void markPlayed(gathering, bggName)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loyalty.gatherings, loyalty.days, loyalty.loading, loyalty.isLoggedIn, ratings, ratingsReady])
 
   if (!loyalty.isLoggedIn) {
     return (
@@ -60,46 +110,6 @@ export default function LoyaltyCard({
   if (loyalty.loading) return <p className="mylist-empty">讀取中…</p>
 
   const summary = loyalty.summary
-  const ratingsReady = ratings.status === 'ready'
-
-  // 七項評分都填了才算完整（overall 沒填時資料會是 0）
-  function isComplete(bggName: string): boolean {
-    const mine = ratings.getMine(bggName)
-    if (!mine || !(mine.overall > 0)) return false
-    return RATING_FIELDS.every((field) => mine[field.key] != null)
-  }
-
-  async function togglePlayed(
-    gathering: MyGathering,
-    bggName: string,
-    checked: boolean,
-  ) {
-    setBusyKey(`${gathering.id}:${bggName}`)
-    const ok = await loyalty.setPlayed(gathering.id, bggName, checked)
-
-    if (ok && checked) {
-      // 當天還沒有這款的遊玩紀錄，就補一筆
-      if (playSessions.status === 'ready') {
-        const exists = playSessions
-          .getSessions(bggName)
-          .some((item) => item.playedOn === gathering.date)
-        if (!exists) {
-          await playSessions.addSession(bggName, {
-            playedOn: gathering.date,
-            playerCount: null,
-            note: '',
-          })
-        }
-      }
-      // 順便標成「已玩」（不動遊玩次數，次數由遊玩紀錄計算）
-      if (!personal.getEntry(bggName).played) {
-        personal.updateEntry(bggName, { played: true }, { skipPlayedRule: true })
-      }
-    }
-
-    if (ok) loyalty.reload()
-    setBusyKey(null)
-  }
 
   // 從邀請連結進來時，自動捲到連結指定的那一天
   function focusRef(date: string) {
@@ -158,14 +168,12 @@ export default function LoyaltyCard({
       : day.qualified
 
     let text: string
-    if (marked.length === 0) {
-      text = '請勾選你今天實際玩了哪些遊戲'
-    } else if (!ratingsReady) {
+    if (!ratingsReady) {
       text = '評分讀取中…'
     } else if (qualified) {
-      text = `已得 1 點（${marked.length} 款都評分完整）`
+      text = `已得 1 點（${marked.length} 款評分完整）`
     } else {
-      text = `評分完整 ${ratedCount} / ${marked.length} 款，每款都填完七項才算`
+      text = '請挑一款你玩過的遊戲，把七項評分填完整，就會蓋章'
     }
 
     return (
@@ -192,34 +200,18 @@ export default function LoyaltyCard({
                 <ul className="lc-games">
                   {session.games.map((bggName) => {
                     const game = gameMap.get(bggName)
-                    const isPlayed = session.played.includes(bggName)
-                    const done = isPlayed && ratingsReady && isComplete(bggName)
+                    const done = ratingsReady && isComplete(bggName)
                     return (
                       <li className="lc-game" key={bggName}>
                         <span className="lc-game-name">
                           {game?.name ?? bggName}
                         </span>
-                        <label className="lc-played">
-                          <input
-                            type="checkbox"
-                            checked={isPlayed}
-                            disabled={busyKey !== null}
-                            onChange={(event) =>
-                              void togglePlayed(
-                                session,
-                                bggName,
-                                event.target.checked,
-                              )
-                            }
-                          />
-                          我玩了
-                        </label>
-                        {isPlayed && ratingsReady && (
+                        {ratingsReady && (
                           <span className="lc-game-actions">
                             <span
                               className={`lc-game-state ${done ? 'done' : ''}`}
                             >
-                              {done ? '✓ 已評分，不用再填' : '未評分'}
+                              {done ? '✓ 已評分' : '未評分'}
                             </span>
                             {game && (
                               <button
@@ -314,17 +306,17 @@ export default function LoyaltyCard({
         <ol className="lc-steps">
           <li>
             <b>1</b>
-            <span>聚會當天，管理者把你列入出席名單，並設定當天的遊戲。</span>
+            <span>點管理者傳的聚會連結，登入並完成報到。</span>
           </li>
           <li>
             <b>2</b>
-            <span>在下方聚會日，勾選你實際玩了哪幾款（「我玩了」）。</span>
+            <span>
+              在下方聚會日，挑一款你玩過的遊戲，把七項評分填完整；評分完就自動算你玩過。
+            </span>
           </li>
           <li>
             <b>3</b>
-            <span>
-              把這幾款的七項評分填完整；以前評分過的遊戲不用重填，評分隨時可修改。
-            </span>
+            <span>以前評分過的遊戲不用重填，評分隨時可修改。</span>
           </li>
         </ol>
         <ul className="lc-rules">
