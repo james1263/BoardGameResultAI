@@ -136,9 +136,9 @@ export default function CheckInDialog({
       const gg =
         myIds.length > 0
           ? await supabase
-              .from('gathering_games')
-              .select('gathering_id, bgg_name')
-              .in('gathering_id', myIds)
+            .from('gathering_games')
+            .select('gathering_id, bgg_name')
+            .in('gathering_id', myIds)
           : { data: [], error: null }
 
       if (cancelled) return
@@ -184,17 +184,17 @@ export default function CheckInDialog({
   }, [resolved, wasNeeded, needRating])
 
   const showRate = resolved && (wasNeeded ?? needRating)
+  const needVip = succeeded && vip.checked && !vip.isVip
 
   // 一開始就不用評分（免評分、以前評過、沒有指定遊戲）：稍等一下直接到集點卡
   useEffect(() => {
-    if (!resolved || wasNeeded !== false) return
+    if (needVip || !resolved || wasNeeded !== false) return
     const timer = window.setTimeout(() => onDoneRef.current(date), 1200)
     return () => window.clearTimeout(timer)
-  }, [resolved, wasNeeded, date])
+  }, [needVip, resolved, wasNeeded, date])
 
   const gameMap = new Map(boardGames.map((game) => [game.bggName, game]))
   const canContinue = !!info && (info.exempt || doneCount > 0 || !!info.error)
-  const needVip = showRate && vip.checked && !vip.isVip
 
   return createPortal(
     <div className="modal-backdrop checkin-backdrop">
@@ -217,13 +217,31 @@ export default function CheckInDialog({
 
         {error && <p className="pd-error">{error}</p>}
 
-        {succeeded && !resolved && <p className="pd-text">正在準備評分…</p>}
+        {needVip && (
+          <div className="ci-rate">
+            <p className="pd-text">
+              <b>下一步：加入 VIP。</b>
+              請輸入管理者給你的通關密碼，才能評分和使用集點卡。
+            </p>
+            <button
+              className="pd-save"
+              type="button"
+              onClick={() => setIsVipOpen(true)}
+            >
+              輸入密碼加入 VIP
+            </button>
+          </div>
+        )}
 
-        {succeeded && resolved && !showRate && (
+        {succeeded && !needVip && !resolved && (
+          <p className="pd-text">正在準備評分…</p>
+        )}
+
+        {succeeded && !needVip && resolved && !showRate && (
           <p className="pd-text">正在帶你到集點卡…</p>
         )}
 
-        {succeeded && showRate && (
+        {succeeded && !needVip && showRate && (
           <div className="ci-rate">
             <p className="pd-text">
               <b>下一步：評分。</b>

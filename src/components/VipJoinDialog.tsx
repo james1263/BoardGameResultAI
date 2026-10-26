@@ -58,7 +58,6 @@ export default function VipJoinDialog({ onClose }: { onClose: () => void }) {
                         <h2>加入 VIP</h2>
                         <p className="pd-hint">
                             來玩過桌遊的朋友才能加入，請向管理者詢問通關密碼。
-                            參加有設人數上限的聚會並報到，也會自動加入。
                             加入後，你的想玩／已玩會以暱稱顯示給 VIP 朋友看（管理者可看到完整名單），
                             可以隨時在暱稱選單關閉。
                         </p>
