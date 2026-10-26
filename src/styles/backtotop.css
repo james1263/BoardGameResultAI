@@ -21,3 +21,11 @@
   opacity: 1;
   transform: translateY(-2px);
 }
+
+/* 手機：避開底部導覽列（約 64px）與 iPhone 底部手勢區 */
+@media (max-width: 760px) {
+  .back-to-top {
+    right: 16px;
+    bottom: calc(64px + 16px + env(safe-area-inset-bottom, 0px));
+  }
+}
