@@ -402,3 +402,179 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+/* ===== 我的桌遊抽屜改版：分頁按鈕、清單、免費券、我的統計 ===== */
+
+.club-stat.active {
+  background: var(--c-cream, #f5f0e5);
+  color: var(--c-ink, #34463c);
+}
+
+.club-stat.active span {
+  color: var(--c-ink-soft, #5d6b62);
+}
+
+.club-list {
+  padding: 0 20px;
+}
+
+.club-list .club-section-title {
+  margin: 20px 0 6px;
+}
+
+.club-more {
+  margin-top: 18px;
+}
+
+.club-menu-single {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.club-voucher {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f1c97a;
+  color: #34463c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.club-voucher p {
+  margin: 0;
+}
+
+.club-voucher-icon {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.club-voucher-sub {
+  margin-top: 2px !important;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.mystat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.mystat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.mystat-box span {
+  color: #7a7f75;
+  font-size: 12px;
+}
+
+.mystat-box strong {
+  color: var(--c-forest, #456b50);
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.mystat-box small {
+  color: #7a7f75;
+  font-size: 12px;
+}
+
+.mystat-title {
+  margin: 22px 0 6px;
+  font-size: 16px;
+  text-align: left;
+}
+
+.mystat-top {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mystat-top li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.mystat-top .mylist-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.mystat-rank {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--c-caramel, #b78a5a);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+}
+
+.mystat-count {
+  flex: none;
+  color: var(--c-forest, #456b50);
+}
+
+.mystat-foot {
+  margin: 16px 0 0;
+  color: #7a7f75;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.club-today {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 20px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--c-caramel, #b78a5a);
+  border-radius: 12px;
+  background: #fbf3e4;
+  text-align: left;
+}
+
+.club-today b {
+  font-size: 14px;
+}
+
+.club-today p {
+  margin: 2px 0 0;
+  color: #7a7f75;
+  font-size: 12px;
+}
+
+.club-today button {
+  flex: none;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 10px;
+  background: var(--c-forest, #456b50);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}

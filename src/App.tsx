@@ -857,6 +857,8 @@ function Library({
       <MyList
         key={inviteKey}
         mode={myListMode}
+        todayPending={todayTask.pending}
+        onOpenLoyalty={openMyLoyalty}
         isAdmin={isAdmin}
         isVip={vip.isVip}
         onBrowse={() => {
