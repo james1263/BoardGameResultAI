@@ -1,9 +1,45 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案交接文件（精簡版）
 
 > 給接手的 AI 閱讀。**請先讀 `QUICKSTART.md`（懶人包），再讀本文件。**
-> 最後更新：2026-10-27 傍晚（最上方有「2026-10-27 傍晚更新」，其次是「2026-10-27 更新」一節，優先閱讀；以下主體為 2026-10-26 深夜版）。這一版把已完成的功能整理成「依主題」的紀錄（取代舊的 A～Q 附錄），內容與決定不變；日期與細節若與 `QUICKSTART.md` 衝突，以 `QUICKSTART.md` 為準。
+> 最後更新：2026-10-27 深夜（最上方先看「2026-10-27 深夜更新」，再看最上方有「2026-10-27 傍晚更新」，其次是「2026-10-27 更新」一節，優先閱讀；以下主體為 2026-10-26 深夜版）。這一版把已完成的功能整理成「依主題」的紀錄（取代舊的 A～Q 附錄），內容與決定不變；日期與細節若與 `QUICKSTART.md` 衝突，以 `QUICKSTART.md` 為準。
 
-## 2026-10-27 傍晚更新（最新；與下方任何舊內容衝突時，以本節為準）
+## 2026-10-27 深夜更新（最新；與下方任何舊內容衝突時，以本節為準）
+
+### 已 push（`git log` 已確認）
+- `c56e3fc` 我的桌遊改版、`b2c4d6a` privacy.html 補免費券說明、`4803d8d` 排行榜空狀態、`3bf83a5` 集點卡改版（近期紀錄只顯示最近 5 筆）。
+- **自動用券第二批 SQL 已確認執行**（使用者截圖：`settle_vouchers_on_rating`、`settle_vouchers_on_attendee` 兩個觸發器都在）。
+- **尚未 commit 的 6 個檔案（使用者貼的 `git status`；是否已 build、commit、push 接手先問）**：`src/MyList.tsx`、`src/styles/mylist.css`、`src/styles/library.css`、`src/components/AdminCenter.tsx`、`src/LoyaltyAdmin.tsx`、`src/styles/vip.css`。建議 commit 訊息分三組：我的桌遊／排序列／管理中心。
+
+### 本日完成的內容
+- **「我的桌遊」抽屜（`MyList.tsx`）**：想玩／已玩數字方塊改成分頁按鈕（`activeTab`，預設想玩），清單直接顯示在下方，**已沒有「返回」流程**；空清單才顯示「去逛收藏」；**「我的統計」**是抽屜內第二個畫面（`view: 'home' | 'stats'`，有「‹ 返回」）：玩過幾款、總遊玩次數、約略總時數（次數×BGG 時間，`Math.round(分鐘/6)/10` 小時，沒時間資料的遊戲不計）、最常玩 TOP 3；使用者要求**「我的統計」入口放在已玩清單上面**（`club-more` 區塊移到第一個 `club-list` 上方）。`MyList` 新 props：`todayPending`（來自 `App.tsx` 的 `todayTask.pending`）、`onOpenLoyalty`（`openMyLoyalty`）；`todayPending` 為真時顯示「今天有聚會，還沒評分／去評分」卡（`club-today`），按鈕打開集點卡抽屜。`ClubPoints` 提示文字已改新規則，並在有券時顯示金色免費券卡（`usableVouchers`，另有 `availableVouchers − usableVouchers` 張「明天起才能用」）。`.club-menu-item`、`.mylist-name` 加深墨綠文字色（iPhone 預設會變藍）。
+- **排行榜空狀態（`Leaderboard.tsx` 的 `renderEmpty()`）**：依情況說明為什麼是空的（期間內沒新增、沒人標記、評分未滿 5 人、評分讀取中）並附按鈕（看全部期間／去逛收藏／先看想玩榜）。樣式 `.lb-empty*` 在 `leaderboard.css`。評分榜空時刻意不顯示「目前有幾款在累積」（不確定未滿 5 人時資料庫是否回傳人數）。
+- **集點卡改版（`LoyaltyCard.tsx`、`loyalty-card.css`）**：配色改用 `tokens.css` 變數；點數、免費券、兩個印章格包進 `lc-wallet`；「如何取得點數／規則」改成 `<details className="lc-fold">` 預設收起；**近期紀錄預設只顯示最近 5 筆（`RECENT_DAYS`，`loyalty.days` 由新到舊）**，其餘按 `lc-more`「顯示全部 N 筆」；若邀請連結的日期（`focusDate`）在被收起的部分，會自動全部展開（`focusHidden`）。補上原本缺少的 CSS（`lc-stat-sub`、`lc-session-title`、`lc-day.focus`、`lc-today-ticket`）。
+- **排序列（`library.css`）**：刪掉手機版 `.sort-reset.is-hidden { display: none }`，改成 `.sort-dir`、`.sort-reset` 寬度固定（`flex: none`、重設 `min-width: 56px`），「重設」沒用到時只是看不見（`visibility: hidden`），**升冪／降冪位置不會跑**。
+- **管理中心（`AdminCenter.tsx`、`LoyaltyAdmin.tsx`、`vip.css`）**：大分頁改成三等分膠囊、圖示在上字在下，標籤縮短為「成員」「聚會集點」「資料匯入」（`ac-tab-ico`、`ac-tab-label`）；小分頁（聚會設定／集點狀況／免費券紀錄）三等分；手機（≤520px）視窗加寬（`.ma-backdrop` padding 8px、`.ac-modal`／`.ma-modal`／`.st-modal` padding 14px 12px）；成員列在手機改成換行（`.ma-row` 換行、`.ma-who` 佔滿一行），解決暱稱被擠成直排（**這是只看 CSS 推測的修法，`MemberAdmin.tsx` 沒看過，若仍有問題要請使用者貼該檔**）；搜尋框與下拉在 iPhone 改成墨綠 16px 字。**「近期聚會」改成依月份分組**（`monthKeys`、`openMonths` 狀態；預設展開最新一個月與本月，其餘收起；按月份標題 `lga-month-head` 展開／收合），**點開某一天，聚會詳情直接出現在那一列下面**（原本在整個列表最下方；`LoyaltyAdmin.tsx` 的 `{g.id === selectedId && selected && (...)}` 已搬進該列 `<li>` 內），再按一次收起。**使用者說的「新增月份」被理解為「依月份分組」，尚未確認是否符合原意。**
+- 這批新增的覆蓋樣式**全部貼在 `vip.css` 最底下**（`vip.css` 最後載入，同權重時後面的贏）。`loyalty-admin.css` 與 `loyalty-admin_1.css` 使用者貼過兩份，內容完全相同（沒有差異）。
+
+### 本日作廢／已完成的舊說明
+- 傍晚待辦 1（「我的桌遊」抽屜改版 ①～⑥ 項）→ 已完成，其中「去評分」卡是用 `todayPending` 重用 `useTodayTask`，沒有另外算一次。
+- 傍晚待辦 3（`privacy.html` 補免費券說明）→ 已完成並 push。
+- 「兩份 SQL 是否都已執行：第二批未確認」→ 已確認執行。
+- 「『我的桌遊』抽屜首頁有想玩清單／已玩清單入口列」→ 已拿掉。
+- 傍晚說明中「`loyalty-card.css` 底下可能殘留 `.modal-backdrop.voucher-backdrop`」→ 已請使用者刪除（接手可用搜尋確認）。
+
+### 待辦（接續順序）
+1. 先確認上面 6 個檔案是否已 build、commit、push；手機實測：排序列、我的統計位置、管理中心三個分頁、近期聚會就地展開與月份分組。
+2. 若管理中心「成員與 VIP」在手機上仍擠壓，請使用者貼 `src/components/MemberAdmin.tsx` 直接改程式。
+3. 視覺改版剩下：管理者視窗其他部分的統一風格（按鈕兩種：主要森林綠實心、次要外框；表格與列表間距）、**手機全面檢查**（遊戲卡片 4／9 欄在手機的實際欄數、詳細視窗、報到流程、各彈窗；使用者用手機截圖回報問題，AI 一次整理成一批）。
+4. 規則書 PDF 上傳（私有 bucket）→ AI 規則助手（RAG，最重要的長期目標）。
+5. PWA、VIP 朋友名單、推薦牆、拖曳調整排名、VIP 鎖定 SQL（資格要含來過聚會的人）。
+6. 仍未驗證：`gathering_plays` 是否已 drop、`capacity` 是否 NOT NULL、`makeCoverSlug` 新版是否已套用並重新匯入（`cover_slug !~ '^[a-z0-9_-]+$'` 應為 0 列）。
+
+### 給接手 AI 的提醒（本日學到）
+- 使用者貼的檔案是當下最新版沒錯（本日多次用 `git log`／`Select-String` 驗證過），但**聊天室只在他貼過的檔案範圍內可信**；這次管理中心的樣式分散在 `vip.css`（`ma-`、`ac-`）、`loyalty.css`（`loy-`）、`admin.css`（`admin-`）、`loyalty-admin.css`（`lga-`）四個檔案，改外觀前先用 `Select-String -Path src\styles\*.css -Pattern "\.類別名"` 找出 class 在哪裡。
+- 修改量大又要「搬一大塊 JSX」時（例如本日的聚會詳情），給明確的搜尋關鍵字與起訖行，並請他 build 通過再 commit。
+
+---
+
+## 2026-10-27 傍晚更新（與下方舊內容衝突時，以本節為準；但比「深夜更新」舊）
 
 ### 已交付（使用者 build 成功；是否已 commit／push 請接手時用 `git log`、`git status` 確認）
 - **5 個進階篩選（人數、時間上限、難度五級、新遊戲、評分狀態）與「我的俱樂部」摘要卡**已套用並 push（`git status` 乾淨）。摘要卡在 `MyList.tsx`：`ClubHeader`（暱稱、徽章：訪客／一般會員／VIP 會員／管理者、想玩／已玩數字方塊、未登入說明＋Google 登入鈕）、`ClubPoints`（只有「VIP 且非管理者」才會呼叫集點資料）。樣式在 `mylist.css` 的「我的俱樂部」區。
