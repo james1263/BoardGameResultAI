@@ -449,3 +449,163 @@
   color: #456b50;
   font-weight: 700;
 }
+
+/* ===== 管理中心改版：分頁、手機版加寬、成員列不再被擠壓、月份分組、就地展開 ===== */
+
+.ac-head h2,
+.ma-head h2 {
+  color: #34463c;
+  opacity: 1;
+}
+
+/* 大分頁：三等分、圖示在上、字在下 */
+.ac-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 10px 0 14px;
+  padding: 4px;
+  border: 0;
+  border-radius: 12px;
+  background: #efe8d4;
+  overflow: visible;
+}
+
+.ac-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 7px 4px;
+  border: 0;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.ac-tab.active {
+  background: #fff;
+  color: #456b50;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.ac-tab-ico {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* 小分頁（聚會設定／集點狀況／免費券紀錄）：三等分 */
+.loy-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.loy-tab {
+  padding: 7px 4px;
+  border-color: rgba(52, 70, 60, 0.25);
+  color: #34463c;
+  font-size: 13px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.loy-tab.active {
+  border-color: #456b50;
+  background: #456b50;
+  color: #fff;
+}
+
+/* 搜尋框與下拉：iPhone 預設會變藍字、字太小 */
+.ma-tools input,
+.ma-tools select,
+.ma-code-row input {
+  color: #34463c;
+  font: inherit;
+  font-size: 16px;
+}
+
+/* 月份分組 */
+.lga-month {
+  margin-top: 10px;
+}
+
+.lga-month-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #efe8d4;
+  color: #34463c;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lga-month-head small {
+  color: #7b8a7f;
+  font-weight: 400;
+}
+
+.lga-month-arrow {
+  margin-left: auto;
+  color: #7b8a7f;
+}
+
+.lga-month .lga-list {
+  margin-top: 8px;
+}
+
+.lga-list .lga-row {
+  margin-top: 0;
+}
+
+/* 點開的聚會詳情：直接接在那一列下面，左邊一條綠線表示是同一組 */
+.lga-list > li > .lga-detail {
+  margin: 8px 0 6px 10px;
+  border-left: 4px solid #456b50;
+  border-radius: 4px 14px 14px 4px;
+}
+
+/* 手機：視窗加寬、成員列換行 */
+@media (max-width: 520px) {
+  .ma-backdrop {
+    padding: 8px;
+  }
+
+  .ac-modal,
+  .ma-modal,
+  .st-modal {
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    padding: 14px 12px 22px;
+  }
+
+  .ma-row {
+    flex-wrap: wrap;
+    gap: 6px 8px;
+  }
+
+  .ma-who {
+    flex: 1 1 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 8px;
+  }
+
+  .ma-row .ma-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .lga-list > li > .lga-detail {
+    margin-left: 4px;
+    padding: 12px 10px;
+  }
+}

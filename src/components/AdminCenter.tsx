@@ -7,8 +7,8 @@ import { OPEN_CSV_IMPORT_EVENT } from '../lib/adminEvents'
 type Tab = 'members' | 'gatherings' | 'data'
 
 const TABS: { key: Tab; icon: string; label: string }[] = [
-  { key: 'members', icon: '👥', label: '成員與 VIP' },
-  { key: 'gatherings', icon: '🎴', label: '聚會與集點' },
+  { key: 'members', icon: '👥', label: '成員' },
+  { key: 'gatherings', icon: '🎴', label: '聚會集點' },
   { key: 'data', icon: '📦', label: '資料匯入' },
 ]
 
@@ -57,7 +57,10 @@ export default function AdminCenter() {
                     className={`ac-tab ${tab === item.key ? 'active' : ''}`}
                     onClick={() => setTab(item.key)}
                   >
-                    {item.icon} {item.label}
+                    <span className="ac-tab-ico" aria-hidden="true">
+                      {item.icon}
+                    </span>
+                    <span className="ac-tab-label">{item.label}</span>
                   </button>
                 ))}
               </div>
