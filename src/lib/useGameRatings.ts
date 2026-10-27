@@ -13,9 +13,9 @@ export type RatingKey =
 
 export const RATING_FIELDS: { key: RatingKey; label: string }[] = [
     { key: 'like', label: '喜歡度' },
-    { key: 'playerImpact', label: '玩家影響性' },
-    { key: 'communication', label: '溝通性' },
-    { key: 'change', label: '變化性' },
+    { key: 'playerImpact', label: '影響度' },
+    { key: 'communication', label: '溝通度' },
+    { key: 'change', label: '變化度' },
     { key: 'unique', label: '獨特性' },
     { key: 'keep', label: '適合留下來程度' },
 ]
