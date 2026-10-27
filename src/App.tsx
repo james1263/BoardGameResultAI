@@ -23,6 +23,7 @@ import { useGameRatings } from './lib/useGameRatings'
 import { useCommunityStats } from './lib/useCommunityStats'
 import { useInviteLink } from './lib/useInviteLink'
 import { useCheckinLink } from './lib/useCheckinLink'
+import { useTodayTask } from './lib/useTodayTask'
 import { VIP_CHANGED_EVENT, useVip } from './lib/useVip'
 import { useGamePeople, useAdminRatings } from './lib/useGamePeople'
 import InAppBrowserNotice from './components/InAppBrowserNotice'
@@ -81,6 +82,7 @@ function Library({
   const playSessions = useGamePlaySessions()
   const ratings = useGameRatings()
   const communityStats = useCommunityStats()
+  const todayTask = useTodayTask(ratings)
   const vip = useVip()
   const people = useGamePeople(vip.isVip)
   const adminRatings = useAdminRatings(isAdmin)
@@ -585,6 +587,7 @@ function Library({
         }}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenLoyalty={openMyLoyalty}
+        loyaltyAlert={todayTask.pending}
       />
 
       <main>
@@ -619,10 +622,6 @@ function Library({
 
         <section className="library">
           <div className="section-heading">
-            <div>
-              <p className="eyebrow">MY COLLECTION</p>
-              <h2>我的桌遊收藏</h2>
-            </div>
             <div className="heading-actions">
               <span className="game-count">
                 顯示 {displayedGameCount} / {boardGames.length} 款

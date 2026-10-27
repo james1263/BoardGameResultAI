@@ -4,19 +4,19 @@ import type { BoardGame } from '../data/boardGames.generated'
 import { supabase } from '../lib/supabase'
 import { PROFILE_SAVED_EVENT } from '../lib/googleLogin'
 import { useSession } from '../lib/useSession'
-import { useVip, VIP_CHANGED_EVENT } from '../lib/useVip'
+import { VIP_CHANGED_EVENT } from '../lib/useVip'
 import { RATING_FIELDS, type RatingsApi } from '../lib/useGameRatings'
-import VipJoinDialog from './VipJoinDialog'
 
 type JoinRow = { result_status: string; result_date: string | null }
 type DayInfo = { exempt: boolean; games: string[]; error: string }
 
 const MESSAGES: Record<string, string> = {
-  joined: '報到成功！你已經列入今天的出席名單。',
+  joined: '報到成功！你已經列入今天的出席名單，也成為 VIP 朋友了。',
   already: '你已經報到過了。',
   closed: '這場聚會目前沒有開放報到，請找管理者。',
   not_started: '這場聚會還沒開始，聚會當天才能報到。',
-  ended: '這場聚會已經結束，無法再報到。',
+  ended:
+    '這個連結已過期，只在聚會當天有效。如果你已經報到過，請直接按底部的「集點卡」。',
   full: '這場聚會已經額滿，請找管理者幫你加入。',
   no_profile: '請先設定暱稱（右上角的暱稱選單），填完會自動報到。',
   no_contact:
@@ -45,7 +45,6 @@ export default function CheckInDialog({
 }) {
   const session = useSession()
   const userId = session?.user?.id ?? null
-  const vip = useVip()
 
   const [busy, setBusy] = useState(true)
   const [status, setStatus] = useState<string | null>(null)
@@ -53,7 +52,6 @@ export default function CheckInDialog({
   const [error, setError] = useState('')
   const [info, setInfo] = useState<DayInfo | null>(null)
   const [wasNeeded, setWasNeeded] = useState<boolean | null>(null)
-  const [isVipOpen, setIsVipOpen] = useState(false)
   const statusRef = useRef<string | null>(null)
   const startedRef = useRef(false)
   const onDoneRef = useRef(onDone)
@@ -80,7 +78,7 @@ export default function CheckInDialog({
     setStatus(row.result_status)
     setDate(row.result_date)
     if (row.result_status === 'joined' || row.result_status === 'already') {
-      // 報到可能順便升成 VIP，通知畫面重新檢查
+      // 報到後資料庫已自動升成 VIP，通知畫面重新檢查
       window.dispatchEvent(new Event(VIP_CHANGED_EVENT))
     }
   }, [token])
@@ -184,14 +182,13 @@ export default function CheckInDialog({
   }, [resolved, wasNeeded, needRating])
 
   const showRate = resolved && (wasNeeded ?? needRating)
-  const needVip = succeeded && vip.checked && !vip.isVip
 
   // 一開始就不用評分（免評分、以前評過、沒有指定遊戲）：稍等一下直接到集點卡
   useEffect(() => {
-    if (needVip || !resolved || wasNeeded !== false) return
+    if (!resolved || wasNeeded !== false) return
     const timer = window.setTimeout(() => onDoneRef.current(date), 1200)
     return () => window.clearTimeout(timer)
-  }, [needVip, resolved, wasNeeded, date])
+  }, [resolved, wasNeeded, date])
 
   const gameMap = new Map(boardGames.map((game) => [game.bggName, game]))
   const canContinue = !!info && (info.exempt || doneCount > 0 || !!info.error)
@@ -217,73 +214,42 @@ export default function CheckInDialog({
 
         {error && <p className="pd-error">{error}</p>}
 
-        {needVip && (
-          <div className="ci-rate">
-            <p className="pd-text">
-              <b>下一步：加入 VIP。</b>
-              請輸入管理者給你的通關密碼，才能評分和使用集點卡。
-            </p>
-            <button
-              className="pd-save"
-              type="button"
-              onClick={() => setIsVipOpen(true)}
-            >
-              輸入密碼加入 VIP
-            </button>
-          </div>
-        )}
+        {succeeded && !resolved && <p className="pd-text">正在準備評分…</p>}
 
-        {succeeded && !needVip && !resolved && (
-          <p className="pd-text">正在準備評分…</p>
-        )}
-
-        {succeeded && !needVip && resolved && !showRate && (
+        {succeeded && resolved && !showRate && (
           <p className="pd-text">正在帶你到集點卡…</p>
         )}
 
-        {succeeded && !needVip && showRate && (
+        {succeeded && showRate && (
           <div className="ci-rate">
             <p className="pd-text">
               <b>下一步：評分。</b>
               從下面挑一款你今天玩過的遊戲，把七項評分都填完，評完就自動算你玩過，也才能蓋章。
             </p>
 
-            {needVip ? (
-              <>
-                <p className="pd-warn">評分是 VIP 朋友的功能，請先輸入通關密碼。</p>
-                <button
-                  className="pd-save"
-                  type="button"
-                  onClick={() => setIsVipOpen(true)}
-                >
-                  輸入密碼加入 VIP
-                </button>
-              </>
-            ) : (
-              <ul className="ci-games">
-                {info!.games.map((bggName) => {
-                  const game = gameMap.get(bggName)
-                  const done = isComplete(bggName)
-                  return (
-                    <li className="ci-game" key={bggName}>
-                      <span className="ci-game-name">{game?.name ?? bggName}</span>
-                      <span className={`ci-game-state ${done ? 'done' : ''}`}>
-                        {done ? '✓ 已評分' : '未評分'}
-                      </span>
-                      {game && (
-                        <button
-                          type="button"
-                          className="ma-btn"
-                          onClick={() => onRate(game)}
-                        >
-                          {done ? '查看／修改' : '去評分'}
-                        </button>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
+            <ul className="ci-games">
+              {info!.games.map((bggName) => {
+                const game = gameMap.get(bggName)
+                const done = isComplete(bggName)
+                return (
+                  <li className="ci-game" key={bggName}>
+                    <span className="ci-game-name">{game?.name ?? bggName}</span>
+                    <span className={`ci-game-state ${done ? 'done' : ''}`}>
+                      {done ? '✓ 已評分' : '未評分'}
+                    </span>
+                    {game && (
+                      <button
+                        type="button"
+                        className="ma-btn"
+                        onClick={() => onRate(game)}
+                      >
+                        {done ? '查看／修改' : '去評分'}
+                      </button>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
 
             <button
               className="pd-save"
@@ -318,8 +284,6 @@ export default function CheckInDialog({
               關閉
             </button>
           ))}
-
-        {isVipOpen && <VipJoinDialog onClose={() => setIsVipOpen(false)} />}
       </div>
     </div>,
     document.body,

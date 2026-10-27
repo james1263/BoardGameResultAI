@@ -203,3 +203,22 @@
     padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* 集點卡的紅點提醒 */
+.sb-dot {
+  position: absolute;
+  top: 4px;
+  right: 24%;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--c-paper);
+  border-radius: 50%;
+  background: #d64545;
+}
+
+@media (min-width: 761px) {
+  .sb-dot {
+    top: 6px;
+    right: 6px;
+  }
+}

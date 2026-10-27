@@ -42,11 +42,16 @@ export default function SortControl({
       >
         {sortDirection === 'asc' ? '↑ 升冪' : '↓ 降冪'}
       </button>
-      {!isDefault && (
-        <button type="button" className="sort-reset" onClick={onReset}>
-          重設
-        </button>
-      )}
+      <button
+        type="button"
+        className={`sort-reset ${isDefault ? 'is-hidden' : ''}`}
+        onClick={onReset}
+        disabled={isDefault}
+        tabIndex={isDefault ? -1 : 0}
+        aria-hidden={isDefault}
+      >
+        重設
+      </button>
     </div>
   )
 }

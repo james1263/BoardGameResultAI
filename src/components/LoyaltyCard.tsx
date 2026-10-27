@@ -5,6 +5,7 @@ import {
   useMyLoyalty,
   formatDay,
   formatDateTime,
+  todayLocal,
   type LoyaltyDay,
   type MyGathering,
 } from '../lib/useLoyalty'
@@ -88,18 +89,20 @@ export default function LoyaltyCard({
   }
 
   function renderLegacyDay(day: LoyaltyDay) {
+    const isUpcoming = day.date >= todayLocal() && !day.qualified
     const text = day.qualified
       ? `已得 1 點（${day.gameCount} 款都評分完整）`
-      : !day.hasSession
-        ? '還沒有這天的遊玩紀錄：到遊戲的「我的桌遊」分頁新增，日期選這一天'
-        : `評分完整 ${day.ratedCount} / ${day.gameCount} 款，每款都填完七項才算`
+      : isUpcoming
+        ? '你已經在這天的出席名單上。管理者還沒指定要評分的遊戲，指定後這裡會出現遊戲，評完分就蓋章。'
+        : !day.hasSession
+          ? '還沒有這天的遊玩紀錄：到遊戲的「我的桌遊」分頁新增，日期選這一天'
+          : `評分完整 ${day.ratedCount} / ${day.gameCount} 款，每款都填完七項才算`
     return (
       <li
         key={day.date}
         ref={focusRef(day.date)}
-        className={`lc-day ${day.qualified ? 'done' : ''} ${
-          focusDate === day.date ? 'focus' : ''
-        }`}
+        className={`lc-day ${day.qualified ? 'done' : ''} ${focusDate === day.date ? 'focus' : ''
+          }`}
       >
         {renderStamp(day.date, day.qualified)}
         <div className="lc-day-main">
@@ -130,9 +133,8 @@ export default function LoyaltyCard({
       <li
         key={day.date}
         ref={focusRef(day.date)}
-        className={`lc-day ${qualified ? 'done' : ''} ${
-          focusDate === day.date ? 'focus' : ''
-        }`}
+        className={`lc-day ${qualified ? 'done' : ''} ${focusDate === day.date ? 'focus' : ''
+          }`}
       >
         {renderStamp(day.date, qualified)}
         <div className="lc-day-main">
@@ -186,6 +188,21 @@ export default function LoyaltyCard({
     )
   }
 
+  // 今天有被列入、有指定遊戲、還沒得點：顯示「今天要評分」
+  const todayDate = todayLocal()
+  const todayGames = Array.from(
+    new Set(
+      loyalty.gatherings
+        .filter((item) => item.date === todayDate)
+        .flatMap((item) => item.games),
+    ),
+  )
+  const attendingToday = loyalty.days.some((day) => day.date === todayDate)
+  const todayQualified =
+    loyalty.days.some((day) => day.date === todayDate && day.qualified) ||
+    todayGames.some((name) => isComplete(name))
+  const showTodayTask =
+    ratingsReady && attendingToday && todayGames.length > 0 && !todayQualified
   const monthPoints = summary?.monthPoints ?? 0
 
   return (
@@ -200,6 +217,32 @@ export default function LoyaltyCard({
           ♟
         </span>
       </header>
+      {showTodayTask && (
+        <section className="lc-today">
+          <p className="lc-today-kicker">今天要做的事</p>
+          <h4 className="lc-today-title">評一款今天玩的遊戲，就能蓋章</h4>
+          <p className="lc-today-sub">七項評分填完整就得 1 點。</p>
+          <ul className="lc-games">
+            {todayGames.map((bggName) => {
+              const game = gameMap.get(bggName)
+              return (
+                <li className="lc-game" key={bggName}>
+                  <span className="lc-game-name">{game?.name ?? bggName}</span>
+                  {game && (
+                    <button
+                      type="button"
+                      className="lc-btn"
+                      onClick={() => onOpenGame(game, 'ratings')}
+                    >
+                      去評分
+                    </button>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
 
       {summary && (
         <>
@@ -256,7 +299,7 @@ export default function LoyaltyCard({
         <ol className="lc-steps">
           <li>
             <b>1</b>
-            <span>點管理者傳的聚會連結，登入、報到，還不是 VIP 的人要輸入通關密碼。</span>
+            <span>點管理者傳的聚會連結，登入並報到（報到後就是 VIP）；管理者直接幫你加入名單的人，不用點連結。</span>
           </li>
           <li>
             <b>2</b>

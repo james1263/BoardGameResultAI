@@ -11,11 +11,13 @@ export default function TopBar({
   onOpenMyList,
   onOpenLeaderboard,
   onOpenLoyalty,
+  loyaltyAlert,
 }: {
   myListCount: number
   onOpenMyList: () => void
   onOpenLeaderboard: () => void
   onOpenLoyalty: () => void
+  loyaltyAlert: boolean
 }) {
   const isAdmin = useIsAdmin()
   const vip = useVip()
@@ -72,6 +74,9 @@ export default function TopBar({
                 🎟
               </span>
               <span>集點卡</span>
+              {loyaltyAlert && (
+                <span className="sb-dot" aria-label="今天有遊戲要評分" />
+              )}
             </button>
           )}
           <button type="button" className="sb-item" onClick={onOpenMyList}>
