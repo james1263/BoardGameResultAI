@@ -578,3 +578,11 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+.club-menu-item {
+  color: var(--c-ink, #34463c);
+}
+
+.mylist-name {
+  color: var(--c-ink, #34463c);
+}

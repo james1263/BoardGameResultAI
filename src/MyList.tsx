@@ -428,6 +428,20 @@ export default function MyList({
                             </button>
                         </div>
                     )}
+                    <div className="club-list club-more">
+                        <button
+                            type="button"
+                            className="club-menu-item club-menu-single"
+                            onClick={() => setView('stats')}
+                        >
+                            <span className="club-menu-icon" aria-hidden="true">▤</span>
+                            <span className="club-menu-text">
+                                <b>我的統計</b>
+                                <small>玩過幾款、總次數、最常玩的遊戲</small>
+                            </span>
+                            <span className="club-menu-arrow" aria-hidden="true">›</span>
+                        </button>
+                    </div>
                     <div className="club-list">
                         <h3 className="club-section-title">
                             {tab === 'want' ? '想玩清單' : '已玩清單'}
@@ -504,21 +518,6 @@ export default function MyList({
                                 })}
                             </ul>
                         )}
-                    </div>
-
-                    <div className="club-list club-more">
-                        <button
-                            type="button"
-                            className="club-menu-item club-menu-single"
-                            onClick={() => setView('stats')}
-                        >
-                            <span className="club-menu-icon" aria-hidden="true">▤</span>
-                            <span className="club-menu-text">
-                                <b>我的統計</b>
-                                <small>玩過幾款、總次數、最常玩的遊戲</small>
-                            </span>
-                            <span className="club-menu-arrow" aria-hidden="true">›</span>
-                        </button>
                     </div>
                 </div>
             </aside>
