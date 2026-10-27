@@ -1,9 +1,52 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案交接文件（精簡版）
 
 > 給接手的 AI 閱讀。**請先讀 `QUICKSTART.md`（懶人包），再讀本文件。**
-> 最後更新：2026-10-27 深夜（最上方先看「2026-10-27 深夜更新」，再看最上方有「2026-10-27 傍晚更新」，其次是「2026-10-27 更新」一節，優先閱讀；以下主體為 2026-10-26 深夜版）。這一版把已完成的功能整理成「依主題」的紀錄（取代舊的 A～Q 附錄），內容與決定不變；日期與細節若與 `QUICKSTART.md` 衝突，以 `QUICKSTART.md` 為準。
+> 最後更新：2026-10-27 深夜（最上方先看「2026-10-27 深夜（第二批）更新」，再看「2026-10-27 深夜更新（第一批）」，再看「2026-10-27 傍晚更新」，其次是「2026-10-27 更新」一節，優先閱讀；以下主體為 2026-10-26 深夜版）。這一版把已完成的功能整理成「依主題」的紀錄（取代舊的 A～Q 附錄），內容與決定不變；日期與細節若與 `QUICKSTART.md` 衝突，以 `QUICKSTART.md` 為準。
 
-## 2026-10-27 深夜更新（最新；與下方任何舊內容衝突時，以本節為準）
+## 2026-10-27 深夜（第二批）更新（最新；與下方任何舊內容衝突時，以本節為準）
+
+### git 狀態（接手先用 `git status`、`git log --oneline -8` 確認，不要假設）
+- 「深夜更新（第一批）」裡那 6 個未 commit 的檔案**已 commit 並 push**（`git log`：`b244887` 管理中心、`1a74c99` 排序列、`9aea1a7` 我的桌遊統計、`b5daaf5` 更新交接文件）。該節待辦 1 作廢。
+- 之後又做了兩批（見下）。**第一批**（人數區間等）使用者回報已 push、已實測。**第二批**使用者回報「有更動成功」（build 與手機測試通過），並已拿到 commit／push 指令；**是否已 push 未確認**。第二批共 5 個檔案：`index.html`、`public/privacy.html`、`src/components/PlayCounter.tsx`、`src/lib/useGameRatings.ts`、`src/styles/vip.css`（`privacy.html` 的改動只有評分名稱，是正確的、要保留）。
+- 使用者要求把這兩份交接文件（`PROJECT_CONTEXT.md`、`QUICKSTART.md`）一起 commit、push（本次例外，平常只在使用者要求時才 commit）。
+
+### 第一批（已 push、已實測）
+- **進階篩選「我們有幾個人」改成人數區間**（最少～最多兩個下拉）：規則是**整個區間都玩得起來才列出**（`lo ≥ minPlayers` 且 `hi ≤ maxPlayers`，人數缺值不排除）；只選一邊＝剛好該人數；前後顛倒自動對調。`libraryTypes.ts` 新增 `getGroupRange`、`fitsGroupRange`；`App.tsx` 新增 `groupSizeMax` 與 `groupRange`（useMemo），`filteredGames`／`missingDataCount`／`activeFilterCount`／`clearFilters` 已同步。
+- **進階篩選標題列固定**（`.drawer-header` sticky，✕ 不會被捲走）、**BGG 難度五顆同一排**（`.filter-pills-5`，格線五等分）。
+- **遊戲卡片等高**（`cards.css` 底部：卡片 flex 直排、「詳細資料」按鈕 `margin-top: auto` 貼底；清單檢視維持橫排；`@media (hover: none)` 取消 hover 上抬，避免 iPhone 點過的卡片卡在被抬高的狀態）。
+- **「我的俱樂部」✕ 固定在抽屜右上角**（`mylist.css` 底部 `.club-close` absolute）。
+
+### 第二批（build、手機測試通過；是否已 push 見上）
+- **標題變淡的原因與修法**：使用者的 iPhone 開**深色模式**，沒有指定顏色的文字（各視窗的 `h2` 標題）會繼承瀏覽器預設的淡白色。已在 `vip.css` 最底下加 `:root { color-scheme: light; }` 與 `body { color: var(--c-ink, #34463c); }`（強制淺色）。同批還有 `:where(button:not(:disabled)) { color: inherit; }`（修 iPhone 按鈕文字變藍；使用者說已套用）。**之後新增任何視窗標題，都不要依賴繼承色。**
+- **`index.html` 的 `<html lang>` 改成 `zh-Hant`**：原本是 `en`，手機 Chrome 會跳出「英文／繁體中文」翻譯列、蓋住畫面上方（也是「我的俱樂部」標題看起來被切掉的原因）。
+- **評分名稱統一成「度」**：評分分頁（`useGameRatings.ts` 的 `label`）改成**影響度、溝通度、變化度**，與概覽一致（概覽的「變化度／溝通度／影響度／複雜度」本來就是度）；`privacy.html` 同步。**只改畫面文字，`key` 不動。`parseCsv.ts` 裡的 CSV 欄位名稱（`溝通性`、`玩家影響性`、`複雜性`、`變化性`、`玩家影響性排名`）是使用者 Notion 的欄名，絕對不能改**，改了匯入會報「缺欄位」。「獨特性」「快速性」使用者沒列入，**維持原樣**（已問，尚未回覆是否也要改成「度」）。
+- **記錄遊玩次數時自動標「已玩」**（使用者回「照建議」）：`PlayCounter.tsx` 的「＋」在尚未標已玩時一併設 `played: true`（用 `skipPlayedRule: true`，避免次數被多算）；「記錄一次遊玩」（`PlaySessions.tsx`）本來就會標已玩。起因：我的統計顯示「玩過 0 款、總遊玩次數 2 次」，自相矛盾。**舊資料補標 SQL 已給使用者（先 `select count(*)`，大於 0 再 `update public.user_game_status set played = true where played = false and play_count > 0;`），是否已執行未確認**；補標的幾筆會算成「今天新增已玩」（觸發器寫 `played_first_at`），影響很小。
+
+### 手機檢查結果（2026-10-27 晚，使用者傳 15 張 iPhone 截圖，AI 已看過）
+- 正常：詳細視窗四個分頁（概覽／評分／我的桌遊／規則）、遊戲卡片（按鈕已對齊）、排行榜四個榜與空狀態、集點卡（錢包卡、規則收合）、我的統計、我的俱樂部抽屜、暱稱與聯絡方式視窗、暱稱選單。
+- **未解決（低優先）**：截圖 2、3、13～15（沒有網址列的那幾張）底部，詳細視窗與底部導覽列的**下方都露出一條約 76px 的遊戲卡片內容**（沒有被遮罩蓋住）。`tabs.css` 手機版寫 `.game-modal.has-tabs { height: 100dvh }`、`.modal-backdrop { padding: 0 }`，`modal.css`、`account.css` 的 `.modal-backdrop` 也沒問題，**CSS 看不出原因**，疑似該瀏覽器環境（LINE 內建？Safari？加到主畫面？）本身的特性。**已問使用者那幾張是用什麼開的，尚未回覆。** 若是 LINE 內建瀏覽器，朋友多半從 LINE 點連結進來，值得處理。
+- 還沒在手機走過完整**報到流程**（登入→暱稱→自動報到→評分→集點卡）；要等下次聚會，或用另一個 Google 帳號測。
+- 「資料庫小驗證」：`gathering_checkins.capacity` 已確認 **NOT NULL**（`is_nullable` = `NO`）。**`to_regclass('public.gathering_plays')` 是否為 null、`cover_slug !~ '^[a-z0-9_-]+$'` 是否 0 列，仍未收到結果。**
+
+### 使用者確認的事實
+- **目前網站是 106 款，不是 107 款**（舊文件裡的 107 已全部改成 106）。
+
+### 待辦（接續順序）
+1. 開場：`git pull`、`git status`、`git log --oneline -8`，確認第二批與這兩份文件是否已 push；問補標「已玩」的 SQL 是否已執行。
+2. 小項（使用者有空再回）：截圖底部露出內容是用什麼開的；「獨特性／快速性」要不要也改成「度」；`gathering_plays` 與 `cover_slug` 兩個驗證；管理中心「近期聚會依月份分組」是否符合使用者說的「新增月份」；`MemberAdmin.tsx` 在手機是否仍擠壓（沒看過檔案）。
+3. 手機報到流程完整實測。
+4. **規則書 PDF 上傳（私有 bucket）→ AI 規則助手（RAG，最重要的長期目標）**。**開工前要使用者回答三件事（已問，尚未回覆）**：①先做全部 106 款，還是先挑 10～20 款常玩的？②規則書 PDF 大概幾份、多大、中英文各幾份？③只自己用、只給 VIP 朋友問，還是也開放訪客（著作權與費用）？建議分階段：範圍與著作權決定 → 私有 bucket 與上傳介面 → PDF 切段保留頁碼＋向量檢索（pgvector，中文可能要混合關鍵字）→ Edge Function 呼叫 AI＋每人每日提問上限（金鑰只放後端）→ 詳細視窗加「AI 查詢」分頁、底部導覽加第 5 顆。
+5. 其餘：管理者視窗其他部分的統一風格、PWA（缺圖示）、VIP 朋友名單、推薦牆、拖曳調整排名、VIP 鎖定 SQL（資格要含來過聚會的人）。
+
+### 給接手 AI 的提醒（本批學到）
+- **iPhone 深色模式**會讓沒指定顏色的文字變淡白色；使用者手機是深色模式。新增畫面要確認文字顏色是明確指定的，或繼承自 `body`（已設為深墨綠）。
+- 使用者在 PowerShell 看到的中文亂碼（例如 `tabs.css` 的註解）只是終端機顯示問題，檔案沒壞；`git diff` 出現 `(END)` 時按 `q` 離開。
+- 這次使用者一次傳了 15 張手機截圖，AI 看完後**一次整理成一批**修改，效率很好；之後手機檢查維持這個做法。
+- 使用者說「好了」、「沒問題了」代表該批已 build、測試完成；他不一定貼測試結果，重要項目仍要再確認。
+
+---
+
+## 2026-10-27 深夜更新（第一批；比上方「第二批」舊，與下方舊內容衝突時，以本節為準；其中「尚未 commit 的 6 個檔案」已 push）
 
 ### 已 push（`git log` 已確認）
 - `c56e3fc` 我的桌遊改版、`b2c4d6a` privacy.html 補免費券說明、`4803d8d` 排行榜空狀態、`3bf83a5` 集點卡改版（近期紀錄只顯示最近 5 筆）。
@@ -131,7 +174,7 @@
 - **名稱**：桌遊規則助手（BOARD GAME COMPANION）；網站已上線 https://board-game-result-ai.vercel.app/
 - **目標**：桌遊收藏與規則查詢網站，最終能詢問 AI 解決規則爭議（AI 規則助手是最重要的長期目標，見第 9 節）。
 - **使用模式（重要）**：網站**公開瀏覽，也開放訪客問 AI，但只有使用者本人（管理者）能編輯**（匯入 CSV、上傳封面、管理聚會）。訪客不能更動內部設定。
-- **資料量**：107 款桌遊（使用者在 Notion 整理後匯出 CSV）。使用者的朋友圈是主要玩家，保留讓其他人加入的可能。
+- **資料量**：106 款桌遊（使用者 2026-10-27 確認）（使用者在 Notion 整理後匯出 CSV）。使用者的朋友圈是主要玩家，保留讓其他人加入的可能。
 - **本機路徑**：`D:\BoardGameResultAI`（Windows、PowerShell、用 `npm.cmd`）；使用者會在多台電腦作業，見第 11 節。
 
 ## 2. 技術架構與部署
@@ -235,14 +278,14 @@
 - **每個指令都標清楚貼在哪裡**（VS Code 終端機＝PowerShell，或 Supabase SQL Editor；他曾把 PowerShell 指令貼進 SQL Editor）。
 - 你**碰不到使用者的本機檔案**，也收不到 CSV；需要資訊就給 PowerShell／SQL 指令請他貼結果或截圖。**他貼來的檔案可能是舊版**（2026-10-24 貼過舊的整份 `App.css`；2026-10-26 貼的 `App.tsx` 也比本機舊），判斷現況先用 `git status`／`git log`／`Get-Content ... -First 15` 確認。
 - **大改 `App.tsx`、`AdminPanel.tsx`、`PlayerPanel.tsx`、`GameDocuments.tsx`、`src/components/*` 前，請使用者貼出目前版本**。樣式分散在 `src/styles/`，改哪塊先確認在哪個檔案。
-- 每階段改完 `npm.cmd run build` 再實測畫面（build 成功不等於畫面正確）。不要破壞現有功能與 107 款資料。**不要要求使用者貼出密碼、Secret／service_role key、資料庫密碼、Google Client Secret。**
+- 每階段改完 `npm.cmd run build` 再實測畫面（build 成功不等於畫面正確）。不要破壞現有功能與 106 款資料。**不要要求使用者貼出密碼、Secret／service_role key、資料庫密碼、Google Client Secret。**
 - **影響資料、隱私的設計決策，先提方案並列「建議預設值」，等他回「照建議」再動工。** 一次一階段，前一階段測試完才進下一階段。給 SQL 時先說明會做什麼，並附驗證查詢。
 
 ## 11. 多台電腦作業
 
 **自動同步**：Supabase 資料與 Storage、GitHub 上的程式碼。**不會同步**：`.env.local`（要重建）、`boardgames.csv`、**沒有 commit／push 的修改**。
 
-新電腦第一次設定：①安裝 Git、Node.js（LTS）、VS Code，設定 `git config --global user.name`／`user.email`；②在舊電腦 `git remote get-url origin` 取得倉庫網址；③`git clone <網址>`，`cd` 進去，確認在 `master`；④`npm.cmd install`；⑤專案根目錄建立 `.env.local`（兩行純文字、不加引號）：`VITE_SUPABASE_URL=https://hgeuockbjrzayfdylavq.supabase.co`、`VITE_SUPABASE_PUBLISHABLE_KEY=（Supabase 後台 Project Settings → API Keys 的 Publishable key）`，**只能用 Publishable key**；⑥`npm.cmd run dev`，確認顯示 107 款、能登入管理者。
+新電腦第一次設定：①安裝 Git、Node.js（LTS）、VS Code，設定 `git config --global user.name`／`user.email`；②在舊電腦 `git remote get-url origin` 取得倉庫網址；③`git clone <網址>`，`cd` 進去，確認在 `master`；④`npm.cmd install`；⑤專案根目錄建立 `.env.local`（兩行純文字、不加引號）：`VITE_SUPABASE_URL=https://hgeuockbjrzayfdylavq.supabase.co`、`VITE_SUPABASE_PUBLISHABLE_KEY=（Supabase 後台 Project Settings → API Keys 的 Publishable key）`，**只能用 Publishable key**；⑥`npm.cmd run dev`，確認顯示 106 款、能登入管理者。
 
 日常：開始前 `git pull`；結束前逐檔 `git add` → `git commit` → `git push`；不要兩台電腦同時改同一批檔案；未完成的工作用分支存。
 
