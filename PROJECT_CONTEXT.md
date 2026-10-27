@@ -1,7 +1,56 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案交接文件（精簡版）
 
 > 給接手的 AI 閱讀。**請先讀 `QUICKSTART.md`（懶人包），再讀本文件。**
-> 最後更新：2026-10-26（深夜，視覺改版第二階段進行中）。這一版把已完成的功能整理成「依主題」的紀錄（取代舊的 A～Q 附錄），內容與決定不變；日期與細節若與 `QUICKSTART.md` 衝突，以 `QUICKSTART.md` 為準。
+> 最後更新：2026-10-27（新增「2026-10-27 更新」一節，優先閱讀；以下主體為 2026-10-26 深夜版）。這一版把已完成的功能整理成「依主題」的紀錄（取代舊的 A～Q 附錄），內容與決定不變；日期與細節若與 `QUICKSTART.md` 衝突，以 `QUICKSTART.md` 為準。
+
+## 2026-10-27 更新（以本節為準；與下方舊內容衝突時，以這裡為準）
+
+### 已完成（使用者回報已 push、已測試觸發器存在）
+- **集點卡與「我的桌遊」拆成兩個獨立抽屜**：`MyList.tsx` 新增 `mode: 'list' | 'loyalty'`（`list` 只有想玩／已玩；`loyalty` 只有集點卡）；`App.tsx` 新增 `myListMode`，邀請連結、報到完成、頂端「集點卡」都設為 `loyalty`，「我的桌遊」設為 `list`。`initialTab` 已移除。
+- **手機收藏標題列**：標題拿掉（不再顯示 MY COLLECTION／我的桌遊收藏），控制列佔滿整行；排序列手機版上下排列（`library.css` 最底部）。
+- **排序「重設」位置固定**：`SortControl.tsx` 的重設按鈕一直存在，預設時加 `is-hidden`（電腦版 `visibility: hidden`、手機版 `display: none`），升冪／降冪不再跑位。
+- **新報到規則**：
+  - 被列入出席名單的人**自動成為 VIP**（觸發器 `attendee_makes_vip`，掛在 `gathering_attendees` AFTER INSERT；`source='self'` 記為 `checkin`，其餘記為 `admin`）。取消出席不會取消 VIP。
+  - **報到流程不再有通關密碼**：Google 登入 → 填暱稱與聯絡方式 → 自動報到 → 評分（至少一款七項評完；以前評過／免評分／沒指定遊戲則略過）→ 集點卡。`CheckInDialog.tsx` 已移除 `VipJoinDialog`、`needVip`。
+  - **連結只在聚會當天（台北時間）有效，包含已報到的人**：`join_gathering` 的日期檢查移到最前面（`not_started`／`ended` 先於 `already`）。過期訊息：「這個連結已過期，只在聚會當天有效。如果你已經報到過，請直接按底部的『集點卡』。」已報到的人要看集點卡，直接按底部「集點卡」。
+  - `?card=日期` 連結仍支援，介面不提供。
+- **手動加入的玩家**：底部「集點卡」出現**紅點**（`lib/useTodayTask.ts`：今天有他的聚會、已指定遊戲、尚未得點才亮；切回網頁會重新讀取）；集點卡最上方出現「今天要做的事」卡片（`lc-today`），按鈕直接開該遊戲的評分分頁。已評過分者直接得點、沒有紅點。不做自動彈出評分。
+- **管理者聚會詳情順序改為**：① 指定遊戲 → ② 人數上限 → ③ 手動加入參加者 → ④ 聚會連結。④ 顯示「上限 N 人・手動加入 M 人・自己報到 K 人・連結還可報到 N−(M+K) 人」與「有效至當天 23:59」。建立連結前必須有一款遊戲＋人數上限（含手動加入的人）。
+- **舊聚會日（沒指定遊戲）的集點卡說明文字**：今天或未來且尚未得點時，顯示「你已經在這天的出席名單上。管理者還沒指定要評分的遊戲……」，不再顯示看不懂的「到遊戲的『我的桌遊』分頁新增」。
+
+### 作廢的舊說明
+- 「報到不再自動升 VIP、非 VIP 要輸入通關密碼」→ **作廢**，報到＝VIP。
+- 「已報到的人在聚會結束後再點連結會回 already、仍可打開集點卡」→ **作廢**。
+- `MyList` 三分頁（想玩／已玩／集點卡）→ **作廢**，已拆開。
+- 「底部導覽 5 顆減為 4 顆、拿掉頂端集點卡」的方案 → **不採用**；維持 4 顆：桌遊收藏、排行榜、集點卡、我的桌遊（管理者的第三顆是「⚙ 管理」）。AI 規則助手做好後再加第 5 顆。
+- 「VIP 鎖定 SQL」（restrictive 政策 `"vip only"`）仍未執行，之後的資格要改成「來過聚會的人自動有資格＋輸入密碼的人」，執行前先與使用者討論。
+
+### 風險提醒
+- 聚會連結傳進群組後，當天收到的人都能變成 VIP；唯一擋板是「人數上限」與「只有當天有效」，人數上限請照實際人數填。
+- 密碼機制（`redeem_vip_code`）保留，給沒參加聚會、但想加入的朋友。
+
+### 使用者決定
+- 左上角名稱先保留「桌遊規則助手」，AI 助手做好後再改成整體性名稱。
+- 左右滑動切換分頁：等 4～5 個頁面都獨立後再做。
+- 右上角改 Email 登入：先不做（寄信額度與費用）。
+- 「我的桌遊」之後要加：個人統計（總次數、總時數、最常玩）優先，其次近期／下次聚會想玩、想玩一鍵移到已玩。擁有／收納／借出先不做。
+
+### 待辦（接續順序）
+1. 視覺改版：5 個進階篩選（人數、時間上限、難度五級、新遊戲、評分狀態；「只看有封面」要先想怎麼判斷，不行就略過）→ 排行榜空狀態 → 集點卡頁面風格 → 管理者視窗統一風格 → 手機全面檢查。
+2. 「我的桌遊」抽屜頂端加摘要卡、未登入說明（見 QUICKSTART 舊方案，但不拿掉集點卡）。
+3. 個人統計。
+4. 規則書 PDF 上傳（私有 bucket）→ AI 規則助手（RAG）。
+5. PWA、VIP 朋友名單、推薦牆、拖曳調整排名。
+6. 已確認：`gathering_plays` 是否已 drop、`capacity` 是否 NOT NULL 的驗證結果使用者仍未貼。
+
+### 2026-10-27 下午補充
+- **5 個進階篩選已定案（使用者回「照建議」並貼了 `FilterDrawer.tsx`、`libraryTypes.ts`、`filter.css`）**：①「我們有幾個人」：`minPlayers ≤ N ≤ maxPlayers`；②時間「不超過 30／60／90／120 分鐘」；③**難度五級（使用者改，取代三段）：`<1.8`、`1.8～<2.6`、`2.6～<3.2`、`3.2～<3.8`、`≥3.8`**，缺值不屬於任何級；④只看新遊戲（30 天內）；⑤評分狀態「我評過／我還沒評」（登入且評分讀取完成才有意義）。「只看有封面」不做。新增條件要同步 `activeFilterCount`、`clearFilters`、`filteredGames` 的 useMemo 依賴、`missingDataCount`。
+- **這批是否已套用未知**：使用者要 AI「直接更新」，但聊天室額度用完前沒看到結果。**接手時先問**：`FilterDrawer.tsx`／`libraryTypes.ts`／`filter.css`／`App.tsx` 是否已改、是否已 push（`git status`、`git log`），不要假設。
+- **`privacy.html` 已於 2026-10-27 更新**：日期改為 10 月 27 日；VIP 資格含「被管理者加入出席名單、聚會連結報到會自動成為 VIP」；移除已不存在的「勾選自己玩了哪些遊戲」；集點卡改為依出席與評分計算。需 commit／push 才會上線。
+- 提醒：「VIP 鎖定 SQL」尚未執行；做的時候資格要含「來過聚會的人」。
+
+
+---
 
 ## 1. 專案簡介
 
@@ -42,7 +91,7 @@
 | `gathering_checkins` | 報到設定：`gathering_id` pk、`token`（隨機、唯一）、`is_open`、`capacity`（1～500，**NOT NULL**）。**只有管理者可讀寫**（玩家讀不到 token）。 |
 | `loyalty_redemptions` | 免費券兌換紀錄：`id`、`user_id`、`redeemed_at`、`redeemed_by`（永久保留、沒有刪除功能，要刪用 SQL）。 |
 
-**資料庫函式**：`is_admin()`、`get_rating_summaries()`、社群統計彙總函式（security definer，只回人數）、`loyalty_day_status(p_user)（新規則：出席＋任一款指定遊戲評分完整，或免評分；舊聚會日沿用遊玩紀錄規則）`（點數核心，見第 7 節）、`loyalty_totals(uid)`（本月點數、總點數、累積券；定義尚未確認，應以前者為基礎）、玩家用 `get_my_loyalty_summary`／`get_my_loyalty_days`、管理者用 `admin_get_loyalty_overview`／`admin_get_loyalty_days(p_user)`／`admin_redeem_voucher(p_user)`、`join_gathering(p_token)`（玩家報到的唯一入口）（不再自動升 VIP）、觸發器函式 `set_user_game_status_times()`、`mark_played_from_activity()只掛在 game_ratings`、`game_ratings_set_updated_at`。**security definer 函式一律 `set search_path = ''`，並 `revoke ... from public, anon`（需要的才 grant）。改函式前請使用者在 SQL Editor 匯出實際定義。**
+**資料庫函式**：`is_admin()`、`get_rating_summaries()`、社群統計彙總函式（security definer，只回人數）、`loyalty_day_status(p_user)（新規則：出席＋任一款指定遊戲評分完整，或免評分；舊聚會日沿用遊玩紀錄規則）`（點數核心，見第 7 節）、`loyalty_totals(uid)`（本月點數、總點數、累積券；定義尚未確認，應以前者為基礎）、玩家用 `get_my_loyalty_summary`／`get_my_loyalty_days`、管理者用 `admin_get_loyalty_overview`／`admin_get_loyalty_days(p_user)`／`admin_redeem_voucher(p_user)`、`join_gathering(p_token)`（玩家報到的唯一入口；只在聚會當天有效；報到後由觸發器 `attendee_makes_vip` 自動成為 VIP）、觸發器函式 `set_user_game_status_times()`、`mark_played_from_activity()只掛在 game_ratings`、`game_ratings_set_updated_at`。**security definer 函式一律 `set search_path = ''`，並 `revoke ... from public, anon`（需要的才 grant）。改函式前請使用者在 SQL Editor 匯出實際定義。**
 
 **Storage**：公開 bucket `covers`（任何人可讀，寫入只認管理者），檔名 `{coverSlug}.webp`，**必須是 ASCII**。規則書 PDF 將來要用**私有** bucket（著作權）。
 
@@ -82,7 +131,7 @@
 - **玩家登出選單**：暱稱 ▾ →「修改暱稱與聯絡方式／登出」；管理者的登出在頂端列。暱稱視窗第一次登入或尚未填聯絡方式時自動跳出（暱稱與 LINE／FB 名字必填，可「稍後再說」）。
 - **視窗必須 `createPortal(..., document.body)`**；`.modal-backdrop` z-index 1100，報到視窗 1050，「請改用瀏覽器開啟」1200，頂端列 900，「我的桌遊」抽屜 1200，VIP 密碼視窗 1300（.vip-join-backdrop）。**頂端列（`.topbar`／`.sitebar`）不可加 `backdrop-filter`、`transform`、`filter`**，否則 `position: fixed` 的遮罩會被關在頂端列裡（暱稱視窗只露出一條，2026-10-26 發生過）。
 - **集點規則**並指定當天遊戲；玩家報到（或被管理者加入）＝當天有來；**當天指定遊戲任一款七項評分完整，就得 1 點**（評分可在家補、可以是以前評的）；`exempt` 免評分直接得點。一天只算 1 點（同日多場合併）；同月 2 點換 1 張免費券（無期限）；當月只有 1 點到下月 1 日不再計入；兌換紀錄永久保留；已兌換超過累積顯示 ⚠。沒有指定遊戲的舊聚會日沿用舊規則（用 `game_play_sessions` 的日期、每款都評完整）。**沒有「我玩了」勾選**，`gathering_plays` 已移除。函式不讀 `board_games`，改名風險同前（只有在 Notion 改 `bggName`）。所以遊戲被移到垃圾桶或刪除不影響點數（畫面上該遊戲會顯示成英文名稱、沒有「去評分」按鈕）；**只有在 Notion 改 `bggName` 才有風險**。使用者想過用藍牙／區網偵測，**建議不要**。
-- **聚會連結（單一連結，2026-10-26 決定）**：管理者在聚會詳情「建立聚會連結」（預設開放）→ 複製 `https://網址/?join=隨機碼&openExternalBrowser=1` 傳給當天要來的人。玩家登入（沒有帳號會自動建立）→ `CheckInDialog` 開啟即自動呼叫（失敗才出現「我來了」按鈕）→ `join_gathering(p_token)` 檢查：已登入、token 有效、**已報到者永遠回 `already`（聚會結束後仍可用同一連結回到集點卡）**、開放中、**台北時間聚會當天**、有暱稱與聯絡方式、未額滿（`for update` 鎖住該場聚會防超額）→ 成功後依序：非 VIP 輸入通關密碼 → 評分（至少一款評完才能往下，免評分／已評過／無指定遊戲則略過）→ 集點卡。管理者必須先指定至少一款遊戲並填人數上限（不可留空，隨時可改）才能建立／複製連結；可開關、重設連結。重設連結（舊連結立刻失效）；出席名單標示「自己報到」並可移除。**不需要把人數上限填滿**（有些人沒有帳號、要到場才建立）。舊的 `?card=日期`（只打開集點卡、不會讓人變成出席者）仍支援，但管理者介面已不再提供。現場 4 位數報到碼**先不做**，遇到陌生人再加。
+- **聚會連結（單一連結，2026-10-26 決定）**：管理者在聚會詳情「建立聚會連結」（預設開放）→ 複製 `https://網址/?join=隨機碼&openExternalBrowser=1` 傳給當天要來的人。玩家登入（沒有帳號會自動建立）→ `CheckInDialog` 開啟即自動呼叫（失敗才出現「我來了」按鈕）→ `join_gathering(p_token)` 檢查：已登入、token 有效、**非聚會當天（台北時間）一律回 `not_started`／`ended`，包含已報到者（2026-10-27 改）；已報到者當天回 `already`**、開放中、**台北時間聚會當天**、有暱稱與聯絡方式、未額滿（`for update` 鎖住該場聚會防超額）→ 成功後依序：（已無通關密碼，報到即成 VIP）評分（至少一款評完才能往下，免評分／已評過／無指定遊戲則略過）→ 集點卡。管理者必須先指定至少一款遊戲並填人數上限（不可留空，隨時可改）才能建立／複製連結；可開關、重設連結。重設連結（舊連結立刻失效）；出席名單標示「自己報到」並可移除。**不需要把人數上限填滿**（有些人沒有帳號、要到場才建立）。舊的 `?card=日期`（只打開集點卡、不會讓人變成出席者）仍支援，但管理者介面已不再提供。現場 4 位數報到碼**先不做**，遇到陌生人再加。
 - **管理者「聚會與集點」視窗**（`LoyaltyAdmin.tsx`，樣式 `lga-` 開頭）：分頁「聚會設定」（新增聚會、近期聚會列、聚會詳情：聚會連結、頭像標籤出席者（可搜尋暱稱或 LINE／FB 名字、顯示聯絡方式、免評分、來源標籤）、指定遊戲）與「集點狀況」（總表、明細、兌換）。
 - 確認過（2026-10-26）：`get_my_loyalty_summary`、`get_my_loyalty_days`、`admin_get_loyalty_overview`、`admin_get_loyalty_days`、`admin_redeem_voucher` 都只呼叫 `loyalty_day_status`／`loyalty_totals`，**不讀 `board_games`**；管理員函式內有 `is_admin()` 檢查，兌換用 advisory lock 防重複。含 `bgg_name` 欄位的資料表共 6 個：`board_games`、`game_documents`、`game_play_sessions`、`game_ratings`、`gathering_games`、`user_game_status`（改名補救腳本用）。
 - 評分或「我玩了」後，集點卡的評分狀態來自 `ratings`（只在 `Library` 呼叫一次，不要在 `LoyaltyCard` 再呼叫）。`addSession` 沒有防重複（同款同日可重複新增）。
@@ -127,9 +176,9 @@
 
 - **層級**：訪客（瀏覽、本機想玩／已玩）→ 一般登入（雲端同步、遊玩紀錄）→ VIP（評分、評分摘要、集點卡、聚會報到、名單、統計表、之後的推薦牆與 AI）→ 管理者。AI 只給 VIP，每日上限之後設計。
 - **資料表**：`vip_members`（`granted_by`＝password／checkin／admin；只有管理者可讀寫）、`vip_settings`（單列密碼雜湊，前端讀不到）、`vip_attempts`（嘗試紀錄，前端讀不到）；`player_profiles.hide_in_lists`；`gatherings.title`（場次名稱，唯一條件改為 `(gathered_on, title)`）。
-- **函式**（security definer、`set search_path=''`、anon 無權限）：`is_vip()`（管理者也算）、`redeem_vip_code`、`admin_set_vip_code`（至少 4 字）、`admin_set_vip`、`admin_list_members`、`get_vip_friends`（只有暱稱，UI 未做）、`admin_vip_lock_info`、`admin_clear_vip_lock`、`join_gathering`（不再自動升 VIP，非 VIP 須輸入通關密碼）、`admin_create_gathering`（原子建立聚會＋遊戲＋人數上限＋報到連結）（註：前端 LoyaltyAdmin 目前用直接 insert＋UI 驗證，並未呼叫此函式；2026-10-26 查過該函式**不存在**，可忽略）、`get_hide_in_lists`／`set_hide_in_lists`、`get_game_people`（VIP 只回暱稱且排除隱藏者，管理者含 LINE／FB）、`admin_get_all_ratings`（僅管理者）、`loyalty_day_status`（同日多場合併為 1 點）。
+- **函式**（security definer、`set search_path=''`、anon 無權限）：`is_vip()`（管理者也算）、`redeem_vip_code`、`admin_set_vip_code`（至少 4 字）、`admin_set_vip`、`admin_list_members`、`get_vip_friends`（只有暱稱，UI 未做）、`admin_vip_lock_info`、`admin_clear_vip_lock`、`join_gathering`（只在聚會當天有效；報到後由觸發器 `attendee_makes_vip` 自動成為 VIP）、`admin_create_gathering`（原子建立聚會＋遊戲＋人數上限＋報到連結）（註：前端 LoyaltyAdmin 目前用直接 insert＋UI 驗證，並未呼叫此函式；2026-10-26 查過該函式**不存在**，可忽略）、`get_hide_in_lists`／`set_hide_in_lists`、`get_game_people`（VIP 只回暱稱且排除隱藏者，管理者含 LINE／FB）、`admin_get_all_ratings`（僅管理者）、`loyalty_day_status`（同日多場合併為 1 點）。
 - **前端**：`lib/useVip.ts`（事件 `vip-changed`）、`lib/useGamePeople.ts`、`lib/adminEvents.ts`；`components/VipJoinDialog`、`VipLock`、`MemberAdmin`、`AdminCenter`、`StatsTables`；`LoyaltyAdmin` 改為嵌在管理中心的內容元件；`LoyaltyCard` 有 1～4 步驟與收合的規則；`Leaderboard` 可展開名單；樣式 `styles/vip.css`（最後載入）。
 - **未做／待執行**：換成 鎖定 SQL、PWA（缺圖示）、VIP 朋友名單、推薦牆、導覽改名與 AI 頁。
 - **疑點**：測試帳號集點卡曾顯示「已兌換 1、累積 0」的警告（若不是測試資料要查）；同一天兩場的集點卡尚未實測。
 
-2026-10-26（深夜）：另新增 admin_delete_member（刪帳號，不能刪管理者）；統計表矩陣篩選；CheckInDialog 流程化（自動報到→VIP 密碼→評分→集點卡）。vip_members.granted_by='checkin' 只留在舊資料，新報到不再產生。
+2026-10-26（深夜）：另新增 admin_delete_member（刪帳號，不能刪管理者）；統計表矩陣篩選；CheckInDialog 流程化（自動報到→VIP 密碼→評分→集點卡）。2026-10-27 起觸發器會寫入 granted_by='checkin'（連結報到）或 'admin'（手動加入）。
