@@ -78,17 +78,17 @@ export default function Leaderboard({
         const byPeriod: Record<Period, number> =
           board === 'want'
             ? {
-                all: s.wantCount,
-                month: s.wantMonth,
-                quarter: s.wantQuarter,
-                year: s.wantYear,
-              }
+              all: s.wantCount,
+              month: s.wantMonth,
+              quarter: s.wantQuarter,
+              year: s.wantYear,
+            }
             : {
-                all: s.playedCount,
-                month: s.playedMonth,
-                quarter: s.playedQuarter,
-                year: s.playedYear,
-              }
+              all: s.playedCount,
+              month: s.playedMonth,
+              quarter: s.playedQuarter,
+              year: s.playedYear,
+            }
         const value = byPeriod[period]
         if (value <= 0) return []
         return [
@@ -182,8 +182,69 @@ export default function Leaderboard({
       ? '依目前的總人數排名，只統計已登入的玩家。'
       : '依該期間「新增」的人數排名（下方小字是目前總人數）。'
     : '需滿 5 位玩家評分才會上榜。'
+  function renderEmpty(): ReactNode {
+    if (isCountBoard) {
+      const label = board === 'want' ? '想玩' : '已玩'
+      if (period !== 'all') {
+        const periodLabel = PERIODS.find((item) => item.key === period)?.label ?? ''
+        return (
+          <div className="lb-empty">
+            <span className="lb-empty-icon" aria-hidden="true">🗓</span>
+            <b>{periodLabel}還沒有新增的{label}</b>
+            <p>這個榜只算該期間「新增」的人數，換成「全部」可以看到目前的總人數。</p>
+            <button
+              type="button"
+              className="lb-empty-btn"
+              onClick={() => setPeriod('all')}
+            >
+              看全部期間
+            </button>
+          </div>
+        )
+      }
+      return (
+        <div className="lb-empty">
+          <span className="lb-empty-icon" aria-hidden="true">🎲</span>
+          <b>還沒有人標記{label}</b>
+          <p>
+            登入的玩家在遊戲封面按 {board === 'want' ? '♥' : '✓'} 後，就會出現在這裡。
+            沒有登入的訪客不會被統計。
+          </p>
+          <button type="button" className="lb-empty-btn" onClick={onClose}>
+            去逛收藏
+          </button>
+        </div>
+      )
+    }
+
+    if (ratings.status !== 'ready') {
+      return (
+        <div className="lb-empty">
+          <b>讀取中…</b>
+          <p>如果一直沒有出現，請重新整理網頁。</p>
+        </div>
+      )
+    }
 
     return (
+      <div className="lb-empty">
+        <span className="lb-empty-icon" aria-hidden="true">⭐</span>
+        <b>評分累積中</b>
+        <p>
+          每款遊戲要滿 5 位玩家評分，才會出現在這個榜；評分人數不足時，不會公開任何平均。
+          VIP 會員可以在遊戲詳細視窗的「評分」分頁評分。
+        </p>
+        <button
+          type="button"
+          className="lb-empty-btn"
+          onClick={() => setBoard('want')}
+        >
+          先看想玩榜
+        </button>
+      </div>
+    )
+  }
+  return (
     <>
       {!isTableOpen && (
         <>
@@ -242,11 +303,7 @@ export default function Leaderboard({
               <p className="lb-note">{note}</p>
 
               {ranked.length === 0 ? (
-                <p className="mylist-empty">
-                  {isCountBoard
-                    ? '這個期間還沒有人標記。'
-                    : '評分累積中，滿 5 位玩家才會上榜。'}
-                </p>
+                renderEmpty()
               ) : (
                 <ul className="mylist-list">
                   {ranked.map((entry) => {
