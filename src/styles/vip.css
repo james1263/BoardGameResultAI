@@ -609,3 +609,8 @@
     padding: 12px 10px;
   }
 }
+
+   /* iPhone 的按鈕預設文字是藍色：沒指定顏色的按鈕改成跟隨上層文字色 */
+   :where(button:not(:disabled)) {
+     color: inherit;
+   }
