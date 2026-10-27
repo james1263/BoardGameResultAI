@@ -309,13 +309,19 @@
   visibility: hidden;
 }
 
-@media (max-width: 760px) {
-  .sort-reset.is-hidden {
-    display: none;
-  }
-}
-
 /* 標題拿掉後，控制列佔滿整行 */
 .heading-actions {
   flex: 1;
+}
+
+/* 三個控制項的寬度固定，「重設」看不見時仍保留位置，所以升冪／降冪不會跑位 */
+.sort-dir {
+  flex: none;
+}
+
+.sort-reset {
+  flex: none;
+  min-width: 56px;
+  padding: 0 6px;
+  text-align: center;
 }
