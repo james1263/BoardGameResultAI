@@ -6,7 +6,8 @@ import type { RatingsApi } from './lib/useGameRatings'
 import LoyaltyCard from './components/LoyaltyCard'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
-export type Tab = 'want' | 'played' | 'loyalty'
+export type Tab = 'want' | 'played'
+export type MyListMode = 'list' | 'loyalty'
 
 export default function MyList({
   boardGames,
@@ -14,7 +15,7 @@ export default function MyList({
   playSessions,
   ratings,
   isOpen,
-  initialTab,
+  mode,
   focusDate,
   onClose,
   onOpenGame,
@@ -25,13 +26,13 @@ export default function MyList({
   playSessions: PlaySessionsApi
   ratings: RatingsApi
   isOpen: boolean
-  initialTab?: Tab
+  mode: MyListMode
   focusDate?: string | null
   onClose: () => void
   onOpenGame: (game: BoardGame, tab?: 'ratings') => void
   renderCover: (game: BoardGame) => ReactNode
 }) {
-  const [tab, setTab] = useState<Tab>(initialTab ?? 'want')
+  const [tab, setTab] = useState<Tab>('want')
 
   const wantGames = useMemo(
     () => boardGames.filter((game) => personal.entries[game.bggName]?.wantToPlay),
@@ -46,13 +47,15 @@ export default function MyList({
 
   const shown = tab === 'want' ? wantGames : playedGames
   const isLoading = personal.isLoggedIn && personal.status === 'loading'
+  const isLoyalty = mode === 'loyalty'
+  const title = isLoyalty ? '集點卡' : '我的桌遊'
 
   return (
     <>
       <div className="mylist-backdrop" onClick={onClose} />
-      <aside className="mylist-drawer" role="dialog" aria-label="我的桌遊">
+      <aside className="mylist-drawer" role="dialog" aria-label={title}>
         <div className="mylist-header">
-          <h2>我的桌遊</h2>
+          <h2>{title}</h2>
           <button
             className="mylist-close"
             type="button"
@@ -63,32 +66,27 @@ export default function MyList({
           </button>
         </div>
 
-        <div className="mylist-tabs">
-          <button
-            type="button"
-            className={`mylist-tab ${tab === 'want' ? 'active' : ''}`}
-            onClick={() => setTab('want')}
-          >
-            ♥ 想玩（{wantGames.length}）
-          </button>
-          <button
-            type="button"
-            className={`mylist-tab ${tab === 'played' ? 'active' : ''}`}
-            onClick={() => setTab('played')}
-          >
-            ✓ 已玩（{playedGames.length}）
-          </button>
-          <button
-            type="button"
-            className={`mylist-tab ${tab === 'loyalty' ? 'active' : ''}`}
-            onClick={() => setTab('loyalty')}
-          >
-            🎟 集點卡
-          </button>
-        </div>
+        {!isLoyalty && (
+          <div className="mylist-tabs">
+            <button
+              type="button"
+              className={`mylist-tab ${tab === 'want' ? 'active' : ''}`}
+              onClick={() => setTab('want')}
+            >
+              ♥ 想玩（{wantGames.length}）
+            </button>
+            <button
+              type="button"
+              className={`mylist-tab ${tab === 'played' ? 'active' : ''}`}
+              onClick={() => setTab('played')}
+            >
+              ✓ 已玩（{playedGames.length}）
+            </button>
+          </div>
+        )}
 
         <div className="mylist-body">
-          {tab === 'loyalty' ? (
+          {isLoyalty ? (
             <LoyaltyCard
               boardGames={boardGames}
               ratings={ratings}

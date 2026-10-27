@@ -13,7 +13,7 @@ import {
   boardGames as fallbackGames,
 } from './data/boardGames.generated'
 import AdminPanel from './AdminPanel'
-import MyList from './MyList'
+import MyList, { type MyListMode } from './MyList'
 import Leaderboard from './components/Leaderboard'
 import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
@@ -85,6 +85,7 @@ function Library({
   const people = useGamePeople(vip.isVip)
   const adminRatings = useAdminRatings(isAdmin)
   const [isMyListOpen, setIsMyListOpen] = useState(false)
+  const [myListMode, setMyListMode] = useState<MyListMode>('list')
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
   // 管理者傳的集點卡連結：登入後自動打開自己的集點卡
   const {
@@ -101,6 +102,7 @@ function Library({
     if (!invitePending || !inviteLoggedIn) return
     setInviteFocus(inviteDate)
     setInviteKey((count) => count + 1)
+    setMyListMode('loyalty')
     setIsMyListOpen(true)
     consumeInvite()
   }, [invitePending, inviteLoggedIn, inviteDate, consumeInvite])
@@ -118,6 +120,7 @@ function Library({
     if (!date) return
     setInviteFocus(date)
     setInviteKey((count) => count + 1)
+    setMyListMode('loyalty')
     setIsMyListOpen(true)
   }
   const hadCheckinRef = useRef(false)
@@ -164,6 +167,7 @@ function Library({
   function openMyLoyalty() {
     setInviteFocus(null)
     setInviteKey((count) => count + 1)
+    setMyListMode('loyalty')
     setIsMyListOpen(true)
   }
   const [nowMs] = useState(() => Date.now())
@@ -575,7 +579,10 @@ function Library({
       <InAppBrowserNotice />
       <TopBar
         myListCount={myListCount}
-        onOpenMyList={() => setIsMyListOpen(true)}
+        onOpenMyList={() => {
+          setMyListMode('list')
+          setIsMyListOpen(true)
+        }}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenLoyalty={openMyLoyalty}
       />
@@ -803,7 +810,7 @@ function Library({
 
       <MyList
         key={inviteKey}
-        initialTab={inviteKey > 0 ? 'loyalty' : undefined}
+        mode={myListMode}
         focusDate={inviteFocus}
         boardGames={boardGames}
         personal={personal}
