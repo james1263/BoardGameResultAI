@@ -369,3 +369,84 @@
 .filter-drawer .filter-field > span {
   text-align: left;
 }
+
+/* 進階篩選：膠囊按鈕群組 */
+.filter-group {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.filter-group-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.filter-group-hint {
+  color: var(--c-ink-soft);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+p.filter-group-hint {
+  margin: 6px 0 0;
+}
+
+.filter-grid-spaced {
+  margin-top: 16px;
+}
+
+.filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 64px;
+  padding: 7px 12px;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.filter-pill small {
+  color: var(--c-ink-soft);
+  font-size: 10px;
+}
+
+.filter-pill:hover:not(:disabled) {
+  background: #f1f0e8;
+}
+
+.filter-pill.on {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+.filter-pill.on small {
+  color: #ffffffcc;
+}
+
+.filter-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.filter-group .filter-field {
+  max-width: 220px;
+}

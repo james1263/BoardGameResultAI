@@ -24,6 +24,7 @@ import { useCommunityStats } from './lib/useCommunityStats'
 import { useInviteLink } from './lib/useInviteLink'
 import { useCheckinLink } from './lib/useCheckinLink'
 import { useTodayTask } from './lib/useTodayTask'
+import { useSession } from './lib/useSession'
 import { VIP_CHANGED_EVENT, useVip } from './lib/useVip'
 import { useGamePeople, useAdminRatings } from './lib/useGamePeople'
 import InAppBrowserNotice from './components/InAppBrowserNotice'
@@ -36,6 +37,10 @@ import {
   type ViewMode,
   type MineGroup,
   type DisplayItem,
+  type DifficultyLevel,
+  type RatingFilter,
+  getDifficultyLevel,
+  isNewGameAt,
   VIEW_MODE_STORAGE_KEY,
   loadViewMode,
   NEW_GAME_DAYS,
@@ -81,6 +86,8 @@ function Library({
   const personal = usePersonalCollection()
   const playSessions = useGamePlaySessions()
   const ratings = useGameRatings()
+  const session = useSession()
+  const canFilterByRating = !!session && ratings.status === 'ready'
   const communityStats = useCommunityStats()
   const todayTask = useTodayTask(ratings)
   const vip = useVip()
@@ -213,13 +220,18 @@ function Library({
   }
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [minDifficulty, setMinDifficulty] = useState<NumericFilter>('')
-  const [maxDifficulty, setMaxDifficulty] = useState<NumericFilter>('')
+  const [difficultyLevels, setDifficultyLevels] = useState<DifficultyLevel[]>(
+    [],
+  )
+  const [groupSize, setGroupSize] = useState<NumericFilter>('')
   const [bestPlayerCount, setBestPlayerCount] = useState<NumericFilter>('')
   const [recommendPlayerCount, setRecommendPlayerCount] =
     useState<NumericFilter>('')
-  const [minTime, setMinTime] = useState<NumericFilter>('')
-  const [maxTime, setMaxTime] = useState<NumericFilter>('')
+  const [timeLimit, setTimeLimit] = useState<NumericFilter>('')
+  const [onlyNew, setOnlyNew] = useState(false)
+  const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all')
+  // 登出或評分還沒讀完時，評分狀態篩選不生效
+  const ratingFilterActive = ratingFilter !== 'all' && canFilterByRating
 
   const [sortBy, setSortBy] = useState<SortKey>('rankingEngine')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -238,29 +250,20 @@ function Library({
     }
   }
 
-  const difficulties = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          boardGames
-            .map((game) => game.bggDifficulty)
-            .filter((value): value is number => value != null),
-        ),
-      ).sort((a, b) => a - b),
-    [boardGames],
-  )
-
-  const times = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          boardGames
-            .map((game) => game.bggTime)
-            .filter((value): value is number => value != null),
-        ),
-      ).sort((a, b) => a - b),
-    [boardGames],
-  )
+  // 「我們有幾個人」下拉選單：從所有遊戲的人數下限到上限（最多 12 人）
+  const groupSizes = useMemo(() => {
+    const mins = boardGames
+      .map((game) => game.minPlayers)
+      .filter((value): value is number => value != null)
+    const maxs = boardGames
+      .map((game) => game.maxPlayers)
+      .filter((value): value is number => value != null)
+    if (mins.length === 0 || maxs.length === 0) return []
+    const low = Math.min(...mins)
+    const high = Math.min(Math.max(...maxs), 12)
+    if (high < low) return []
+    return Array.from({ length: high - low + 1 }, (_, index) => low + index)
+  }, [boardGames])
 
   const playerCounts = useMemo(
     () =>
@@ -293,16 +296,15 @@ function Library({
         return false
       }
 
-      if (
-        minDifficulty !== '' &&
-        (game.bggDifficulty == null || game.bggDifficulty < minDifficulty)
-      ) {
-        return false
+      if (difficultyLevels.length > 0) {
+        const level = getDifficultyLevel(game.bggDifficulty)
+        if (level === null || !difficultyLevels.includes(level)) return false
       }
 
       if (
-        maxDifficulty !== '' &&
-        (game.bggDifficulty == null || game.bggDifficulty > maxDifficulty)
+        groupSize !== '' &&
+        ((game.minPlayers != null && groupSize < game.minPlayers) ||
+          (game.maxPlayers != null && groupSize > game.maxPlayers))
       ) {
         return false
       }
@@ -321,12 +323,20 @@ function Library({
         return false
       }
 
-      if (minTime !== '' && (game.bggTime == null || game.bggTime < minTime)) {
+      if (
+        timeLimit !== '' &&
+        (game.bggTime == null || game.bggTime > timeLimit)
+      ) {
         return false
       }
 
-      if (maxTime !== '' && (game.bggTime == null || game.bggTime > maxTime)) {
+      if (onlyNew && !isNewGameAt(game.createdAt, nowMs)) {
         return false
+      }
+
+      if (ratingFilterActive) {
+        const rated = ratings.getMine(game.bggName) !== null
+        if (ratingFilter === 'rated' ? !rated : rated) return false
       }
 
       return true
@@ -384,12 +394,16 @@ function Library({
   }, [
     searchText,
     selectedCategories,
-    minDifficulty,
-    maxDifficulty,
+    difficultyLevels,
+    groupSize,
     bestPlayerCount,
     recommendPlayerCount,
-    minTime,
-    maxTime,
+    timeLimit,
+    onlyNew,
+    nowMs,
+    ratingFilter,
+    ratingFilterActive,
+    ratings.getMine,
     sortBy,
     sortDirection,
     boardGames,
@@ -438,8 +452,8 @@ function Library({
   ).length
 
   const missingDataCount = useMemo(() => {
-    const hasDifficultyFilter = minDifficulty !== '' || maxDifficulty !== ''
-    const hasTimeFilter = minTime !== '' || maxTime !== ''
+    const hasDifficultyFilter = difficultyLevels.length > 0
+    const hasTimeFilter = timeLimit !== ''
 
     if (!hasDifficultyFilter && !hasTimeFilter) return 0
 
@@ -479,28 +493,50 @@ function Library({
         return false
       }
 
+      if (
+        groupSize !== '' &&
+        ((game.minPlayers != null && groupSize < game.minPlayers) ||
+          (game.maxPlayers != null && groupSize > game.maxPlayers))
+      ) {
+        return false
+      }
+
+      if (onlyNew && !isNewGameAt(game.createdAt, nowMs)) {
+        return false
+      }
+
+      if (ratingFilterActive) {
+        const rated = ratings.getMine(game.bggName) !== null
+        if (ratingFilter === 'rated' ? !rated : rated) return false
+      }
+
       return true
     }).length
   }, [
     searchText,
     selectedCategories,
-    minDifficulty,
-    maxDifficulty,
+    difficultyLevels,
+    groupSize,
     bestPlayerCount,
     recommendPlayerCount,
-    minTime,
-    maxTime,
+    timeLimit,
+    onlyNew,
+    nowMs,
+    ratingFilter,
+    ratingFilterActive,
+    ratings.getMine,
     boardGames,
   ])
 
   const activeFilterCount =
     selectedCategories.length +
-    Number(minDifficulty !== '') +
-    Number(maxDifficulty !== '') +
+    difficultyLevels.length +
+    Number(groupSize !== '') +
     Number(bestPlayerCount !== '') +
     Number(recommendPlayerCount !== '') +
-    Number(minTime !== '') +
-    Number(maxTime !== '') +
+    Number(timeLimit !== '') +
+    Number(onlyNew) +
+    Number(ratingFilterActive) +
     Number(groupByMine) +
     hiddenGroups.length
 
@@ -520,15 +556,24 @@ function Library({
     )
   }
 
+  function toggleDifficultyLevel(level: DifficultyLevel) {
+    setDifficultyLevels((current) =>
+      current.includes(level)
+        ? current.filter((item) => item !== level)
+        : [...current, level],
+    )
+  }
+
   function clearFilters() {
     setSearchText('')
     setSelectedCategories([])
-    setMinDifficulty('')
-    setMaxDifficulty('')
+    setDifficultyLevels([])
+    setGroupSize('')
     setBestPlayerCount('')
     setRecommendPlayerCount('')
-    setMinTime('')
-    setMaxTime('')
+    setTimeLimit('')
+    setOnlyNew(false)
+    setRatingFilter('all')
     setGroupByMine(false)
     setHiddenGroups([])
   }
@@ -657,21 +702,23 @@ function Library({
             displayedGameCount={displayedGameCount}
             clearDisabled={searchText === '' && activeFilterCount === 0}
             onClear={clearFilters}
-            difficulties={difficulties}
-            times={times}
             playerCounts={playerCounts}
-            minDifficulty={minDifficulty}
-            setMinDifficulty={setMinDifficulty}
-            maxDifficulty={maxDifficulty}
-            setMaxDifficulty={setMaxDifficulty}
+            groupSizes={groupSizes}
+            groupSize={groupSize}
+            setGroupSize={setGroupSize}
             bestPlayerCount={bestPlayerCount}
             setBestPlayerCount={setBestPlayerCount}
             recommendPlayerCount={recommendPlayerCount}
             setRecommendPlayerCount={setRecommendPlayerCount}
-            minTime={minTime}
-            setMinTime={setMinTime}
-            maxTime={maxTime}
-            setMaxTime={setMaxTime}
+            timeLimit={timeLimit}
+            setTimeLimit={setTimeLimit}
+            difficultyLevels={difficultyLevels}
+            toggleDifficultyLevel={toggleDifficultyLevel}
+            onlyNew={onlyNew}
+            setOnlyNew={setOnlyNew}
+            ratingFilter={ratingFilter}
+            setRatingFilter={setRatingFilter}
+            canFilterByRating={canFilterByRating}
             hiddenGroups={hiddenGroups}
             toggleMineGroup={toggleMineGroup}
             groupByMine={groupByMine}

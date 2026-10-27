@@ -60,3 +60,54 @@ export function getMineGroup(entry: PersonalEntry | undefined): MineGroup {
 }
 
 export const MAIN_CATEGORIES = ['策略', '陣營', '派對']
+
+// ---- 進階篩選用 ----
+
+// 難度五級（2026-10-27 使用者決定）：<1.8／<2.6／<3.2／<3.8／>=3.8
+export type DifficultyLevel = 1 | 2 | 3 | 4 | 5
+
+export const DIFFICULTY_LEVELS: DifficultyLevel[] = [1, 2, 3, 4, 5]
+
+export const DIFFICULTY_LEVEL_INFO: Record<
+  DifficultyLevel,
+  { name: string; range: string }
+> = {
+  1: { name: '入門', range: '1.8 以下' },
+  2: { name: '輕度', range: '1.8–2.6' },
+  3: { name: '中度', range: '2.6–3.2' },
+  4: { name: '中重', range: '3.2–3.8' },
+  5: { name: '重度', range: '3.8 以上' },
+}
+
+export function getDifficultyLevel(
+  difficulty: number | null | undefined,
+): DifficultyLevel | null {
+  if (difficulty == null) return null
+  if (difficulty < 1.8) return 1
+  if (difficulty < 2.6) return 2
+  if (difficulty < 3.2) return 3
+  if (difficulty < 3.8) return 4
+  return 5
+}
+
+export const TIME_LIMITS = [30, 60, 90, 120]
+
+export type RatingFilter = 'all' | 'rated' | 'unrated'
+
+export const RATING_FILTERS: RatingFilter[] = ['all', 'rated', 'unrated']
+
+export const RATING_FILTER_LABELS: Record<RatingFilter, string> = {
+  all: '全部',
+  rated: '我評過',
+  unrated: '我還沒評',
+}
+
+export function isNewGameAt(
+  createdAt: string | null | undefined,
+  nowMs: number,
+): boolean {
+  if (!createdAt) return false
+  return (
+    nowMs - new Date(createdAt).getTime() < NEW_GAME_DAYS * 24 * 60 * 60 * 1000
+  )
+}

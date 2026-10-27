@@ -1,9 +1,17 @@
 import type { ReactNode } from 'react'
 import {
+  DIFFICULTY_LEVELS,
+  DIFFICULTY_LEVEL_INFO,
   MINE_GROUPS,
   MINE_GROUP_LABELS,
+  NEW_GAME_DAYS,
+  RATING_FILTERS,
+  RATING_FILTER_LABELS,
+  TIME_LIMITS,
+  type DifficultyLevel,
   type MineGroup,
   type NumericFilter,
+  type RatingFilter,
 } from '../lib/libraryTypes'
 import { EyeIcon } from './Icons'
 
@@ -45,22 +53,28 @@ export type FilterDrawerProps = {
   clearDisabled: boolean
   onClear: () => void
 
-  difficulties: number[]
-  times: number[]
   playerCounts: number[]
+  groupSizes: number[]
 
-  minDifficulty: NumericFilter
-  setMinDifficulty: (value: NumericFilter) => void
-  maxDifficulty: NumericFilter
-  setMaxDifficulty: (value: NumericFilter) => void
+  groupSize: NumericFilter
+  setGroupSize: (value: NumericFilter) => void
   bestPlayerCount: NumericFilter
   setBestPlayerCount: (value: NumericFilter) => void
   recommendPlayerCount: NumericFilter
   setRecommendPlayerCount: (value: NumericFilter) => void
-  minTime: NumericFilter
-  setMinTime: (value: NumericFilter) => void
-  maxTime: NumericFilter
-  setMaxTime: (value: NumericFilter) => void
+
+  timeLimit: NumericFilter
+  setTimeLimit: (value: NumericFilter) => void
+
+  difficultyLevels: DifficultyLevel[]
+  toggleDifficultyLevel: (level: DifficultyLevel) => void
+
+  onlyNew: boolean
+  setOnlyNew: (value: boolean) => void
+
+  ratingFilter: RatingFilter
+  setRatingFilter: (value: RatingFilter) => void
+  canFilterByRating: boolean
 
   hiddenGroups: MineGroup[]
   toggleMineGroup: (group: MineGroup) => void
@@ -75,9 +89,17 @@ export default function FilterDrawer(props: FilterDrawerProps) {
     displayedGameCount,
     clearDisabled,
     onClear,
-    difficulties,
-    times,
     playerCounts,
+    groupSizes,
+    timeLimit,
+    setTimeLimit,
+    difficultyLevels,
+    toggleDifficultyLevel,
+    onlyNew,
+    setOnlyNew,
+    ratingFilter,
+    setRatingFilter,
+    canFilterByRating,
     hiddenGroups,
     toggleMineGroup,
     groupByMine,
@@ -116,19 +138,19 @@ export default function FilterDrawer(props: FilterDrawerProps) {
             </button>
           </div>
 
-          <div className="filter-grid">
+          <div className="filter-group">
             <NumberSelect
-              label="最低 BGG 難度"
-              value={props.minDifficulty}
-              options={difficulties}
-              onChange={props.setMinDifficulty}
+              label="我們有幾個人？"
+              value={props.groupSize}
+              options={groupSizes}
+              onChange={props.setGroupSize}
             />
-            <NumberSelect
-              label="最高 BGG 難度"
-              value={props.maxDifficulty}
-              options={difficulties}
-              onChange={props.setMaxDifficulty}
-            />
+            <p className="filter-group-hint">
+              只列出這個人數玩得起來的遊戲。
+            </p>
+          </div>
+
+          <div className="filter-grid filter-grid-spaced">
             <NumberSelect
               label="最佳人數"
               value={props.bestPlayerCount}
@@ -141,18 +163,65 @@ export default function FilterDrawer(props: FilterDrawerProps) {
               options={playerCounts}
               onChange={props.setRecommendPlayerCount}
             />
-            <NumberSelect
-              label="最短遊戲時間（分鐘）"
-              value={props.minTime}
-              options={times}
-              onChange={props.setMinTime}
-            />
-            <NumberSelect
-              label="最長遊戲時間（分鐘）"
-              value={props.maxTime}
-              options={times}
-              onChange={props.setMaxTime}
-            />
+          </div>
+
+          <div className="filter-group">
+            <div className="filter-group-title">
+              <span>遊戲時間</span>
+              <span className="filter-group-hint">不超過幾分鐘（再按一次取消）</span>
+            </div>
+            <div className="filter-pills">
+              {TIME_LIMITS.map((limit) => {
+                const on = timeLimit === limit
+                return (
+                  <button
+                    key={limit}
+                    type="button"
+                    className={`filter-pill ${on ? 'on' : ''}`}
+                    aria-pressed={on}
+                    onClick={() => setTimeLimit(on ? '' : limit)}
+                  >
+                    {limit} 分鐘
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="filter-group">
+            <div className="filter-group-title">
+              <span>BGG 難度</span>
+              <span className="filter-group-hint">可複選</span>
+            </div>
+            <div className="filter-pills">
+              {DIFFICULTY_LEVELS.map((level) => {
+                const on = difficultyLevels.includes(level)
+                const info = DIFFICULTY_LEVEL_INFO[level]
+                return (
+                  <button
+                    key={level}
+                    type="button"
+                    className={`filter-pill ${on ? 'on' : ''}`}
+                    aria-pressed={on}
+                    onClick={() => toggleDifficultyLevel(level)}
+                  >
+                    {info.name}
+                    <small>{info.range}</small>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="filter-group">
+            <label className="category-option">
+              <input
+                type="checkbox"
+                checked={onlyNew}
+                onChange={(event) => setOnlyNew(event.target.checked)}
+              />
+              <span>只看新遊戲（{NEW_GAME_DAYS} 天內加入）</span>
+            </label>
           </div>
 
           <p className="drawer-tip">桌遊類型請在首頁上方的膠囊選擇。</p>
@@ -192,6 +261,32 @@ export default function FilterDrawer(props: FilterDrawerProps) {
             <p className="mine-note">
               想玩的遊戲就算也玩過，仍歸在「想玩」區。
             </p>
+
+            <div className="filter-group">
+              <div className="filter-group-title">
+                <span>評分狀態</span>
+                {!canFilterByRating && (
+                  <span className="filter-group-hint">登入後才能使用</span>
+                )}
+              </div>
+              <div className="filter-pills">
+                {RATING_FILTERS.map((value) => {
+                  const on = ratingFilter === value
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      className={`filter-pill ${on ? 'on' : ''}`}
+                      aria-pressed={on}
+                      disabled={!canFilterByRating && value !== 'all'}
+                      onClick={() => setRatingFilter(value)}
+                    >
+                      {RATING_FILTER_LABELS[value]}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         </section>
 
