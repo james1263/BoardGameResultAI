@@ -1,11 +1,11 @@
 /* 玩家集點卡：印章風格（新檔，樣式都用 lc- 開頭） */
 .lc {
-  --lc-paper: #fbf6e9;
+  --lc-paper: var(--c-paper, #fbf7ec);
   --lc-paper-2: #f3ead2;
-  --lc-ink: #3a3526;
+  --lc-ink: var(--c-ink, #34463c);
   --lc-muted: #8b8468;
-  --lc-green: #4f6f52;
-  --lc-green-dark: #2f4a3a;
+  --lc-green: var(--c-forest, #456b50);
+  --lc-green-dark: var(--c-ink, #34463c);
   --lc-stamp: #b5452d;
   --lc-kraft: #d8c49a;
   --lc-line: rgba(58, 53, 38, 0.18);
@@ -454,6 +454,128 @@
   font-size: 0.88rem;
 }
 
-.modal-backdrop.voucher-backdrop {
-  z-index: 1400;
+/* ===== 集點卡改版：錢包卡、規則收合、補齊缺少的樣式 ===== */
+
+.lc-wallet {
+  margin-top: 12px;
+  padding: 4px 12px 12px;
+  border: 2px solid var(--lc-kraft);
+  border-radius: 14px;
+  background: #fffdf5;
+}
+
+.lc-wallet .lc-stat {
+  border-width: 1.5px;
+  background: var(--lc-paper);
+}
+
+.lc-stat-sub {
+  color: var(--lc-muted);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+/* 規則收合 */
+.lc-fold {
+  margin-top: 16px;
+  border: 1.5px dashed var(--lc-kraft);
+  border-radius: 12px;
+  background: var(--lc-paper-2);
+}
+
+.lc-fold summary {
+  padding: 10px 14px;
+  color: var(--lc-green-dark);
+  font-family: var(--lc-serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.lc-fold summary::-webkit-details-marker {
+  display: none;
+}
+
+.lc-fold summary::after {
+  content: '▾';
+  float: right;
+  color: var(--lc-muted);
+}
+
+.lc-fold[open] summary::after {
+  content: '▴';
+}
+
+.lc-fold .lc-steps {
+  margin: 0 14px 10px;
+}
+
+.lc-fold .lc-rules {
+  margin: 0 14px 14px;
+  background: transparent;
+}
+
+/* 使用免費券的提醒卡：用金色，和紅色的「今天要評分」區分 */
+.lc-today-ticket {
+  border-color: var(--lc-kraft);
+  background: #fbf3e4;
+}
+
+.lc-today-ticket .lc-today-kicker {
+  color: #a6741d;
+}
+
+/* 同一天多場 */
+.lc-session + .lc-session {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--lc-line);
+}
+
+.lc-session-title {
+  margin: 6px 0 0;
+  color: var(--lc-green-dark);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+/* 從聚會連結進來時標出的那一天 */
+.lc-day.focus {
+  box-shadow: 0 0 0 3px rgba(181, 69, 45, 0.25);
+}
+
+/* 窄螢幕：印章縮小，內容才不會被擠 */
+@media (max-width: 380px) {
+  .lc-stamp {
+    width: 58px;
+    height: 58px;
+  }
+
+  .lc-stamp-day {
+    font-size: 1.25rem;
+  }
+
+  .lc-reward {
+    padding: 6px 8px;
+    font-size: 0.78rem;
+  }
+}
+
+.lc-more {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 9px 0;
+  border: 1.5px dashed var(--lc-kraft);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--lc-green-dark);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.lc-more:hover {
+  background: var(--lc-paper-2);
 }

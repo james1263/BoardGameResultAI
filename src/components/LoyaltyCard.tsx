@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { usePersonalCollection } from '../lib/usePersonalCollection'
 import {
@@ -37,6 +37,8 @@ export default function LoyaltyCard({
   const loyalty = useMyLoyalty()
   const vip = useVip()
   const scrolledRef = useRef(false)
+  const [showAllDays, setShowAllDays] = useState(false)
+  const RECENT_DAYS = 5
 
   const gameMap = useMemo(
     () => new Map(boardGames.map((game) => [game.bggName, game])),
@@ -221,6 +223,16 @@ export default function LoyaltyCard({
     (summary?.availableVouchers ?? 0) - usableVouchers,
   )
   const usedToday = usedDates.has(todayDate)
+
+  // 近期紀錄預設只顯示最近幾筆；從連結指定的那一天若在被收起的部分，就自動全部展開
+  const focusHidden = focusDate
+    ? loyalty.days.findIndex((day) => day.date === focusDate) >= RECENT_DAYS
+    : false
+  const daysExpanded = showAllDays || focusHidden
+  const visibleDays = daysExpanded
+    ? loyalty.days
+    : loyalty.days.slice(0, RECENT_DAYS)
+
   // 有可用的券、今天有來、還沒評分：提醒評完分會自動用券
   const voucherWaiting =
     ratingsReady && attendingToday && !todayQualified && !usedToday && usableVouchers > 0
@@ -285,7 +297,7 @@ export default function LoyaltyCard({
       )}
 
       {summary && (
-        <>
+        <div className="lc-wallet">
           <div className="lc-stats">
             <div className="lc-stat">
               <span className="lc-stat-label">本月點數</span>
@@ -329,11 +341,10 @@ export default function LoyaltyCard({
             </span>
           </div>
           <p className="lc-progress-note">
-            同一個月集滿 2 點，會自動變成 1 張免費券，點數歸零重算。券沒有期限，
-            但要拿到的隔天起才會自動使用。累積券 {summary.earnedVouchers} 張、已使用{' '}
-            {summary.redeemed} 張。
+            同一個月集滿 2 點，自動變成 1 張免費券，點數歸零。累積券{' '}
+            {summary.earnedVouchers} 張・已使用 {summary.redeemed} 張。
           </p>
-        </>
+        </div>
       )}
 
       {summary?.overRedeemed && (
@@ -342,12 +353,14 @@ export default function LoyaltyCard({
         </p>
       )}
 
-      <section className="lc-section">
-        <h4 className="lc-heading">如何取得 1 點？</h4>
+      <details className="lc-fold">
+        <summary>如何取得點數？規則說明</summary>
         <ol className="lc-steps">
           <li>
             <b>1</b>
-            <span>點管理者傳的聚會連結，登入並報到（報到後就是 VIP）；管理者直接幫你加入名單的人，不用點連結。</span>
+            <span>
+              點管理者傳的聚會連結，登入並報到（報到後就是 VIP）；管理者直接幫你加入名單的人，不用點連結。
+            </span>
           </li>
           <li>
             <b>2</b>
@@ -363,29 +376,44 @@ export default function LoyaltyCard({
         <ul className="lc-rules">
           <li>一天不管玩幾款、參加幾場，只算 1 點。</li>
           <li>當月只集到 1 點，到下個月 1 日就不再計入。</li>
+          <li>免費券沒有期限，但要拿到的隔天起才會自動使用。</li>
           <li>
             有可用的免費券時，報到並評分後系統會自動用券（不能累積）；用券那天不集點。
           </li>
-          <li>點數依你目前的紀錄即時計算；兌換紀錄會永久保留。</li>
+          <li>事後修改或刪除評分，不會退回已使用的點數或免費券。</li>
+          <li>點數依你目前的紀錄即時計算；免費券使用紀錄會永久保留。</li>
           <li>只有你本人和管理者看得到你的出席與點數，其他玩家看不到。</li>
         </ul>
-      </section>
+      </details>
 
       <section className="lc-section">
         <h4 className="lc-heading">近期紀錄</h4>
         {loyalty.days.length === 0 ? (
           <p className="lc-empty">還沒有被列入任何一天的聚會名單。</p>
         ) : (
-          <ul className="lc-days">
-            {loyalty.days.map((day) => {
-              const sessions = loyalty.gatherings
-                .filter((item) => item.date === day.date)
-                .sort((a, b) => a.title.localeCompare(b.title, 'zh-Hant'))
-              return sessions.some((item) => item.games.length > 0)
-                ? renderGatheringDay(day, sessions)
-                : renderLegacyDay(day)
-            })}
-          </ul>
+          <>
+            <ul className="lc-days">
+              {visibleDays.map((day) => {
+                const sessions = loyalty.gatherings
+                  .filter((item) => item.date === day.date)
+                  .sort((a, b) => a.title.localeCompare(b.title, 'zh-Hant'))
+                return sessions.some((item) => item.games.length > 0)
+                  ? renderGatheringDay(day, sessions)
+                  : renderLegacyDay(day)
+              })}
+            </ul>
+            {loyalty.days.length > RECENT_DAYS && !focusHidden && (
+              <button
+                type="button"
+                className="lc-more"
+                onClick={() => setShowAllDays((value) => !value)}
+              >
+                {showAllDays
+                  ? '收起較早的紀錄 ▴'
+                  : `顯示全部 ${loyalty.days.length} 筆 ▾`}
+              </button>
+            )}
+          </>
         )}
       </section>
 
@@ -416,4 +444,4 @@ export default function LoyaltyCard({
       </button>
     </div>
   )
-}
+}
