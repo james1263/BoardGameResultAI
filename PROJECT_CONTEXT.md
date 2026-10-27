@@ -1,7 +1,45 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案交接文件（精簡版）
 
 > 給接手的 AI 閱讀。**請先讀 `QUICKSTART.md`（懶人包），再讀本文件。**
-> 最後更新：2026-10-27（新增「2026-10-27 更新」一節，優先閱讀；以下主體為 2026-10-26 深夜版）。這一版把已完成的功能整理成「依主題」的紀錄（取代舊的 A～Q 附錄），內容與決定不變；日期與細節若與 `QUICKSTART.md` 衝突，以 `QUICKSTART.md` 為準。
+> 最後更新：2026-10-27 傍晚（最上方有「2026-10-27 傍晚更新」，其次是「2026-10-27 更新」一節，優先閱讀；以下主體為 2026-10-26 深夜版）。這一版把已完成的功能整理成「依主題」的紀錄（取代舊的 A～Q 附錄），內容與決定不變；日期與細節若與 `QUICKSTART.md` 衝突，以 `QUICKSTART.md` 為準。
+
+## 2026-10-27 傍晚更新（最新；與下方任何舊內容衝突時，以本節為準）
+
+### 已交付（使用者 build 成功；是否已 commit／push 請接手時用 `git log`、`git status` 確認）
+- **5 個進階篩選（人數、時間上限、難度五級、新遊戲、評分狀態）與「我的俱樂部」摘要卡**已套用並 push（`git status` 乾淨）。摘要卡在 `MyList.tsx`：`ClubHeader`（暱稱、徽章：訪客／一般會員／VIP 會員／管理者、想玩／已玩數字方塊、未登入說明＋Google 登入鈕）、`ClubPoints`（只有「VIP 且非管理者」才會呼叫集點資料）。樣式在 `mylist.css` 的「我的俱樂部」區。
+- **免費券 v2（使用者已確認的規則，取代舊的「同月 2 點、管理者兌換」說法）**：
+  - 同一個月**第 2 點（4、6…）當下自動變成 1 張券，月點數歸零**（`month_points = 該月計入點數 % 2`；`total_points` 是累計）。
+  - **券要拿到的隔天起才能用**（拿到券的當天不能用）。
+  - **有券又有來的人，當天一定使用，不能累積**。實作在**資料庫端自動**：只要某個聚會日「達成」（評分完整或免評分）且當時有可用券，`settle_vouchers(p_user)` 自動寫一筆 `loyalty_redemptions`（`used_on` = 該聚會日、`redeemed_by` = null）。**用券那天不集點。** 只處理 **2026-10-27 以後**的聚會日，不回頭改舊紀錄。
+  - 觸發時機：觸發器 `settle_vouchers_on_rating`（`game_ratings` insert／update 後）、`settle_vouchers_on_attendee`（`gathering_attendees` insert／update 後，例如設免評分）；另外 `get_my_loyalty_summary`、`admin_get_loyalty_overview` 讀取時也會先補算。觸發器內有 exception 保護，出錯不會擋住評分。
+  - **使用者決定：事後修改或刪除評分，不退點數、不退券，已用掉就是用掉。**
+  - **評分仍是前提**（評分是統計手段）：流程是報到 → 評分 → 系統自動用券（當天不集點）。**不需要管理者按確認**，管理者在「免費券紀錄」看使用紀錄即可。
+  - 玩家端（`LoyaltyCard.tsx`）：評分前顯示「你有 N 張免費券可以用，評分完成後會自動使用」；用掉後顯示「今天已自動使用 1 張免費券」、印章顯示「已用券」；「其中 N 張明天起才能用」；兌換歷史改名「免費券使用紀錄」。**沒有使用視窗**（曾做過 `VoucherUseDialog.tsx` 的「強制按鈕」方案，已作廢並刪除，`use_my_voucher` 函式也已 drop）。
+  - 管理者端（`LoyaltyAdmin.tsx`）：三個小分頁「聚會設定／集點狀況／免費券紀錄」。集點狀況改成**一人一張卡片**，排序：可用券多 → 本月點數多 → 總點數多；有「只顯示有點數或有券的人」勾選；「兌換」按鈕改名「補登」（只補登現場已給過的券，`admin_redeem_voucher` 仍是舊版：只檢查累積券、`used_on` 為 null）。免費券紀錄分頁欄位：玩家、用在哪一天、使用時間、來源（系統自動使用／管理者補登）。明細中用券的日子標「🎟 使用免費券（這天不集點）」。樣式在 `loyalty-admin.css` 最底下（`lga-players`、`lga-pcard`、`lga-pill`…）。
+- **新增／變更的資料庫物件**：`loyalty_redemptions.used_on date` ＋唯一索引 `(user_id, used_on) where used_on is not null`；`loyalty_point_days(p_user)`（已達成且沒被拿去用券的日子，同月依日期排名，只供內部使用）；`loyalty_totals(p_user)` 改回 4 欄（`total_points, month_points, earned_vouchers, usable_vouchers`；`usable_vouchers` 只算「拿到券的日期 < 今天」）；`get_my_loyalty_summary()` 多回 `usable_vouchers`（`greatest(usable − 已使用, 0)`）並改成 plpgsql（讀取時補算）；`settle_vouchers(uuid)`、`trg_settle_vouchers()`、兩個觸發器；`admin_get_loyalty_overview()` 重建（volatile，先補算）。`loyalty_day_status` **沒有改**（它仍只回「達成」，用券日是否計點由 `loyalty_point_days` 排除）。內部函式都已 `revoke ... from public, anon, authenticated`。
+- **兩份 SQL 是否都已在 Supabase 執行（`voucher_migration.sql` 第一批、`voucher_auto.sql` 第二批）：第一批使用者截圖顯示管理者表頭已變成「本月（滿 2 歸零）」，應已執行；第二批（自動用券）未確認。接手先問。** 驗證：`select proname from pg_proc where proname in ('settle_vouchers','loyalty_point_days','use_my_voucher');`（應有前兩個、沒有第三個）；`select tgname from pg_trigger where tgname like 'settle_vouchers%';`（應有 2 個）。
+- 前端 `useLoyalty.ts`：`LoyaltySummary` 多 `usableVouchers`；`Redemption` 多 `usedOn`；`loyalty_redemptions` 查詢多選 `used_on`。
+- `loyalty-card.css` 底下可能殘留 `.modal-backdrop.voucher-backdrop { z-index: 1400; }`（已用不到，無害，可刪）。
+
+### 重要教訓（本日）
+- **使用者曾請 Gemini 把 CSS 縮小（`filter.css`、`modal.css`、`mylist.css`、`vip.css`），AI 建議先不要 commit，使用者已 `git restore` 還原。** 之後不要把 CSS 交給別的工具壓縮／重寫；若要整理 CSS，先實測所有畫面再 commit。
+- 管理者資料表現在的「本月」欄是「該月餘數」（0 或 1），不是該月總點數；總點數看「總 N 點」。
+
+### 待辦（接續順序，使用者尚未回「照建議」）
+1. **「我的桌遊」抽屜**（`MyList.tsx`、`mylist.css`）：①上方「想玩」「已玩」數字方塊改成分頁按鈕，清單直接顯示在下方，**拿掉重複的兩列入口與「返回」流程**；②空清單才顯示「去逛收藏」；③加**「我的統計」**（玩過幾款、總遊玩次數、約略總時數＝次數×BGG 時間並標「約」、最常玩 TOP 3），AI 偏向在抽屜內點開後出現有「‹ 返回」的畫面（使用者尚未決定展開或獨立頁）；④今天有聚會且未評分時顯示「去評分」卡片；⑤有券時顯示免費券卡片（有券才出現）；⑥`ClubPoints` 提示文字「同月累積 2 點，可換 1 張免費券」要改成新規則（2 點自動變券、點數歸零、隔天起自動使用）。
+2. 排行榜空狀態 → 集點卡頁面風格 → 管理者視窗統一風格 → 手機全面檢查。
+3. `privacy.html` 補上免費券說明（自動使用紀錄管理者可見）。
+4. 規則書 PDF 上傳（私有 bucket）→ AI 規則助手（RAG）。
+5. PWA、VIP 朋友名單、推薦牆、拖曳調整排名、VIP 鎖定 SQL（資格要含來過聚會的人）。
+6. 仍未驗證：`gathering_plays` 是否已 drop、`capacity` 是否 NOT NULL。
+
+### 本日作廢的舊說明
+- 「同月 2 點換 1 張免費券，由管理者按『兌換』」→ 改為自動變券、自動用券（見上）。
+- 「玩家按『使用』／管理者按『確認』」的流程 → 作廢（使用者說有看使用紀錄就好，不用確認）。
+- 「集點狀況」表格 → 已改成卡片；使用紀錄移到第三個小分頁。
+- 「『我的桌遊』抽屜首頁有想玩清單／已玩清單入口列」→ 待改（見待辦 1），目前仍存在。
+
+---
 
 ## 2026-10-27 更新（以本節為準；與下方舊內容衝突時，以這裡為準）
 
@@ -89,7 +127,7 @@
 | `gathering_attendees` | `(gathering_id, user_id)`、`exempt`（免評分）、`source`（`admin`/`self`）。**INSERT／UPDATE／DELETE 只有管理者**（玩家只能透過 `join_gathering`）；玩家可讀自己的列。 |
   | `gathering_games` | 當天指定的遊戲（`gathering_id`、`bgg_name`）。`gathering_plays`（「我玩了」）已於 2026-10-26 移除。 |
 | `gathering_checkins` | 報到設定：`gathering_id` pk、`token`（隨機、唯一）、`is_open`、`capacity`（1～500，**NOT NULL**）。**只有管理者可讀寫**（玩家讀不到 token）。 |
-| `loyalty_redemptions` | 免費券兌換紀錄：`id`、`user_id`、`redeemed_at`、`redeemed_by`（永久保留、沒有刪除功能，要刪用 SQL）。 |
+| `loyalty_redemptions` | 免費券使用紀錄：`id`、`user_id`、`redeemed_at`、`redeemed_by`（管理者補登時有值，自動用券為 null）、`used_on`（用在哪一天的聚會日，管理者補登為 null；`(user_id, used_on)` 唯一）。永久保留、沒有刪除功能，要刪用 SQL。 |
 
 **資料庫函式**：`is_admin()`、`get_rating_summaries()`、社群統計彙總函式（security definer，只回人數）、`loyalty_day_status(p_user)（新規則：出席＋任一款指定遊戲評分完整，或免評分；舊聚會日沿用遊玩紀錄規則）`（點數核心，見第 7 節）、`loyalty_totals(uid)`（本月點數、總點數、累積券；定義尚未確認，應以前者為基礎）、玩家用 `get_my_loyalty_summary`／`get_my_loyalty_days`、管理者用 `admin_get_loyalty_overview`／`admin_get_loyalty_days(p_user)`／`admin_redeem_voucher(p_user)`、`join_gathering(p_token)`（玩家報到的唯一入口；只在聚會當天有效；報到後由觸發器 `attendee_makes_vip` 自動成為 VIP）、觸發器函式 `set_user_game_status_times()`、`mark_played_from_activity()只掛在 game_ratings`、`game_ratings_set_updated_at`。**security definer 函式一律 `set search_path = ''`，並 `revoke ... from public, anon`（需要的才 grant）。改函式前請使用者在 SQL Editor 匯出實際定義。**
 
