@@ -7,4 +7,4 @@ dist/
 *.bak
 .DS_Store
 Thumbs.db
-.env.local
+.env.localboardgames.csv
