@@ -857,6 +857,16 @@ function Library({
       <MyList
         key={inviteKey}
         mode={myListMode}
+        isAdmin={isAdmin}
+        isVip={vip.isVip}
+        onBrowse={() => {
+          setIsMyListOpen(false)
+          window.setTimeout(() => {
+            document
+              .querySelector('.library')
+              ?.scrollIntoView({ behavior: 'smooth' })
+          }, 50)
+        }}
         focusDate={inviteFocus}
         boardGames={boardGames}
         personal={personal}

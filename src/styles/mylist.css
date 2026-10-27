@@ -160,3 +160,245 @@
   font-size: 12px;
   color: #3f7d58;
 }
+
+/* ===== 我的俱樂部（我的桌遊抽屜首頁） ===== */
+
+.club-body {
+  padding: 0 0 24px;
+}
+
+.club-card {
+  padding: 18px 20px 20px;
+  background: var(--c-ink, #34463c);
+  color: #fff;
+  text-align: left;
+}
+
+.club-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.club-kicker {
+  margin: 0 0 2px;
+  color: #ffffffb3;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.club-top h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.club-close {
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.club-who {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0 14px;
+}
+
+.club-avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--c-cream, #f5f0e5);
+  color: var(--c-ink, #34463c);
+}
+
+.club-name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.club-badge {
+  margin: 2px 0 0;
+  color: #ffffffb3;
+  font-size: 13px;
+}
+
+.club-badge.vip {
+  color: #f1c97a;
+}
+
+.club-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.club-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 12px;
+  background: #ffffff1f;
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.club-stat span {
+  color: #ffffffcc;
+  font-size: 12px;
+}
+
+.club-stat strong {
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.club-stat:hover {
+  background: #ffffff33;
+}
+
+.club-points {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ffffff1f;
+}
+
+.club-points-label {
+  color: #ffffffcc;
+  font-size: 12px;
+}
+
+.club-points-value {
+  font-size: 24px;
+}
+
+.club-points-hint {
+  flex-basis: 100%;
+  color: #ffffffb3;
+  font-size: 12px;
+}
+
+.club-login {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ffffff1a;
+}
+
+.club-login p,
+.club-note {
+  margin: 0 0 10px;
+  color: #ffffffd9;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.club-note {
+  margin: 12px 0 0;
+}
+
+.club-login-btn {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--c-caramel, #b78a5a);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.club-section-title {
+  margin: 20px 20px 10px;
+  font-size: 16px;
+  text-align: left;
+}
+
+.club-menu {
+  margin: 0 20px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.club-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 14px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.club-menu-item + .club-menu-item {
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.club-menu-icon {
+  flex: none;
+  width: 24px;
+  color: var(--c-forest, #456b50);
+  font-size: 18px;
+  text-align: center;
+}
+
+.club-menu-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.club-menu-text small {
+  color: #7a7f75;
+  font-size: 12px;
+}
+
+.club-menu-arrow {
+  color: #7a7f75;
+  font-size: 22px;
+}
+
+.mylist-back {
+  border: none;
+  background: transparent;
+  color: var(--c-forest, #456b50);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mylist-browse {
+  margin-top: 12px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--c-forest, #456b50);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
