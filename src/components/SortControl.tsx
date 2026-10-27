@@ -15,6 +15,14 @@ export default function SortControl({
 }) {
   const isDefault = sortBy === 'rankingEngine' && sortDirection === 'asc'
 
+  // 綜合分數＝700 減 score_rank，內部由小到大等於畫面上由大到小，所以標示要反過來
+  const flip = sortBy === 'scoreRank'
+  const shownDirection: 'asc' | 'desc' = flip
+    ? sortDirection === 'asc'
+      ? 'desc'
+      : 'asc'
+    : sortDirection
+
   return (
     <div className="sort-control">
       <select
@@ -24,7 +32,7 @@ export default function SortControl({
       >
         <option value="rankingEngine">Ranking engine</option>
         <option value="classicGameRanking">常玩遊戲排名</option>
-        <option value="scoreRank">綜合分數排名</option>
+        <option value="scoreRank">綜合分數</option>
         <option value="name">桌遊名稱</option>
         <option value="bggScore">BGG 分數</option>
         <option value="bggDifficulty">BGG 難度</option>
@@ -37,10 +45,10 @@ export default function SortControl({
         className="sort-dir"
         onClick={onToggleDirection}
         aria-label={
-          sortDirection === 'asc' ? '切換為降冪排序' : '切換為升冪排序'
+          shownDirection === 'asc' ? '切換為降冪排序' : '切換為升冪排序'
         }
       >
-        {sortDirection === 'asc' ? '↑ 升冪' : '↓ 降冪'}
+        {shownDirection === 'asc' ? '↑ 升冪' : '↓ 降冪'}
       </button>
       <button
         type="button"

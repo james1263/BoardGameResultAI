@@ -138,3 +138,47 @@ export function fitsGroupRange(
   if (game.maxPlayers != null && hi > game.maxPlayers) return false
   return true
 }
+
+// ---- 綜合分數（畫面顯示）----
+
+// 畫面顯示「綜合分數」＝700 減 score_rank，越大越好（資料庫欄位不變）
+export function getDisplayScore(
+  scoreRank: number | null | undefined,
+): number | null {
+  if (scoreRank == null) return null
+  return Math.round((700 - scoreRank) * 10) / 10
+}
+
+// ---- 管理者 CSV 換算分數（與資料庫函式 get_rating_summaries 同一套規則）----
+
+export type AdminScores = { overall: number | null; keep: number | null }
+
+// 玩過的遊戲＝ranking_engine 是整數（.5 結尾代表還沒玩過）
+export function computeAdminScores(
+  games: LibraryGame[],
+): Map<string, AdminScores> {
+  const result = new Map<string, AdminScores>()
+  const played = games.filter(
+    (g) => g.rankingEngine != null && Number.isInteger(g.rankingEngine),
+  )
+  const scoreRanks: number[] = []
+  for (const g of played) {
+    if (g.scoreRank != null) scoreRanks.push(g.scoreRank)
+  }
+
+  for (const g of played) {
+    const re = g.rankingEngine as number
+    const overall =
+      re <= 25 ? 10 : re <= 50 ? 9 : re <= 65 ? 8 : re <= 80 ? 7 : 6
+
+    let keep: number | null = null
+    const sr = g.scoreRank
+    if (sr != null) {
+      // 同分並列：名次＝比自己小的有幾款＋1
+      const rank = scoreRanks.filter((v) => v < sr).length + 1
+      keep = rank <= 30 ? 5 : rank <= 60 ? 4 : rank <= 90 ? 3 : 2
+    }
+    result.set(g.bggName, { overall, keep })
+  }
+  return result
+}

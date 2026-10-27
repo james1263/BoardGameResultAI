@@ -1,5 +1,5 @@
 import type { PersonalApi } from '../lib/personalApi'
-import type { LibraryGame } from '../lib/libraryTypes'
+import { getDisplayScore, type LibraryGame } from '../lib/libraryTypes'
 import { formatNumber, formatPlayers } from '../lib/gameFormat'
 import CoverImage from './CoverImage'
 import StatusButtons from './StatusButtons'
@@ -51,7 +51,7 @@ export default function GameCard({
           </p>
 
           <p className="game-score-rank">
-            綜合分數排名：{formatNumber(game.scoreRank)}
+            綜合分數：{formatNumber(getDisplayScore(game.scoreRank))}
           </p>
         </div>
 

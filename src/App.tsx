@@ -49,6 +49,7 @@ import {
   MINE_GROUPS,
   MINE_GROUP_LABELS,
   getMineGroup,
+  computeAdminScores,
 } from './lib/libraryTypes'
 import { getPlayerSortValue, compareNullableNumbers } from './lib/gameFormat'
 import { HeartIcon, CheckIcon } from './components/Icons'
@@ -81,6 +82,7 @@ function Library({
     [allGames],
   )
   const trash = useTrashActions(allGames, onGamesChange)
+  const adminScores = useMemo(() => computeAdminScores(boardGames), [boardGames])
   const [searchText, setSearchText] = useState('')
   const [selectedGame, setSelectedGame] = useState<LibraryGame | null>(null)
   const [selectedTab, setSelectedTab] = useState<'overview' | 'ratings' | 'mine' | 'rules'>('overview')
@@ -819,6 +821,7 @@ function Library({
           coverVersion={coverVersions[selectedGame.coverSlug] ?? 0}
           initialTab={selectedTab}
           isAdmin={isAdmin}
+          adminScores={adminScores.get(selectedGame.bggName) ?? null}
           personal={personal}
           playSessions={playSessions}
           ratings={ratings}

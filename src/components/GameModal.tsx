@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
-import type { LibraryGame } from '../lib/libraryTypes'
+import type { AdminScores, LibraryGame } from '../lib/libraryTypes'
 import type { PersonalApi } from '../lib/personalApi'
 import GameDocuments from '../GameDocuments'
 import CoverImage from './CoverImage'
@@ -29,6 +29,7 @@ export default function GameModal({
   game,
   coverVersion,
   isAdmin,
+  adminScores,
   personal,
   playSessions,
   ratings,
@@ -45,6 +46,7 @@ export default function GameModal({
   game: LibraryGame
   coverVersion: number
   isAdmin: boolean
+  adminScores: AdminScores | null
   personal: PersonalApi
   playSessions: PlaySessionsApi
   ratings: RatingsApi
@@ -227,13 +229,57 @@ export default function GameModal({
           )}
 
           {tab === 'ratings' && (
-            <div className="modal-section">
-              <RatingSection
-                key={`${game.bggName}-${ratings.status}`}
-                bggName={game.bggName}
-                api={ratings}
-              />
-            </div>
+            isAdmin ? (
+              <div className="modal-section">
+                <h3 className="modal-section-title">管理者評分（來自 CSV）</h3>
+                <div className="rating-list">
+                  <RatingDots label="喜歡度" value={game.likeEmoji} />
+                  <RatingDots label="溝通度" value={game.communicationEmoji} />
+                  <RatingDots label="獨特性" value={game.uniqueEmoji} />
+                  <RatingDots label="影響度" value={game.playerImpactEmoji} />
+                  <RatingDots label="變化度" value={game.changeEmoji} />
+                </div>
+                <div className="rate-grid" style={{ marginTop: 12 }}>
+                  <div className="rate-grid-item">
+                    <span>整體</span>
+                    <strong>
+                      {adminScores == null
+                        ? '未玩過'
+                        : `${adminScores.overall} / 10`}
+                    </strong>
+                  </div>
+                  <div className="rate-grid-item">
+                    <span>適合留下來</span>
+                    <strong>
+                      {adminScores == null
+                        ? '未玩過'
+                        : adminScores.keep == null
+                          ? '未提供'
+                          : `${adminScores.keep} / 5`}
+                    </strong>
+                  </div>
+                </div>
+                <p className="rate-note">
+                  這是你在 Notion 的評分，重新匯入 CSV 就會自動更新。整體由 Ranking
+                  engine、適合留下來由分數排名換算；還沒玩過的遊戲（Ranking engine
+                  以 .5 結尾）七項都不計入大家的評分。
+                </p>
+                <p className="rate-subtitle" style={{ marginTop: 14 }}>大家的評分</p>
+                <CommunitySummary
+                  bggName={game.bggName}
+                  api={ratings}
+                  detailed
+                />
+              </div>
+            ) : (
+              <div className="modal-section">
+                <RatingSection
+                  key={`${game.bggName}-${ratings.status}`}
+                  bggName={game.bggName}
+                  api={ratings}
+                />
+              </div>
+            )
           )}
 
           {tab === 'mine' && (
