@@ -586,3 +586,19 @@
 .mylist-name {
   color: var(--c-ink, #34463c);
 }
+
+/* 我的俱樂部：✕ 固定在抽屜右上角，捲動時不會跑掉 */
+.club-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 5;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(52, 70, 60, 0.92);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+  font-size: 22px;
+}
