@@ -366,3 +366,43 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* 卡片等高：按鈕固定貼在卡片最底部 */
+.game-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.game-card .game-art {
+  flex: none;
+}
+
+.game-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.game-info .rule-button {
+  margin-top: auto;
+}
+
+/* 清單檢視維持橫向排列 */
+.view-list .game-card {
+  flex-direction: row;
+}
+
+.view-list .game-info {
+  flex-direction: row;
+}
+
+.view-list .game-info .rule-button {
+  margin-top: 0;
+}
+
+/* 觸控螢幕沒有「懸停」：點過的卡片不要卡在被抬高的狀態 */
+@media (hover: none) {
+  .game-card:hover {
+    transform: none;
+  }
+}
