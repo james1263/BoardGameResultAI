@@ -58,6 +58,8 @@ export type FilterDrawerProps = {
 
   groupSize: NumericFilter
   setGroupSize: (value: NumericFilter) => void
+  groupSizeMax: NumericFilter
+  setGroupSizeMax: (value: NumericFilter) => void
   bestPlayerCount: NumericFilter
   setBestPlayerCount: (value: NumericFilter) => void
   recommendPlayerCount: NumericFilter
@@ -137,16 +139,30 @@ export default function FilterDrawer(props: FilterDrawerProps) {
               清除篩選
             </button>
           </div>
-
           <div className="filter-group">
-            <NumberSelect
-              label="我們有幾個人？"
-              value={props.groupSize}
-              options={groupSizes}
-              onChange={props.setGroupSize}
-            />
+            <div className="filter-group-title">
+              <span>我們有幾個人？</span>
+              <span className="filter-group-hint">可選區間，例如 3～5 人</span>
+            </div>
+            <div className="filter-range">
+              <NumberSelect
+                label="最少"
+                value={props.groupSize}
+                options={groupSizes}
+                onChange={props.setGroupSize}
+              />
+              <span className="filter-range-sep" aria-hidden="true">
+                ～
+              </span>
+              <NumberSelect
+                label="最多"
+                value={props.groupSizeMax}
+                options={groupSizes}
+                onChange={props.setGroupSizeMax}
+              />
+            </div>
             <p className="filter-group-hint">
-              只列出這個人數玩得起來的遊戲。
+              只列出整個人數區間都玩得起來的遊戲；只選一邊，就是剛好這個人數。
             </p>
           </div>
 
@@ -193,7 +209,7 @@ export default function FilterDrawer(props: FilterDrawerProps) {
               <span>BGG 難度</span>
               <span className="filter-group-hint">可複選</span>
             </div>
-            <div className="filter-pills">
+            <div className="filter-pills filter-pills-5">
               {DIFFICULTY_LEVELS.map((level) => {
                 const on = difficultyLevels.includes(level)
                 const info = DIFFICULTY_LEVEL_INFO[level]

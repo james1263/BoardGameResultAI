@@ -111,3 +111,30 @@ export function isNewGameAt(
     nowMs - new Date(createdAt).getTime() < NEW_GAME_DAYS * 24 * 60 * 60 * 1000
   )
 }
+
+// ---- 人數區間篩選 ----
+
+export type PlayerRange = [number, number]
+
+// 只填一個＝剛好這個人數；兩個都填＝區間（前後顛倒會自動對調）
+export function getGroupRange(
+  a: NumericFilter,
+  b: NumericFilter,
+): PlayerRange | null {
+  if (a === '' && b === '') return null
+  const lo = a === '' ? (b as number) : a
+  const hi = b === '' ? (a as number) : b
+  return lo <= hi ? [lo, hi] : [hi, lo]
+}
+
+// 整個區間都玩得起來才算符合（人數資料缺值的遊戲不排除，和以前一樣）
+export function fitsGroupRange(
+  game: { minPlayers?: number | null; maxPlayers?: number | null },
+  range: PlayerRange | null,
+): boolean {
+  if (!range) return true
+  const [lo, hi] = range
+  if (game.minPlayers != null && lo < game.minPlayers) return false
+  if (game.maxPlayers != null && hi > game.maxPlayers) return false
+  return true
+}

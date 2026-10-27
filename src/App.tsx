@@ -40,6 +40,8 @@ import {
   type DifficultyLevel,
   type RatingFilter,
   getDifficultyLevel,
+  getGroupRange,
+  fitsGroupRange,
   isNewGameAt,
   VIEW_MODE_STORAGE_KEY,
   loadViewMode,
@@ -224,6 +226,7 @@ function Library({
     [],
   )
   const [groupSize, setGroupSize] = useState<NumericFilter>('')
+  const [groupSizeMax, setGroupSizeMax] = useState<NumericFilter>('')
   const [bestPlayerCount, setBestPlayerCount] = useState<NumericFilter>('')
   const [recommendPlayerCount, setRecommendPlayerCount] =
     useState<NumericFilter>('')
@@ -277,6 +280,10 @@ function Library({
       ).sort((a, b) => a - b),
     [boardGames],
   )
+  const groupRange = useMemo(
+    () => getGroupRange(groupSize, groupSizeMax),
+    [groupSize, groupSizeMax],
+  )
 
   const filteredGames = useMemo(() => {
     const search = searchText.trim().toLocaleLowerCase()
@@ -301,11 +308,7 @@ function Library({
         if (level === null || !difficultyLevels.includes(level)) return false
       }
 
-      if (
-        groupSize !== '' &&
-        ((game.minPlayers != null && groupSize < game.minPlayers) ||
-          (game.maxPlayers != null && groupSize > game.maxPlayers))
-      ) {
+      if (!fitsGroupRange(game, groupRange)) {
         return false
       }
 
@@ -395,7 +398,7 @@ function Library({
     searchText,
     selectedCategories,
     difficultyLevels,
-    groupSize,
+    groupRange,
     bestPlayerCount,
     recommendPlayerCount,
     timeLimit,
@@ -493,11 +496,7 @@ function Library({
         return false
       }
 
-      if (
-        groupSize !== '' &&
-        ((game.minPlayers != null && groupSize < game.minPlayers) ||
-          (game.maxPlayers != null && groupSize > game.maxPlayers))
-      ) {
+      if (!fitsGroupRange(game, groupRange)) {
         return false
       }
 
@@ -516,7 +515,7 @@ function Library({
     searchText,
     selectedCategories,
     difficultyLevels,
-    groupSize,
+    groupRange,
     bestPlayerCount,
     recommendPlayerCount,
     timeLimit,
@@ -531,7 +530,7 @@ function Library({
   const activeFilterCount =
     selectedCategories.length +
     difficultyLevels.length +
-    Number(groupSize !== '') +
+    Number(groupRange !== null) + +
     Number(bestPlayerCount !== '') +
     Number(recommendPlayerCount !== '') +
     Number(timeLimit !== '') +
@@ -569,6 +568,7 @@ function Library({
     setSelectedCategories([])
     setDifficultyLevels([])
     setGroupSize('')
+    setGroupSizeMax('')
     setBestPlayerCount('')
     setRecommendPlayerCount('')
     setTimeLimit('')
@@ -706,6 +706,8 @@ function Library({
             groupSizes={groupSizes}
             groupSize={groupSize}
             setGroupSize={setGroupSize}
+            groupSizeMax={groupSizeMax}
+            setGroupSizeMax={setGroupSizeMax}
             bestPlayerCount={bestPlayerCount}
             setBestPlayerCount={setBestPlayerCount}
             recommendPlayerCount={recommendPlayerCount}
