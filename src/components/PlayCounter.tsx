@@ -51,7 +51,13 @@ export default function PlayCounter({
           aria-label="增加遊玩次數"
           disabled={disabled || entry.playCount >= 999}
           onClick={() =>
-            personal.updateEntry(bggName, { playCount: entry.playCount + 1 })
+            personal.updateEntry(
+              bggName,
+              entry.played
+                ? { playCount: entry.playCount + 1 }
+                : { playCount: entry.playCount + 1, played: true },
+              { skipPlayedRule: true },
+            )
           }
         >
           ＋
