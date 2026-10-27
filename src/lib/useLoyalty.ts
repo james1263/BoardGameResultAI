@@ -8,6 +8,8 @@ export type LoyaltySummary = {
     earnedVouchers: number
     redeemed: number
     availableVouchers: number
+    // 今天就能使用的券（拿到券的隔天起才算）
+    usableVouchers: number
     overRedeemed: boolean
 }
 
@@ -19,7 +21,8 @@ export type LoyaltyDay = {
     qualified: boolean
 }
 
-export type Redemption = { id: string; redeemedAt: string }
+// usedOn：玩家自己用券時的聚會日（管理者補登的紀錄是 null）
+export type Redemption = { id: string; redeemedAt: string; usedOn: string | null }
 
 // 玩家被列入的聚會日：當天指定的遊戲清單
 export type MyGathering = {
@@ -36,6 +39,7 @@ type SummaryRow = {
     redeemed: number
     available_vouchers: number
     over_redeemed: boolean
+    usable_vouchers?: number
 }
 
 type DayRow = {
@@ -46,7 +50,7 @@ type DayRow = {
     qualified: boolean
 }
 
-type RedemptionRow = { id: string; redeemed_at: string }
+type RedemptionRow = { id: string; redeemed_at: string; used_on?: string | null }
 type GatheringRow = { id: string; gathered_on: string; title: string }
 type PairRow = { gathering_id: string; bgg_name: string }
 
@@ -57,6 +61,7 @@ export function toSummary(row: SummaryRow): LoyaltySummary {
         earnedVouchers: row.earned_vouchers,
         redeemed: row.redeemed,
         availableVouchers: row.available_vouchers,
+        usableVouchers: row.usable_vouchers ?? 0,
         overRedeemed: row.over_redeemed,
     }
 }
@@ -72,7 +77,11 @@ export function toDay(row: DayRow): LoyaltyDay {
 }
 
 export function toRedemption(row: RedemptionRow): Redemption {
-    return { id: row.id, redeemedAt: row.redeemed_at }
+    return {
+        id: row.id,
+        redeemedAt: row.redeemed_at,
+        usedOn: row.used_on ?? null,
+    }
 }
 
 export function formatDay(date: string): string {
@@ -134,7 +143,7 @@ export function useMyLoyalty() {
                     supabase.rpc('get_my_loyalty_days'),
                     supabase
                         .from('loyalty_redemptions')
-                        .select('id, redeemed_at')
+                        .select('id, redeemed_at, used_on')
                         .eq('user_id', id)
                         .order('redeemed_at', { ascending: false }),
                     supabase.from('gatherings').select('id, gathered_on, title'),

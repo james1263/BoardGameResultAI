@@ -59,6 +59,10 @@ export default function LoyaltyCard({
 
   const summary = loyalty.summary
   const ratingsReady = ratings.status === 'ready'
+  // 玩家自己用過免費券的聚會日（那天不集點）
+  const usedDates = new Set(
+    loyalty.redemptions.flatMap((item) => (item.usedOn ? [item.usedOn] : [])),
+  )
 
   // 七項評分都填了才算完整（overall 沒填時資料會是 0）
   function isComplete(bggName: string): boolean {
@@ -79,18 +83,23 @@ export default function LoyaltyCard({
 
   function renderStamp(date: string, done: boolean) {
     const { month, day } = splitDate(date)
+    const used = usedDates.has(date)
     return (
       <div className="lc-stamp" aria-hidden="true">
         <span className="lc-stamp-month">{month} 月</span>
         <span className="lc-stamp-day">{day}</span>
-        <span className="lc-stamp-text">{done ? '已蓋章' : '待蓋章'}</span>
+        <span className="lc-stamp-text">
+          {used ? '已用券' : done ? '已蓋章' : '待蓋章'}
+        </span>
       </div>
     )
   }
 
   function renderLegacyDay(day: LoyaltyDay) {
     const isUpcoming = day.date >= todayLocal() && !day.qualified
-    const text = day.qualified
+    const text = usedDates.has(day.date)
+      ? '這天使用了 1 張免費券，不集點'
+      : day.qualified
       ? `已得 1 點（${day.gameCount} 款都評分完整）`
       : isUpcoming
         ? '你已經在這天的出席名單上。管理者還沒指定要評分的遊戲，指定後這裡會出現遊戲，評完分就蓋章。'
@@ -123,6 +132,8 @@ export default function LoyaltyCard({
     let text: string
     if (!ratingsReady) {
       text = '評分讀取中…'
+    } else if (usedDates.has(day.date)) {
+      text = '這天使用了 1 張免費券，不集點'
     } else if (qualified) {
       text = '已得 1 點'
     } else {
@@ -204,10 +215,20 @@ export default function LoyaltyCard({
   const showTodayTask =
     ratingsReady && attendingToday && todayGames.length > 0 && !todayQualified
   const monthPoints = summary?.monthPoints ?? 0
+  const usableVouchers = summary?.usableVouchers ?? 0
+  const pendingVouchers = Math.max(
+    0,
+    (summary?.availableVouchers ?? 0) - usableVouchers,
+  )
+  const usedToday = usedDates.has(todayDate)
+  // 有可用的券、今天有來、還沒評分：提醒評完分會自動用券
+  const voucherWaiting =
+    ratingsReady && attendingToday && !todayQualified && !usedToday && usableVouchers > 0
 
   return (
     <div className="lc">
       {loyalty.error && <p className="lc-error">讀取失敗：{loyalty.error}</p>}
+
 
       <header className="lc-banner">
         <span className="lc-banner-kicker">BOARD GAME NIGHT</span>
@@ -217,6 +238,25 @@ export default function LoyaltyCard({
           ♟
         </span>
       </header>
+
+      {usedToday && (
+        <section className="lc-today lc-today-ticket">
+          <p className="lc-today-kicker">🎟 免費券</p>
+          <h4 className="lc-today-title">今天已自動使用 1 張免費券</h4>
+          <p className="lc-today-sub">
+            有券又有來的人，評分完成後系統會自動用券，今天不集點。
+          </p>
+        </section>
+      )}
+      {voucherWaiting && (
+        <section className="lc-today lc-today-ticket">
+          <p className="lc-today-kicker">🎟 免費券</p>
+          <h4 className="lc-today-title">你有 {usableVouchers} 張免費券可以用</h4>
+          <p className="lc-today-sub">
+            評分完成後會自動使用 1 張，今天就不集點了。
+          </p>
+        </section>
+      )}
       {showTodayTask && (
         <section className="lc-today">
           <p className="lc-today-kicker">今天要做的事</p>
@@ -260,6 +300,11 @@ export default function LoyaltyCard({
                 {summary.availableVouchers}
                 <small>張</small>
               </strong>
+              {pendingVouchers > 0 && (
+                <small className="lc-stat-sub">
+                  其中 {pendingVouchers} 張明天起才能用
+                </small>
+              )}
             </div>
           </div>
 
@@ -277,13 +322,16 @@ export default function LoyaltyCard({
             <span className="lc-progress-arrow" aria-hidden="true">
               →
             </span>
-            <span className={`lc-reward ${monthPoints >= 2 ? 'ready' : ''}`}>
+            <span
+              className={`lc-reward ${summary.availableVouchers > 0 ? 'ready' : ''}`}
+            >
               免費券 1 張
             </span>
           </div>
           <p className="lc-progress-note">
-            同一個月集滿 2 點換 1 張，券沒有期限。累積券 {summary.earnedVouchers}{' '}
-            張、已兌換 {summary.redeemed} 張。
+            同一個月集滿 2 點，會自動變成 1 張免費券，點數歸零重算。券沒有期限，
+            但要拿到的隔天起才會自動使用。累積券 {summary.earnedVouchers} 張、已使用{' '}
+            {summary.redeemed} 張。
           </p>
         </>
       )}
@@ -315,6 +363,9 @@ export default function LoyaltyCard({
         <ul className="lc-rules">
           <li>一天不管玩幾款、參加幾場，只算 1 點。</li>
           <li>當月只集到 1 點，到下個月 1 日就不再計入。</li>
+          <li>
+            有可用的免費券時，報到並評分後系統會自動用券（不能累積）；用券那天不集點。
+          </li>
           <li>點數依你目前的紀錄即時計算；兌換紀錄會永久保留。</li>
           <li>只有你本人和管理者看得到你的出席與點數，其他玩家看不到。</li>
         </ul>
@@ -339,14 +390,18 @@ export default function LoyaltyCard({
       </section>
 
       <section className="lc-section">
-        <h4 className="lc-heading">兌換歷史</h4>
+        <h4 className="lc-heading">免費券使用紀錄</h4>
         {loyalty.redemptions.length === 0 ? (
           <p className="lc-empty">還沒有兌換過。</p>
         ) : (
           <ul className="lc-tickets">
             {loyalty.redemptions.map((item) => (
               <li className="lc-ticket" key={item.id}>
-                <span className="lc-ticket-title">兌換 1 張免費券</span>
+                <span className="lc-ticket-title">
+                  {item.usedOn
+                    ? `${formatDay(item.usedOn)} 使用 1 張免費券`
+                    : '兌換 1 張免費券（管理者補登）'}
+                </span>
                 <span className="lc-ticket-date">
                   {formatDateTime(item.redeemedAt)}
                 </span>
@@ -361,4 +416,4 @@ export default function LoyaltyCard({
       </button>
     </div>
   )
-}
+}

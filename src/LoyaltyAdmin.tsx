@@ -30,7 +30,13 @@ type Detail = {
     redemptions: Redemption[]
 }
 type Checkin = { token: string; isOpen: boolean; capacity: number | null }
-type AdminTab = 'setup' | 'status'
+type VoucherUse = {
+    id: string
+    userId: string
+    usedOn: string | null
+    redeemedAt: string
+}
+type AdminTab = 'setup' | 'status' | 'vouchers'
 
 type OverviewRaw = {
     user_id: string
@@ -103,11 +109,38 @@ export default function LoyaltyAdmin() {
     const [selfAttendees, setSelfAttendees] = useState<Record<string, string[]>>({})
     const [capacityDraft, setCapacityDraft] = useState('')
     const [detail, setDetail] = useState<Detail | null>(null)
+    const [onlyWithPoints, setOnlyWithPoints] = useState(false)
+    const [voucherUses, setVoucherUses] = useState<VoucherUse[]>([])
 
     const gameNameMap = useMemo(
         () => new Map(allGames.map((game) => [game.bggName, game.name])),
         [allGames],
     )
+
+    async function loadVoucherUses(): Promise<string> {
+        const { data, error } = await supabase
+            .from('loyalty_redemptions')
+            .select('id, user_id, used_on, redeemed_at')
+            .order('redeemed_at', { ascending: false })
+            .limit(300)
+        if (error) return error.message
+        setVoucherUses(
+            (
+                (data ?? []) as {
+                    id: string
+                    user_id: string
+                    used_on: string | null
+                    redeemed_at: string
+                }[]
+            ).map((row) => ({
+                id: row.id,
+                userId: row.user_id,
+                usedOn: row.used_on,
+                redeemedAt: row.redeemed_at,
+            })),
+        )
+        return ''
+    }
 
     async function loadAll() {
         setLoading(true)
@@ -134,9 +167,16 @@ export default function LoyaltyAdmin() {
                 .select('gathering_id, token, is_open, capacity'),
         ])
 
+        const usesError = await loadVoucherUses()
         const failed =
             g.error ?? a.error ?? p.error ?? o.error ?? gg.error ?? bg.error ?? ct.error ?? ck.error
-        setMessage(failed ? '讀取失敗：' + failed.message : '')
+        setMessage(
+            failed
+                ? '讀取失敗：' + failed.message
+                : usesError
+                    ? '讀取免費券紀錄失敗：' + usesError
+                    : '',
+        )
 
         setGatherings(
             (
@@ -227,6 +267,7 @@ export default function LoyaltyAdmin() {
             return
         }
         setOverview(((data ?? []) as OverviewRaw[]).map(toOverview))
+        await loadVoucherUses()
     }
 
     async function addGathering() {
@@ -557,7 +598,7 @@ export default function LoyaltyAdmin() {
             supabase.rpc('admin_get_loyalty_days', { p_user: row.userId }),
             supabase
                 .from('loyalty_redemptions')
-                .select('id, redeemed_at')
+                .select('id, redeemed_at, used_on')
                 .eq('user_id', row.userId)
                 .order('redeemed_at', { ascending: false }),
         ])
@@ -579,7 +620,11 @@ export default function LoyaltyAdmin() {
                     }[]
                 ).map(toDay),
                 redemptions: (
-                    (r.data ?? []) as { id: string; redeemed_at: string }[]
+                    (r.data ?? []) as {
+                        id: string
+                        redeemed_at: string
+                        used_on: string | null
+                    }[]
                 ).map(toRedemption),
             })
         }
@@ -589,7 +634,7 @@ export default function LoyaltyAdmin() {
     async function redeem(row: OverviewRow) {
         if (
             !window.confirm(
-                `確定為「${row.nickname}」兌換 1 張免費券嗎？\n目前可用 ${row.availableVouchers} 張，兌換後無法復原。`,
+                `確定為「${row.nickname}」補登 1 張免費券使用嗎？\n（有券又有來的人系統會自動用券，這個按鈕只用來補登現場已經給過的券。）\n目前累積可用 ${row.availableVouchers} 張，補登後無法復原。`,
             )
         )
             return
@@ -603,7 +648,7 @@ export default function LoyaltyAdmin() {
         if (error) {
             setMessage('兌換失敗：' + error.message)
         } else {
-            setMessage(`已為「${row.nickname}」兌換 1 張，剩下 ${data ?? 0} 張可用。`)
+            setMessage(`已為「${row.nickname}」補登 1 張，剩下 ${data ?? 0} 張可用。`)
             await refreshOverview()
             if (detail?.userId === row.userId) await showDetail(row)
         }
@@ -648,6 +693,20 @@ export default function LoyaltyAdmin() {
             .slice(0, 8)
         : []
 
+    // 有券、有點數的人排最上面
+    const rankedOverview = [...overview]
+        .filter(
+            (row) =>
+                !onlyWithPoints || row.totalPoints > 0 || row.availableVouchers > 0,
+        )
+        .sort(
+            (x, y) =>
+                y.availableVouchers - x.availableVouchers ||
+                y.monthPoints - x.monthPoints ||
+                y.totalPoints - x.totalPoints ||
+                x.nickname.localeCompare(y.nickname, 'zh-Hant'),
+        )
+
     return (
         <div className="loy-admin lga-embedded">
             {loading && <p className="loy-admin-note">讀取中…</p>}
@@ -671,6 +730,15 @@ export default function LoyaltyAdmin() {
                     onClick={() => setTab('status')}
                 >
                     集點狀況
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === 'vouchers'}
+                    className={`loy-tab ${tab === 'vouchers' ? 'active' : ''}`}
+                    onClick={() => setTab('vouchers')}
+                >
+                    免費券紀錄
                 </button>
             </div>
 
@@ -1009,39 +1077,62 @@ export default function LoyaltyAdmin() {
                     {overview.length === 0 ? (
                         <p>還沒有任何人被列入聚會名單。</p>
                     ) : (
-                        <div className="loy-admin-tablewrap">
-                            <table className="loy-admin-table">
-                                <thead>
-                                    <tr>
-                                        <th>暱稱</th>
-                                        <th>本月</th>
-                                        <th>總點數</th>
-                                        <th>累積券</th>
-                                        <th>已兌換</th>
-                                        <th>可用</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {overview.map((row) => (
-                                        <tr key={row.userId}>
-                                            <td>
-                                                {row.nickname}
+                        <>
+                            <label className="lga-filter">
+                                <input
+                                    type="checkbox"
+                                    checked={onlyWithPoints}
+                                    onChange={(event) =>
+                                        setOnlyWithPoints(event.target.checked)
+                                    }
+                                />
+                                只顯示有點數或有券的人
+                            </label>
+                            <ul className="lga-players">
+                                {rankedOverview.map((row) => {
+                                    const empty =
+                                        row.totalPoints === 0 && row.availableVouchers === 0
+                                    return (
+                                        <li
+                                            key={row.userId}
+                                            className={`lga-pcard ${empty ? 'dim' : ''} ${row.availableVouchers > 0 ? 'has-ticket' : ''}`}
+                                        >
+                                            <span className="lga-avatar">
+                                                {initialOf(row.nickname)}
+                                            </span>
+                                            <div className="lga-pinfo">
+                                                <strong>
+                                                    {row.nickname}
+                                                    {row.overRedeemed && (
+                                                        <span
+                                                            className="loy-flag"
+                                                            title="已使用超過目前累積"
+                                                        >
+                                                            ⚠
+                                                        </span>
+                                                    )}
+                                                </strong>
                                                 <small className="lga-contact">
                                                     {contacts[row.userId] ?? '未填聯絡方式'}
                                                 </small>
-                                                {row.overRedeemed && (
-                                                    <span className="loy-flag" title="已兌換超過目前累積">
-                                                        ⚠
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td>{row.monthPoints}</td>
-                                            <td>{row.totalPoints}</td>
-                                            <td>{row.earnedVouchers}</td>
-                                            <td>{row.redeemed}</td>
-                                            <td>{row.availableVouchers}</td>
-                                            <td className="loy-admin-actions">
+                                            </div>
+                                            <div className="lga-pstats">
+                                                <span className="lga-pill">
+                                                    本月 {row.monthPoints} / 2 點
+                                                </span>
+                                                <span className="lga-pill">
+                                                    總 {row.totalPoints} 點
+                                                </span>
+                                                <span
+                                                    className={`lga-pill ${row.availableVouchers > 0 ? 'ticket' : ''}`}
+                                                >
+                                                    🎟 可用 {row.availableVouchers}
+                                                </span>
+                                                <span className="lga-pill">
+                                                    已使用 {row.redeemed}
+                                                </span>
+                                            </div>
+                                            <div className="loy-admin-actions">
                                                 <button
                                                     type="button"
                                                     className="admin-link"
@@ -1056,17 +1147,17 @@ export default function LoyaltyAdmin() {
                                                     disabled={busy || row.availableVouchers < 1}
                                                     onClick={() => redeem(row)}
                                                 >
-                                                    兌換
+                                                    補登
                                                 </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                            </div>
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        </>
                     )}
                     <p className="loy-admin-note">
-                        ⚠ 代表「已兌換的張數 &gt; 目前累積」，通常是玩家領券後改了評分或取消了標記。
+                        ⚠ 代表「已使用的張數 &gt; 目前累積」，通常是玩家用券後改了評分或取消了標記。有券又有來的人，評分完成後系統會自動用券（當天不集點），不用另外處理。
                     </p>
                     <button
                         className="loy-refresh"
@@ -1087,7 +1178,11 @@ export default function LoyaltyAdmin() {
                                     {detail.days.map((day) => (
                                         <li key={day.date}>
                                             {formatDay(day.date)}：
-                                            {day.qualified
+                                            {detail.redemptions.some(
+                                                (item) => item.usedOn === day.date,
+                                            )
+                                                ? '🎟 使用免費券（這天不集點）'
+                                                : day.qualified
                                                 ? '✓ 得 1 點'
                                                 : !day.hasSession
                                                     ? '還沒有標記玩過的遊戲（或沒有當天遊玩紀錄）'
@@ -1097,17 +1192,66 @@ export default function LoyaltyAdmin() {
                                 </ul>
                             )}
                             <p>
-                                兌換紀錄：
+                                免費券使用紀錄：
                                 {detail.redemptions.length === 0
                                     ? '無'
                                     : detail.redemptions
-                                        .map((item) => formatDateTime(item.redeemedAt))
+                                        .map((item) =>
+                                            item.usedOn
+                                                ? `${formatDay(item.usedOn)} 用券（${formatDateTime(item.redeemedAt)}）`
+                                                : `${formatDateTime(item.redeemedAt)}（補登）`,
+                                        )
                                         .join('、')}
                             </p>
                         </div>
                     )}
                 </>
             )}
+
+            {tab === 'vouchers' && (
+                <>
+                    <h3 className="lga-step">
+                        <span>🎟</span>免費券使用紀錄
+                    </h3>
+                    {voucherUses.length === 0 ? (
+                        <p className="loy-admin-note">還沒有人使用過免費券。</p>
+                    ) : (
+                        <div className="loy-admin-tablewrap">
+                            <table className="loy-admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>玩家</th>
+                                        <th>用在哪一天</th>
+                                        <th>使用時間</th>
+                                        <th>來源</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {voucherUses.map((item) => (
+                                        <tr key={item.id}>
+                                            <td>
+                                                {players.find((p) => p.id === item.userId)
+                                                    ?.nickname ?? '（未知）'}
+                                                <small className="lga-contact">
+                                                    {contacts[item.userId] ?? '未填聯絡方式'}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                {item.usedOn ? formatDay(item.usedOn) : '—'}
+                                            </td>
+                                            <td>{formatDateTime(item.redeemedAt)}</td>
+                                            <td>
+                                                {item.usedOn ? '系統自動使用' : '管理者補登'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                </>
+            )}
         </div>
     )
-}
+}

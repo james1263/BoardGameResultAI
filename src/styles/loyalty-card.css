@@ -9,8 +9,7 @@
   --lc-stamp: #b5452d;
   --lc-kraft: #d8c49a;
   --lc-line: rgba(58, 53, 38, 0.18);
-  --lc-serif: 'Noto Serif TC', 'Source Han Serif TC', 'Songti TC', 'PMingLiU',
-    serif;
+  --lc-serif: 'Noto Serif TC', 'Source Han Serif TC', 'Songti TC', 'PMingLiU', serif;
 
   padding: 14px;
   border-radius: 16px;
@@ -86,15 +85,20 @@
   margin-top: 12px;
 }
 
+.lc-stat,
+.lc-day,
+.lc-ticket {
+  border: 2px solid var(--lc-kraft);
+  border-radius: 12px;
+  background: #fffdf5;
+}
+
 .lc-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
   padding: 10px 6px;
-  border: 2px solid var(--lc-kraft);
-  border-radius: 12px;
-  background: #fffdf5;
 }
 
 .lc-stat-ticket {
@@ -102,9 +106,17 @@
   border-color: var(--lc-stamp);
 }
 
+.lc-stat-label,
+.lc-progress-note,
+.lc-empty,
+.lc-day-status,
+.lc-ticket-date,
+.lc-today-sub {
+  color: var(--lc-muted);
+}
+
 .lc-stat-label {
   font-size: 0.78rem;
-  color: var(--lc-muted);
 }
 
 .lc-stat-num {
@@ -157,7 +169,8 @@
   transform: rotate(-8deg);
 }
 
-.lc-progress-arrow {
+.lc-progress-arrow,
+.lc-reward {
   color: var(--lc-muted);
 }
 
@@ -165,7 +178,6 @@
   padding: 8px 12px;
   border: 2px dashed var(--lc-muted);
   border-radius: 8px;
-  color: var(--lc-muted);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -180,7 +192,6 @@
   margin: 8px 0 0;
   text-align: center;
   font-size: 0.75rem;
-  color: var(--lc-muted);
 }
 
 /* 區塊標題 */
@@ -246,7 +257,6 @@
 .lc-empty {
   margin: 0;
   font-size: 0.85rem;
-  color: var(--lc-muted);
 }
 
 /* 近期紀錄：印章＋內容 */
@@ -264,9 +274,6 @@
   display: flex;
   gap: 12px;
   padding: 12px;
-  border: 2px solid var(--lc-kraft);
-  border-radius: 12px;
-  background: #fffdf5;
 }
 
 .lc-day.done {
@@ -324,7 +331,6 @@
 .lc-day-status {
   margin: 2px 0 0;
   font-size: 0.82rem;
-  color: var(--lc-muted);
 }
 
 .lc-day.done .lc-day-status {
@@ -413,18 +419,12 @@
   gap: 8px;
   padding: 10px 12px;
   border: 2px dashed var(--lc-stamp);
-  border-radius: 10px;
-  background: #fffdf5;
   font-size: 0.82rem;
 }
 
 .lc-ticket-title {
   font-weight: 700;
   color: var(--lc-stamp);
-}
-
-.lc-ticket-date {
-  color: var(--lc-muted);
 }
 
 /* 今天要評分的提醒卡 */
@@ -451,6 +451,9 @@
 
 .lc-today-sub {
   margin: 4px 0 10px;
-  color: var(--c-ink-soft);
   font-size: 0.88rem;
+}
+
+.modal-backdrop.voucher-backdrop {
+  z-index: 1400;
 }

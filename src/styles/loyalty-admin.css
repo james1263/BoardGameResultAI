@@ -38,19 +38,28 @@
   font-size: 1.25rem;
 }
 
+.lga-head-text p,
+.lga-row-main small,
+.lga-contact {
+  color: #7b8a7f;
+}
+
 .lga-head-text p {
   margin: 2px 0 0;
-  color: #7b8a7f;
   font-size: 0.72rem;
   letter-spacing: 0.12em;
 }
 
-.lga-badge {
+.lga-badge,
+.lga-status {
   padding: 3px 10px;
   border-radius: 999px;
   background: rgba(69, 107, 80, 0.16);
   color: #456b50;
   font-size: 0.78rem;
+}
+
+.lga-badge {
   font-weight: 600;
 }
 
@@ -95,12 +104,17 @@
 }
 
 /* 卡片 */
-.lga-card {
+.lga-card,
+.lga-row {
   margin-top: 14px;
-  padding: 14px;
   border: 1px solid rgba(52, 70, 60, 0.14);
-  border-radius: 14px;
   background: #fffdf6;
+  color: #34463c;
+}
+
+.lga-card {
+  padding: 14px;
+  border-radius: 14px;
 }
 
 /* 新增聚會 */
@@ -135,7 +149,9 @@
   cursor: pointer;
 }
 
-.lga-primary:disabled {
+.lga-primary:disabled,
+.lga-outline:disabled,
+.lga-danger:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -159,12 +175,6 @@
   color: #a03c32;
 }
 
-.lga-outline:disabled,
-.lga-danger:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* 近期聚會 */
 .lga-list {
   display: grid;
@@ -180,10 +190,7 @@
   gap: 12px;
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid rgba(52, 70, 60, 0.14);
   border-radius: 12px;
-  background: #fffdf6;
-  color: #34463c;
   text-align: left;
   cursor: pointer;
 }
@@ -215,19 +222,6 @@
   flex: 1;
   flex-direction: column;
   min-width: 0;
-}
-
-.lga-row-main small {
-  color: #7b8a7f;
-}
-
-.lga-status {
-  flex: none;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: rgba(69, 107, 80, 0.16);
-  color: #456b50;
-  font-size: 0.78rem;
 }
 
 .lga-status.done {
@@ -348,20 +342,9 @@
   display: block;
   padding: 0 4px 2px;
   overflow: hidden;
-  color: #7b8a7f;
   font-size: 0.76rem;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-@media (max-width: 520px) {
-  .lga-new {
-    grid-template-columns: 1fr;
-  }
-
-  .lga-chips {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 /* 自助報到 */
@@ -405,4 +388,88 @@
   background: rgba(183, 138, 90, 0.2);
   color: #8a5f33;
   font-size: 0.72rem;
+}
+
+@media (max-width: 520px) {
+  .lga-new {
+    grid-template-columns: 1fr;
+  }
+
+  .lga-chips {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ===== 管理者：集點狀況卡片 ===== */
+.lga-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 10px;
+  font-size: 13px;
+}
+
+.lga-players {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.lga-pcard {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.lga-pcard.has-ticket {
+  border-color: var(--c-caramel, #b78a5a);
+  background: #fff8ec;
+}
+
+.lga-pcard.dim {
+  opacity: 0.6;
+}
+
+.lga-pinfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.lga-pstats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  grid-column: 2 / 4;
+}
+
+.lga-pill {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #eef2ea;
+  font-size: 12px;
+}
+
+.lga-pill.ticket {
+  background: var(--c-caramel, #b78a5a);
+  color: #fff;
+  font-weight: 700;
+}
+
+.lga-pcard .loy-admin-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.lc-today-ticket {
+  border-color: var(--c-caramel, #b78a5a);
 }
