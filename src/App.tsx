@@ -56,6 +56,7 @@ import { getPlayerSortValue, compareNullableNumbers } from './lib/gameFormat'
 import { HeartIcon, CheckIcon } from './components/Icons'
 import CoverImage from './components/CoverImage'
 import TopBar, { type NavPage } from './components/TopBar'
+import { useBackClose } from './lib/useBackClose'
 import ViewToggle from './components/ViewToggle'
 import FilterDrawer from './components/FilterDrawer'
 import GameCard from './components/GameCard'
@@ -191,12 +192,14 @@ function Library({
   // 底部／頂端導覽：點另一顆直接取代目前的頁面，再點同一顆＝關閉
   function goHome() {
     setSelectedGame(null)
+    setIsFilterOpen(false)
     setActivePage(null)
   }
 
   function goPage(page: NavPage) {
-    // 點導覽時，先關掉開著的詳細視窗，避免兩個視窗疊在一起
+    // 點導覽時，先關掉開著的詳細視窗與進階篩選，避免視窗疊在一起
     setSelectedGame(null)
+    setIsFilterOpen(false)
     if (activePage === page) {
       setActivePage(null)
       return
@@ -270,6 +273,11 @@ function Library({
   const [sortBy, setSortBy] = useState<SortKey>('rankingEngine')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  // 手機返回鍵／iPhone 右滑：導覽頁面或進階篩選開著時，先關視窗，不要退回上一個網頁（例如登入頁）
+  useBackClose(() => {
+    setActivePage(null)
+    setIsFilterOpen(false)
+  }, activePage !== null || isFilterOpen)
   const [groupByMine, setGroupByMine] = useState(false)
   const [hiddenGroups, setHiddenGroups] = useState<MineGroup[]>([])
 
