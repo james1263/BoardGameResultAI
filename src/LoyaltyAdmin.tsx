@@ -36,6 +36,12 @@ type VoucherUse = {
     usedOn: string | null
     redeemedAt: string
 }
+type GrantRow = {
+    id: string
+    userId: string
+    quantity: number
+    grantedAt: string
+}
 type AdminTab = 'setup' | 'status' | 'vouchers'
 
 type OverviewRaw = {
@@ -112,6 +118,7 @@ export default function LoyaltyAdmin() {
     const [onlyWithPoints, setOnlyWithPoints] = useState(false)
     const [voucherUses, setVoucherUses] = useState<VoucherUse[]>([])
     const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
+    const [grants, setGrants] = useState<GrantRow[]>([])
 
     const gameNameMap = useMemo(
         () => new Map(allGames.map((game) => [game.bggName, game.name])),
@@ -119,15 +126,23 @@ export default function LoyaltyAdmin() {
     )
 
     async function loadVoucherUses(): Promise<string> {
-        const { data, error } = await supabase
-            .from('loyalty_redemptions')
-            .select('id, user_id, used_on, redeemed_at')
-            .order('redeemed_at', { ascending: false })
-            .limit(300)
-        if (error) return error.message
+        const [u, gr] = await Promise.all([
+            supabase
+                .from('loyalty_redemptions')
+                .select('id, user_id, used_on, redeemed_at')
+                .order('redeemed_at', { ascending: false })
+                .limit(300),
+            supabase
+                .from('loyalty_grants')
+                .select('id, user_id, quantity, granted_at')
+                .order('granted_at', { ascending: false })
+                .limit(300),
+        ])
+        if (u.error) return u.error.message
+        if (gr.error) return gr.error.message
         setVoucherUses(
             (
-                (data ?? []) as {
+                (u.data ?? []) as {
                     id: string
                     user_id: string
                     used_on: string | null
@@ -138,6 +153,21 @@ export default function LoyaltyAdmin() {
                 userId: row.user_id,
                 usedOn: row.used_on,
                 redeemedAt: row.redeemed_at,
+            })),
+        )
+        setGrants(
+            (
+                (gr.data ?? []) as {
+                    id: string
+                    user_id: string
+                    quantity: number
+                    granted_at: string
+                }[]
+            ).map((row) => ({
+                id: row.id,
+                userId: row.user_id,
+                quantity: row.quantity,
+                grantedAt: row.granted_at,
             })),
         )
         return ''
@@ -632,6 +662,31 @@ export default function LoyaltyAdmin() {
         setBusy(false)
     }
 
+    async function grantVoucher(row: OverviewRow) {
+        const input = window.prompt(
+            `要贈送幾張免費券給「${row.nickname}」？（1～5 張）`,
+            '1',
+        )
+        if (input === null) return
+        const qty = Number(input)
+        if (!Number.isInteger(qty) || qty < 1 || qty > 5) {
+            setMessage('張數請填 1～5 的整數。')
+            return
+        }
+        setBusy(true)
+        setMessage('')
+        const { error } = await supabase.rpc('admin_grant_voucher', {
+            p_user: row.userId,
+            p_qty: qty,
+        })
+        if (error) {
+            setMessage('贈送失敗：' + error.message)
+        } else {
+            setMessage(`已贈送 ${qty} 張免費券給「${row.nickname}」。`)
+            await refreshOverview()
+        }
+        setBusy(false)
+    }
     async function redeem(row: OverviewRow) {
         if (
             !window.confirm(
@@ -1187,6 +1242,14 @@ export default function LoyaltyAdmin() {
                                                 >
                                                     補登
                                                 </button>
+                                                <button
+                                                    type="button"
+                                                    className="admin-link"
+                                                    disabled={busy}
+                                                    onClick={() => grantVoucher(row)}
+                                                >
+                                                    贈送
+                                                </button>
                                             </div>
                                         </li>
                                     )
@@ -1288,6 +1351,36 @@ export default function LoyaltyAdmin() {
                         </div>
                     )}
 
+                    <h3 className="lga-step" style={{ marginTop: 18 }}>
+                        <span>🎁</span>管理者贈送紀錄
+                    </h3>
+                    {grants.length === 0 ? (
+                        <p className="loy-admin-note">還沒有贈送過免費券。</p>
+                    ) : (
+                        <div className="loy-admin-tablewrap">
+                            <table className="loy-admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>玩家</th>
+                                        <th>張數</th>
+                                        <th>贈送時間</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {grants.map((item) => (
+                                        <tr key={item.id}>
+                                            <td>
+                                                {players.find((p) => p.id === item.userId)
+                                                    ?.nickname ?? '（未知）'}
+                                            </td>
+                                            <td>{item.quantity}</td>
+                                            <td>{formatDateTime(item.grantedAt)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </>
             )}
         </div>

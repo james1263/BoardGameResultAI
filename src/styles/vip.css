@@ -1094,3 +1094,9 @@ body {
 .ra-rules-link {
   margin-bottom: 10px;
 }
+
+.rb-warn {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: #8a5a1c;
+}

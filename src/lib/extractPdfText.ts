@@ -101,11 +101,16 @@ export async function extractPdfChunks(
     data: new Uint8Array(buffer.slice(0)),
   })
 
-  const pdf = await loadingTask.promise.catch(() => {
-    throw new PdfExtractError(
-      'PDF_READ_ERROR',
-      '無法讀取這個 PDF（檔案可能損毀或有密碼保護）。',
-    )
+  const pdf = await loadingTask.promise.catch((error: unknown) => {
+    const rawName = (error as { name?: unknown } | null)?.name
+    const name = typeof rawName === 'string' ? rawName : ''
+    let reason = `無法讀取這個 PDF（${name || '原因不明'}）。請先確認用瀏覽器能正常開啟。`
+    if (name === 'PasswordException') {
+      reason = '這個 PDF 有密碼保護，無法讀取。請先移除密碼再上傳。'
+    } else if (name === 'InvalidPDFException') {
+      reason = '這個 PDF 格式錯誤或已損毀，無法讀取。請重新下載或換一份。'
+    }
+    throw new PdfExtractError('PDF_READ_ERROR', reason)
   })
 
   const totalPages = pdf.numPages
@@ -135,7 +140,7 @@ export async function extractPdfChunks(
   if (textChars < 200 || textPages / totalPages < 0.3) {
     throw new PdfExtractError(
       'NO_TEXT',
-      '這個 PDF 幾乎沒有可擷取的文字（可能是掃描圖片）。第一版不支援 OCR，請換成文字版 PDF。',
+      '這個 PDF 幾乎沒有可擷取的文字（可能是掃描圖片）。請先確認用瀏覽器開啟時能用滑鼠選取文字或按 Ctrl+F 搜尋；掃描圖片需先 OCR 轉成文字版。第一版不支援 OCR。',
     )
   }
   if (chunks.length > MAX_CHUNKS) {

@@ -96,6 +96,8 @@ function formatMb(bytes: number): string {
   return (bytes / 1024 / 1024).toFixed(1) + ' MB'
 }
 
+const LARGE_FILE_BYTES = 15 * 1024 * 1024
+
 const STATUS_LABEL: Record<RowStatus, string> = {
   ready: '待上傳',
   uploading: '上傳中',
@@ -476,7 +478,7 @@ export default function RulebookBatchUpload() {
         <>
           <h3>批次上傳規則書</h3>
           <p className="rb-hint">
-            一次選多個 PDF（文字版，每個最大 50 MB）。系統會從檔名猜遊戲，猜不到的請自己選。
+            一次選多個 PDF（文字版，每個最大 50 MB）。用瀏覽器開啟能選取文字或按 Ctrl+F 搜尋，才算可用的文字版。系統會從檔名猜遊戲，猜不到的請自己選。
             檔名含 faq 或 errata／勘誤會自動歸類，其餘當規則書。確認後按「全部上傳」，
             會一份一份處理，失敗不影響其他檔。上傳的 PDF 只有管理者看得到。
           </p>
@@ -536,6 +538,14 @@ export default function RulebookBatchUpload() {
                           )}
                         </div>
                       )}
+
+                      {row.file.size > LARGE_FILE_BYTES &&
+                        row.status !== 'done' && (
+                          <p className="rb-warn">
+                            檔案偏大（{formatMb(row.file.size)}）。仍可上傳，但若官方有
+                            Lo-res／Compact 版，建議改用較小的檔案。
+                          </p>
+                        )}
 
                       {row.message && (
                         <p
