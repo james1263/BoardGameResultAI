@@ -90,7 +90,7 @@
 ## 6. 視覺風格與樣式地雷
 
 - 風格：**溫暖桌遊俱樂部**。色票（在 `tokens.css`）：奶油 `#F5F0E5`、紙白 `#FBF7EC`、森林綠 `#456B50`（深 `#365B40`）、焦糖 `#B78A5A`、深墨綠 `#34463C`；變數 `--c-cream/paper/forest/forest-dark/caramel/ink/ink-soft/line/danger`、`--radius-s/m/l`、`--shadow-s/m`、`--z-bar/--z-modal`。印章與會員卡只用在集點卡與少量裝飾。不做路由與資料夾大搬家。
-- 導覽：桌面頂端、手機底部（`sitebar`；一次只開一頁，點另一顆直接取代、再點同一顆關閉；**手機底部導覽目前被抽屜／遮罩蓋住，待修**，見 QUICKSTART N2／N4；抽屜相關 class：`.mylist-backdrop`／`.mylist-drawer`、`.drawer-backdrop`／`.filter-drawer`、`.modal-backdrop`、`.ma-backdrop`、`.ra-backdrop`、`.account-backdrop`、`.cat-backdrop`，手機 `.sb-nav` 為 `position: fixed`）：桌遊收藏、排行榜、集點卡、我的桌遊（管理者第三顆是「⚙ 管理」），VIP／管理者另有第 5 顆「✦ 規則助手」（若擠縮成「規則」）。`BackToTop` 在手機避開底部導覽（760px 斷點、64px）。
+- 導覽：桌面頂端、手機底部（`sitebar`；一次只開一頁，點另一顆直接取代、再點同一顆關閉；**手機底部導覽已可點：手機（≤760px）上所有遮罩／抽屜／視窗的 `bottom` 停在導覽列上方（`--nav-h`＝64px＋安全區），視窗高度改跟著遮罩（`100%`），不再用 `100dvh`；樣式在 `vip.css` 最底下（`vip-append-3.css`、`vip-append-4.css` 內容）；不要用提高 `.sb-nav` z-index 的方式（`.sitebar` 是 sticky 堆疊層，無效）**；抽屜相關 class：`.mylist-backdrop`／`.mylist-drawer`、`.drawer-backdrop`／`.filter-drawer`、`.modal-backdrop`、`.ma-backdrop`、`.ra-backdrop`、`.account-backdrop`、`.cat-backdrop`，手機 `.sb-nav` 為 `position: fixed`）：桌遊收藏、排行榜、集點卡、我的桌遊（管理者第三顆是「⚙ 管理」），VIP／管理者另有第 5 顆「✦ 規則助手」（若擠縮成「規則」）。`BackToTop` 在手機避開底部導覽（760px 斷點、64px）。
 - **視窗層級**：視窗一律 `createPortal(..., document.body)`；`.modal-backdrop` z-index 1100、報到視窗 1050、「請改用瀏覽器開啟」1200、頂端列 900、「我的桌遊」抽屜 1200、VIP 密碼視窗 1300（`.vip-join-backdrop`）。**頂端列（`.topbar`／`.sitebar`）不可加 `backdrop-filter`、`transform`、`filter`**，否則 `position: fixed` 的遮罩被關在頂端列裡。
 - **iPhone 深色模式**：沒指定顏色的文字（視窗 `h2`）會變淡白色。已在 `vip.css` 底部加 `:root{color-scheme:light}`、`body{color:var(--c-ink,#34463c)}`、`:where(button:not(:disabled)){color:inherit}`（修按鈕文字變藍）。**新增視窗標題不要依賴繼承色**；`.club-menu-item`、`.mylist-name` 已加深墨綠。
 - `index.html` 的 `<html lang>` 是 `zh-Hant`（原 `en` 會讓手機 Chrome 跳翻譯列蓋住畫面上方）。
@@ -110,7 +110,7 @@
 - **授權**：使用者決定不設開關、一律啟用；AI 已提醒私有 bucket 不等於取得授權、能從 BGG 下載不等於有權再上傳與擷取（非法律意見），風險由使用者自行評估。
 - **未決／之後**：中文檢索方式比較（`pgroonga` 據 AI 所知對中日韓文支援較好、`pg_trgm` 備案；兩者與 `unaccent`、`vector`、`pg_cron` 都可用但**都未啟用**，`zhparser` 不在清單；皆**未實測**，目前不啟用任何擴充）；**跨語言問題尚未根治**（候選：使用者輸入英文術語、每款遊戲專有名詞對照表、之後評估語意搜尋／向量與免費翻譯 API，皆未查證，要做先與使用者討論）；中英檢索測試集（20～50 題、人工標頁碼、看是否出現在前 5 筆）；網站內直接回答的生成式 AI（候選 Gemini 免費 API，額度與資料用途條款**未查證**，要做時重查官方文件；不做連結使用者自己的 AI 帳號；本機 Ollama 只給進階使用者）；「更新版本」按鈕；章節標題；OCR。
 - 驗收標準：文件可分別管理；文字型 PDF 能擷取並保留頁碼；結果不混入其他桌遊；可看原文與出處；可複製提示詞；訪客與一般會員無法繞過前端呼叫受保護的檢索；PDF 原檔不公開；網站沒有生成式 AI API 呼叫；找不到時不假裝有答案；測四種身分（訪客、一般會員、VIP、管理者）。
-- `lib/useBackClose.ts`：開啟視窗時手機「返回」只關視窗；目前只套用 `GameModal`、`RulebookPage`，✕ 保留（擴充待辦見 QUICKSTART N3）。
+- `lib/useBackClose.ts`：`useBackClose(onClose, enabled = true)`，**所有開著的視窗共用一筆歷史紀錄**（第一個視窗登記時 `pushState`、全部關閉才 `history.back()` 收回；按返回／右滑＝一起關閉；`setTimeout(0)` 延遲判斷以免視窗互相切換時誤動歷史；用 ✕ 關閉時自己收回那一筆，`popstate` 在 `hasEntry` 為 false 時略過）。已套用：`App.tsx`（導覽頁面與進階篩選）、`GameModal`、`RulebookPage`、`PlayerPanel`（暱稱視窗＋帳號選單）、`CategoryChips`；未套用：`CheckInDialog`、`VipJoinDialog`。**新視窗要支援返回鍵，只要在元件裡呼叫 `useBackClose(onClose, isOpen)`，不要自己 `pushState`。**
 
 ## 8. 其他想做清單（使用者提出，未排序）
 
