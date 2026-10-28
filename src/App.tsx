@@ -57,6 +57,7 @@ import { HeartIcon, CheckIcon } from './components/Icons'
 import CoverImage from './components/CoverImage'
 import TopBar, { type NavPage } from './components/TopBar'
 import { useBackClose } from './lib/useBackClose'
+import { loadFilters, saveFilters } from './lib/filterStorage'
 import ViewToggle from './components/ViewToggle'
 import FilterDrawer from './components/FilterDrawer'
 import GameCard from './components/GameCard'
@@ -255,31 +256,82 @@ function Library({
     }
   }
 
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [difficultyLevels, setDifficultyLevels] = useState<DifficultyLevel[]>(
-    [],
+  // 上次的篩選設定（存在這支瀏覽器，開網站時還原；搜尋文字不存）
+  const [saved] = useState(loadFilters)
+
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() =>
+    // 類型若已不存在（例如 CSV 改過），就略過，避免一開啟就一片空白
+    saved.selectedCategories.filter((category) =>
+      boardGames.some((game) => game.category.includes(category)),
+    ),
   )
-  const [groupSize, setGroupSize] = useState<NumericFilter>('')
-  const [groupSizeMax, setGroupSizeMax] = useState<NumericFilter>('')
-  const [bestPlayerCount, setBestPlayerCount] = useState<NumericFilter>('')
+  const [difficultyLevels, setDifficultyLevels] = useState<DifficultyLevel[]>(
+    saved.difficultyLevels,
+  )
+  const [groupSize, setGroupSize] = useState<NumericFilter>(saved.groupSize)
+  const [groupSizeMax, setGroupSizeMax] = useState<NumericFilter>(
+    saved.groupSizeMax,
+  )
+  const [bestPlayerCount, setBestPlayerCount] = useState<NumericFilter>(
+    saved.bestPlayerCount,
+  )
   const [recommendPlayerCount, setRecommendPlayerCount] =
-    useState<NumericFilter>('')
-  const [timeLimit, setTimeLimit] = useState<NumericFilter>('')
-  const [onlyNew, setOnlyNew] = useState(false)
-  const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all')
+    useState<NumericFilter>(saved.recommendPlayerCount)
+  const [timeLimit, setTimeLimit] = useState<NumericFilter>(saved.timeLimit)
+  const [onlyNew, setOnlyNew] = useState(saved.onlyNew)
+  const [ratingFilter, setRatingFilter] = useState<RatingFilter>(
+    saved.ratingFilter,
+  )
   // 登出或評分還沒讀完時，評分狀態篩選不生效
   const ratingFilterActive = ratingFilter !== 'all' && canFilterByRating
 
-  const [sortBy, setSortBy] = useState<SortKey>('rankingEngine')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [sortBy, setSortBy] = useState<SortKey>(saved.sortBy)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
+    saved.sortDirection,
+  )
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   // 手機返回鍵／iPhone 右滑：導覽頁面或進階篩選開著時，先關視窗，不要退回上一個網頁（例如登入頁）
   useBackClose(() => {
     setActivePage(null)
     setIsFilterOpen(false)
   }, activePage !== null || isFilterOpen)
-  const [groupByMine, setGroupByMine] = useState(false)
-  const [hiddenGroups, setHiddenGroups] = useState<MineGroup[]>([])
+  const [groupByMine, setGroupByMine] = useState(saved.groupByMine)
+  const [hiddenGroups, setHiddenGroups] = useState<MineGroup[]>(
+    saved.hiddenGroups,
+  )
+
+  // 篩選或排序一改就存起來（清除篩選、重設排序也會存成預設值）
+  useEffect(() => {
+    saveFilters({
+      selectedCategories,
+      difficultyLevels,
+      groupSize,
+      groupSizeMax,
+      bestPlayerCount,
+      recommendPlayerCount,
+      timeLimit,
+      onlyNew,
+      ratingFilter,
+      groupByMine,
+      hiddenGroups,
+      sortBy,
+      sortDirection,
+    })
+  }, [
+    selectedCategories,
+    difficultyLevels,
+    groupSize,
+    groupSizeMax,
+    bestPlayerCount,
+    recommendPlayerCount,
+    timeLimit,
+    onlyNew,
+    ratingFilter,
+    groupByMine,
+    hiddenGroups,
+    sortBy,
+    sortDirection,
+  ])
 
   const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode)
 
