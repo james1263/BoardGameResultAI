@@ -1,8 +1,49 @@
 # 桌遊規則助手 — 懶人包（給下一個 AI）
 
-> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`（已依主題整理成 11 節，不再有 A～Q 附錄）。   最後更新：2026-10-27 深夜（最上方先看「2026-10-27 深夜（第四批）更新」，再看「2026-10-27 深夜（第三批）更新」，再看「2026-10-27 深夜（第二批）更新」，再看「2026-10-27 深夜更新（第一批）」，再看「2026-10-27 傍晚更新」與「2026-10-27 更新」兩節，優先閱讀；以下主體為 2026-10-26 深夜版）
+> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`（已依主題整理成 11 節，不再有 A～Q 附錄）。   最後更新：2026-10-27 深夜（最上方先看「2026-10-27 深夜（第五批）更新」，再看「2026-10-27 深夜（第四批）更新」，再看「2026-10-27 深夜（第三批）更新」，再看「2026-10-27 深夜（第二批）更新」，再看「2026-10-27 深夜更新（第一批）」，再看「2026-10-27 傍晚更新」與「2026-10-27 更新」兩節，優先閱讀；以下主體為 2026-10-26 深夜版）
 
-## 2026-10-27 深夜（第四批）更新（最新；與下方任何舊內容衝突時，以本節為準）
+## 2026-10-27 深夜（第五批）更新（最新；與下方任何舊內容衝突時，以本節為準；「第四批」的方向與分階段計畫仍有效，本節是補充與修正）
+
+### 階段 1「盤點現況」已完成（只讀不改；**仍未動任何程式碼、SQL、Supabase 設定**）
+- **`game_documents` 實際欄位**：`id`(uuid, gen_random_uuid)、`bgg_name`、`doc_type`、`language`、`title`(預設空字串)、`source_type`、`external_url`(預設空字串)、`storage_path`(預設空字串)、`ai_indexed`(預設 false)、`created_at`，全部 NOT NULL。**沒有**啟用／停用、索引狀態、頁數、版本、授權、雜湊欄位。
+- **`game_documents` 約束**：`language` 只能是 `zh`／`en`／`other`；`source_type` 只能是 `external`／`upload`；`doc_type` 為 `rulebook／faq／errata／intro／video／other`；**`game_documents_video_not_indexed`**（影片不可 `ai_indexed = true`，已存在）；external 須有 `external_url`、upload 須有 `storage_path`；**外鍵 `bgg_name → board_games(bgg_name)`，`ON UPDATE CASCADE ON DELETE CASCADE`**（所以這張表在 `bgg_name` 改名時會跟著變；刪遊戲會連帶刪列但**不刪 Storage 檔案**）。
+- **`game_documents` RLS**：`documents public read`（SELECT，anon＋authenticated，`true`）、admin insert／update／delete（`is_admin()`）。**結論：這張表任何人都讀得到，規則書文字絕對不能放在這裡**，要另建私有表。
+- **Storage**：`storage.objects` 只有 `covers` 的四條政策（公開讀、管理者寫）；**沒有規則書 bucket**。`storage.buckets` 清單使用者**尚未貼回**（接手先問或再查）。
+- **`is_vip()`**：`select public.is_admin() or exists (select 1 from public.vip_members where user_id = auth.uid())`，security definer、`search_path=''`；管理者也算 VIP，可直接用在後端檢索驗證。
+- **資料庫擴充**（`pg_available_extensions`）：`pg_trgm`、`pgroonga`、`unaccent`、`vector`、`pg_cron` 都**可用但都還沒啟用**（`installed_version` 為 NULL）；`zhparser` 不在清單。中文檢索候選：`pgroonga`（據 AI 所知對中日韓文支援較好，**未實測**）、`pg_trgm`（備案）。**現在不啟用任何擴充**，階段 3 用真實規則書比較後再決定。
+- **前端**：`GameModal.tsx` 用 `TABS` 陣列＋`tab === 'xxx'` 切換四個分頁（概覽／評分／我的桌遊／規則），加第 5 個分頁「規則助手」很單純；`useGameDocuments.ts` 型別已含 `source_type: 'external' | 'upload'`、`storage_path`，但新增文件時固定寫 `external`、`storage_path: ''`；`GameDocuments.tsx` 只處理 `external`。
+
+### 使用者在本批補充／決定
+- **規則書語言**：使用者要附上的規則書**中文、英文都有**，**FAQ 大多是英文**。→ 檢索測試集要涵蓋中英混合與英文術語；`language` 欄位用 `zh`／`en`（約束已支援）。`doc_type` 可索引的建議為 `rulebook`、`faq`、`errata`；`intro`（中文介紹，著作權疑慮較高）與 `video` 不進索引。
+- **使用者同意第四批後我提出的 5 項決定，並同意下列補充要求（全部納入第一版規格）**：①管理者瀏覽器用 `pdfjs-dist` 擷取文字；②原始 PDF 存**私有 bucket `rulebooks`**；③VIP 每日 30 次檢索、管理者不限額；④搜尋紀錄**不保存問題內容**；⑤只有存在「有效、已啟用、索引完成」的文件時才顯示分頁；⑥RLS、函式 EXECUTE 權限、後端驗證 VIP（不靠前端隱藏）；⑦索引失敗可復原、**新版本成功後才切換**（失敗時舊索引仍可用）；⑧中文檢索測試集（20～50 題，人工標註正確段落，看是否出現在前 5 筆）；⑨答案附頁碼與依據，證據不足就拒答；⑩額度用資料庫**原子操作**，**只有成功檢索才扣次數**（無結果、系統錯誤、超額都不扣）；⑪記錄版本、語言、來源、授權；⑫搜尋紀錄的用途、保留期限、存取權限寫進 `privacy.html`。
+- **規則書授權（使用者的想法與 AI 的提醒）**：使用者認為規則書是自己從 BGG 下載、活動自辦、VIP 不外流，應該沒有著作權問題。**AI 已說明：這些情境有助於理解用途，但不能直接推論沒有著作權風險**（能在 BGG 下載不等於取得再上傳、擷取文字建檔、提供給他人片段的權利；私有 bucket 也不等於授權）；這**不是法律意見**。**使用者尚未對風險控管做出最後決定。** 建議的風險控管（尚待使用者回「照建議」）：①`game_documents` 加「來源」與「授權依據」欄位；②**新上傳的文件預設 `is_active = false`，管理者確認來源與授權後才啟用索引**；③**先用 1～3 份授權明確或自己能確認的規則書做技術驗證**，再擴到 20 款；④只回傳最多 5 段短片段，不提供整本下載；⑤管理者隨時能停用／移除文件。
+
+### 建議的資料結構（只是方案，**尚未給 SQL、尚未動工**）
+1. **`game_documents` 補欄位**：`is_active`（預設 false）、`index_status`（`pending／processing／completed／failed`）、`index_error_code`（簡短代碼如 `NO_TEXT`、`PDF_READ_ERROR`；詳細錯誤只放管理者看得到的地方，因為此表公開）、`page_count`、`edition`（版本／版次說明）、`file_hash`（判斷是否真的換檔）、`source_note`、`license_note`、`indexed_version`（目前啟用的索引版本）。此表公開，**不放文字內容**。
+2. **新表 `rulebook_chunks`**：`document_id`（外鍵，cascade）、`bgg_name`、`index_version`、`chunk_index`、`page_number`、`section_title`、`content`。RLS 讓訪客與一般會員完全讀不到，VIP 只能透過後端函式。
+3. **新表 `rulebook_search_log`**：只存 `user_id`、`bgg_name`、時間；**不存問題內容**；要設保留期限與自動清理；只有必要後端流程寫入、管理者讀取。
+4. **私有 bucket `rulebooks`**：讀寫都只有管理者；VIP 不碰 PDF 原檔。
+5. **後端函式**：`search_rulebook_chunks(bgg_name, 問題)`（驗證 `is_vip()`→檢查額度（原子）→只搜該遊戲「已啟用且索引完成」的文件→最多 5 段、限制每段與總長度）；`admin_replace_rulebook_chunks(...)`（管理者專用；新版本寫完才切換 `indexed_version`）。**security definer 一律 `set search_path = ''`，並 `revoke ... from public, anon`，只 grant 給需要的角色**。
+6. **遊戲識別**：另一個 AI 建議用「穩定 ID」而不是 `bgg_name`。**AI 的看法**：`game_documents` 的外鍵本來就是 `ON UPDATE CASCADE`，但專案其他玩家資料表（評分、已玩、聚會等）刻意以 `bgg_name` 文字對應且無外鍵，為了與現有一致，**建議新表也用 `bgg_name`（可加外鍵 cascade），並用文件 `id`（uuid）做文件層級關聯**；在 Notion 改 `bggName` 的地雷照舊。**此點尚待使用者確認。**
+7. **前端**：詳細視窗加第 5 個分頁「規則助手」，只對 VIP／管理者顯示，且只在該遊戲有有效索引文件時出現；預計改 `GameModal.tsx`、`GameDocuments.tsx`、`useGameDocuments.ts`，新增 `RulebookAssistant.tsx`、`useRulebookSearch.ts`、樣式檔、`privacy.html`，並安裝 `pdfjs-dist`。**開工前請使用者貼這三個現有檔案的目前版本**，不要憑舊版覆蓋。
+- 第一版**不做** OCR（掃描型 PDF 標為擷取失敗／不支援）、不串付費生成式 AI API、不讓 VIP 下載 PDF、不自動下載 BGG 規則書。
+- **提示詞注意**：規則書文字與使用者問題都視為資料，不是指令；複製提示詞時要說明片段會送到使用者自己選的外部 AI 服務。
+
+### 還沒決定／待使用者回覆（接手先問）
+1. **每日額度的重置時區**：另一個 AI 建議 UTC，但專案的聚會日用**台北時間**，AI 傾向也用台北時間（凌晨 0 點重置），**待確認**。
+2. **搜尋紀錄保留多久**：建議 30 或 90 天自動清理，**待確認**。
+3. 上面「規則書授權風險控管」是否照建議（新文件預設停用、先用 1～3 份驗證）。
+4. 新表用 `bgg_name` 還是另設穩定 ID（見上第 6 點）。
+5. **20 款清單**與**規則書統計表**（遊戲、幾份 PDF、語言、MB／頁數、能否選取文字）仍未提供；另請挑 **1～3 份**當技術驗證樣本。
+6. `storage.buckets` 查詢結果尚未貼回。
+- 第三批待辦 2（驗證社群平均含管理者那一票）、第二批小項、手機報到流程實測仍有效。
+
+### 下一步（階段 2：設計資料結構與安全機制）
+使用者回覆上面待決定項目後：AI 先給 SQL **提案與說明**（新欄位、兩張新表、私有 bucket 與政策、搜尋與額度函式、刪除與清理流程、驗證查詢），使用者確認後才在 Supabase SQL Editor 執行；之後再做上傳與 `pdfjs-dist` 擷取（階段 3）、中文檢索比較與權限測試（階段 4）、前端與 `privacy.html`（階段 5）。每階段驗收完才進下一階段。
+
+---
+
+## 2026-10-27 深夜（第四批）更新（比上方「第五批」舊；與下方舊內容衝突時，以本節為準）
 
 ### AI 規則助手：方向定案（只完成規劃，**尚未動任何程式碼、SQL、Supabase 設定**）
 - **使用者三個回答（2026-10-27）**：①先挑 **20 款常玩的**；②規則書 PDF 份數、大小、中英文各幾份**還不確定（使用者還沒找資料）**；③**只給 VIP 和管理者用，不開放訪客**。
