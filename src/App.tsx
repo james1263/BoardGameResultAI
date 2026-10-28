@@ -1016,6 +1016,11 @@ function Library({
         <RulebookPage
           boardGames={boardGames}
           onClose={() => setActivePage(null)}
+          onOpenGame={(game) => {
+            setCoverMessage('')
+            setSelectedTab('rules')
+            setSelectedGame(game)
+          }}
         />
       )}
       <BackToTop />

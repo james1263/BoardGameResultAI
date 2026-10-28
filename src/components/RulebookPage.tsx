@@ -8,9 +8,11 @@ import { useBackClose } from '../lib/useBackClose'
 export default function RulebookPage({
   boardGames,
   onClose,
+  onOpenGame,
 }: {
   boardGames: LibraryGame[]
   onClose: () => void
+  onOpenGame: (game: LibraryGame) => void
 }) {
   useBackClose(onClose)
   const [indexed, setIndexed] = useState<string[] | null>(null)
@@ -64,11 +66,20 @@ export default function RulebookPage({
 
         <div className="ra-page-body">
           {picked ? (
-            <RulebookAssistant
-              key={picked.bggName}
-              bggName={picked.bggName}
-              gameName={picked.name}
-            />
+            <>
+              <button
+                type="button"
+                className="ra-btn ra-btn-small ra-rules-link"
+                onClick={() => onOpenGame(picked)}
+              >
+                📖 這款的規則連結與影片
+              </button>
+              <RulebookAssistant
+                key={picked.bggName}
+                bggName={picked.bggName}
+                gameName={picked.name}
+              />
+            </>
           ) : indexed === null ? (
             <p className="ra-notice">讀取中…</p>
           ) : indexed.length === 0 ? (
