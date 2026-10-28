@@ -9,7 +9,7 @@ import {
   type DocType,
   type GameDocument,
 } from '../lib/useGameDocuments'
-import { docLabel, indexSuffix } from '../lib/docLabels'
+import { docIcon, docLabel, indexSuffix } from '../lib/docLabels'
 
 type GameOption = { bgg_name: string; name: string }
 type DocKind = 'rulebook' | 'faq' | 'errata'
@@ -160,18 +160,18 @@ function GamePicker({
   const q = compact(query)
   const matches = q
     ? games
-        .filter(
-          (g) =>
-            compact(g.bgg_name).includes(q) || compact(g.name).includes(q),
-        )
-        .sort((x, y) => {
-          const xs =
-            compact(x.bgg_name).startsWith(q) || compact(x.name).startsWith(q)
-          const ys =
-            compact(y.bgg_name).startsWith(q) || compact(y.name).startsWith(q)
-          return Number(ys) - Number(xs)
-        })
-        .slice(0, 8)
+      .filter(
+        (g) =>
+          compact(g.bgg_name).includes(q) || compact(g.name).includes(q),
+      )
+      .sort((x, y) => {
+        const xs =
+          compact(x.bgg_name).startsWith(q) || compact(x.name).startsWith(q)
+        const ys =
+          compact(y.bgg_name).startsWith(q) || compact(y.name).startsWith(q)
+        return Number(ys) - Number(xs)
+      })
+      .slice(0, 8)
     : []
 
   return (
@@ -223,7 +223,6 @@ export default function RulebookBatchUpload() {
 
   // 貼連結
   const [linkGame, setLinkGame] = useState('')
-  const [linkType, setLinkType] = useState<DocType>('rulebook')
   const [linkTitle, setLinkTitle] = useState('')
   const [linkUrl, setLinkUrl] = useState('')
   const [linkBusy, setLinkBusy] = useState(false)
@@ -244,7 +243,7 @@ export default function RulebookBatchUpload() {
     const timer = window.setTimeout(() => {
       fetch(
         'https://www.youtube.com/oembed?format=json&url=' +
-          encodeURIComponent(url),
+        encodeURIComponent(url),
       )
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
@@ -252,7 +251,7 @@ export default function RulebookBatchUpload() {
           const title = data && typeof data.title === 'string' ? data.title : ''
           if (title) setLinkTitle((current) => current || title)
         })
-        .catch(() => {})
+        .catch(() => { })
         .finally(() => {
           if (!cancelled) setTitleLoading(false)
         })
@@ -401,15 +400,6 @@ export default function RulebookBatchUpload() {
     setRows((current) => current.filter((r) => r.status !== 'done'))
   }
 
-  function changeLinkType(next: DocType) {
-    setLinkType(next)
-  }
-
-  function changeLinkUrl(value: string) {
-    setLinkUrl(value)
-    if (isVideoUrl(value)) changeLinkType('video')
-  }
-
   async function submitLink(event: FormEvent) {
     event.preventDefault()
     setLinkError('')
@@ -418,7 +408,7 @@ export default function RulebookBatchUpload() {
       setLinkError('請先選擇遊戲。')
       return
     }
-
+    const linkType: DocType = isVideoUrl(linkUrl) ? 'video' : 'other'
     setLinkBusy(true)
     const message = await docsApi.addDoc({
       docType: linkType,
@@ -426,6 +416,7 @@ export default function RulebookBatchUpload() {
       title: linkTitle,
       url: linkUrl,
     })
+
     setLinkBusy(false)
 
     if (message) {
@@ -485,9 +476,9 @@ export default function RulebookBatchUpload() {
         <>
           <h3>批次上傳規則書</h3>
           <p className="rb-hint">
-            一次選多個 PDF（文字版，每個最大 50 MB）。系統會從檔名猜遊戲與類型，猜不到的請自己選。
-            確認後按「全部上傳」，會一份一份處理，失敗不影響其他檔。上傳的 PDF 只有管理者看得到。
-            文件顯示的名稱就是檔名。
+            一次選多個 PDF（文字版，每個最大 50 MB）。系統會從檔名猜遊戲，猜不到的請自己選。
+            檔名含 faq 或 errata／勘誤會自動歸類，其餘當規則書。確認後按「全部上傳」，
+            會一份一份處理，失敗不影響其他檔。上傳的 PDF 只有管理者看得到。
           </p>
 
           <label className="rb-pick">
@@ -540,19 +531,6 @@ export default function RulebookBatchUpload() {
                               updateRow(row.id, { bggName, guessed: false })
                             }
                           />
-                          <select
-                            value={row.docType}
-                            disabled={locked}
-                            onChange={(event) =>
-                              updateRow(row.id, {
-                                docType: event.target.value as DocKind,
-                              })
-                            }
-                          >
-                            <option value="rulebook">規則書</option>
-                            <option value="faq">FAQ</option>
-                            <option value="errata">勘誤</option>
-                          </select>
                           {row.guessed && row.bggName && (
                             <small className="rb-guess">遊戲是從檔名猜的，請確認</small>
                           )}
@@ -604,8 +582,8 @@ export default function RulebookBatchUpload() {
         <>
           <h3>貼連結／管理文件</h3>
           <p className="rb-hint">
-            先選遊戲，下面會列出這款已有的文件（可刪除），也可以新增規則書、FAQ、中文介紹或影片連結。
-            有填標題就顯示標題，沒填才顯示「類型（語言）」。
+            先選遊戲，下面會列出這款已有的文件（可刪除），也可以新增影片或網頁連結。
+            網址是 YouTube、bilibili、vimeo 會自動當影片，其他當網頁。
           </p>
 
           <form className="rb-fields rb-linkform" onSubmit={submitLink}>
@@ -635,18 +613,18 @@ export default function RulebookBatchUpload() {
                     {docsApi.docs.map((doc) => (
                       <li key={doc.id} className="rb-docitem">
                         {doc.source_type === 'external' &&
-                        isSafeUrl(doc.external_url) ? (
+                          isSafeUrl(doc.external_url) ? (
                           <a
                             className="bgg-link"
                             href={doc.external_url}
                             target="_blank"
                             rel="noreferrer"
                           >
-                            {docLabel(doc)} ↗
+                            {docIcon(doc)} {docLabel(doc)} ↗
                           </a>
                         ) : (
                           <span>
-                            {docLabel(doc)}
+                            {docIcon(doc)} {docLabel(doc)}
                             {indexSuffix(doc)}
                           </span>
                         )}
@@ -664,24 +642,8 @@ export default function RulebookBatchUpload() {
 
                 <strong>新增連結</strong>
                 <label className="admin-field">
-                  <span>類型</span>
-                  <select
-                    value={linkType}
-                    onChange={(event) =>
-                      changeLinkType(event.target.value as DocType)
-                    }
-                  >
-                    <option value="rulebook">規則書</option>
-                    <option value="faq">FAQ</option>
-                    <option value="errata">勘誤</option>
-                    <option value="intro">中文介紹</option>
-                    <option value="video">影片（AI 不會參考）</option>
-                    <option value="other">其他</option>
-                  </select>
-                </label>
-                <label className="admin-field">
                   <span>
-                    標題（可不填；有填就以標題顯示）
+                    標題（選填，例如：官方 FAQ）
                     {titleLoading && '　正在讀取影片名稱…'}
                   </span>
                   <input
@@ -696,10 +658,14 @@ export default function RulebookBatchUpload() {
                     type="url"
                     placeholder="https://"
                     value={linkUrl}
-                    onChange={(event) => changeLinkUrl(event.target.value)}
-                    required
+                    onChange={(event) => setLinkUrl(event.target.value)}
                   />
                 </label>
+                {linkUrl.trim() !== '' && (
+                  <p className="rb-hint">
+                    將新增為：{isVideoUrl(linkUrl) ? '▶ 影片' : '🔗 網頁'}
+                  </p>
+                )}
 
                 {linkError && <p className="admin-error">{linkError}</p>}
                 {linkDone && <p className="rb-msg">{linkDone}</p>}

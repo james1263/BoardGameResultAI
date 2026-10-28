@@ -1,16 +1,21 @@
 import { useState } from 'react'
 import {
   isSafeUrl,
-  type DocType,
   type GameDocument,
   type GameDocumentsApi,
 } from './lib/useGameDocuments'
-import { docLabel, indexSuffix } from './lib/docLabels'
+import {
+  docIcon,
+  docKind,
+  docLabel,
+  indexSuffix,
+  type DocKind3,
+} from './lib/docLabels'
 
-const GROUPS: { title: string; types: DocType[] }[] = [
-  { title: 'RULEBOOKS & FAQ', types: ['rulebook', 'faq', 'errata', 'other'] },
-  { title: '中文介紹', types: ['intro'] },
-  { title: '影片', types: ['video'] },
+const GROUPS: { kind: DocKind3; title: string; adminOnly?: boolean }[] = [
+  { kind: 'web', title: '🔗 網頁與規則連結' },
+  { kind: 'video', title: '▶ 教學影片' },
+  { kind: 'pdf', title: '📄 規則書 PDF（只有管理者看得到，供搜尋用）', adminOnly: true },
 ]
 
 export default function GameDocuments({
@@ -48,18 +53,17 @@ export default function GameDocuments({
 
       {!isLoading && !loadError && visibleDocs.length === 0 && (
         <p className="game-docs-empty">
-          尚未提供規則書、中文介紹或影片連結。
+          這款還沒有教學影片或規則連結。
         </p>
       )}
 
       {GROUPS.map((group) => {
-        const items = visibleDocs.filter((doc) =>
-          group.types.includes(doc.doc_type),
-        )
+        if (group.adminOnly && !isAdmin) return null
+        const items = visibleDocs.filter((doc) => docKind(doc) === group.kind)
         if (items.length === 0) return null
 
         return (
-          <div className="docs-group" key={group.title}>
+          <div className="docs-group" key={group.kind}>
             <h4 className="docs-group-title">{group.title}</h4>
             <ul>
               {items.map((doc) => (
@@ -72,11 +76,11 @@ export default function GameDocuments({
                       target="_blank"
                       rel="noreferrer"
                     >
-                      {docLabel(doc)} ↗
+                      {docIcon(doc)} {docLabel(doc)} ↗
                     </a>
                   ) : (
                     <span>
-                      {docLabel(doc)}
+                      {docIcon(doc)} {docLabel(doc)}
                       {isAdmin && indexSuffix(doc)}
                     </span>
                   )}
