@@ -1053,3 +1053,36 @@ body {
   font-size: 0.8rem;
   color: var(--c-ink-soft, #6b7a70);
 }
+
+.mylist-counter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.mylist-counter-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--c-line, #ddd3bf);
+  background: var(--c-paper, #fbf7ec);
+  color: var(--c-ink, #34463c);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.mylist-counter-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.mylist-counter-value {
+  min-width: 3.2em;
+  text-align: center;
+  font-weight: 600;
+  color: var(--c-ink, #34463c);
+}
+.mylist-counter-last {
+  font-size: 0.8rem;
+  color: var(--c-ink-soft, #6b7a70);
+}

@@ -372,7 +372,7 @@ export default function MyList({
                         <h3 className="mystat-title">最常玩 TOP 3</h3>
                         {stats.top.length === 0 ? (
                             <p className="mylist-empty">
-                                還沒有遊玩次數。在遊戲的「我的桌遊」分頁記錄次數，這裡就會統計。
+                                還沒有遊玩次數。在「已玩清單」調整次數，或在遊戲視窗記錄一次遊玩，這裡就會統計。
                             </p>
                         ) : (
                             <ol className="mystat-top">
@@ -487,12 +487,58 @@ export default function MyList({
                                                 >
                                                     {game.name}
                                                 </button>
-                                                {total > 0 && (
-                                                    <p className="mylist-meta">
-                                                        玩過 {total} 次
-                                                        {summary.lastPlayedOn &&
-                                                            ` · 最近：${summary.lastPlayedOn.replaceAll('-', '/')}`}
-                                                    </p>
+                                                {tab === 'played' ? (
+                                                    <div className="mylist-counter">
+                                                        <button
+                                                            type="button"
+                                                            className="mylist-counter-btn"
+                                                            aria-label="減少遊玩次數"
+                                                            title={
+                                                                (entry?.playCount ?? 0) <= 0 && summary.count > 0
+                                                                    ? '有日期的紀錄請在遊戲視窗「我的桌遊」分頁刪除'
+                                                                    : undefined
+                                                            }
+                                                            disabled={!personal.canEdit || (entry?.playCount ?? 0) <= 0}
+                                                            onClick={() =>
+                                                                personal.updateEntry(
+                                                                    game.bggName,
+                                                                    { playCount: (entry?.playCount ?? 0) - 1 },
+                                                                    { skipPlayedRule: true },
+                                                                )
+                                                            }
+                                                        >
+                                                            −
+                                                        </button>
+                                                        <span className="mylist-counter-value">{total} 次</span>
+                                                        <button
+                                                            type="button"
+                                                            className="mylist-counter-btn"
+                                                            aria-label="增加遊玩次數"
+                                                            disabled={!personal.canEdit || (entry?.playCount ?? 0) >= 999}
+                                                            onClick={() =>
+                                                                personal.updateEntry(
+                                                                    game.bggName,
+                                                                    { playCount: (entry?.playCount ?? 0) + 1 },
+                                                                    { skipPlayedRule: true },
+                                                                )
+                                                            }
+                                                        >
+                                                            ＋
+                                                        </button>
+                                                        {summary.lastPlayedOn && (
+                                                            <span className="mylist-counter-last">
+                                                                最近：{summary.lastPlayedOn.replaceAll('-', '/')}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    total > 0 && (
+                                                        <p className="mylist-meta">
+                                                            玩過 {total} 次
+                                                            {summary.lastPlayedOn &&
+                                                                ` · 最近：${summary.lastPlayedOn.replaceAll('-', '/')}`}
+                                                        </p>
+                                                    )
                                                 )}
                                                 {entry?.note && (
                                                     <p className="mylist-note">{entry.note}</p>
