@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import MemberAdmin from './MemberAdmin'
 import LoyaltyAdmin from '../LoyaltyAdmin'
+import RulebookBatchUpload from './RulebookBatchUpload'
 import { OPEN_CSV_IMPORT_EVENT } from '../lib/adminEvents'
 
-type Tab = 'members' | 'gatherings' | 'data'
+type Tab = 'members' | 'gatherings' | 'rulebooks' | 'data'
 
 const TABS: { key: Tab; icon: string; label: string }[] = [
   { key: 'members', icon: '👥', label: '成員' },
   { key: 'gatherings', icon: '🎴', label: '聚會集點' },
+  { key: 'rulebooks', icon: '📚', label: '規則書' },
   { key: 'data', icon: '📦', label: '資料匯入' },
 ]
 
@@ -67,11 +69,12 @@ export default function AdminCenter() {
 
               {tab === 'members' && <MemberAdmin />}
               {tab === 'gatherings' && <LoyaltyAdmin />}
+              {tab === 'rulebooks' && <RulebookBatchUpload />}
               {tab === 'data' && (
                 <div className="ac-data">
                   <h3>匯入 CSV（Notion 匯出）</h3>
                   <p>
-                    更新 107 款桌遊的資料與封面。CSV 裡沒有的遊戲會移到垃圾桶，不會直接刪除。
+                    更新所有桌遊的資料與封面。CSV 裡沒有的遊戲會移到垃圾桶，不會直接刪除。
                   </p>
                   <button type="button" className="ma-btn" onClick={openCsvImport}>
                     開始匯入 CSV
@@ -81,7 +84,8 @@ export default function AdminCenter() {
                   <ul>
                     <li>上傳或更換封面、編輯簡介、移到垃圾桶：打開那款遊戲的「詳細資料」。</li>
                     <li>還原、編輯原因、永久刪除：頁面最下方的垃圾桶區。</li>
-                    <li>規則書與 FAQ 連結：遊戲詳細視窗的「規則」分頁。</li>
+                    <li>上傳規則書 PDF（供規則助手檢索）：本視窗的「規則書」分頁。</li>
+                    <li>貼規則書、FAQ、中文介紹、影片連結，或刪除文件：遊戲詳細視窗的「規則」分頁。</li>
                   </ul>
                 </div>
               )}

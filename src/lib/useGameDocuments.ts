@@ -36,6 +36,110 @@ const MAX_PDF_BYTES = 50 * 1024 * 1024
 const MAX_PAYLOAD_CHARS = 3_000_000
 const INDEXABLE: DocType[] = ['rulebook', 'faq', 'errata']
 
+export type UploadInput = {
+  file: File
+  docType: DocType
+  language: DocLanguage
+  title: string
+  edition: string
+  sourceNote: string
+  onProgress?: (text: string) => void
+}
+
+// 沒填標題時用檔名（去掉 .pdf，最多 80 字）
+export function defaultDocTitle(file: File): string {
+  return file.name.replace(/\.pdf$/i, '').slice(0, 80)
+}
+
+// 管理者上傳 PDF 到「指定遊戲」：先擷取文字，成功才上傳；任何一步失敗都會復原
+// 回傳錯誤訊息；成功回傳 null
+export async function uploadPdfDocument(
+  bggName: string,
+  input: UploadInput,
+): Promise<string | null> {
+  const { file } = input
+  const progress = input.onProgress ?? (() => {})
+
+  if (!bggName) return '請先選擇遊戲。'
+  if (!INDEXABLE.includes(input.docType)) {
+    return '只有規則書、FAQ、勘誤可以建立索引。'
+  }
+  if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') {
+    return '請選擇 PDF 檔。'
+  }
+  if (file.size > MAX_PDF_BYTES) return '檔案超過 50 MB。'
+  if (input.sourceNote.trim().length > 200) {
+    return '來源說明不能超過 200 字。'
+  }
+
+  let extracted
+  try {
+    progress('讀取 PDF 文字…')
+    extracted = await extractPdfChunks(file, (done, total) =>
+      progress(`讀取文字：第 ${done} / ${total} 頁`),
+    )
+  } catch (error) {
+    if (error instanceof PdfExtractError) return error.message
+    return (
+      '讀取 PDF 失敗：' + (error instanceof Error ? error.message : '未知錯誤')
+    )
+  }
+
+  const payload = extracted.chunks.map((chunk) => ({
+    page: chunk.page,
+    title: chunk.title,
+    content: chunk.content,
+  }))
+  if (JSON.stringify(payload).length > MAX_PAYLOAD_CHARS) {
+    return '這份文件的文字量太大，無法一次建立索引。'
+  }
+
+  const docId = crypto.randomUUID()
+  const path = `${docId}.pdf`
+  const title = input.title.trim() || defaultDocTitle(file)
+
+  progress('上傳 PDF…')
+  const upload = await supabase.storage
+    .from('rulebooks')
+    .upload(path, file, { contentType: 'application/pdf', upsert: false })
+  if (upload.error) return '上傳失敗：' + upload.error.message
+
+  const insert = await supabase.from('game_documents').insert({
+    id: docId,
+    bgg_name: bggName,
+    doc_type: input.docType,
+    language: input.language,
+    title,
+    source_type: 'upload',
+    external_url: '',
+    storage_path: path,
+    ai_indexed: false,
+    index_status: 'processing',
+    edition: input.edition.trim(),
+    source_note: input.sourceNote.trim(),
+  })
+  if (insert.error) {
+    await supabase.storage.from('rulebooks').remove([path])
+    return '新增文件失敗：' + insert.error.message
+  }
+
+  progress('建立索引…')
+  const replace = await supabase.rpc('admin_replace_rulebook_chunks', {
+    p_document: docId,
+    p_chunks: payload,
+    p_page_count: extracted.pageCount,
+    p_file_hash: extracted.fileHash,
+  })
+  if (replace.error) {
+    // 全部復原，不留下半成品
+    await supabase.from('game_documents').delete().eq('id', docId)
+    await supabase.storage.from('rulebooks').remove([path])
+    return '建立索引失敗，已復原：' + replace.error.message
+  }
+
+  return null
+}
+
 export function useGameDocuments(bggName: string) {
   const [docs, setDocs] = useState<GameDocument[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -95,100 +199,12 @@ export function useGameDocuments(bggName: string) {
     [bggName],
   )
 
-  // 管理者上傳 PDF：先擷取文字，成功才上傳；任何一步失敗都會復原
+  // 保留給舊呼叫用；實際上傳邏輯在上面的 uploadPdfDocument
   const uploadDoc = useCallback(
-    async (input: {
-      file: File
-      docType: DocType
-      language: DocLanguage
-      title: string
-      edition: string
-      sourceNote: string
-      onProgress?: (text: string) => void
-    }): Promise<string | null> => {
-      const { file } = input
-      const progress = input.onProgress ?? (() => {})
-
-      if (!INDEXABLE.includes(input.docType)) {
-        return '只有規則書、FAQ、勘誤可以建立索引。'
-      }
-      if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') {
-        return '請選擇 PDF 檔。'
-      }
-      if (file.size > MAX_PDF_BYTES) return '檔案超過 50 MB。'
-      if (input.sourceNote.trim().length > 200) {
-        return '來源說明不能超過 200 字。'
-      }
-
-      let extracted
-      try {
-        progress('讀取 PDF 文字…')
-        extracted = await extractPdfChunks(file, (done, total) =>
-          progress(`讀取文字：第 ${done} / ${total} 頁`),
-        )
-      } catch (error) {
-        if (error instanceof PdfExtractError) return error.message
-        return (
-          '讀取 PDF 失敗：' +
-          (error instanceof Error ? error.message : '未知錯誤')
-        )
-      }
-
-      const payload = extracted.chunks.map((chunk) => ({
-        page: chunk.page,
-        title: chunk.title,
-        content: chunk.content,
-      }))
-      if (JSON.stringify(payload).length > MAX_PAYLOAD_CHARS) {
-        return '這份文件的文字量太大，無法一次建立索引。'
-      }
-
-      const docId = crypto.randomUUID()
-      const path = `${docId}.pdf`
-      const title =
-        input.title.trim() || file.name.replace(/\.pdf$/i, '').slice(0, 80)
-
-      progress('上傳 PDF…')
-      const upload = await supabase.storage
-        .from('rulebooks')
-        .upload(path, file, { contentType: 'application/pdf', upsert: false })
-      if (upload.error) return '上傳失敗：' + upload.error.message
-
-      const insert = await supabase.from('game_documents').insert({
-        id: docId,
-        bgg_name: bggName,
-        doc_type: input.docType,
-        language: input.language,
-        title,
-        source_type: 'upload',
-        external_url: '',
-        storage_path: path,
-        ai_indexed: false,
-        index_status: 'processing',
-        edition: input.edition.trim(),
-        source_note: input.sourceNote.trim(),
-      })
-      if (insert.error) {
-        await supabase.storage.from('rulebooks').remove([path])
-        return '新增文件失敗：' + insert.error.message
-      }
-
-      progress('建立索引…')
-      const replace = await supabase.rpc('admin_replace_rulebook_chunks', {
-        p_document: docId,
-        p_chunks: payload,
-        p_page_count: extracted.pageCount,
-        p_file_hash: extracted.fileHash,
-      })
-      if (replace.error) {
-        // 全部復原，不留下半成品
-        await supabase.from('game_documents').delete().eq('id', docId)
-        await supabase.storage.from('rulebooks').remove([path])
-        return '建立索引失敗，已復原：' + replace.error.message
-      }
-
-      setReloadKey((current) => current + 1)
-      return null
+    async (input: UploadInput): Promise<string | null> => {
+      const message = await uploadPdfDocument(bggName, input)
+      if (!message) setReloadKey((current) => current + 1)
+      return message
     },
     [bggName],
   )

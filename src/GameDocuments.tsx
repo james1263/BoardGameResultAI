@@ -28,9 +28,6 @@ const GROUPS: { title: string; types: DocType[] }[] = [
   { title: '影片', types: ['video'] },
 ]
 
-// 只有這三種可以上傳 PDF 並建立索引
-const INDEXABLE: DocType[] = ['rulebook', 'faq', 'errata']
-
 function docLabel(doc: GameDocument): string {
   if (doc.doc_type === 'intro') return doc.title || '中文介紹'
   if (doc.doc_type === 'video') return '▶ ' + (doc.title || '影片')
@@ -57,7 +54,7 @@ export default function GameDocuments({
   api: GameDocumentsApi
   isAdmin: boolean
 }) {
-  const { docs, isLoading, loadError, addDoc, uploadDoc, deleteDoc } = api
+  const { docs, isLoading, loadError, addDoc, deleteDoc } = api
 
   // 一般人只看得到外部連結；上傳的 PDF 是私有的，只有管理者看得到
   const visibleDocs = isAdmin
@@ -66,76 +63,21 @@ export default function GameDocuments({
 
   const [docType, setDocType] = useState<DocType>('rulebook')
   const [language, setLanguage] = useState<DocLanguage>('en')
-  const [mode, setMode] = useState<'link' | 'upload'>('link')
   const [title, setTitle] = useState('')
   const [url, setUrl] = useState('')
-  const [edition, setEdition] = useState('')
-  const [sourceNote, setSourceNote] = useState('')
-  const [file, setFile] = useState<File | null>(null)
-  const [fileKey, setFileKey] = useState(0)
   const [busy, setBusy] = useState(false)
-  const [progress, setProgress] = useState('')
   const [formError, setFormError] = useState('')
   const [done, setDone] = useState('')
-
-  const canUpload = INDEXABLE.includes(docType)
-  const isUpload = canUpload && mode === 'upload'
 
   function changeType(next: DocType) {
     setDocType(next)
     if (next === 'intro') setLanguage('zh')
-    if (!INDEXABLE.includes(next)) setMode('link')
-  }
-
-  function changeMode(next: 'link' | 'upload') {
-    setMode(next)
-    // 上傳只支援中文、英文
-    if (next === 'upload' && language === 'other') setLanguage('en')
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setFormError('')
     setDone('')
-
-    if (isUpload) {
-      if (!file) {
-        setFormError('請先選擇 PDF 檔。')
-        return
-      }
-      if (language === 'other') {
-        setFormError('上傳 PDF 目前只支援中文或英文。')
-        return
-      }
-      setBusy(true)
-      setProgress('準備中…')
-
-      const message = await uploadDoc({
-        file,
-        docType: docType as 'rulebook' | 'faq' | 'errata',
-        language,
-        title,
-        edition,
-        sourceNote,
-        onProgress: setProgress,
-      })
-
-      setBusy(false)
-      setProgress('')
-
-      if (message) {
-        setFormError(message)
-        return
-      }
-
-      setTitle('')
-      setEdition('')
-      setSourceNote('')
-      setFile(null)
-      setFileKey((current) => current + 1)
-      setDone('已上傳並建立索引。')
-      return
-    }
 
     setBusy(true)
     const message = await addDoc({ docType, language, title, url })
@@ -222,7 +164,10 @@ export default function GameDocuments({
 
       {isAdmin && (
         <form className="doc-form" onSubmit={handleSubmit}>
-          <strong>新增文件</strong>
+          <strong>新增連結</strong>
+          <p className="game-docs-empty">
+            要上傳 PDF 供規則助手檢索，請到「管理」→「規則書」分頁。
+          </p>
 
           <label className="admin-field">
             <span>類型</span>
@@ -239,21 +184,6 @@ export default function GameDocuments({
             </select>
           </label>
 
-          {canUpload && (
-            <label className="admin-field">
-              <span>來源</span>
-              <select
-                value={mode}
-                onChange={(event) =>
-                  changeMode(event.target.value as 'link' | 'upload')
-                }
-              >
-                <option value="link">貼連結</option>
-                <option value="upload">上傳 PDF（供規則助手檢索）</option>
-              </select>
-            </label>
-          )}
-
           <label className="admin-field">
             <span>語言</span>
             <select
@@ -264,16 +194,12 @@ export default function GameDocuments({
             >
               <option value="zh">中文</option>
               <option value="en">英文</option>
-              {!isUpload && <option value="other">其他語言</option>}
+              <option value="other">其他語言</option>
             </select>
           </label>
 
           <label className="admin-field">
-            <span>
-              {isUpload
-                ? '標題（可不填，會用檔名）'
-                : '標題（可不填；中文介紹與影片會直接顯示這個標題）'}
-            </span>
+            <span>標題（可不填；中文介紹與影片會直接顯示這個標題）</span>
             <input
               type="text"
               value={title}
@@ -281,66 +207,22 @@ export default function GameDocuments({
             />
           </label>
 
-          {!isUpload && (
-            <label className="admin-field">
-              <span>網址</span>
-              <input
-                type="url"
-                placeholder="https://"
-                value={url}
-                onChange={(event) => setUrl(event.target.value)}
-                required
-              />
-            </label>
-          )}
+          <label className="admin-field">
+            <span>網址</span>
+            <input
+              type="url"
+              placeholder="https://"
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+              required
+            />
+          </label>
 
-          {isUpload && (
-            <>
-              <label className="admin-field">
-                <span>版次說明（可不填，例如 2nd Edition）</span>
-                <input
-                  type="text"
-                  value={edition}
-                  onChange={(event) => setEdition(event.target.value)}
-                />
-              </label>
-
-              <label className="admin-field">
-                <span>
-                  來源說明（可不填，例如 BGG、出版社官網、網頁另存成 PDF）
-                </span>
-                <input
-                  type="text"
-                  maxLength={200}
-                  value={sourceNote}
-                  onChange={(event) => setSourceNote(event.target.value)}
-                />
-              </label>
-
-              <label className="admin-field">
-                <span>PDF 檔（文字版，最大 50 MB；只有管理者看得到檔案）</span>
-                <input
-                  key={fileKey}
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-                />
-              </label>
-            </>
-          )}
-
-          {progress && <p>{progress}</p>}
           {formError && <p className="admin-error">{formError}</p>}
           {done && <p>{done}</p>}
 
           <button className="rule-button" type="submit" disabled={busy}>
-            {busy
-              ? isUpload
-                ? '處理中…'
-                : '新增中…'
-              : isUpload
-                ? '上傳並建立索引'
-                : '新增'}
+            {busy ? '新增中…' : '新增'}
           </button>
         </form>
       )}
