@@ -1013,7 +1013,7 @@ body {
   .modal-backdrop .game-modal.has-tabs {
     height: min(680px, 100%);
     max-height: 100%;
-  }
+  }gi
 
   .ma-backdrop .ac-modal {
     height: 100%;
@@ -1031,4 +1031,25 @@ body {
   .ra-backdrop .ra-page {
     height: 100%;
   }
+}
+
+.ra-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+.ra-actions a.ra-btn {
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+}
+.ra-btn-small {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+.ra-actions-note {
+  font-size: 0.8rem;
+  color: var(--c-ink-soft, #6b7a70);
 }
