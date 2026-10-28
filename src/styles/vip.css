@@ -566,7 +566,7 @@
 }
 
 /* 點開的聚會詳情：直接接在那一列下面，左邊一條綠線表示是同一組 */
-.lga-list > li > .lga-detail {
+.lga-list>li>.lga-detail {
   margin: 8px 0 6px 10px;
   border-left: 4px solid #456b50;
   border-radius: 4px 14px 14px 4px;
@@ -604,13 +604,22 @@
     font-size: 12px;
   }
 
-  .lga-list > li > .lga-detail {
+  .lga-list>li>.lga-detail {
     margin-left: 4px;
     padding: 12px 10px;
   }
 }
 
-   /* iPhone 的按鈕預設文字是藍色：沒指定顏色的按鈕改成跟隨上層文字色 */
-   :where(button:not(:disabled)) {
-     color: inherit;
-   }
+/* iPhone 的按鈕預設文字是藍色：沒指定顏色的按鈕改成跟隨上層文字色 */
+:where(button:not(:disabled)) {
+  color: inherit;
+}
+
+/* 強制淺色：手機開深色模式時，沒指定顏色的文字（例如各視窗標題）會變成淡白色 */
+:root {
+  color-scheme: light;
+}
+
+body {
+  color: var(--c-ink, #34463c);
+}
