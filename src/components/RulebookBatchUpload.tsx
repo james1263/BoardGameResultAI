@@ -1,6 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
-import { defaultDocTitle, uploadPdfDocument } from '../lib/useGameDocuments'
+import {
+  defaultDocTitle,
+  isSafeUrl,
+  uploadPdfDocument,
+  useGameDocuments,
+  type DocLanguage,
+  type DocType,
+  type GameDocument,
+} from '../lib/useGameDocuments'
+import { docLabel, indexSuffix } from '../lib/docLabels'
 
 type GameOption = { bgg_name: string; name: string }
 type DocKind = 'rulebook' | 'faq' | 'errata'
@@ -13,7 +22,6 @@ type Row = {
   bggName: string
   docType: DocKind
   language: Lang
-  query: string
   status: RowStatus
   message: string
   guessed: boolean
@@ -39,7 +47,6 @@ const NOISE =
 function guessGame(fileName: string, games: GameOption[]): string {
   const base = fileName.replace(/\.pdf$/i, '')
   const fileCompact = normalize(base).replace(NOISE, ' ').replace(/ /g, '')
-  const fileRaw = base
 
   let bestScore = 0
   let bestNames: string[] = []
@@ -55,7 +62,7 @@ function guessGame(fileName: string, games: GameOption[]): string {
       score = 500 + english.length
     }
 
-    if (chinese.length >= 2 && fileRaw.includes(chinese)) {
+    if (chinese.length >= 2 && base.includes(chinese)) {
       score = Math.max(score, 400 + chinese.length)
     }
 
@@ -96,15 +103,159 @@ const STATUS_LABEL: Record<RowStatus, string> = {
   error: '失敗',
 }
 
+// 影片網站的連結：貼上時自動把類型選成「影片」
+function isVideoUrl(url: string): boolean {
+  return /^https?:\/\/([a-z0-9-]+\.)*(youtube\.com|youtu\.be|bilibili\.com|b23\.tv|vimeo\.com)\//i.test(
+    url.trim(),
+  )
+}
+
+// ── 遊戲選擇（輸入就自動列出符合的遊戲，點一下就選好） ──────────
+
+function gameLabel(game: GameOption): string {
+  return game.name ? `${game.name}（${game.bgg_name}）` : game.bgg_name
+}
+
+function GamePicker({
+  games,
+  value,
+  onChange,
+  disabled,
+}: {
+  games: GameOption[]
+  value: string
+  onChange: (bggName: string) => void
+  disabled?: boolean
+}) {
+  const [query, setQuery] = useState('')
+  const selected = games.find((g) => g.bgg_name === value)
+
+  // 已選好：顯示名稱＋「更換」
+  if (selected) {
+    return (
+      <div className="rb-picked">
+        <span>{gameLabel(selected)}</span>
+        <button
+          type="button"
+          className="admin-link"
+          disabled={disabled}
+          onClick={() => {
+            onChange('')
+            setQuery('')
+          }}
+        >
+          更換
+        </button>
+      </div>
+    )
+  }
+
+  const q = compact(query)
+  const matches = q
+    ? games
+        .filter(
+          (g) =>
+            compact(g.bgg_name).includes(q) || compact(g.name).includes(q),
+        )
+        .sort((x, y) => {
+          const xs =
+            compact(x.bgg_name).startsWith(q) || compact(x.name).startsWith(q)
+          const ys =
+            compact(y.bgg_name).startsWith(q) || compact(y.name).startsWith(q)
+          return Number(ys) - Number(xs)
+        })
+        .slice(0, 8)
+    : []
+
+  return (
+    <div className="rb-combo">
+      <input
+        type="search"
+        className="rb-search rb-missing"
+        placeholder="輸入遊戲名稱（英文或中文），會自動列出符合的遊戲"
+        value={query}
+        disabled={disabled}
+        onChange={(event) => setQuery(event.target.value)}
+      />
+      {q && matches.length > 0 && (
+        <ul className="rb-suggest">
+          {matches.map((game) => (
+            <li key={game.bgg_name}>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(game.bgg_name)
+                  setQuery('')
+                }}
+              >
+                {gameLabel(game)}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {q && matches.length === 0 && (
+        <p className="rb-hint">找不到符合的遊戲，換個關鍵字試試。</p>
+      )}
+    </div>
+  )
+}
+
 // ── 元件 ─────────────────────────────────────────────
 
 export default function RulebookBatchUpload() {
+  const [mode, setMode] = useState<'pdf' | 'link'>('pdf')
   const [games, setGames] = useState<GameOption[]>([])
   const [gamesError, setGamesError] = useState('')
+
+  // 批次上傳 PDF
   const [rows, setRows] = useState<Row[]>([])
   const [running, setRunning] = useState(false)
   const [notice, setNotice] = useState('')
   const [pickerKey, setPickerKey] = useState(0)
+
+  // 貼連結
+  const [linkGame, setLinkGame] = useState('')
+  const [linkType, setLinkType] = useState<DocType>('rulebook')
+  const [linkLang, setLinkLang] = useState<DocLanguage>('en')
+  const [linkTitle, setLinkTitle] = useState('')
+  const [linkUrl, setLinkUrl] = useState('')
+  const [linkBusy, setLinkBusy] = useState(false)
+  const [linkError, setLinkError] = useState('')
+  const [linkDone, setLinkDone] = useState('')
+  const [titleLoading, setTitleLoading] = useState(false)
+  const docsApi = useGameDocuments(linkGame)
+
+  // 貼 YouTube 連結時，自動試著抓影片名稱填進標題（抓不到就維持空白，可自己填）
+  useEffect(() => {
+    const url = linkUrl.trim()
+    if (!/^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(url)) {
+      setTitleLoading(false)
+      return
+    }
+    let cancelled = false
+    setTitleLoading(true)
+    const timer = window.setTimeout(() => {
+      fetch(
+        'https://www.youtube.com/oembed?format=json&url=' +
+          encodeURIComponent(url),
+      )
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (cancelled) return
+          const title = data && typeof data.title === 'string' ? data.title : ''
+          if (title) setLinkTitle((current) => current || title)
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (!cancelled) setTitleLoading(false)
+        })
+    }, 500)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [linkUrl])
 
   useEffect(() => {
     let cancelled = false
@@ -159,7 +310,6 @@ export default function RulebookBatchUpload() {
         bggName: guess,
         docType: guessDocType(file.name),
         language: guessLanguage(file.name),
-        query: '',
         status: 'ready',
         message: '',
         guessed: guess !== '',
@@ -209,8 +359,7 @@ export default function RulebookBatchUpload() {
         if (check.data && check.data.length > 0) {
           updateRow(row.id, {
             status: 'error',
-            message:
-              '這款已有同名的上傳文件。要更新請先到該遊戲的「規則」分頁刪除舊的。',
+            message: '這款已有同名的上傳文件。要更新請先在「貼連結」分頁選這款遊戲，刪除舊的。',
           })
           continue
         }
@@ -246,15 +395,55 @@ export default function RulebookBatchUpload() {
     setRows((current) => current.filter((r) => r.status !== 'done'))
   }
 
-  function optionsFor(row: Row): GameOption[] {
-    const q = row.query.trim().toLowerCase()
-    return games.filter(
-      (g) =>
-        g.bgg_name === row.bggName ||
-        !q ||
-        g.bgg_name.toLowerCase().includes(q) ||
-        g.name.toLowerCase().includes(q),
-    )
+  function changeLinkType(next: DocType) {
+    setLinkType(next)
+    if (next === 'intro') setLinkLang('zh')
+    else if (next === 'video') setLinkLang('other')
+    else if (linkLang === 'other') setLinkLang('en')
+  }
+
+  function changeLinkUrl(value: string) {
+    setLinkUrl(value)
+    if (isVideoUrl(value)) changeLinkType('video')
+  }
+
+  async function submitLink(event: FormEvent) {
+    event.preventDefault()
+    setLinkError('')
+    setLinkDone('')
+    if (!linkGame) {
+      setLinkError('請先選擇遊戲。')
+      return
+    }
+
+    setLinkBusy(true)
+    const message = await docsApi.addDoc({
+      docType: linkType,
+      language: linkLang,
+      title: linkTitle,
+      url: linkUrl,
+    })
+    setLinkBusy(false)
+
+    if (message) {
+      setLinkError(message)
+      return
+    }
+    setLinkTitle('')
+    setLinkUrl('')
+    setLinkDone('已新增連結。')
+  }
+
+  async function deleteLinkDoc(doc: GameDocument) {
+    const text =
+      doc.source_type === 'upload'
+        ? '確定要刪除這份文件嗎？PDF 原檔與搜尋索引都會一起刪除，無法復原。'
+        : '確定要刪除這份文件連結嗎？'
+    if (!window.confirm(text)) return
+    setLinkError('')
+    setLinkDone('')
+    const message = await docsApi.deleteDoc(doc)
+    if (message) setLinkError(message)
   }
 
   const pending = rows.filter((r) => r.status === 'ready' || r.status === 'error')
@@ -264,154 +453,289 @@ export default function RulebookBatchUpload() {
 
   return (
     <div className="rb">
-      <h3>批次上傳規則書</h3>
-      <p className="rb-hint">
-        一次選多個 PDF（文字版，每個最大 50 MB）。系統會從檔名猜遊戲、類型與語言，猜不到的請自己選。
-        確認後按「全部上傳」，會一份一份處理，失敗不影響其他檔。上傳的 PDF 只有管理者看得到。
-      </p>
+      <div className="rb-seg" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'pdf'}
+          className={mode === 'pdf' ? 'active' : ''}
+          disabled={running}
+          onClick={() => setMode('pdf')}
+        >
+          上傳 PDF
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'link'}
+          className={mode === 'link' ? 'active' : ''}
+          disabled={running}
+          onClick={() => setMode('link')}
+        >
+          貼連結／管理文件
+        </button>
+      </div>
 
       {gamesError && <p className="admin-error">{gamesError}</p>}
 
-      <label className="rb-pick">
-        <span>選擇 PDF（可多選）</span>
-        <input
-          key={pickerKey}
-          type="file"
-          accept="application/pdf,.pdf"
-          multiple
-          disabled={running || games.length === 0}
-          onChange={(event) => addFiles(event.target.files)}
-        />
-      </label>
-
-      {notice && <p className="admin-error">{notice}</p>}
-
-      {rows.length > 0 && (
+      {mode === 'pdf' && (
         <>
-          <ul className="rb-list">
-            {rows.map((row) => {
-              const locked = running || row.status === 'uploading' || row.status === 'done'
-              return (
-                <li className={`rb-row rb-${row.status}`} key={row.id}>
-                  <div className="rb-row-head">
-                    <span className="rb-file">
-                      {row.file.name}
-                      <small>　{formatMb(row.file.size)}</small>
-                    </span>
-                    <span className="rb-chip">{STATUS_LABEL[row.status]}</span>
-                    {!locked && (
-                      <button
-                        type="button"
-                        className="rb-x"
-                        aria-label="移除這個檔案"
-                        onClick={() => removeRow(row.id)}
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
+          <h3>批次上傳規則書</h3>
+          <p className="rb-hint">
+            一次選多個 PDF（文字版，每個最大 50 MB）。系統會從檔名猜遊戲、類型與語言，猜不到的請自己選。
+            確認後按「全部上傳」，會一份一份處理，失敗不影響其他檔。上傳的 PDF 只有管理者看得到。
+            文件顯示的名稱就是檔名。
+          </p>
 
-                  {row.status !== 'done' && (
-                    <div className="rb-fields">
-                      <input
-                        type="search"
-                        className="rb-search"
-                        placeholder="搜尋遊戲（英文或中文名）"
-                        value={row.query}
-                        disabled={locked}
-                        onChange={(event) =>
-                          updateRow(row.id, { query: event.target.value })
-                        }
-                      />
-                      <select
-                        className={row.bggName ? '' : 'rb-missing'}
-                        value={row.bggName}
-                        disabled={locked}
-                        onChange={(event) =>
-                          updateRow(row.id, {
-                            bggName: event.target.value,
-                            guessed: false,
-                          })
-                        }
-                      >
-                        <option value="">請選擇遊戲</option>
-                        {optionsFor(row).map((game) => (
-                          <option key={game.bgg_name} value={game.bgg_name}>
-                            {game.name
-                              ? `${game.name}（${game.bgg_name}）`
-                              : game.bgg_name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="rb-two">
-                        <select
-                          value={row.docType}
-                          disabled={locked}
-                          onChange={(event) =>
-                            updateRow(row.id, {
-                              docType: event.target.value as DocKind,
-                            })
-                          }
-                        >
-                          <option value="rulebook">規則書</option>
-                          <option value="faq">FAQ</option>
-                          <option value="errata">勘誤</option>
-                        </select>
-                        <select
-                          value={row.language}
-                          disabled={locked}
-                          onChange={(event) =>
-                            updateRow(row.id, {
-                              language: event.target.value as Lang,
-                            })
-                          }
-                        >
-                          <option value="en">英文</option>
-                          <option value="zh">中文</option>
-                        </select>
+          <label className="rb-pick">
+            <span>選擇 PDF（可多選）</span>
+            <input
+              key={pickerKey}
+              type="file"
+              accept="application/pdf,.pdf"
+              multiple
+              disabled={running || games.length === 0}
+              onChange={(event) => addFiles(event.target.files)}
+            />
+          </label>
+
+          {notice && <p className="admin-error">{notice}</p>}
+
+          {rows.length > 0 && (
+            <>
+              <ul className="rb-list">
+                {rows.map((row) => {
+                  const locked =
+                    running || row.status === 'uploading' || row.status === 'done'
+                  return (
+                    <li className={`rb-row rb-${row.status}`} key={row.id}>
+                      <div className="rb-row-head">
+                        <span className="rb-file">
+                          {row.file.name}
+                          <small>　{formatMb(row.file.size)}</small>
+                        </span>
+                        <span className="rb-chip">{STATUS_LABEL[row.status]}</span>
+                        {!locked && (
+                          <button
+                            type="button"
+                            className="rb-x"
+                            aria-label="移除這個檔案"
+                            onClick={() => removeRow(row.id)}
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
-                      {row.guessed && row.bggName && (
-                        <small className="rb-guess">遊戲是從檔名猜的，請確認</small>
-                      )}
-                    </div>
-                  )}
 
-                  {row.message && (
-                    <p
-                      className={
-                        row.status === 'error' ? 'admin-error rb-msg' : 'rb-msg'
+                      {row.status !== 'done' && (
+                        <div className="rb-fields">
+                          <GamePicker
+                            games={games}
+                            value={row.bggName}
+                            disabled={locked}
+                            onChange={(bggName) =>
+                              updateRow(row.id, { bggName, guessed: false })
+                            }
+                          />
+                          <div className="rb-two">
+                            <select
+                              value={row.docType}
+                              disabled={locked}
+                              onChange={(event) =>
+                                updateRow(row.id, {
+                                  docType: event.target.value as DocKind,
+                                })
+                              }
+                            >
+                              <option value="rulebook">規則書</option>
+                              <option value="faq">FAQ</option>
+                              <option value="errata">勘誤</option>
+                            </select>
+                            <select
+                              value={row.language}
+                              disabled={locked}
+                              onChange={(event) =>
+                                updateRow(row.id, {
+                                  language: event.target.value as Lang,
+                                })
+                              }
+                            >
+                              <option value="en">英文</option>
+                              <option value="zh">中文</option>
+                            </select>
+                          </div>
+                          {row.guessed && row.bggName && (
+                            <small className="rb-guess">遊戲是從檔名猜的，請確認</small>
+                          )}
+                        </div>
+                      )}
+
+                      {row.message && (
+                        <p
+                          className={
+                            row.status === 'error' ? 'admin-error rb-msg' : 'rb-msg'
+                          }
+                        >
+                          {row.message}
+                        </p>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+
+              <div className="rb-actions">
+                <button
+                  type="button"
+                  className="ma-btn"
+                  disabled={running || pending.length === 0 || missingGame > 0}
+                  onClick={uploadAll}
+                >
+                  {running
+                    ? '上傳中，請不要關閉視窗…'
+                    : errorCount > 0 && pending.length === errorCount
+                      ? `重試失敗的 ${errorCount} 份`
+                      : `全部上傳（${pending.length} 份）`}
+                </button>
+                {doneCount > 0 && !running && (
+                  <button type="button" className="admin-link" onClick={clearDone}>
+                    清除已完成的 {doneCount} 筆
+                  </button>
+                )}
+              </div>
+              {missingGame > 0 && (
+                <p className="rb-hint">還有 {missingGame} 份沒選遊戲。</p>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {mode === 'link' && (
+        <>
+          <h3>貼連結／管理文件</h3>
+          <p className="rb-hint">
+            先選遊戲，下面會列出這款已有的文件（可刪除），也可以新增規則書、FAQ、中文介紹或影片連結。
+            有填標題就顯示標題，沒填才顯示「類型（語言）」。
+          </p>
+
+          <form className="rb-fields rb-linkform" onSubmit={submitLink}>
+            <GamePicker
+              games={games}
+              value={linkGame}
+              onChange={(bggName) => {
+                setLinkGame(bggName)
+                setLinkError('')
+                setLinkDone('')
+              }}
+            />
+
+            {linkGame && (
+              <>
+                <div className="rb-doclist">
+                  {docsApi.isLoading && <p className="rb-hint">載入文件中…</p>}
+                  {docsApi.loadError && (
+                    <p className="admin-error">{docsApi.loadError}</p>
+                  )}
+                  {!docsApi.isLoading &&
+                    !docsApi.loadError &&
+                    docsApi.docs.length === 0 && (
+                      <p className="rb-hint">這款還沒有任何文件。</p>
+                    )}
+                  <ul>
+                    {docsApi.docs.map((doc) => (
+                      <li key={doc.id} className="rb-docitem">
+                        {doc.source_type === 'external' &&
+                        isSafeUrl(doc.external_url) ? (
+                          <a
+                            className="bgg-link"
+                            href={doc.external_url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {docLabel(doc)} ↗
+                          </a>
+                        ) : (
+                          <span>
+                            {docLabel(doc)}
+                            {indexSuffix(doc)}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          className="admin-link"
+                          onClick={() => deleteLinkDoc(doc)}
+                        >
+                          刪除
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <strong>新增連結</strong>
+                <label className="admin-field">
+                  <span>類型</span>
+                  <select
+                    value={linkType}
+                    onChange={(event) =>
+                      changeLinkType(event.target.value as DocType)
+                    }
+                  >
+                    <option value="rulebook">規則書</option>
+                    <option value="faq">FAQ</option>
+                    <option value="errata">勘誤</option>
+                    <option value="intro">中文介紹</option>
+                    <option value="video">影片（AI 不會參考）</option>
+                    <option value="other">其他</option>
+                  </select>
+                </label>
+                {linkType !== 'video' && linkType !== 'intro' && (
+                  <label className="admin-field">
+                    <span>語言</span>
+                    <select
+                      value={linkLang}
+                      onChange={(event) =>
+                        setLinkLang(event.target.value as DocLanguage)
                       }
                     >
-                      {row.message}
-                    </p>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
+                      <option value="zh">中文</option>
+                      <option value="en">英文</option>
+                      <option value="other">其他語言</option>
+                    </select>
+                  </label>
+                )}
+                <label className="admin-field">
+                  <span>
+                    標題（可不填；有填就以標題顯示）
+                    {titleLoading && '　正在讀取影片名稱…'}
+                  </span>
+                  <input
+                    type="text"
+                    value={linkTitle}
+                    onChange={(event) => setLinkTitle(event.target.value)}
+                  />
+                </label>
+                <label className="admin-field">
+                  <span>網址</span>
+                  <input
+                    type="url"
+                    placeholder="https://"
+                    value={linkUrl}
+                    onChange={(event) => changeLinkUrl(event.target.value)}
+                    required
+                  />
+                </label>
 
-          <div className="rb-actions">
-            <button
-              type="button"
-              className="ma-btn"
-              disabled={running || pending.length === 0 || missingGame > 0}
-              onClick={uploadAll}
-            >
-              {running
-                ? '上傳中，請不要關閉視窗…'
-                : errorCount > 0 && pending.length === errorCount
-                  ? `重試失敗的 ${errorCount} 份`
-                  : `全部上傳（${pending.length} 份）`}
-            </button>
-            {doneCount > 0 && !running && (
-              <button type="button" className="admin-link" onClick={clearDone}>
-                清除已完成的 {doneCount} 筆
-              </button>
+                {linkError && <p className="admin-error">{linkError}</p>}
+                {linkDone && <p className="rb-msg">{linkDone}</p>}
+
+                <button className="ma-btn" type="submit" disabled={linkBusy}>
+                  {linkBusy ? '新增中…' : '新增連結'}
+                </button>
+              </>
             )}
-          </div>
-          {missingGame > 0 && (
-            <p className="rb-hint">還有 {missingGame} 份沒選遊戲。</p>
-          )}
+          </form>
         </>
       )}
     </div>

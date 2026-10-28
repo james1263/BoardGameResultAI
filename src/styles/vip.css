@@ -907,3 +907,88 @@ body {
   gap: 12px;
   flex-wrap: wrap;
 }
+
+/* ===== 管理中心：固定大小、4 顆分頁、規則書分頁 ===== */
+.ac-modal {
+  width: min(560px, calc(100vw - 24px));
+  height: min(720px, calc(100dvh - 40px));
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ac-head { flex: 0 0 auto; }
+.ac-tabs {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.ac-tab { min-width: 0; padding: 8px 2px; }
+.ac-tab-label { font-size: 12px; white-space: nowrap; }
+.ac-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 760px) {
+  .ac-modal {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+  }
+}
+
+.rb { display: grid; gap: 12px; color: var(--c-ink, #34463c); }
+.rb h3 { margin: 4px 0 0; color: var(--c-ink, #34463c); }
+.rb-hint { margin: 0; font-size: 13px; line-height: 1.5; color: var(--c-ink-soft, #5f6f64); }
+.rb-msg { margin: 4px 0 0; font-size: 13px; }
+.rb-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.rb-seg button {
+  padding: 9px 6px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--c-line, #ddd3bd); background: var(--c-paper, #fbf7ec);
+  font: inherit; font-size: 14px;
+}
+.rb-seg button.active { background: var(--c-forest, #456b50); border-color: var(--c-forest, #456b50); color: #fff; }
+.rb-list, .rb-doclist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rb-row {
+  border: 1px solid var(--c-line, #ddd3bd); border-radius: 12px;
+  background: var(--c-paper, #fbf7ec); padding: 10px;
+}
+.rb-row.rb-error { border-color: var(--c-danger, #b3402f); }
+.rb-row.rb-done { opacity: 0.75; }
+.rb-row-head { display: flex; align-items: center; gap: 8px; }
+.rb-file { flex: 1; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
+.rb-file small { color: var(--c-ink-soft, #5f6f64); }
+.rb-chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #efe6d2; white-space: nowrap; }
+.rb-x { border: 0; background: none; cursor: pointer; font-size: 16px; padding: 4px 6px; }
+.rb-fields { display: grid; gap: 8px; margin-top: 8px; }
+.rb-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rb-fields select, .rb-fields input, .rb-search, .rb-linkform input {
+  width: 100%; box-sizing: border-box; padding: 8px; font: inherit; font-size: 14px;
+  border: 1px solid var(--c-line, #ddd3bd); border-radius: 8px; background: #fff;
+}
+.rb-missing { border-color: var(--c-danger, #b3402f) !important; }
+.rb-guess { color: var(--c-caramel, #b78a5a); }
+.rb-pick { display: grid; gap: 6px; }
+.rb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.rb-docitem { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 14px; }
+
+/* 遊戲選擇：輸入後直接列出符合的遊戲 */
+.rb-combo { display: grid; gap: 6px; }
+.rb-suggest {
+  list-style: none; margin: 0; padding: 4px; display: grid; gap: 2px;
+  border: 1px solid var(--c-line, #ddd3bd); border-radius: 10px; background: #fff;
+  max-height: 240px; overflow-y: auto;
+}
+.rb-suggest button {
+  width: 100%; text-align: left; padding: 10px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--c-ink, #34463c); font: inherit; font-size: 14px;
+}
+.rb-suggest button:hover, .rb-suggest button:active { background: #efe6d2; }
+.rb-picked {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 8px 10px; border: 1px solid var(--c-line, #ddd3bd); border-radius: 8px;
+  background: #fff; font-size: 14px; color: var(--c-ink, #34463c);
+}

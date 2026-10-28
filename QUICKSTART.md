@@ -1,6 +1,6 @@
 # 桌遊規則助手 — 懶人包（給下一個 AI）
 
-> 最後更新：2026-10-28（第八批：兩份文件已去重合併）。
+> 最後更新：2026-10-28（第九批：管理中心規則書批次上傳＋導覽直接切換；兩份文件已去重合併）。
 > **分工**：本檔＝現況、使用者新需求、待辦、合作規則；`PROJECT_CONTEXT.md`＝架構、資料庫、功能規則、規則助手設計（兩檔內容不重複）。
 > 若與舊版或聊天內容衝突，以本檔為準。
 
@@ -12,27 +12,28 @@
 
 ## 2. 目前狀態（2026-10-28）
 
-- **git**：`HEAD = origin/master = 53f824c`，工作目錄乾淨，第七批全部已 push。
+- **git**：第七批 `53f824c` 之後，第九批（管理中心規則書批次上傳＋導覽直接切換＋影片自動選類型）由使用者 commit／push，訊息「管理中心規則書批次上傳與導覽直接切換」；**實際狀態請用 `git log --oneline -5` 確認，不要假設**。
 - **規則助手第七批（已上線）**：檢索 SQL（`search_rulebook_chunks`、`rulebook_search_remaining`、`rulebook_has_index`、`rulebook_indexed_games`）；獨立頁面 `RulebookPage.tsx`＋`RulebookAssistant.tsx`（先選遊戲、中文問題自動建議英文關鍵字、英文搜尋框、結果含頁碼、兩個複製提示詞按鈕）；導覽列第 5 顆「✦ 規則助手」（僅 VIP／管理者）；`lib/zhEnGlossary.ts`（約 40 組中英對照）；`lib/useBackClose.ts`（手機返回只關視窗，目前只套用 `GameModal`、`RulebookPage`）；`GameDocuments.tsx` 合併新增連結與上傳 PDF 為單一表單；詳細視窗固定大小；強制淺色模式。
+- **第九批（已實作、使用者已在電腦實測，手機未完整測）**：管理中心變 4 顆分頁（成員、聚會集點、**規則書**、資料匯入）；「規則書」分頁（`RulebookBatchUpload.tsx`）有兩個模式——「上傳 PDF」（一次選多檔、每檔從檔名猜遊戲／類型／語言、**遊戲選擇是單一輸入框，打字就自動列出最多 8 個符合的遊戲、點一下選好**、逐檔上傳顯示進度、失敗可重試、同款同名上傳文件會擋）與「貼連結／管理文件」（先選遊戲、列出該款文件可刪除、新增連結）。貼連結時：**網址是 YouTube／youtu.be／bilibili／vimeo 會自動把類型選成「影片」**，類型為影片或中文介紹時**隱藏語言欄**；貼 YouTube 連結會用 oEmbed 自動帶入影片名稱（使用者實測有效），**bilibili 抓不到名稱要自己填**；沒填標題的影片顯示「▶ 影片（網站名）」。詳細視窗「規則」分頁只剩文件清單（管理者可刪除），新增一律到管理中心。文件顯示名稱規則集中在 `lib/docLabels.ts`（`docLabel`：有標題以標題為主，否則「類型（語言）」；`indexSuffix` 只給管理者看索引狀態）。`App.tsx` 改成單一 `activePage`（`NavPage`＝`leaderboard`／`rules`／`admin`／`loyalty`／`mylist`），點另一顆導覽會直接取代、再點同一顆關閉（桌面可用；**手機底部導覽仍被抽屜遮住，見 N2／N4**）。`AdminCenter` 的開關改由 `App` 控制（`isOpen`／`onToggle`／`onClose`）。
 - 已測試上傳 3 份英文規則書（Ayar 20 頁、Bable 12 頁、天際礦脈 `rules-en` 32 頁），皆 `completed`。`rules-en` 語言已改 `en`（使用者已執行 SQL，回「Success」；可用 `select title, language from public.game_documents where title='rules-en';` 再確認）。
 - 使用者已做過一輪手機實測（含 LINE 截圖），結果見下節。
 
-## 3. 使用者新需求（2026-10-28 手機實測後提出，全部尚未動工；請保留）
+## 3. 使用者新需求（2026-10-28 手機實測後提出；N1 已完成、N4 程式部分已完成，其餘尚未動工；請保留）
 
 | # | 需求（使用者原話意思） | 分析／建議做法 |
 |---|---|---|
-| N1 | 希望**在管理中心上傳規則** | 即原「第 2 批」：管理中心加「規則書」分頁（細節見第 4 節） |
-| N2 | **畫面底部怪怪的，往上滑會漏底** | 與舊的未解問題同一件：詳細視窗與底部導覽下方露出約 76px 遊戲卡片內容（`tabs.css` 手機版 `.game-modal.has-tabs{height:100dvh}`、`.modal-backdrop{padding:0}` 看起來都對，CSS 看不出原因）。使用者新傳的截圖檔名 `S__*.jpg` 疑似 LINE 內建瀏覽器。**要查**：是否 LINE／Safari 的網址列收合造成 `dvh` 與實際高度不一致、遮罩未蓋滿。方向：遮罩改 `position:fixed; inset:0` 並用 `100lvh`／`-webkit-fill-available`、視窗開啟時鎖住 body 捲動（`overflow:hidden`＋`overscroll-behavior:contain`）、底部導覽加 `env(safe-area-inset-bottom)`。**請使用者說明是用什麼開的（LINE／Safari／Chrome／主畫面），並貼 `tabs.css`、`base.css` 相關段落** |
+| N1 | ~~希望在管理中心上傳規則~~ **已完成（第九批）** | 見第 2 節第九批。管理中心「規則書」分頁：批次上傳、貼連結、管理文件 |
+| N2 | **畫面底部怪怪的，往上滑會漏底** | 與舊的未解問題同一件：詳細視窗與底部導覽下方露出約 76px 遊戲卡片內容（`tabs.css` 手機版 `.game-modal.has-tabs{height:100dvh}`、`.modal-backdrop{padding:0}` 看起來都對，CSS 看不出原因）。使用者新傳的截圖檔名 `S__*.jpg` 疑似 LINE 內建瀏覽器。**要查**：是否 LINE／Safari 的網址列收合造成 `dvh` 與實際高度不一致、遮罩未蓋滿。方向：遮罩改 `position:fixed; inset:0` 並用 `100lvh`／`-webkit-fill-available`、視窗開啟時鎖住 body 捲動（`overflow:hidden`＋`overscroll-behavior:contain`）、底部導覽加 `env(safe-area-inset-bottom)`。**請使用者說明是用什麼開的（LINE／Safari／Chrome／主畫面），並貼 `tabs.css`、`base.css` 相關段落** | **2026-10-28 補充**：使用者截圖像 **iPhone 的 Google App 內建瀏覽器**（上方有 ✕＋網址列、下方有返回／首頁／分頁工具列，會自己伸縮），不是 LINE；這類瀏覽器的 `dvh` 與實際可視高度可能不一致。已確認：管理中心等視窗開著時，**底部導覽被遮罩蓋住、點不到**。候選做法 A（使用者尚未回「照建議」）：導覽列永遠在最上層、抽屜與遮罩在手機改成停在導覽列上方（約 64px，各抽屜矮一點，順便解決漏底）；B：每個抽屜頂端加分頁切換（工作量大）；C：不動。**已知 fixed 元素 class**：`.mylist-backdrop`／`.mylist-drawer`、`.drawer-backdrop`／`.filter-drawer`、`.modal-backdrop`、`.ma-backdrop`（管理中心／成員）、`.ra-backdrop`（規則助手）、`.account-backdrop`、`.cat-backdrop`、`.personal-toast`、`.back-to-top`，手機的 `.sb-nav` 是 `position: fixed`（在 `.sitebar` 裡，`.sitebar` 不可加 `backdrop-filter`／`transform`／`filter`，且 fixed 元素自成堆疊層，單改 `.sb-nav` 的 z-index 可能無效）。**要動工前請使用者貼 `sitebar.css`、`mylist.css`（或對應檔）、`filter.css`、`modal.css`、`vip.css` 中這些 class 的完整規則**（上次的 `Select-String` 只印出 `position: fixed` 前後幾行，看不到 `inset`／`height`／`z-index`）。
 | N3 | **iPhone 右滑（返回）從排行榜／集點卡／我的桌遊會回到登入畫面，不是首頁**（使用者推測可能是之前登入的動作） | 推測原因：①這些抽屜沒有 push history，右滑直接退回上一個歷史（Google 登入頁）；②OAuth 登入後的網址／歷史沒清。做法：把 `useBackClose` 擴到**所有抽屜與頁面**（排行榜、集點卡、我的桌遊、規則助手、管理中心、進階篩選、統計表、暱稱視窗），開啟時 `pushState`、返回時關閉；登入完成後用 `history.replaceState` 清掉網址參數，避免回到登入頁。實測：iPhone Safari 右滑、Android 返回鍵、LINE |
-| N4 | **底部五顆按鈕不必先回主畫面才能點下一個** | 目前點一顆會開抽屜／頁面，要先關才能點別顆。改為單一 `activePage` 狀態：點另一顆時**直接取代**目前的抽屜（先關舊的再開新的），再點同一顆＝關閉；底部導覽要高於抽屜（或抽屜不遮住導覽）。改 `App.tsx`、`TopBar.tsx`（請使用者貼目前版本） |
+| N4 | **底部五顆按鈕不必先回主畫面才能點下一個** | 目前點一顆會開抽屜／頁面，要先關才能點別顆。改為單一 `activePage` 狀態：點另一顆時**直接取代**目前的抽屜（先關舊的再開新的），再點同一顆＝關閉；底部導覽要高於抽屜（或抽屜不遮住導覽）。改 `App.tsx`、`TopBar.tsx`（請使用者貼目前版本） | **進度（第九批）**：`App.tsx` 的 `activePage` 單一狀態與 `TopBar` 已完成，桌面版點另一顆會直接取代；**手機因導覽被遮住尚無法點**，待 N2 一起解。
 | N5 | **主畫面使用者設定的篩選模式要能儲存**，不用每次重新按自己的模式 | 把篩選狀態（類型、進階篩選、「我的紀錄」眼睛與分區模式、排序）存 `localStorage`（鍵例如 `boardgame-filters`），開啟時還原，「清除篩選」才重設；檢視模式本來就有存（`boardgame-view-mode`）。**待問使用者**：指的是「我的紀錄」三顆眼睛＋分區模式，還是全部篩選？AI 建議全部都存。登入玩家可日後考慮同步雲端（先不做） |
 | N6 | **搜到的英文片段能不能用 Google／瀏覽器內建翻譯？** | **可以，不需要付費 API。** 建議：每段結果加「翻譯」按鈕，開新分頁 `https://translate.google.com/?sl=en&tl=zh-TW&text=<編碼後片段>&op=translate`（片段最長 800 字，網址夠用）；結果區文字設 `lang="en"` 並保持可選取，讓 Safari／Chrome 的「選取文字→翻譯」可用（**瀏覽器內建整頁翻譯對「單一區塊」不可靠，不保證**）；另提供「複製片段」。**提醒**：按翻譯會把片段送到 Google，與「複製提示詞給外部 AI」同樣要在按鈕旁說明，不可宣稱資料仍留在本站（授權疑慮見 PROJECT_CONTEXT 第 7 節）。不做自動翻譯 API（費用與額度未查證） |
 
 ## 4. 待辦順序（一次一批，上一批實測完才進下一批）
 
-0. **先問**：使用者目前在哪台電腦、`git pull`／`git status`；N2 的截圖是用什麼開的。
-1. **第 2 批（對應 N1）管理中心「規則書」分頁**：一次選多個 PDF；每列從檔名猜遊戲（比對 `bggName` 與中文名）、類型（檔名含 faq／errata，否則規則書）、語言（有中文字猜 `zh`，否則 `en`）；猜不到顯示「請選擇遊戲」，下拉可搜尋；確認後逐檔上傳，顯示進度與失敗原因，失敗不影響其他檔；詳細視窗「規則」分頁拿掉上傳，只留貼連結與清單。`useGameDocuments` 要改成可指定任意 `bggName`（目前綁單一遊戲）。要改 `AdminCenter.tsx`（已看過）、`useGameDocuments.ts`、`GameDocuments.tsx`（**請使用者貼目前版本**）。
-2. **手機操作批（N2＋N3＋N4）**：底部漏底、返回鍵擴到所有抽屜、五顆導覽直接切換；一起改一批、一起實測。
+0. **先問**：使用者目前在哪台電腦、`git pull`／`git status`／`git log --oneline -5`（確認第九批是否已 push）；N2 的截圖已知是 iPhone 的 Google App 內建瀏覽器。
+1. ~~第 2 批（N1）管理中心「規則書」分頁~~ **已完成**（見第 2 節第九批）。待使用者手機實測：4 顆分頁寬度、批次上傳實際 20 份 PDF 的猜檔名命中率（`rules-en.pdf` 這類沒遊戲名的要手動選；若大多如此，考慮改成「先選遊戲、再選檔案」）。
+2. **手機操作批（N2＋N3＋N4 剩餘）**：先請使用者回「照建議」選 A／B／C（見 N2），並貼第 3 節 N2 列出的 CSS 規則；再做：①手機導覽列在最上層、抽屜停在導覽列上方（含底部漏底、鎖住 body 捲動、`env(safe-area-inset-bottom)`）；②返回鍵（`useBackClose`）擴到所有抽屜；③登入後 `history.replaceState` 清網址。一起改、一起實測（iPhone 的 Google App 瀏覽器、Safari、Android Chrome、LINE）。
 3. **N5 篩選記憶**、**N6 翻譯按鈕**（可併入規則助手小改）。
 4. **第 3 批「我的俱樂部」與詳細視窗「我的桌遊」整合**：已玩清單每列可改次數（改 `play_count`＝沒日期的次數，已確認不會重複計算）；詳細視窗「我的桌遊」分頁拿掉想玩／已玩按鈕與遊玩次數，保留「記錄一次遊玩」、最近紀錄、備註；備註改名「我的整體心得」；單次心得沿用 `game_play_sessions.note`；不動資料庫。改 `MyList.tsx`、`PlayCounter.tsx`、`GameModal.tsx`。
 5. **`privacy.html` 補「規則助手搜尋紀錄」**（用途、保留 7 天、只存使用者與遊戲與時間、不存問題內容；若做 N6 也要說明片段會送往 Google）。**在讓朋友實際使用規則助手前做完。**
@@ -51,6 +52,7 @@
 - 管理中心「近期聚會依月份分組」是否符合使用者說的「新增月份」；`MemberAdmin.tsx` 在手機是否仍擠壓（沒看過檔案，需要時請使用者貼）。
 - 手機完整報到流程（登入→暱稱→自動報到→評分→集點卡）尚未實測，等下次聚會或用另一個 Google 帳號測。
 - 聚會連結 `&openExternalBrowser=1` 在 LINE 的行為：使用者實測過報到流程「沒有問題」。
+- 第九批待實測：手機上管理中心 4 顆分頁寬度；規則書分頁的遊戲選擇列表在手機鍵盤彈出時是否好按；貼 YouTube 連結自動帶名稱在手機是否一樣有效；**語言欄對檢索的影響尚未查證**（AI 沒看過 `search_rulebook_chunks` 全文，推測是以英文全文檢索處理所有切塊、語言只影響顯示名稱與使用者辨識；要完全移除語言欄前先請使用者匯出該函式與 `game_documents` 欄位限制）。
 
 ## 6. 使用者的決定（不要推翻）
 
@@ -59,6 +61,7 @@
 - 遊戲簡介補寫：使用者說太耗時，晚點。
 - 管理者 CSV 分數算進社群評分（當一位評分者）；遊戲卡片顯示「綜合分數」＝700 − `score_rank`。
 - 評分用語統一用「度」：影響度、溝通度、變化度（只改畫面文字；`parseCsv.ts` 的 CSV 欄名如 `溝通性`、`玩家影響性`、`複雜性`、`變化性` 是使用者 Notion 欄名，**絕對不能改**）。
+- 規則書管理：新增上傳與貼連結**一律在管理中心**，詳細視窗只留清單；文件有標題就以標題為主；影片網址貼上就自動選「影片」類型；遊戲選擇要「輸入就自動列出、點一下選好」，不要搜尋框加下拉兩段；管理中心每個分頁視窗大小要一致、不忽大忽小；語言欄使用者覺得常忘記選（已對影片／中文介紹隱藏，規則書／FAQ／勘誤仍保留）。
 
 ## 7. 與使用者合作的規則（重要）
 

@@ -55,7 +55,7 @@ import {
 import { getPlayerSortValue, compareNullableNumbers } from './lib/gameFormat'
 import { HeartIcon, CheckIcon } from './components/Icons'
 import CoverImage from './components/CoverImage'
-import TopBar from './components/TopBar'
+import TopBar, { type NavPage } from './components/TopBar'
 import ViewToggle from './components/ViewToggle'
 import FilterDrawer from './components/FilterDrawer'
 import GameCard from './components/GameCard'
@@ -98,10 +98,12 @@ function Library({
   const vip = useVip()
   const people = useGamePeople(vip.isVip)
   const adminRatings = useAdminRatings(isAdmin)
-  const [isMyListOpen, setIsMyListOpen] = useState(false)
+  // 導覽列的頁面一次只開一個：點另一顆直接取代，再點同一顆就關閉
+  const [activePage, setActivePage] = useState<NavPage | null>(null)
   const [myListMode, setMyListMode] = useState<MyListMode>('list')
-  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
-  const [isRulesOpen, setIsRulesOpen] = useState(false)
+  const isMyListOpen = activePage === 'mylist' || activePage === 'loyalty'
+  const isLeaderboardOpen = activePage === 'leaderboard'
+  const isRulesOpen = activePage === 'rules'
   // 管理者傳的集點卡連結：登入後自動打開自己的集點卡
   const {
     pending: invitePending,
@@ -118,7 +120,7 @@ function Library({
     setInviteFocus(inviteDate)
     setInviteKey((count) => count + 1)
     setMyListMode('loyalty')
-    setIsMyListOpen(true)
+    setActivePage('loyalty')
     consumeInvite()
   }, [invitePending, inviteLoggedIn, inviteDate, consumeInvite])
 
@@ -136,7 +138,7 @@ function Library({
     setInviteFocus(date)
     setInviteKey((count) => count + 1)
     setMyListMode('loyalty')
-    setIsMyListOpen(true)
+    setActivePage('loyalty')
   }
   const hadCheckinRef = useRef(false)
   useEffect(() => {
@@ -183,7 +185,25 @@ function Library({
     setInviteFocus(null)
     setInviteKey((count) => count + 1)
     setMyListMode('loyalty')
-    setIsMyListOpen(true)
+    setActivePage('loyalty')
+  }
+
+  // 底部／頂端導覽：點另一顆直接取代目前的頁面，再點同一顆＝關閉
+  function goPage(page: NavPage) {
+    if (activePage === page) {
+      setActivePage(null)
+      return
+    }
+    if (page === 'loyalty') {
+      openMyLoyalty()
+      return
+    }
+    if (page === 'mylist') {
+      setInviteFocus(null)
+      setInviteKey((count) => count + 1)
+      setMyListMode('list')
+    }
+    setActivePage(page)
   }
   const [nowMs] = useState(() => Date.now())
 
@@ -630,15 +650,12 @@ function Library({
       <InAppBrowserNotice />
       <TopBar
         myListCount={myListCount}
-        onOpenMyList={() => {
-          setMyListMode('list')
-          setIsMyListOpen(true)
-        }}
-        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
-        onOpenLoyalty={openMyLoyalty}
+        activePage={activePage}
+        onGoPage={goPage}
+        onGoHome={() => setActivePage(null)}
         loyaltyAlert={todayTask.pending}
-        onOpenRules={() => setIsRulesOpen(true)}
         canUseRules={vip.isVip || isAdmin}
+        onCloseAdmin={() => setActivePage(null)}
       />
 
       <main>
@@ -871,7 +888,7 @@ function Library({
         isAdmin={isAdmin}
         isVip={vip.isVip}
         onBrowse={() => {
-          setIsMyListOpen(false)
+          setActivePage(null)
           window.setTimeout(() => {
             document
               .querySelector('.library')
@@ -884,12 +901,12 @@ function Library({
         playSessions={playSessions}
         ratings={ratings}
         isOpen={isMyListOpen}
-        onClose={() => setIsMyListOpen(false)}
+        onClose={() => setActivePage(null)}
         onOpenGame={(game, tab) => {
           setCoverMessage('')
           setSelectedTab(tab ?? 'overview')
           setSelectedGame(game)
-          setIsMyListOpen(false)
+          setActivePage(null)
         }}
         renderCover={(game) => (
           <CoverImage
@@ -911,11 +928,11 @@ function Library({
         communityStats={communityStats}
         ratings={ratings}
         isOpen={isLeaderboardOpen}
-        onClose={() => setIsLeaderboardOpen(false)}
+        onClose={() => setActivePage(null)}
         onOpenGame={(game) => {
           setCoverMessage('')
           setSelectedGame(game)
-          setIsLeaderboardOpen(false)
+          setActivePage(null)
         }}
         renderCover={(game) => (
           <CoverImage
@@ -931,7 +948,7 @@ function Library({
       {isRulesOpen && (vip.isVip || isAdmin) && (
         <RulebookPage
           boardGames={boardGames}
-          onClose={() => setIsRulesOpen(false)}
+          onClose={() => setActivePage(null)}
         />
       )}
       <BackToTop />

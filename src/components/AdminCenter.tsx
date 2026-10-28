@@ -14,18 +14,30 @@ const TABS: { key: Tab; icon: string; label: string }[] = [
   { key: 'data', icon: '📦', label: '資料匯入' },
 ]
 
-export default function AdminCenter() {
-  const [isOpen, setIsOpen] = useState(false)
+// 開關由 App 控制（導覽列點「管理」＝切換），這樣其他導覽按鈕可以直接取代它
+export default function AdminCenter({
+  isOpen,
+  onToggle,
+  onClose,
+}: {
+  isOpen: boolean
+  onToggle: () => void
+  onClose: () => void
+}) {
   const [tab, setTab] = useState<Tab>('members')
 
   function openCsvImport() {
-    setIsOpen(false)
+    onClose()
     window.dispatchEvent(new Event(OPEN_CSV_IMPORT_EVENT))
   }
 
   return (
     <>
-      <button type="button" className="sb-item" onClick={() => setIsOpen(true)}>
+      <button
+        type="button"
+        className={`sb-item ${isOpen ? 'active' : ''}`}
+        onClick={onToggle}
+      >
         <span className="sb-ico" aria-hidden="true">
           ⚙
         </span>
@@ -34,7 +46,7 @@ export default function AdminCenter() {
 
       {isOpen &&
         createPortal(
-          <div className="ma-backdrop" onClick={() => setIsOpen(false)}>
+          <div className="ma-backdrop" onClick={onClose}>
             <div className="ac-modal" onClick={(event) => event.stopPropagation()}>
               <div className="ac-head">
                 <h2>管理中心</h2>
@@ -43,7 +55,7 @@ export default function AdminCenter() {
                   type="button"
                   className="ma-close"
                   aria-label="關閉"
-                  onClick={() => setIsOpen(false)}
+                  onClick={onClose}
                 >
                   ✕
                 </button>
@@ -67,28 +79,29 @@ export default function AdminCenter() {
                 ))}
               </div>
 
-              {tab === 'members' && <MemberAdmin />}
-              {tab === 'gatherings' && <LoyaltyAdmin />}
-              {tab === 'rulebooks' && <RulebookBatchUpload />}
-              {tab === 'data' && (
-                <div className="ac-data">
-                  <h3>匯入 CSV（Notion 匯出）</h3>
-                  <p>
-                    更新所有桌遊的資料與封面。CSV 裡沒有的遊戲會移到垃圾桶，不會直接刪除。
-                  </p>
-                  <button type="button" className="ma-btn" onClick={openCsvImport}>
-                    開始匯入 CSV
-                  </button>
+              <div className="ac-body">
+                {tab === 'members' && <MemberAdmin />}
+                {tab === 'gatherings' && <LoyaltyAdmin />}
+                {tab === 'rulebooks' && <RulebookBatchUpload />}
+                {tab === 'data' && (
+                  <div className="ac-data">
+                    <h3>匯入 CSV（Notion 匯出）</h3>
+                    <p>
+                      更新所有桌遊的資料與封面。CSV 裡沒有的遊戲會移到垃圾桶，不會直接刪除。
+                    </p>
+                    <button type="button" className="ma-btn" onClick={openCsvImport}>
+                      開始匯入 CSV
+                    </button>
 
-                  <h3>其他資料操作在哪裡</h3>
-                  <ul>
-                    <li>上傳或更換封面、編輯簡介、移到垃圾桶：打開那款遊戲的「詳細資料」。</li>
-                    <li>還原、編輯原因、永久刪除：頁面最下方的垃圾桶區。</li>
-                    <li>上傳規則書 PDF（供規則助手檢索）：本視窗的「規則書」分頁。</li>
-                    <li>貼規則書、FAQ、中文介紹、影片連結，或刪除文件：遊戲詳細視窗的「規則」分頁。</li>
-                  </ul>
-                </div>
-              )}
+                    <h3>其他資料操作在哪裡</h3>
+                    <ul>
+                      <li>上傳或更換封面、編輯簡介、移到垃圾桶：打開那款遊戲的「詳細資料」。</li>
+                      <li>還原、編輯原因、永久刪除：頁面最下方的垃圾桶區。</li>
+                      <li>規則書 PDF、貼連結、刪除文件：本視窗的「規則書」分頁。</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
           </div>,
           document.body,

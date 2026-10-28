@@ -6,22 +6,25 @@ import { supabase } from '../lib/supabase'
 import { useIsAdmin } from '../lib/useIsAdmin'
 import { useVip } from '../lib/useVip'
 
+// 導覽列對應的頁面：一次只會開一個，點另一顆會直接取代，再點同一顆就關閉
+export type NavPage = 'leaderboard' | 'rules' | 'admin' | 'loyalty' | 'mylist'
+
 export default function TopBar({
   myListCount,
-  onOpenMyList,
-  onOpenLeaderboard,
-  onOpenLoyalty,
+  activePage,
+  onGoPage,
+  onGoHome,
   loyaltyAlert,
-  onOpenRules,
   canUseRules,
+  onCloseAdmin,
 }: {
   myListCount: number
-  onOpenMyList: () => void
-  onOpenLeaderboard: () => void
-  onOpenLoyalty: () => void
+  activePage: NavPage | null
+  onGoPage: (page: NavPage) => void
+  onGoHome: () => void
   loyaltyAlert: boolean
-  onOpenRules: () => void
   canUseRules: boolean
+  onCloseAdmin: () => void
 }) {
   const isAdmin = useIsAdmin()
   const vip = useVip()
@@ -43,6 +46,7 @@ export default function TopBar({
           aria-label="桌遊規則助手首頁"
           onClick={(event) => {
             event.preventDefault()
+            onGoHome()
             scrollToTop()
           }}
         >
@@ -56,32 +60,50 @@ export default function TopBar({
         </a>
 
         <nav className="sb-nav" aria-label="主要導覽">
-          <button type="button" className="sb-item active" onClick={scrollToTop}>
+          <button
+            type="button"
+            className={`sb-item ${activePage === null ? 'active' : ''}`}
+            onClick={onGoHome}
+          >
             <span className="sb-ico" aria-hidden="true">
               📚
             </span>
             <span>桌遊收藏</span>
           </button>
-          <button type="button" className="sb-item" onClick={onOpenLeaderboard}>
+          <button
+            type="button"
+            className={`sb-item ${activePage === 'leaderboard' ? 'active' : ''}`}
+            onClick={() => onGoPage('leaderboard')}
+          >
             <span className="sb-ico" aria-hidden="true">
               🏆
             </span>
             <span>排行榜</span>
           </button>
           {canUseRules && (
-            <button type="button" className="sb-item" onClick={onOpenRules}>
+            <button
+              type="button"
+              className={`sb-item ${activePage === 'rules' ? 'active' : ''}`}
+              onClick={() => onGoPage('rules')}
+            >
               <span className="sb-ico" aria-hidden="true">
                 ✦
               </span>
               <span>規則助手</span>
             </button>
-          )} 
+          )}
           {isAdmin ? (
-            <>
-              <AdminCenter />
-            </>
+            <AdminCenter
+              isOpen={activePage === 'admin'}
+              onToggle={() => onGoPage('admin')}
+              onClose={onCloseAdmin}
+            />
           ) : (
-            <button type="button" className="sb-item" onClick={onOpenLoyalty}>
+            <button
+              type="button"
+              className={`sb-item ${activePage === 'loyalty' ? 'active' : ''}`}
+              onClick={() => onGoPage('loyalty')}
+            >
               <span className="sb-ico" aria-hidden="true">
                 🎟
               </span>
@@ -91,7 +113,11 @@ export default function TopBar({
               )}
             </button>
           )}
-          <button type="button" className="sb-item" onClick={onOpenMyList}>
+          <button
+            type="button"
+            className={`sb-item ${activePage === 'mylist' ? 'active' : ''}`}
+            onClick={() => onGoPage('mylist')}
+          >
             <span className="sb-ico" aria-hidden="true">
               ♥
             </span>
