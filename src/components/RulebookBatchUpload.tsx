@@ -321,7 +321,7 @@ export default function RulebookBatchUpload() {
       })
     }
 
-    if (added.length > 0) setRows((current) => [...current, ...added])
+    if (added.length > 0) setRows((current) => [...added, ...current])
     if (skipped.length > 0) {
       setNotice('已略過（不是 PDF 或已在清單中）：' + skipped.join('、'))
     }

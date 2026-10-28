@@ -58,7 +58,7 @@ export async function uploadPdfDocument(
   input: UploadInput,
 ): Promise<string | null> {
   const { file } = input
-  const progress = input.onProgress ?? (() => {})
+  const progress = input.onProgress ?? (() => { })
 
   if (!bggName) return '請先選擇遊戲。'
   if (!INDEXABLE.includes(input.docType)) {
@@ -154,7 +154,7 @@ export function useGameDocuments(bggName: string) {
       .from('game_documents')
       .select('*')
       .eq('bgg_name', bggName)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .then(({ data, error }) => {
         if (cancelled) return
         if (error) {
