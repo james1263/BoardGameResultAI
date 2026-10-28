@@ -12,12 +12,16 @@ export default function TopBar({
   onOpenLeaderboard,
   onOpenLoyalty,
   loyaltyAlert,
+  onOpenRules,
+  canUseRules,
 }: {
   myListCount: number
   onOpenMyList: () => void
   onOpenLeaderboard: () => void
   onOpenLoyalty: () => void
   loyaltyAlert: boolean
+  onOpenRules: () => void
+  canUseRules: boolean
 }) {
   const isAdmin = useIsAdmin()
   const vip = useVip()
@@ -64,6 +68,14 @@ export default function TopBar({
             </span>
             <span>排行榜</span>
           </button>
+          {canUseRules && (
+            <button type="button" className="sb-item" onClick={onOpenRules}>
+              <span className="sb-ico" aria-hidden="true">
+                ✦
+              </span>
+              <span>規則助手</span>
+            </button>
+          )} 
           {isAdmin ? (
             <>
               <AdminCenter />

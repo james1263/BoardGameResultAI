@@ -1,3 +1,4 @@
+import { useBackClose } from '../lib/useBackClose'
 import { useEffect, useState, type ChangeEvent } from 'react'
 import type { AdminScores, LibraryGame } from '../lib/libraryTypes'
 import type { PersonalApi } from '../lib/personalApi'
@@ -62,6 +63,7 @@ export default function GameModal({
 }) {
   const [tab, setTab] = useState<TabKey>(initialTab ?? 'overview')
   const docsApi = useGameDocuments(game.bggName)
+  useBackClose(onClose)
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {

@@ -1,5 +1,6 @@
 import CategoryChips from './components/CategoryChips'
 import SortControl from './components/SortControl'
+import RulebookPage from './components/RulebookPage'
 import {
   useCallback,
   useRef,
@@ -100,6 +101,7 @@ function Library({
   const [isMyListOpen, setIsMyListOpen] = useState(false)
   const [myListMode, setMyListMode] = useState<MyListMode>('list')
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false)
+  const [isRulesOpen, setIsRulesOpen] = useState(false)
   // 管理者傳的集點卡連結：登入後自動打開自己的集點卡
   const {
     pending: invitePending,
@@ -635,6 +637,8 @@ function Library({
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenLoyalty={openMyLoyalty}
         loyaltyAlert={todayTask.pending}
+        onOpenRules={() => setIsRulesOpen(true)}
+        canUseRules={vip.isVip || isAdmin}
       />
 
       <main>
@@ -924,6 +928,12 @@ function Library({
           />
         )}
       />
+      {isRulesOpen && (vip.isVip || isAdmin) && (
+        <RulebookPage
+          boardGames={boardGames}
+          onClose={() => setIsRulesOpen(false)}
+        />
+      )}
       <BackToTop />
       {personal.needsMerge && <MergeDialog personal={personal} />}
 
