@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { LibraryGame } from '../lib/libraryTypes'
+import { useBackClose } from '../lib/useBackClose'
 
 // 三個主體類型固定排最前面，其餘是副類型
 const MAIN_CATEGORIES = ['策略', '派對', '陣營']
@@ -20,6 +21,7 @@ export default function CategoryChips({
 }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  useBackClose(() => setOpen(false), open)
 
   const counts = useMemo(() => {
     const map = new Map<string, number>()

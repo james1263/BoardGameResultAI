@@ -4,6 +4,7 @@ import { supabase } from './lib/supabase'
 import { useSession } from './lib/useSession'
 import { PROFILE_SAVED_EVENT, signInWithGoogle } from './lib/googleLogin'
 import { useAdminCheck } from './lib/useIsAdmin'
+import { useBackClose } from './lib/useBackClose'
 
 type Profile = { nickname: string; public_id: string }
 
@@ -20,6 +21,12 @@ export default function PlayerPanel() {
   const [contactInput, setContactInput] = useState('')
   const [message, setMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+
+  // 手機返回鍵／右滑：暱稱視窗或帳號選單開著時，先關它，不要離開網站
+  useBackClose(() => {
+    setIsOpen(false)
+    setIsMenuOpen(false)
+  }, isOpen || isMenuOpen)
 
   useEffect(() => {
     if (!userId || !checked || isAdmin) {
