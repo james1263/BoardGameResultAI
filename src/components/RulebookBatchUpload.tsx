@@ -103,6 +103,13 @@ const STATUS_LABEL: Record<RowStatus, string> = {
   error: '失敗',
 }
 
+// 語言只是顯示用的標記（檢索不看語言）：影片＝其他、中文介紹＝中文、其餘看標題有沒有中文字
+function guessLinkLanguage(type: DocType, title: string): DocLanguage {
+  if (type === 'video') return 'other'
+  if (type === 'intro') return 'zh'
+  return /[\u4e00-\u9fff]/.test(title) ? 'zh' : 'en'
+}
+
 // 影片網站的連結：貼上時自動把類型選成「影片」
 function isVideoUrl(url: string): boolean {
   return /^https?:\/\/([a-z0-9-]+\.)*(youtube\.com|youtu\.be|bilibili\.com|b23\.tv|vimeo\.com)\//i.test(
@@ -217,7 +224,6 @@ export default function RulebookBatchUpload() {
   // 貼連結
   const [linkGame, setLinkGame] = useState('')
   const [linkType, setLinkType] = useState<DocType>('rulebook')
-  const [linkLang, setLinkLang] = useState<DocLanguage>('en')
   const [linkTitle, setLinkTitle] = useState('')
   const [linkUrl, setLinkUrl] = useState('')
   const [linkBusy, setLinkBusy] = useState(false)
@@ -397,9 +403,6 @@ export default function RulebookBatchUpload() {
 
   function changeLinkType(next: DocType) {
     setLinkType(next)
-    if (next === 'intro') setLinkLang('zh')
-    else if (next === 'video') setLinkLang('other')
-    else if (linkLang === 'other') setLinkLang('en')
   }
 
   function changeLinkUrl(value: string) {
@@ -419,7 +422,7 @@ export default function RulebookBatchUpload() {
     setLinkBusy(true)
     const message = await docsApi.addDoc({
       docType: linkType,
-      language: linkLang,
+      language: guessLinkLanguage(linkType, linkTitle),
       title: linkTitle,
       url: linkUrl,
     })
@@ -482,7 +485,7 @@ export default function RulebookBatchUpload() {
         <>
           <h3>批次上傳規則書</h3>
           <p className="rb-hint">
-            一次選多個 PDF（文字版，每個最大 50 MB）。系統會從檔名猜遊戲、類型與語言，猜不到的請自己選。
+            一次選多個 PDF（文字版，每個最大 50 MB）。系統會從檔名猜遊戲與類型，猜不到的請自己選。
             確認後按「全部上傳」，會一份一份處理，失敗不影響其他檔。上傳的 PDF 只有管理者看得到。
             文件顯示的名稱就是檔名。
           </p>
@@ -537,33 +540,19 @@ export default function RulebookBatchUpload() {
                               updateRow(row.id, { bggName, guessed: false })
                             }
                           />
-                          <div className="rb-two">
-                            <select
-                              value={row.docType}
-                              disabled={locked}
-                              onChange={(event) =>
-                                updateRow(row.id, {
-                                  docType: event.target.value as DocKind,
-                                })
-                              }
-                            >
-                              <option value="rulebook">規則書</option>
-                              <option value="faq">FAQ</option>
-                              <option value="errata">勘誤</option>
-                            </select>
-                            <select
-                              value={row.language}
-                              disabled={locked}
-                              onChange={(event) =>
-                                updateRow(row.id, {
-                                  language: event.target.value as Lang,
-                                })
-                              }
-                            >
-                              <option value="en">英文</option>
-                              <option value="zh">中文</option>
-                            </select>
-                          </div>
+                          <select
+                            value={row.docType}
+                            disabled={locked}
+                            onChange={(event) =>
+                              updateRow(row.id, {
+                                docType: event.target.value as DocKind,
+                              })
+                            }
+                          >
+                            <option value="rulebook">規則書</option>
+                            <option value="faq">FAQ</option>
+                            <option value="errata">勘誤</option>
+                          </select>
                           {row.guessed && row.bggName && (
                             <small className="rb-guess">遊戲是從檔名猜的，請確認</small>
                           )}
@@ -690,21 +679,6 @@ export default function RulebookBatchUpload() {
                     <option value="other">其他</option>
                   </select>
                 </label>
-                {linkType !== 'video' && linkType !== 'intro' && (
-                  <label className="admin-field">
-                    <span>語言</span>
-                    <select
-                      value={linkLang}
-                      onChange={(event) =>
-                        setLinkLang(event.target.value as DocLanguage)
-                      }
-                    >
-                      <option value="zh">中文</option>
-                      <option value="en">英文</option>
-                      <option value="other">其他語言</option>
-                    </select>
-                  </label>
-                )}
                 <label className="admin-field">
                   <span>
                     標題（可不填；有填就以標題顯示）

@@ -992,3 +992,43 @@ body {
   padding: 8px 10px; border: 1px solid var(--c-line, #ddd3bd); border-radius: 8px;
   background: #fff; font-size: 14px; color: var(--c-ink, #34463c);
 }
+
+/* ===== 手機：底部導覽永遠看得到，視窗與抽屜停在導覽列上方 ===== */
+@media (max-width: 760px) {
+  :root {
+    --nav-h: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .modal-backdrop,
+  .mylist-backdrop,
+  .mylist-drawer,
+  .drawer-backdrop,
+  .filter-drawer,
+  .ma-backdrop,
+  .ra-backdrop {
+    bottom: var(--nav-h);
+  }
+
+  /* 視窗高度改跟著遮罩走，不再用 100dvh（Google App／Safari 的網址列會讓 dvh 不準，造成漏底） */
+  .modal-backdrop .game-modal.has-tabs {
+    height: min(680px, 100%);
+    max-height: 100%;
+  }
+
+  .ma-backdrop .ac-modal {
+    height: 100%;
+    max-height: 100%;
+  }
+}
+
+/* 規則助手頁：手機也停在底部導覽上方（接在 vip-append-3.css 之後） */
+@media (max-width: 760px) {
+  .ra-backdrop .ra-page {
+    max-height: 100%;
+  }
+}
+@media (max-width: 520px) {
+  .ra-backdrop .ra-page {
+    height: 100%;
+  }
+}

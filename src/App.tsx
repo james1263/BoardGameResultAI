@@ -189,7 +189,14 @@ function Library({
   }
 
   // 底部／頂端導覽：點另一顆直接取代目前的頁面，再點同一顆＝關閉
+  function goHome() {
+    setSelectedGame(null)
+    setActivePage(null)
+  }
+
   function goPage(page: NavPage) {
+    // 點導覽時，先關掉開著的詳細視窗，避免兩個視窗疊在一起
+    setSelectedGame(null)
     if (activePage === page) {
       setActivePage(null)
       return
@@ -652,7 +659,7 @@ function Library({
         myListCount={myListCount}
         activePage={activePage}
         onGoPage={goPage}
-        onGoHome={() => setActivePage(null)}
+        onGoHome={goHome}
         loyaltyAlert={todayTask.pending}
         canUseRules={vip.isVip || isAdmin}
         onCloseAdmin={() => setActivePage(null)}
