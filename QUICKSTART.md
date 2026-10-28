@@ -1,506 +1,80 @@
 # 桌遊規則助手 — 懶人包（給下一個 AI）
 
-> 3 分鐘版。細節請看 `PROJECT_CONTEXT.md`（已依主題整理成 11 節，不再有 A～Q 附錄）。   最後更新：2026-10-28（最上方先看『第七批更新』），再看2026-10-28（最上方先看『第六批更新』），2026-10-27 深夜（最上方先看「2026-10-27 深夜（第五批）更新」，再看「2026-10-27 深夜（第四批）更新」，再看「2026-10-27 深夜（第三批）更新」，再看「2026-10-27 深夜（第二批）更新」，再看「2026-10-27 深夜更新（第一批）」，再看「2026-10-27 傍晚更新」與「2026-10-27 更新」兩節，優先閱讀；以下主體為 2026-10-26 深夜版）
-
-## 2026-10-28（第七批）更新（最新；與下方任何舊內容衝突時，以本節為準）
-
-### 已完成
-- 階段 4 檢索 SQL 已執行並驗證權限（anon 無權限）：`search_rulebook_chunks(p_bgg_name, p_query)`（VIP 驗證、台北時間每日 30 次、管理者不限、只有找到結果才扣次數、順便刪 7 天前紀錄、英文全文檢索 OR 比對、最多 5 段）、`rulebook_search_remaining()`、`rulebook_has_index(p_bgg_name)`、`rulebook_indexed_games()`（列出有索引文件的遊戲，VIP 才有結果）。
-- 規則書資料夾已搬到 `D:\rulebooks\`（專案外，避免 Vite EBUSY）。階段 3 與深色模式修正已 commit。
-- `GameDocuments.tsx`：新增連結與上傳 PDF 合併為單一「新增文件」表單（類型為規則書／FAQ／勘誤時可選「上傳 PDF」）。
-- **規則助手獨立成頁面**（不再是詳細視窗分頁）：`RulebookPage.tsx`（先選遊戲，只列有索引的遊戲，可搜尋）＋`RulebookAssistant.tsx`（中文問題、建議英文關鍵字、英文搜尋框、結果含頁碼、兩個複製提示詞按鈕）。導覽列第 5 顆「✦ 規則助手」，只有 VIP／管理者看得到（後端仍驗證 `is_vip()`）。
-- `lib/zhEnGlossary.ts`：內建通用中英對照（約 40 組詞，含旭日戰魂錄「茶會」→ tea ceremony），中文問題自動建議英文關鍵字；搜尋框只接受英文，純中文不會搜尋也不扣次數。
-- `lib/useBackClose.ts`：開啟視窗時手機「返回」只關視窗；目前套用在 `GameModal`、`RulebookPage`，✕ 保留。**尚未擴到其他抽屜**。
-- 詳細視窗固定大小（`vip.css` 最底：`.game-modal.has-tabs` 寬 460、高 `min(720px, 100dvh-40px)`，手機全螢幕）。
-
-### 使用者決定／想法（尚未動工）
-- **第 2 批：管理中心加「規則書」分頁**：一次選多個 PDF；每列從檔名猜遊戲（比對 `bggName` 與中文名）、類型（檔名含 faq／errata）、語言（有中文字猜中文，否則英文）；猜不到就「請選擇遊戲」，下拉可搜尋；全部確認後逐檔上傳、顯示進度與失敗原因，失敗不影響其他檔；詳細視窗「規則」分頁拿掉上傳，只留貼連結與清單。`useGameDocuments` 需改成可指定任意 `bggName`（目前綁單一遊戲）。要改 `AdminCenter.tsx`（已看過）。
-- **第 3 批：「我的俱樂部」與詳細視窗「我的桌遊」整合**：已玩清單每列可改次數（改「沒日期的次數」`play_count`，已確認它就是沒日期的歷史次數，不會重複計算）；詳細視窗「我的桌遊」分頁拿掉想玩／已玩按鈕與遊玩次數，保留「記錄一次遊玩」、最近紀錄與備註；備註改名「我的整體心得」；單次心得沿用 `game_play_sessions.note`；不動資料庫。要改 `MyList.tsx`、`PlayCounter.tsx`、`GameModal.tsx`。
-- 手機底部導覽現在 5 顆，若擠就把「規則助手」縮短為「規則」。
-- 每款遊戲專有名詞對照表（管理中心維護）：之後再做。
-
-### 尚未驗證／待處理（接手先問）
-1. 這批是否已 build、commit、push（`git log`）。`TopBar.tsx` 是否已加 `onOpenRules`、`canUseRules`；`App.tsx` 是否已加 `RulebookPage`。
-2. 手機實測：底部 5 顆是否擠、返回鍵是否只關視窗（Android／iPhone Safari／LINE）、詳細視窗大小是否一致。
-3. 用非 VIP 帳號確認看不到「規則助手」；用 VIP 帳號實測搜尋與剩餘次數。
-4. 中文 PDF 擷取品質、`rules-en` 語言是否已改 `en`、建立中英檢索測試集（使用者要挑熟悉的規則書各 5～8 題，標頁碼）仍待做。
-5. `privacy.html` 尚未補「規則助手搜尋紀錄」說明（用途、保留 7 天、只存使用者與遊戲與時間、不存問題內容）。
-6. 20 款清單與規則書統計表仍未提供。
-
-### 下一步
-第 2 批（管理中心批次上傳）→ 第 3 批（我的俱樂部整合）→ `privacy.html` → 手機返回鍵擴到其他抽屜 → 檢索測試集與命中率評估（必要時加每款遊戲對照表或查證語意搜尋／免費翻譯 API，兩者都未查證）。
-
----
-
-## 2026-10-28（第六批）更新（最新；與下方任何舊內容衝突時，以本節為準；第四、五批的方向仍有效，但被本節修正的地方以本節為準）
-
-### 使用者決定（覆蓋第五批）
-- **不做 `is_active` 啟用／停用開關**：索引成功後自動啟用，系統把 `ai_indexed` 設為 true 當「可被搜尋」標記；要下架就刪文件（切塊 cascade 刪除，前端刪除按鈕會一併刪 Storage 的 PDF）。
-- 使用者會放：規則書（中英文）、FAQ（多為英文）、中文規則網站。**網站內容用「另存成 PDF 再上傳」**（Chrome：Ctrl+P → 另存為 PDF → 取消頁首頁尾）。不做自動抓網頁。
-- **搜尋紀錄保留 7 天**；**不啟用 pg_cron**，改在搜尋函式內順便清掉 7 天前的紀錄。**每日額度以台北時間凌晨 0 點重置**（VIP 每日 30 次、管理者不限）。
-- 新表沿用 `bgg_name` 與文件 `id`；**`rulebook_chunks` 只存 `document_id`，不存 `bgg_name`**（靠 `game_documents` 對應，改名不會失聯）。
-- **CSV 不需要新增任何欄位**；文件在網站管理者介面上傳，與 CSV 無關。在 Notion 改 `bggName` 的地雷照舊。
-- 規則書授權：使用者決定不設開關、一律啟用；AI 已提醒「能從 BGG 下載不等於有權再上傳與擷取」，**這不是法律意見**，風險由使用者自行評估；第一版只回傳最多 5 段短片段，不提供下載。
-
-### 已完成（階段 2 第一部分，SQL 已執行並驗證）
-- `game_documents` 新增欄位：`index_status`（`none／pending／processing／completed／failed`，預設 none）、`index_error_code`、`page_count`、`edition`、`file_hash`、`source_note`（≤200 字）、`indexed_version`（預設 0）；新增約束：只有 `rulebook／faq／errata` 可 `ai_indexed = true`。
-- 新表 `rulebook_chunks`（`document_id` 外鍵 cascade、`index_version`、`chunk_index`、`page_number`、`section_title`、`content`；RLS 開啟、**anon 與 authenticated 完全沒有直接權限**）、`rulebook_search_log`（只存 `user_id`、`bgg_name`、`created_at`，不存問題內容；RLS 開啟、無直接權限）。
-- 私有 bucket `rulebooks`（限 `application/pdf`、50 MB、只有管理者可讀寫，四條政策 `rulebooks admin read/insert/update/delete`）。
-- 函式（security definer、`search_path=''`、anon 無權限、authenticated 可執行但內部檢查 `is_admin()`）：`admin_replace_rulebook_chunks(p_document uuid, p_chunks jsonb, p_page_count int, p_file_hash text)`（寫入新版本切塊，成功才切換 `indexed_version`、設 `ai_indexed = true`、`index_status = 'completed'`、刪舊版；同一交易）、`admin_mark_rulebook_failed(p_document uuid, p_code text)`。
-- 六項驗證查詢使用者都貼了截圖，全部符合預期。
-
-### 已完成（階段 3：管理者上傳與文字擷取；使用者已 build、實測）
-- 已安裝 `pdfjs-dist`。新增 `src/lib/extractPdfText.ts`（瀏覽器端擷取、同一頁內切段、每段最多 800 字、不跨頁、中日文之間不補空格、掃描 PDF 回 `NO_TEXT`、最多 3000 段、算 SHA-256）；改 `src/lib/useGameDocuments.ts`（新增 `uploadDoc`：先擷取，成功才上傳 PDF 到 `rulebooks/{docId}.pdf`，再 insert 文件列，再呼叫 `admin_replace_rulebook_chunks`；任何一步失敗都復原文件列與檔案；`deleteDoc` 對上傳文件會先刪 Storage 檔）；改 `src/GameDocuments.tsx`（管理者看得到上傳表單與索引狀態；**非管理者只看到外部連結**）。`GameModal.tsx` 沒改。
-- **pdf.js 新版 API 注意**：結束時要呼叫 `loadingTask.destroy()`，不是 `pdf.destroy()`（會 build 失敗）。
-- 實測：上傳 `Ayar_rulebook`（en，20 頁）、`Bable-English`（en，12 頁）、`rules-en`（天際礦脈資料夾，32 頁）都 `completed`，`indexed_version = 1`；英文預覽乾淨、頁碼正確；未登入開 `.../storage/v1/object/public/rulebooks/<檔名>.pdf` 回 `Bucket not found`（原檔不公開）。
-
-### 尚未驗證／待處理（接手先問）
-1. **這批程式（`package.json`、`package-lock.json`、`src/lib/extractPdfText.ts`、`src/lib/useGameDocuments.ts`、`src/GameDocuments.tsx`）是否已 commit、push 未確認**；用 `git status`、`git log` 查。逐檔 add，不要 `git add .`。
-2. **中文 PDF 的擷取品質尚未測**（有無亂碼、是否被塞空格）；`天際礦脈_水印.pdf` 當時還在下載。上傳後用這兩個查詢看：
-   - `select d.title, d.language, d.index_status, d.ai_indexed, d.page_count, d.indexed_version, count(c.id) as chunks from public.game_documents d left join public.rulebook_chunks c on c.document_id = d.id and c.index_version = d.indexed_version where d.source_type = 'upload' group by d.id;`
-   - `select page_number, left(content, 150) as preview from public.rulebook_chunks order by id limit 15;`
-3. **`rules-en` 的語言被設成 `zh`**，疑似選錯；已建議 `update public.game_documents set language = 'en' where title = 'rules-en';`，是否已執行未確認。
-4. 還沒測：掃描型 PDF 是否正確報 `NO_TEXT`；訪客／一般會員是否看不到上傳文件（前端已過濾，但沒親眼確認）。
-5. **使用者的規則書資料夾在專案內**（`D:\BoardGameResultAI\rulebook\ayar`、`bable`、`skymines`、`新幕桜降る代に決闘を 基本セット`），Vite 監看出現 `EBUSY` 錯誤；已建議搬到 `D:\rulebooks\` 或在 `.gitignore` 加 `rulebook/`，是否做了未確認。`furuyoni` 是**日文**，表單只有中文／英文，第一版不收日文。
-6. 20 款清單、規則書統計表仍未提供；實際只上傳了 3 份測試。
-
-### 下一步
-- **階段 4：檢索**。①用真實規則書比較中文檢索方式（`pgroonga` 與 `pg_trgm`，兩者都可用但都未啟用；`zhparser` 不在清單；英文可用內建全文檢索）；**目前不啟用任何擴充**。②**跨語言問題尚未解決**：使用者用中文提問，但多數規則書與 FAQ 是英文，中文關鍵字比不到英文內文；候選做法：使用者輸入英文術語、為每款遊戲維護中英術語對照、之後評估語意搜尋（向量，需 embedding，有費用與依賴考量），請先與使用者討論再動工。③寫 `search_rulebook_chunks(p_bgg_name text, p_query text)`：驗證 `is_vip()` → 用 advisory lock 鎖該使用者 → 檢查今日台北時間次數（VIP 30、管理者不限）→ 只搜該遊戲 `ai_indexed = true` 且 `index_status = 'completed'` 的文件、且 `index_version = indexed_version` 的切塊 → 最多 5 段並限制長度 → **只有找到結果才寫入 `rulebook_search_log`**（無結果、錯誤、超額都不扣）→ 順便刪 7 天前紀錄；`revoke ... from public, anon`，只 grant authenticated。④建立中英文檢索測試集（20～50 題，人工標註正確段落，看是否出現在前 5 筆）。
-- **階段 5**：詳細視窗第 5 分頁「規則助手」（只給 VIP／管理者、且該遊戲有索引完成的文件才顯示）、顯示片段與頁碼、一鍵複製提示詞（說明會送到使用者自選的外部 AI）、`privacy.html` 補搜尋紀錄說明（用途、7 天保留、只有必要流程寫入）。需先請使用者貼最新的 `GameModal.tsx` 等檔案。
-- 之後再做：「更新版本」按鈕（`admin_replace_rulebook_chunks` 已支援新版成功才切換）、章節標題（`section_title` 目前為空）、OCR。
-- 第三批待辦 2（驗證社群平均含管理者那一票）、第二批小項、手機報到流程實測仍有效。
-
----
-
-## 2026-10-27 深夜（第五批）更新（最新；與下方任何舊內容衝突時，以本節為準；「第四批」的方向與分階段計畫仍有效，本節是補充與修正）
-
-### 階段 1「盤點現況」已完成（只讀不改；**仍未動任何程式碼、SQL、Supabase 設定**）
-- **`game_documents` 實際欄位**：`id`(uuid, gen_random_uuid)、`bgg_name`、`doc_type`、`language`、`title`(預設空字串)、`source_type`、`external_url`(預設空字串)、`storage_path`(預設空字串)、`ai_indexed`(預設 false)、`created_at`，全部 NOT NULL。**沒有**啟用／停用、索引狀態、頁數、版本、授權、雜湊欄位。
-- **`game_documents` 約束**：`language` 只能是 `zh`／`en`／`other`；`source_type` 只能是 `external`／`upload`；`doc_type` 為 `rulebook／faq／errata／intro／video／other`；**`game_documents_video_not_indexed`**（影片不可 `ai_indexed = true`，已存在）；external 須有 `external_url`、upload 須有 `storage_path`；**外鍵 `bgg_name → board_games(bgg_name)`，`ON UPDATE CASCADE ON DELETE CASCADE`**（所以這張表在 `bgg_name` 改名時會跟著變；刪遊戲會連帶刪列但**不刪 Storage 檔案**）。
-- **`game_documents` RLS**：`documents public read`（SELECT，anon＋authenticated，`true`）、admin insert／update／delete（`is_admin()`）。**結論：這張表任何人都讀得到，規則書文字絕對不能放在這裡**，要另建私有表。
-- **Storage**：`storage.objects` 只有 `covers` 的四條政策（公開讀、管理者寫）；**沒有規則書 bucket**。`storage.buckets` 清單使用者**尚未貼回**（接手先問或再查）。
-- **`is_vip()`**：`select public.is_admin() or exists (select 1 from public.vip_members where user_id = auth.uid())`，security definer、`search_path=''`；管理者也算 VIP，可直接用在後端檢索驗證。
-- **資料庫擴充**（`pg_available_extensions`）：`pg_trgm`、`pgroonga`、`unaccent`、`vector`、`pg_cron` 都**可用但都還沒啟用**（`installed_version` 為 NULL）；`zhparser` 不在清單。中文檢索候選：`pgroonga`（據 AI 所知對中日韓文支援較好，**未實測**）、`pg_trgm`（備案）。**現在不啟用任何擴充**，階段 3 用真實規則書比較後再決定。
-- **前端**：`GameModal.tsx` 用 `TABS` 陣列＋`tab === 'xxx'` 切換四個分頁（概覽／評分／我的桌遊／規則），加第 5 個分頁「規則助手」很單純；`useGameDocuments.ts` 型別已含 `source_type: 'external' | 'upload'`、`storage_path`，但新增文件時固定寫 `external`、`storage_path: ''`；`GameDocuments.tsx` 只處理 `external`。
-
-### 使用者在本批補充／決定
-- **規則書語言**：使用者要附上的規則書**中文、英文都有**，**FAQ 大多是英文**。→ 檢索測試集要涵蓋中英混合與英文術語；`language` 欄位用 `zh`／`en`（約束已支援）。`doc_type` 可索引的建議為 `rulebook`、`faq`、`errata`；`intro`（中文介紹，著作權疑慮較高）與 `video` 不進索引。
-- **使用者同意第四批後我提出的 5 項決定，並同意下列補充要求（全部納入第一版規格）**：①管理者瀏覽器用 `pdfjs-dist` 擷取文字；②原始 PDF 存**私有 bucket `rulebooks`**；③VIP 每日 30 次檢索、管理者不限額；④搜尋紀錄**不保存問題內容**；⑤只有存在「有效、已啟用、索引完成」的文件時才顯示分頁；⑥RLS、函式 EXECUTE 權限、後端驗證 VIP（不靠前端隱藏）；⑦索引失敗可復原、**新版本成功後才切換**（失敗時舊索引仍可用）；⑧中文檢索測試集（20～50 題，人工標註正確段落，看是否出現在前 5 筆）；⑨答案附頁碼與依據，證據不足就拒答；⑩額度用資料庫**原子操作**，**只有成功檢索才扣次數**（無結果、系統錯誤、超額都不扣）；⑪記錄版本、語言、來源、授權；⑫搜尋紀錄的用途、保留期限、存取權限寫進 `privacy.html`。
-- **規則書授權（使用者的想法與 AI 的提醒）**：使用者認為規則書是自己從 BGG 下載、活動自辦、VIP 不外流，應該沒有著作權問題。**AI 已說明：這些情境有助於理解用途，但不能直接推論沒有著作權風險**（能在 BGG 下載不等於取得再上傳、擷取文字建檔、提供給他人片段的權利；私有 bucket 也不等於授權）；這**不是法律意見**。**使用者尚未對風險控管做出最後決定。** 建議的風險控管（尚待使用者回「照建議」）：①`game_documents` 加「來源」與「授權依據」欄位；②**新上傳的文件預設 `is_active = false`，管理者確認來源與授權後才啟用索引**；③**先用 1～3 份授權明確或自己能確認的規則書做技術驗證**，再擴到 20 款；④只回傳最多 5 段短片段，不提供整本下載；⑤管理者隨時能停用／移除文件。
-
-### 建議的資料結構（只是方案，**尚未給 SQL、尚未動工**）
-1. **`game_documents` 補欄位**：`is_active`（預設 false）、`index_status`（`pending／processing／completed／failed`）、`index_error_code`（簡短代碼如 `NO_TEXT`、`PDF_READ_ERROR`；詳細錯誤只放管理者看得到的地方，因為此表公開）、`page_count`、`edition`（版本／版次說明）、`file_hash`（判斷是否真的換檔）、`source_note`、`license_note`、`indexed_version`（目前啟用的索引版本）。此表公開，**不放文字內容**。
-2. **新表 `rulebook_chunks`**：`document_id`（外鍵，cascade）、`bgg_name`、`index_version`、`chunk_index`、`page_number`、`section_title`、`content`。RLS 讓訪客與一般會員完全讀不到，VIP 只能透過後端函式。
-3. **新表 `rulebook_search_log`**：只存 `user_id`、`bgg_name`、時間；**不存問題內容**；要設保留期限與自動清理；只有必要後端流程寫入、管理者讀取。
-4. **私有 bucket `rulebooks`**：讀寫都只有管理者；VIP 不碰 PDF 原檔。
-5. **後端函式**：`search_rulebook_chunks(bgg_name, 問題)`（驗證 `is_vip()`→檢查額度（原子）→只搜該遊戲「已啟用且索引完成」的文件→最多 5 段、限制每段與總長度）；`admin_replace_rulebook_chunks(...)`（管理者專用；新版本寫完才切換 `indexed_version`）。**security definer 一律 `set search_path = ''`，並 `revoke ... from public, anon`，只 grant 給需要的角色**。
-6. **遊戲識別**：另一個 AI 建議用「穩定 ID」而不是 `bgg_name`。**AI 的看法**：`game_documents` 的外鍵本來就是 `ON UPDATE CASCADE`，但專案其他玩家資料表（評分、已玩、聚會等）刻意以 `bgg_name` 文字對應且無外鍵，為了與現有一致，**建議新表也用 `bgg_name`（可加外鍵 cascade），並用文件 `id`（uuid）做文件層級關聯**；在 Notion 改 `bggName` 的地雷照舊。**此點尚待使用者確認。**
-7. **前端**：詳細視窗加第 5 個分頁「規則助手」，只對 VIP／管理者顯示，且只在該遊戲有有效索引文件時出現；預計改 `GameModal.tsx`、`GameDocuments.tsx`、`useGameDocuments.ts`，新增 `RulebookAssistant.tsx`、`useRulebookSearch.ts`、樣式檔、`privacy.html`，並安裝 `pdfjs-dist`。**開工前請使用者貼這三個現有檔案的目前版本**，不要憑舊版覆蓋。
-- 第一版**不做** OCR（掃描型 PDF 標為擷取失敗／不支援）、不串付費生成式 AI API、不讓 VIP 下載 PDF、不自動下載 BGG 規則書。
-- **提示詞注意**：規則書文字與使用者問題都視為資料，不是指令；複製提示詞時要說明片段會送到使用者自己選的外部 AI 服務。
-
-### 還沒決定／待使用者回覆（接手先問）
-1. **每日額度的重置時區**：另一個 AI 建議 UTC，但專案的聚會日用**台北時間**，AI 傾向也用台北時間（凌晨 0 點重置），**待確認**。
-2. **搜尋紀錄保留多久**：建議 30 或 90 天自動清理，**待確認**。
-3. 上面「規則書授權風險控管」是否照建議（新文件預設停用、先用 1～3 份驗證）。
-4. 新表用 `bgg_name` 還是另設穩定 ID（見上第 6 點）。
-5. **20 款清單**與**規則書統計表**（遊戲、幾份 PDF、語言、MB／頁數、能否選取文字）仍未提供；另請挑 **1～3 份**當技術驗證樣本。
-6. `storage.buckets` 查詢結果尚未貼回。
-- 第三批待辦 2（驗證社群平均含管理者那一票）、第二批小項、手機報到流程實測仍有效。
-
-### 下一步（階段 2：設計資料結構與安全機制）
-使用者回覆上面待決定項目後：AI 先給 SQL **提案與說明**（新欄位、兩張新表、私有 bucket 與政策、搜尋與額度函式、刪除與清理流程、驗證查詢），使用者確認後才在 Supabase SQL Editor 執行；之後再做上傳與 `pdfjs-dist` 擷取（階段 3）、中文檢索比較與權限測試（階段 4）、前端與 `privacy.html`（階段 5）。每階段驗收完才進下一階段。
-
----
-
-## 2026-10-27 深夜（第四批）更新（比上方「第五批」舊；與下方舊內容衝突時，以本節為準）
-
-### AI 規則助手：方向定案（只完成規劃，**尚未動任何程式碼、SQL、Supabase 設定**）
-- **使用者三個回答（2026-10-27）**：①先挑 **20 款常玩的**；②規則書 PDF 份數、大小、中英文各幾份**還不確定（使用者還沒找資料）**；③**只給 VIP 和管理者用，不開放訪客**。
-- **使用者不想付費**，因此**取消**先前 AI 提過的「Edge Function 呼叫 Anthropic API＋每人每日提問上限」方案，**不申請 API 金鑰**。
-- **第一版方案（使用者已決定）＝零生成式 AI API 費用**：
-  1. 規則書處理方式：**後端私有檢索，只傳送必要片段**（PDF 放私有 bucket，不提供下載、不傳整本給外部 AI）。
-  2. 第一版＝**RAG 的「R」（檢索）＋「複製給自己的 AI」**：VIP 輸入問題 → 後端檢索指定桌遊的規則段落 → 顯示原文、頁碼、書名 → 一鍵複製提示詞（問題＋片段＋來源＋回答要求），使用者自行貼到 ChatGPT／Gemini／Claude。網站**不呼叫任何生成式 AI API**。
-  3. 生成式 AI（網站內直接回答）：**先完成檢索與引用，之後再評估**。候選是 Gemini 免費 API（有速率限制、免費層級資料可能被用於改善產品，額度與條款會變動，**以上來自另一個 AI 的說明，沒有查證，要做時須重新查官方文件**）；不做「連結使用者自己的 AI 帳號」（使用者的免費訂閱不等於有 API 額度，OAuth 與各家相容性太複雜）；本機 Ollama 只留給進階使用者。
-- **提示詞模板要點**：依據提供的官方規則片段回答；先用繁體中文直接回答；說明依據並引用；區分「規則明寫」與「推論」；片段不足就明說需要哪段補充、不要編造；不要把其他桌遊的規則套進來。複製前要提醒使用者：內容會被送到他自己選的外部 AI 服務，**不可宣稱資料仍留在本站**。
-- **檢索技術**：第一階段用 **PostgreSQL 全文／關鍵字檢索**，先不做向量與 embedding（避免費用與依賴）；**中文斷詞不同於英文，要用實際規則書測試**，必要時加斷詞、同義詞、標題索引；第二階段看效果再評估語意搜尋。每段要保留：桌遊 ID（bgg_name）、文件名稱與語言、頁碼、章節標題、文字片段、索引狀態、`ai_indexed`。文字型 PDF 優先（滑鼠能框選文字）；掃描圖片 PDF 要 OCR，第二批再處理並抽樣檢查。
-- **權限與版權**：訪客與一般登入會員**不可**使用檢索；VIP、管理者可以。**後端每次檢索都驗證 VIP／管理者**（不能只靠前端隱藏）；只回傳必要片段、不提供整本介面；檢索要有頻率限制（防大量擷取）；記錄文件來源與版本；**私有 bucket 不等於取得版權授權**，優先用有授權的規則書，不做公開下載或轉載平台。影片連結永遠不進索引（`ai_indexed` 不可為 true）。
-- **「零 API 費用」的意思**：只是不付生成式 AI API 費用；Supabase 儲存、資料庫、流量仍受免費方案限制。
-
-### 分階段計畫（每階段驗收完才進下一階段）
-1. **盤點現況（下一步，只讀不改）**：檢查 `game_documents` 實際欄位、相關資料表與函式、RLS、`is_vip()` 與管理者判定、詳細視窗與導覽列如何整合；產出「現有／缺少／需調整」清單、建議的資料結構與後端介面（只提方案）、風險與測試計畫、預計修改檔案清單。
-2. **規則書上傳與文字擷取**：管理者上傳、查看、停用；私有 Storage；擷取文字、切段、保留頁碼；顯示處理失敗的文件。
-3. **檢索與引用**：全文／關鍵字檢索；限定指定桌遊與啟用中的文件；顯示片段、頁碼、來源；找不到就明說沒找到。
-4. **VIP 前端介面**：詳細視窗新增「AI 規則助手」分頁（問題輸入、檢索結果、複製提示詞），明確標示這是規則檢索、不是網站生成的 AI 答案。
-5. **安全與品質驗收**：測四種身分（訪客、一般會員、VIP、管理者）；測中英文、找不到答案、錯誤頁碼、不同版本；確認瀏覽器讀不到 PDF 原檔；確認不會意外呼叫付費 AI API。
-- **驗收標準**：20 款文件可分別管理；文字型 PDF 能擷取並保留頁碼；結果不混入其他桌遊；可看原文與出處；可複製提示詞；訪客與一般會員無法繞過前端呼叫受保護的檢索；PDF 原檔不公開；網站沒有生成式 AI API 呼叫；找不到時不假裝有答案。
-
-### 使用者還沒做的事（接手先問）
-- **20 款清單**（建議從「常玩遊戲排名」前面挑）與**規則書統計表**（遊戲、幾份 PDF、語言、MB／頁數、能否選取文字）。PowerShell 量大小：`Get-ChildItem D:\rulebooks -Filter *.pdf | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB,1)}}`。
-- 使用者說今天先休息；本批文件由他 commit、push（是否已 push 接手先用 `git log` 確認）。
-- 第三批待辦 2（驗證社群平均含管理者那一票）與第二批小項、手機報到流程實測仍有效。
-
----
-
-## 2026-10-27 深夜（第三批）更新（比上方「第四批」舊；與下方舊內容衝突時，以本節為準）
-
-### 綜合分數與管理者評分（已 build、commit、push；資料庫 `get_rating_summaries()` 新版 SQL 使用者已確認執行）
-- **遊戲卡片改顯示「綜合分數」＝700 減 `score_rank`**（例：Rising Sun 680、Kemet 602、蒼天之死 597）。排序選項同名，方向標示反過來（分數高在上，按鈕顯示「↓ 降冪」）。資料庫欄位 `score_rank` 與 CSV 欄位 `分數_排名` 沒有改；仍**不要揭露 Notion 內的計算方式**，700 只是顯示換算。
-- **管理者評分頁**：管理者自己的七項評分由 CSV 換算（`computeAdminScores`，在 `libraryTypes.ts`，另有 `getDisplayScore`、型別 `AdminScores`），評分頁顯示五個圓點，加上「整體 N / 10」「適合留下來 N / 5」。VIP 玩家的評分頁維持原樣。
-- **換算規則（前端與資料庫兩邊要一致）**：
-  - 整體：依 `ranking_engine`，≤25→10、≤50→9、≤65→8、≤80→7、其餘→6。
-  - 適合留下來：依 `score_rank`，**只在「玩過」的遊戲之間排名**（`rank()`，同分並列；不含垃圾桶），名次 ≤30→5、≤60→4、≤90→3、其餘→2。
-  - **`ranking_engine` 以 .5 結尾＝沒玩過**，七項都不計，評分頁顯示「未玩過」（資料庫端 `ranking_engine = floor(ranking_engine)` 才算玩過）。
-  - 喜歡度、影響度、溝通度、變化度、獨特性：取 CSV 對應 `*_emoji` 欄的字元數（去掉 U+FE0F 與空白，上限 5；0 個視為沒有）。
-- **決定（使用者 2026-10-27 確認）：管理者的 CSV 分數當成一位評分者，算進社群評分。** `get_rating_summaries()` 新版已執行：`players`（`game_ratings` 排除 `admin_users` 的人，避免管理者重複計算）＋`adm`（由 `board_games` 換算）合併計算；每項仍須 ≥5 人才顯示；`where is_vip()` 的限制保留；回傳欄位與舊版相同，前端不用改。
-  - 影響：玩家評分數的「5 人門檻」現在含管理者那一票（4 位玩家＋管理者＝5 人即顯示）；**排行榜的評分榜、適合留下來榜用的是同一個函式的彙總，也會跟著含管理者**。
-  - 連動風險：Notion／CSV 的 `ranking_engine`、`score_rank`、`*_emoji` 一改，社群平均會跟著變；在 Notion 改 `bggName` 仍會讓玩家評分與管理者換算失聯（見匯入地雷）。
-- 涉及檔案：`App.tsx`（`adminScores` 的 useMemo，傳給 `GameModal`）、`libraryTypes.ts`、`GameCard.tsx`、`SortControl.tsx`、`GameModal.tsx`。
-- 教訓：使用者曾把 `adminScores={...}` 貼進 `TrashSection` 而不是 `GameModal`，兩處都有 `isAdmin={isAdmin}`，給步驟時要寫清楚是哪個元件、貼在哪個標籤底下。
-
-### 待辦（接續順序）
-1. 開場：`git pull`、`git status`、`git log --oneline -8`，確認第三批與這兩份文件是否已 push。
-2. 驗證社群平均：打開一款有 5 位以上玩家評分的遊戲，確認評分數含管理者那一票；再看沒人評分的遊戲（玩過的）是否顯示 1 人、未滿 5 人仍是「評分累積中」。
-3. 第二批待辦仍有效（小項、手機報到流程實測）。
-4. 規則書 PDF 上傳 → AI 規則助手：**三個問題使用者已回答，方向已改為零 API 費用方案，見上方「第四批」**。
-
----
-
-## 2026-10-27 深夜（第二批）更新（比上方「第三批」舊；與下方舊內容衝突時，以本節為準）
-
-### git 狀態（接手先用 `git status`、`git log --oneline -8` 確認，不要假設）
-- 「深夜更新（第一批）」裡那 6 個未 commit 的檔案**已 commit 並 push**（`git log`：`b244887` 管理中心、`1a74c99` 排序列、`9aea1a7` 我的桌遊統計、`b5daaf5` 更新交接文件）。該節待辦 1 作廢。
-- 之後又做了兩批（見下）。**第一批**（人數區間等）使用者回報已 push、已實測。**第二批**使用者回報「有更動成功」（build 與手機測試通過），並已拿到 commit／push 指令；**是否已 push 未確認**。第二批共 5 個檔案：`index.html`、`public/privacy.html`、`src/components/PlayCounter.tsx`、`src/lib/useGameRatings.ts`、`src/styles/vip.css`（`privacy.html` 的改動只有評分名稱，是正確的、要保留）。
-- 使用者要求把這兩份交接文件（`PROJECT_CONTEXT.md`、`QUICKSTART.md`）一起 commit、push（本次例外，平常只在使用者要求時才 commit）。
-
-### 第一批（已 push、已實測）
-- **進階篩選「我們有幾個人」改成人數區間**（最少～最多兩個下拉）：規則是**整個區間都玩得起來才列出**（`lo ≥ minPlayers` 且 `hi ≤ maxPlayers`，人數缺值不排除）；只選一邊＝剛好該人數；前後顛倒自動對調。`libraryTypes.ts` 新增 `getGroupRange`、`fitsGroupRange`；`App.tsx` 新增 `groupSizeMax` 與 `groupRange`（useMemo），`filteredGames`／`missingDataCount`／`activeFilterCount`／`clearFilters` 已同步。
-- **進階篩選標題列固定**（`.drawer-header` sticky，✕ 不會被捲走）、**BGG 難度五顆同一排**（`.filter-pills-5`，格線五等分）。
-- **遊戲卡片等高**（`cards.css` 底部：卡片 flex 直排、「詳細資料」按鈕 `margin-top: auto` 貼底；清單檢視維持橫排；`@media (hover: none)` 取消 hover 上抬，避免 iPhone 點過的卡片卡在被抬高的狀態）。
-- **「我的俱樂部」✕ 固定在抽屜右上角**（`mylist.css` 底部 `.club-close` absolute）。
-
-### 第二批（build、手機測試通過；是否已 push 見上）
-- **標題變淡的原因與修法**：使用者的 iPhone 開**深色模式**，沒有指定顏色的文字（各視窗的 `h2` 標題）會繼承瀏覽器預設的淡白色。已在 `vip.css` 最底下加 `:root { color-scheme: light; }` 與 `body { color: var(--c-ink, #34463c); }`（強制淺色）。同批還有 `:where(button:not(:disabled)) { color: inherit; }`（修 iPhone 按鈕文字變藍；使用者說已套用）。**之後新增任何視窗標題，都不要依賴繼承色。**
-- **`index.html` 的 `<html lang>` 改成 `zh-Hant`**：原本是 `en`，手機 Chrome 會跳出「英文／繁體中文」翻譯列、蓋住畫面上方（也是「我的俱樂部」標題看起來被切掉的原因）。
-- **評分名稱統一成「度」**：評分分頁（`useGameRatings.ts` 的 `label`）改成**影響度、溝通度、變化度**，與概覽一致（概覽的「變化度／溝通度／影響度／複雜度」本來就是度）；`privacy.html` 同步。**只改畫面文字，`key` 不動。`parseCsv.ts` 裡的 CSV 欄位名稱（`溝通性`、`玩家影響性`、`複雜性`、`變化性`、`玩家影響性排名`）是使用者 Notion 的欄名，絕對不能改**，改了匯入會報「缺欄位」。「獨特性」「快速性」使用者沒列入，**維持原樣**（已問，尚未回覆是否也要改成「度」）。
-- **記錄遊玩次數時自動標「已玩」**（使用者回「照建議」）：`PlayCounter.tsx` 的「＋」在尚未標已玩時一併設 `played: true`（用 `skipPlayedRule: true`，避免次數被多算）；「記錄一次遊玩」（`PlaySessions.tsx`）本來就會標已玩。起因：我的統計顯示「玩過 0 款、總遊玩次數 2 次」，自相矛盾。**舊資料補標 SQL 已給使用者（先 `select count(*)`，大於 0 再 `update public.user_game_status set played = true where played = false and play_count > 0;`），是否已執行未確認**；補標的幾筆會算成「今天新增已玩」（觸發器寫 `played_first_at`），影響很小。
-
-### 手機檢查結果（2026-10-27 晚，使用者傳 15 張 iPhone 截圖，AI 已看過）
-- 正常：詳細視窗四個分頁（概覽／評分／我的桌遊／規則）、遊戲卡片（按鈕已對齊）、排行榜四個榜與空狀態、集點卡（錢包卡、規則收合）、我的統計、我的俱樂部抽屜、暱稱與聯絡方式視窗、暱稱選單。
-- **未解決（低優先）**：截圖 2、3、13～15（沒有網址列的那幾張）底部，詳細視窗與底部導覽列的**下方都露出一條約 76px 的遊戲卡片內容**（沒有被遮罩蓋住）。`tabs.css` 手機版寫 `.game-modal.has-tabs { height: 100dvh }`、`.modal-backdrop { padding: 0 }`，`modal.css`、`account.css` 的 `.modal-backdrop` 也沒問題，**CSS 看不出原因**，疑似該瀏覽器環境（LINE 內建？Safari？加到主畫面？）本身的特性。**已問使用者那幾張是用什麼開的，尚未回覆。** 若是 LINE 內建瀏覽器，朋友多半從 LINE 點連結進來，值得處理。
-- 還沒在手機走過完整**報到流程**（登入→暱稱→自動報到→評分→集點卡）；要等下次聚會，或用另一個 Google 帳號測。
-- 「資料庫小驗證」：`gathering_checkins.capacity` 已確認 **NOT NULL**（`is_nullable` = `NO`）。**`to_regclass('public.gathering_plays')` 是否為 null、`cover_slug !~ '^[a-z0-9_-]+$'` 是否 0 列，仍未收到結果。**
-
-### 使用者確認的事實
-- **目前網站是 106 款，不是 107 款**（舊文件裡的 107 已全部改成 106）。
-
-### 待辦（接續順序）
-1. 開場：`git pull`、`git status`、`git log --oneline -8`，確認第二批與這兩份文件是否已 push；問補標「已玩」的 SQL 是否已執行。
-2. 小項（使用者有空再回）：截圖底部露出內容是用什麼開的；「獨特性／快速性」要不要也改成「度」；`gathering_plays` 與 `cover_slug` 兩個驗證；管理中心「近期聚會依月份分組」是否符合使用者說的「新增月份」；`MemberAdmin.tsx` 在手機是否仍擠壓（沒看過檔案）。
-3. 手機報到流程完整實測。
-4. **規則書 PDF 上傳（私有 bucket）→ AI 規則助手（RAG，最重要的長期目標）**。**開工前要使用者回答三件事（已問，尚未回覆）**：①先做全部 106 款，還是先挑 10～20 款常玩的？②規則書 PDF 大概幾份、多大、中英文各幾份？③只自己用、只給 VIP 朋友問，還是也開放訪客（著作權與費用）？建議分階段：範圍與著作權決定 → 私有 bucket 與上傳介面 → PDF 切段保留頁碼＋向量檢索（pgvector，中文可能要混合關鍵字）→ Edge Function 呼叫 AI＋每人每日提問上限（金鑰只放後端）→ 詳細視窗加「AI 查詢」分頁、底部導覽加第 5 顆。
-5. 其餘：管理者視窗其他部分的統一風格、PWA（缺圖示）、VIP 朋友名單、推薦牆、拖曳調整排名、VIP 鎖定 SQL（資格要含來過聚會的人）。
-
-### 給接手 AI 的提醒（本批學到）
-- **iPhone 深色模式**會讓沒指定顏色的文字變淡白色；使用者手機是深色模式。新增畫面要確認文字顏色是明確指定的，或繼承自 `body`（已設為深墨綠）。
-- 使用者在 PowerShell 看到的中文亂碼（例如 `tabs.css` 的註解）只是終端機顯示問題，檔案沒壞；`git diff` 出現 `(END)` 時按 `q` 離開。
-- 這次使用者一次傳了 15 張手機截圖，AI 看完後**一次整理成一批**修改，效率很好；之後手機檢查維持這個做法。
-- 使用者說「好了」、「沒問題了」代表該批已 build、測試完成；他不一定貼測試結果，重要項目仍要再確認。
-
----
-
-## 2026-10-27 深夜更新（第一批；比上方「第二批」舊，與下方舊內容衝突時，以本節為準；其中「尚未 commit 的 6 個檔案」已 push）
-
-### 已 push（`git log` 已確認）
-- `c56e3fc` 我的桌遊改版、`b2c4d6a` privacy.html 補免費券說明、`4803d8d` 排行榜空狀態、`3bf83a5` 集點卡改版（近期紀錄只顯示最近 5 筆）。
-- **自動用券第二批 SQL 已確認執行**（使用者截圖：`settle_vouchers_on_rating`、`settle_vouchers_on_attendee` 兩個觸發器都在）。
-- **尚未 commit 的 6 個檔案（使用者貼的 `git status`；是否已 build、commit、push 接手先問）**：`src/MyList.tsx`、`src/styles/mylist.css`、`src/styles/library.css`、`src/components/AdminCenter.tsx`、`src/LoyaltyAdmin.tsx`、`src/styles/vip.css`。建議 commit 訊息分三組：我的桌遊／排序列／管理中心。
-
-### 本日完成的內容
-- **「我的桌遊」抽屜（`MyList.tsx`）**：想玩／已玩數字方塊改成分頁按鈕（`activeTab`，預設想玩），清單直接顯示在下方，**已沒有「返回」流程**；空清單才顯示「去逛收藏」；**「我的統計」**是抽屜內第二個畫面（`view: 'home' | 'stats'`，有「‹ 返回」）：玩過幾款、總遊玩次數、約略總時數（次數×BGG 時間，`Math.round(分鐘/6)/10` 小時，沒時間資料的遊戲不計）、最常玩 TOP 3；使用者要求**「我的統計」入口放在已玩清單上面**（`club-more` 區塊移到第一個 `club-list` 上方）。`MyList` 新 props：`todayPending`（來自 `App.tsx` 的 `todayTask.pending`）、`onOpenLoyalty`（`openMyLoyalty`）；`todayPending` 為真時顯示「今天有聚會，還沒評分／去評分」卡（`club-today`），按鈕打開集點卡抽屜。`ClubPoints` 提示文字已改新規則，並在有券時顯示金色免費券卡（`usableVouchers`，另有 `availableVouchers − usableVouchers` 張「明天起才能用」）。`.club-menu-item`、`.mylist-name` 加深墨綠文字色（iPhone 預設會變藍）。
-- **排行榜空狀態（`Leaderboard.tsx` 的 `renderEmpty()`）**：依情況說明為什麼是空的（期間內沒新增、沒人標記、評分未滿 5 人、評分讀取中）並附按鈕（看全部期間／去逛收藏／先看想玩榜）。樣式 `.lb-empty*` 在 `leaderboard.css`。評分榜空時刻意不顯示「目前有幾款在累積」（不確定未滿 5 人時資料庫是否回傳人數）。
-- **集點卡改版（`LoyaltyCard.tsx`、`loyalty-card.css`）**：配色改用 `tokens.css` 變數；點數、免費券、兩個印章格包進 `lc-wallet`；「如何取得點數／規則」改成 `<details className="lc-fold">` 預設收起；**近期紀錄預設只顯示最近 5 筆（`RECENT_DAYS`，`loyalty.days` 由新到舊）**，其餘按 `lc-more`「顯示全部 N 筆」；若邀請連結的日期（`focusDate`）在被收起的部分，會自動全部展開（`focusHidden`）。補上原本缺少的 CSS（`lc-stat-sub`、`lc-session-title`、`lc-day.focus`、`lc-today-ticket`）。
-- **排序列（`library.css`）**：刪掉手機版 `.sort-reset.is-hidden { display: none }`，改成 `.sort-dir`、`.sort-reset` 寬度固定（`flex: none`、重設 `min-width: 56px`），「重設」沒用到時只是看不見（`visibility: hidden`），**升冪／降冪位置不會跑**。
-- **管理中心（`AdminCenter.tsx`、`LoyaltyAdmin.tsx`、`vip.css`）**：大分頁改成三等分膠囊、圖示在上字在下，標籤縮短為「成員」「聚會集點」「資料匯入」（`ac-tab-ico`、`ac-tab-label`）；小分頁（聚會設定／集點狀況／免費券紀錄）三等分；手機（≤520px）視窗加寬（`.ma-backdrop` padding 8px、`.ac-modal`／`.ma-modal`／`.st-modal` padding 14px 12px）；成員列在手機改成換行（`.ma-row` 換行、`.ma-who` 佔滿一行），解決暱稱被擠成直排（**這是只看 CSS 推測的修法，`MemberAdmin.tsx` 沒看過，若仍有問題要請使用者貼該檔**）；搜尋框與下拉在 iPhone 改成墨綠 16px 字。**「近期聚會」改成依月份分組**（`monthKeys`、`openMonths` 狀態；預設展開最新一個月與本月，其餘收起；按月份標題 `lga-month-head` 展開／收合），**點開某一天，聚會詳情直接出現在那一列下面**（原本在整個列表最下方；`LoyaltyAdmin.tsx` 的 `{g.id === selectedId && selected && (...)}` 已搬進該列 `<li>` 內），再按一次收起。**使用者說的「新增月份」被理解為「依月份分組」，尚未確認是否符合原意。**
-- 這批新增的覆蓋樣式**全部貼在 `vip.css` 最底下**（`vip.css` 最後載入，同權重時後面的贏）。`loyalty-admin.css` 與 `loyalty-admin_1.css` 使用者貼過兩份，內容完全相同（沒有差異）。
-
-### 本日作廢／已完成的舊說明
-- 傍晚待辦 1（「我的桌遊」抽屜改版 ①～⑥ 項）→ 已完成，其中「去評分」卡是用 `todayPending` 重用 `useTodayTask`，沒有另外算一次。
-- 傍晚待辦 3（`privacy.html` 補免費券說明）→ 已完成並 push。
-- 「兩份 SQL 是否都已執行：第二批未確認」→ 已確認執行。
-- 「『我的桌遊』抽屜首頁有想玩清單／已玩清單入口列」→ 已拿掉。
-- 傍晚說明中「`loyalty-card.css` 底下可能殘留 `.modal-backdrop.voucher-backdrop`」→ 已請使用者刪除（接手可用搜尋確認）。
-
-### 待辦（接續順序）
-1. 先確認上面 6 個檔案是否已 build、commit、push；手機實測：排序列、我的統計位置、管理中心三個分頁、近期聚會就地展開與月份分組。
-2. 若管理中心「成員與 VIP」在手機上仍擠壓，請使用者貼 `src/components/MemberAdmin.tsx` 直接改程式。
-3. 視覺改版剩下：管理者視窗其他部分的統一風格（按鈕兩種：主要森林綠實心、次要外框；表格與列表間距）、**手機全面檢查**（遊戲卡片 4／9 欄在手機的實際欄數、詳細視窗、報到流程、各彈窗；使用者用手機截圖回報問題，AI 一次整理成一批）。
-4. 規則書 PDF 上傳（私有 bucket）→ AI 規則助手（RAG，最重要的長期目標）。
-5. PWA、VIP 朋友名單、推薦牆、拖曳調整排名、VIP 鎖定 SQL（資格要含來過聚會的人）。
-6. 仍未驗證：`gathering_plays` 是否已 drop、`capacity` 是否 NOT NULL、`makeCoverSlug` 新版是否已套用並重新匯入（`cover_slug !~ '^[a-z0-9_-]+$'` 應為 0 列）。
-
-### 給接手 AI 的提醒（本日學到）
-- 使用者貼的檔案是當下最新版沒錯（本日多次用 `git log`／`Select-String` 驗證過），但**聊天室只在他貼過的檔案範圍內可信**；這次管理中心的樣式分散在 `vip.css`（`ma-`、`ac-`）、`loyalty.css`（`loy-`）、`admin.css`（`admin-`）、`loyalty-admin.css`（`lga-`）四個檔案，改外觀前先用 `Select-String -Path src\styles\*.css -Pattern "\.類別名"` 找出 class 在哪裡。
-- 修改量大又要「搬一大塊 JSX」時（例如本日的聚會詳情），給明確的搜尋關鍵字與起訖行，並請他 build 通過再 commit。
-
----
-
-## 2026-10-27 傍晚更新（與下方舊內容衝突時，以本節為準；但比「深夜更新」舊）
-
-### 已交付（使用者 build 成功；是否已 commit／push 請接手時用 `git log`、`git status` 確認）
-- **5 個進階篩選（人數、時間上限、難度五級、新遊戲、評分狀態）與「我的俱樂部」摘要卡**已套用並 push（`git status` 乾淨）。摘要卡在 `MyList.tsx`：`ClubHeader`（暱稱、徽章：訪客／一般會員／VIP 會員／管理者、想玩／已玩數字方塊、未登入說明＋Google 登入鈕）、`ClubPoints`（只有「VIP 且非管理者」才會呼叫集點資料）。樣式在 `mylist.css` 的「我的俱樂部」區。
-- **免費券 v2（使用者已確認的規則，取代舊的「同月 2 點、管理者兌換」說法）**：
-  - 同一個月**第 2 點（4、6…）當下自動變成 1 張券，月點數歸零**（`month_points = 該月計入點數 % 2`；`total_points` 是累計）。
-  - **券要拿到的隔天起才能用**（拿到券的當天不能用）。
-  - **有券又有來的人，當天一定使用，不能累積**。實作在**資料庫端自動**：只要某個聚會日「達成」（評分完整或免評分）且當時有可用券，`settle_vouchers(p_user)` 自動寫一筆 `loyalty_redemptions`（`used_on` = 該聚會日、`redeemed_by` = null）。**用券那天不集點。** 只處理 **2026-10-27 以後**的聚會日，不回頭改舊紀錄。
-  - 觸發時機：觸發器 `settle_vouchers_on_rating`（`game_ratings` insert／update 後）、`settle_vouchers_on_attendee`（`gathering_attendees` insert／update 後，例如設免評分）；另外 `get_my_loyalty_summary`、`admin_get_loyalty_overview` 讀取時也會先補算。觸發器內有 exception 保護，出錯不會擋住評分。
-  - **使用者決定：事後修改或刪除評分，不退點數、不退券，已用掉就是用掉。**
-  - **評分仍是前提**（評分是統計手段）：流程是報到 → 評分 → 系統自動用券（當天不集點）。**不需要管理者按確認**，管理者在「免費券紀錄」看使用紀錄即可。
-  - 玩家端（`LoyaltyCard.tsx`）：評分前顯示「你有 N 張免費券可以用，評分完成後會自動使用」；用掉後顯示「今天已自動使用 1 張免費券」、印章顯示「已用券」；「其中 N 張明天起才能用」；兌換歷史改名「免費券使用紀錄」。**沒有使用視窗**（曾做過 `VoucherUseDialog.tsx` 的「強制按鈕」方案，已作廢並刪除，`use_my_voucher` 函式也已 drop）。
-  - 管理者端（`LoyaltyAdmin.tsx`）：三個小分頁「聚會設定／集點狀況／免費券紀錄」。集點狀況改成**一人一張卡片**，排序：可用券多 → 本月點數多 → 總點數多；有「只顯示有點數或有券的人」勾選；「兌換」按鈕改名「補登」（只補登現場已給過的券，`admin_redeem_voucher` 仍是舊版：只檢查累積券、`used_on` 為 null）。免費券紀錄分頁欄位：玩家、用在哪一天、使用時間、來源（系統自動使用／管理者補登）。明細中用券的日子標「🎟 使用免費券（這天不集點）」。樣式在 `loyalty-admin.css` 最底下（`lga-players`、`lga-pcard`、`lga-pill`…）。
-- **新增／變更的資料庫物件**：`loyalty_redemptions.used_on date` ＋唯一索引 `(user_id, used_on) where used_on is not null`；`loyalty_point_days(p_user)`（已達成且沒被拿去用券的日子，同月依日期排名，只供內部使用）；`loyalty_totals(p_user)` 改回 4 欄（`total_points, month_points, earned_vouchers, usable_vouchers`；`usable_vouchers` 只算「拿到券的日期 < 今天」）；`get_my_loyalty_summary()` 多回 `usable_vouchers`（`greatest(usable − 已使用, 0)`）並改成 plpgsql（讀取時補算）；`settle_vouchers(uuid)`、`trg_settle_vouchers()`、兩個觸發器；`admin_get_loyalty_overview()` 重建（volatile，先補算）。`loyalty_day_status` **沒有改**（它仍只回「達成」，用券日是否計點由 `loyalty_point_days` 排除）。內部函式都已 `revoke ... from public, anon, authenticated`。
-- **兩份 SQL 是否都已在 Supabase 執行（`voucher_migration.sql` 第一批、`voucher_auto.sql` 第二批）：第一批使用者截圖顯示管理者表頭已變成「本月（滿 2 歸零）」，應已執行；第二批（自動用券）未確認。接手先問。** 驗證：`select proname from pg_proc where proname in ('settle_vouchers','loyalty_point_days','use_my_voucher');`（應有前兩個、沒有第三個）；`select tgname from pg_trigger where tgname like 'settle_vouchers%';`（應有 2 個）。
-- 前端 `useLoyalty.ts`：`LoyaltySummary` 多 `usableVouchers`；`Redemption` 多 `usedOn`；`loyalty_redemptions` 查詢多選 `used_on`。
-- `loyalty-card.css` 底下可能殘留 `.modal-backdrop.voucher-backdrop { z-index: 1400; }`（已用不到，無害，可刪）。
-
-### 重要教訓（本日）
-- **使用者曾請 Gemini 把 CSS 縮小（`filter.css`、`modal.css`、`mylist.css`、`vip.css`），AI 建議先不要 commit，使用者已 `git restore` 還原。** 之後不要把 CSS 交給別的工具壓縮／重寫；若要整理 CSS，先實測所有畫面再 commit。
-- 管理者資料表現在的「本月」欄是「該月餘數」（0 或 1），不是該月總點數；總點數看「總 N 點」。
-
-### 待辦（接續順序，使用者尚未回「照建議」）
-1. **「我的桌遊」抽屜**（`MyList.tsx`、`mylist.css`）：①上方「想玩」「已玩」數字方塊改成分頁按鈕，清單直接顯示在下方，**拿掉重複的兩列入口與「返回」流程**；②空清單才顯示「去逛收藏」；③加**「我的統計」**（玩過幾款、總遊玩次數、約略總時數＝次數×BGG 時間並標「約」、最常玩 TOP 3），AI 偏向在抽屜內點開後出現有「‹ 返回」的畫面（使用者尚未決定展開或獨立頁）；④今天有聚會且未評分時顯示「去評分」卡片；⑤有券時顯示免費券卡片（有券才出現）；⑥`ClubPoints` 提示文字「同月累積 2 點，可換 1 張免費券」要改成新規則（2 點自動變券、點數歸零、隔天起自動使用）。
-2. 排行榜空狀態 → 集點卡頁面風格 → 管理者視窗統一風格 → 手機全面檢查。
-3. `privacy.html` 補上免費券說明（自動使用紀錄管理者可見）。
-4. 規則書 PDF 上傳（私有 bucket）→ AI 規則助手（RAG）。
-5. PWA、VIP 朋友名單、推薦牆、拖曳調整排名、VIP 鎖定 SQL（資格要含來過聚會的人）。
-6. 仍未驗證：`gathering_plays` 是否已 drop、`capacity` 是否 NOT NULL。
-
-### 本日作廢的舊說明
-- 「同月 2 點換 1 張免費券，由管理者按『兌換』」→ 改為自動變券、自動用券（見上）。
-- 「玩家按『使用』／管理者按『確認』」的流程 → 作廢（使用者說有看使用紀錄就好，不用確認）。
-- 「集點狀況」表格 → 已改成卡片；使用紀錄移到第三個小分頁。
-- 「『我的桌遊』抽屜首頁有想玩清單／已玩清單入口列」→ 待改（見待辦 1），目前仍存在。
-
----
-
-## 2026-10-27 更新（以本節為準；與下方舊內容衝突時，以這裡為準）
-
-### 已完成（使用者回報已 push、已測試觸發器存在）
-- **集點卡與「我的桌遊」拆成兩個獨立抽屜**：`MyList.tsx` 新增 `mode: 'list' | 'loyalty'`（`list` 只有想玩／已玩；`loyalty` 只有集點卡）；`App.tsx` 新增 `myListMode`，邀請連結、報到完成、頂端「集點卡」都設為 `loyalty`，「我的桌遊」設為 `list`。`initialTab` 已移除。
-- **手機收藏標題列**：標題拿掉（不再顯示 MY COLLECTION／我的桌遊收藏），控制列佔滿整行；排序列手機版上下排列（`library.css` 最底部）。
-- **排序「重設」位置固定**：`SortControl.tsx` 的重設按鈕一直存在，預設時加 `is-hidden`（電腦版 `visibility: hidden`、手機版 `display: none`），升冪／降冪不再跑位。
-- **新報到規則**：
-  - 被列入出席名單的人**自動成為 VIP**（觸發器 `attendee_makes_vip`，掛在 `gathering_attendees` AFTER INSERT；`source='self'` 記為 `checkin`，其餘記為 `admin`）。取消出席不會取消 VIP。
-  - **報到流程不再有通關密碼**：Google 登入 → 填暱稱與聯絡方式 → 自動報到 → 評分（至少一款七項評完；以前評過／免評分／沒指定遊戲則略過）→ 集點卡。`CheckInDialog.tsx` 已移除 `VipJoinDialog`、`needVip`。
-  - **連結只在聚會當天（台北時間）有效，包含已報到的人**：`join_gathering` 的日期檢查移到最前面（`not_started`／`ended` 先於 `already`）。過期訊息：「這個連結已過期，只在聚會當天有效。如果你已經報到過，請直接按底部的『集點卡』。」已報到的人要看集點卡，直接按底部「集點卡」。
-  - `?card=日期` 連結仍支援，介面不提供。
-- **手動加入的玩家**：底部「集點卡」出現**紅點**（`lib/useTodayTask.ts`：今天有他的聚會、已指定遊戲、尚未得點才亮；切回網頁會重新讀取）；集點卡最上方出現「今天要做的事」卡片（`lc-today`），按鈕直接開該遊戲的評分分頁。已評過分者直接得點、沒有紅點。不做自動彈出評分。
-- **管理者聚會詳情順序改為**：① 指定遊戲 → ② 人數上限 → ③ 手動加入參加者 → ④ 聚會連結。④ 顯示「上限 N 人・手動加入 M 人・自己報到 K 人・連結還可報到 N−(M+K) 人」與「有效至當天 23:59」。建立連結前必須有一款遊戲＋人數上限（含手動加入的人）。
-- **舊聚會日（沒指定遊戲）的集點卡說明文字**：今天或未來且尚未得點時，顯示「你已經在這天的出席名單上。管理者還沒指定要評分的遊戲……」，不再顯示看不懂的「到遊戲的『我的桌遊』分頁新增」。
-
-### 作廢的舊說明
-- 「報到不再自動升 VIP、非 VIP 要輸入通關密碼」→ **作廢**，報到＝VIP。
-- 「已報到的人在聚會結束後再點連結會回 already、仍可打開集點卡」→ **作廢**。
-- `MyList` 三分頁（想玩／已玩／集點卡）→ **作廢**，已拆開。
-- 「底部導覽 5 顆減為 4 顆、拿掉頂端集點卡」的方案 → **不採用**；維持 4 顆：桌遊收藏、排行榜、集點卡、我的桌遊（管理者的第三顆是「⚙ 管理」）。AI 規則助手做好後再加第 5 顆。
-- 「VIP 鎖定 SQL」（restrictive 政策 `"vip only"`）仍未執行，之後的資格要改成「來過聚會的人自動有資格＋輸入密碼的人」，執行前先與使用者討論。
-
-### 風險提醒
-- 聚會連結傳進群組後，當天收到的人都能變成 VIP；唯一擋板是「人數上限」與「只有當天有效」，人數上限請照實際人數填。
-- 密碼機制（`redeem_vip_code`）保留，給沒參加聚會、但想加入的朋友。
-
-### 使用者決定
-- 左上角名稱先保留「桌遊規則助手」，AI 助手做好後再改成整體性名稱。
-- 左右滑動切換分頁：等 4～5 個頁面都獨立後再做。
-- 右上角改 Email 登入：先不做（寄信額度與費用）。
-- 「我的桌遊」之後要加：個人統計（總次數、總時數、最常玩）優先，其次近期／下次聚會想玩、想玩一鍵移到已玩。擁有／收納／借出先不做。
-
-### 待辦（接續順序）
-1. 視覺改版：5 個進階篩選（人數、時間上限、難度五級、新遊戲、評分狀態；「只看有封面」要先想怎麼判斷，不行就略過）→ 排行榜空狀態 → 集點卡頁面風格 → 管理者視窗統一風格 → 手機全面檢查。
-2. 「我的桌遊」抽屜頂端加摘要卡、未登入說明（見 QUICKSTART 舊方案，但不拿掉集點卡）。
-3. 個人統計。
-4. 規則書 PDF 上傳（私有 bucket）→ AI 規則助手（RAG）。
-5. PWA、VIP 朋友名單、推薦牆、拖曳調整排名。
-6. 已確認：`gathering_plays` 是否已 drop、`capacity` 是否 NOT NULL 的驗證結果使用者仍未貼。
-
-### 2026-10-27 下午補充
-- **5 個進階篩選已定案（使用者回「照建議」並貼了 `FilterDrawer.tsx`、`libraryTypes.ts`、`filter.css`）**：①「我們有幾個人」：`minPlayers ≤ N ≤ maxPlayers`；②時間「不超過 30／60／90／120 分鐘」；③**難度五級（使用者改，取代三段）：`<1.8`、`1.8～<2.6`、`2.6～<3.2`、`3.2～<3.8`、`≥3.8`**，缺值不屬於任何級；④只看新遊戲（30 天內）；⑤評分狀態「我評過／我還沒評」（登入且評分讀取完成才有意義）。「只看有封面」不做。新增條件要同步 `activeFilterCount`、`clearFilters`、`filteredGames` 的 useMemo 依賴、`missingDataCount`。
-- **這批是否已套用未知**：使用者要 AI「直接更新」，但聊天室額度用完前沒看到結果。**接手時先問**：`FilterDrawer.tsx`／`libraryTypes.ts`／`filter.css`／`App.tsx` 是否已改、是否已 push（`git status`、`git log`），不要假設。
-- **`privacy.html` 已於 2026-10-27 更新**：日期改為 10 月 27 日；VIP 資格含「被管理者加入出席名單、聚會連結報到會自動成為 VIP」；移除已不存在的「勾選自己玩了哪些遊戲」；集點卡改為依出席與評分計算。需 commit／push 才會上線。
-- 提醒：「VIP 鎖定 SQL」尚未執行；做的時候資格要含「來過聚會的人」。
-
-
----
-
-## 這是什麼
-
-使用者在做一個**公開給朋友瀏覽的桌遊收藏網站**「桌遊規則助手」，目前有 106 款桌遊，能搜尋、篩選、排序、看封面和評分。最終目標是讓大家能問 **AI 規則助手**，AI 要根據使用者上傳的規則書 PDF 回答，並標明出處與頁碼。
-
-- 線上網址：https://board-game-result-ai.vercel.app/（GitHub `master` 分支 → Vercel 自動部署）
-- 技術：React + TypeScript + Vite + **Supabase（資料庫、登入、檔案儲存，免費方案，首爾）**
-- 本機路徑：`D:\BoardGameResultAI`（Windows、PowerShell、用 `npm.cmd`）。使用者會在多台電腦作業，路徑可能不同，見 `PROJECT_CONTEXT.md` 第 11 節。
-- **程式結構**：`src/App.css` 是入口檔，只有 `@import`，依序載入 `src/styles/`：`base`、`topbar`、`hero`、`library`、`filter`、`cards`、`modal`、`admin`、`mylist`、`footer`、`trash`、`docs`，之後又加了 `backtotop`、`tabs`、`ratings`、`leaderboard`、`loyalty`、`loyalty-card`（集點卡印章風）、`loyalty-admin`（管理者視窗）、`account`（暱稱視窗、邀請橫幅、各視窗層級；**可覆蓋前面的樣式**）、`sitebar`（新頂端導覽列）；另外 `tokens`（設計變數）放在 `App.css` 最前面（**順序有影響，不要調換；實際清單以本機 `App.css` 為準**）。`src/App.tsx` 只留 `Library` 的狀態與篩選／排序邏輯，畫面拆成 `src/components/`：`TopBar`、`ViewToggle`、`FilterDrawer`、`GameCard`、`GameModal`、`MergeDialog`、`PersonalToast`、`TrashSection`、`CoverImage`、`StatusButtons`、`RatingDots`、`RatingSection`、`PlayCounter`、`PlaySessions`、`PersonalNote`、`DescriptionEditor`、`BackToTop`、`Leaderboard`（排行榜）、`CommunityStats`、`LoyaltyCard`（集點卡）、`CheckInDialog`（報到視窗）、`InAppBrowserNotice`（請改用瀏覽器開啟）、`Icons`；型別與工具在 `src/lib/`：`libraryTypes.ts`、`gameFormat.ts`、`fetchBoardGames.ts`、`personalApi.ts`、`useTrashActions.ts`、`usePersonalCollection.ts`、`useGamePlaySessions.ts`、`useGameRatings.ts`、`useGameDocuments.ts`、`useCommunityStats.ts`、`leaderboards.ts`、`useLoyalty.ts`、`saveDescription.ts`、`useIsAdmin.ts`、`useSession.ts`、`useInviteLink.ts`（集點卡邀請連結）、`useCheckinLink.ts`（聚會報到連結）、`googleLogin.ts`（所有 Google 登入入口，偵測 LINE 等內建瀏覽器）、`uploadCover.ts`、`parseCsv.ts`、`supabase.ts`。另有 `AdminPanel.tsx`、`PlayerPanel.tsx`、`MyList.tsx`（畫面上叫「我的桌遊」）、`LoyaltyAdmin.tsx`（管理者「聚會與集點」視窗）、`GameDocuments.tsx`。
-- 桌遊資料存在 Supabase 的 `board_games` 資料表；網站讀取失敗時才退回本機 `boardGames.generated.ts`。
-- 資料更新流程：Notion 匯出 CSV → 網站頁尾登入管理者 →「匯入 CSV」→ 預覽 →「確認匯入」。
-
-## 使用者是誰、怎麼合作
-
-- **程式初學者**，繁體中文。
-- **使用者已明確說過：預設他會照步驟執行，不用每一步都確認；可以一次給最多 4 個步驟（實務上 8 步左右他也照做）；遇到問題他會自己停下來問；他回「好」就代表沒問題、可以繼續。**（舊版「一次只給一個步驟」已作廢。）
-- 會影響資料、隱私的設計決策，仍先提方案並列出「建議預設值」，讓他回「照建議」或指定修改，再動工。
-- 給法：明確檔案、`Ctrl + F` 搜尋位置、完整程式碼、測試步驟；每批結尾給測試清單與 `git add` 指令。
-- **每個指令都要標清楚在哪裡執行**：PowerShell 指令貼 VS Code 終端機；SQL 貼 Supabase SQL Editor。他曾把 PowerShell 指令貼進 SQL Editor 而報錯（2026-10-25）。
-- 你**碰不到**他的檔案，也**收不到** CSV。要資訊就給 PowerShell／SQL 指令，請他貼結果或截圖。
-- **大改 `App.tsx`、`AdminPanel.tsx`、`PlayerPanel.tsx`、`GameDocuments.tsx` 或 `src/components/` 底下的檔案前，先請他貼目前版本**，不要憑舊版覆蓋。樣式分散在 `src/styles/`，改哪塊先確認在哪個檔案。他曾把程式貼到錯的檔案，給步驟時要寫清楚檔名。
-- **他貼來的檔案可能是舊版**（2026-10-24 他貼了舊的整份 `App.css`）。判斷現況前，先用 `git status`、`git log`、`Get-Content ... | Select-Object -First 15` 這類指令確認實際狀態，不要憑貼來的內容就說「已改好」或「還沒改」。
-- 改完 `npm.cmd run build` 並實測。不要破壞 106 款資料和現有功能。不要揭露「綜合分數排名」的計算方式。
+> 最後更新：2026-10-28（第八批：兩份文件已去重合併）。
+> **分工**：本檔＝現況、使用者新需求、待辦、合作規則；`PROJECT_CONTEXT.md`＝架構、資料庫、功能規則、規則助手設計（兩檔內容不重複）。
+> 若與舊版或聊天內容衝突，以本檔為準。
+
+## 1. 這是什麼
+
+- 使用者在做**公開給朋友瀏覽的桌遊收藏網站「桌遊規則助手」**，目前 **106 款**。長期目標：VIP 能查規則書（RAG：只根據檢索到的片段、附頁碼）。
+- 網址 https://board-game-result-ai.vercel.app/（GitHub `master` → Vercel 自動部署）。React + TypeScript + Vite + Supabase（免費方案，首爾）。
+- 本機 `D:\BoardGameResultAI`（Windows、PowerShell、`npm.cmd`）；規則書 PDF 放 `D:\rulebooks\`（專案外，避免 Vite EBUSY）。多台電腦見 PROJECT_CONTEXT 第 10 節。
+
+## 2. 目前狀態（2026-10-28）
+
+- **git**：`HEAD = origin/master = 53f824c`，工作目錄乾淨，第七批全部已 push。
+- **規則助手第七批（已上線）**：檢索 SQL（`search_rulebook_chunks`、`rulebook_search_remaining`、`rulebook_has_index`、`rulebook_indexed_games`）；獨立頁面 `RulebookPage.tsx`＋`RulebookAssistant.tsx`（先選遊戲、中文問題自動建議英文關鍵字、英文搜尋框、結果含頁碼、兩個複製提示詞按鈕）；導覽列第 5 顆「✦ 規則助手」（僅 VIP／管理者）；`lib/zhEnGlossary.ts`（約 40 組中英對照）；`lib/useBackClose.ts`（手機返回只關視窗，目前只套用 `GameModal`、`RulebookPage`）；`GameDocuments.tsx` 合併新增連結與上傳 PDF 為單一表單；詳細視窗固定大小；強制淺色模式。
+- 已測試上傳 3 份英文規則書（Ayar 20 頁、Bable 12 頁、天際礦脈 `rules-en` 32 頁），皆 `completed`。`rules-en` 語言已改 `en`（使用者已執行 SQL，回「Success」；可用 `select title, language from public.game_documents where title='rules-en';` 再確認）。
+- 使用者已做過一輪手機實測（含 LINE 截圖），結果見下節。
+
+## 3. 使用者新需求（2026-10-28 手機實測後提出，全部尚未動工；請保留）
+
+| # | 需求（使用者原話意思） | 分析／建議做法 |
+|---|---|---|
+| N1 | 希望**在管理中心上傳規則** | 即原「第 2 批」：管理中心加「規則書」分頁（細節見第 4 節） |
+| N2 | **畫面底部怪怪的，往上滑會漏底** | 與舊的未解問題同一件：詳細視窗與底部導覽下方露出約 76px 遊戲卡片內容（`tabs.css` 手機版 `.game-modal.has-tabs{height:100dvh}`、`.modal-backdrop{padding:0}` 看起來都對，CSS 看不出原因）。使用者新傳的截圖檔名 `S__*.jpg` 疑似 LINE 內建瀏覽器。**要查**：是否 LINE／Safari 的網址列收合造成 `dvh` 與實際高度不一致、遮罩未蓋滿。方向：遮罩改 `position:fixed; inset:0` 並用 `100lvh`／`-webkit-fill-available`、視窗開啟時鎖住 body 捲動（`overflow:hidden`＋`overscroll-behavior:contain`）、底部導覽加 `env(safe-area-inset-bottom)`。**請使用者說明是用什麼開的（LINE／Safari／Chrome／主畫面），並貼 `tabs.css`、`base.css` 相關段落** |
+| N3 | **iPhone 右滑（返回）從排行榜／集點卡／我的桌遊會回到登入畫面，不是首頁**（使用者推測可能是之前登入的動作） | 推測原因：①這些抽屜沒有 push history，右滑直接退回上一個歷史（Google 登入頁）；②OAuth 登入後的網址／歷史沒清。做法：把 `useBackClose` 擴到**所有抽屜與頁面**（排行榜、集點卡、我的桌遊、規則助手、管理中心、進階篩選、統計表、暱稱視窗），開啟時 `pushState`、返回時關閉；登入完成後用 `history.replaceState` 清掉網址參數，避免回到登入頁。實測：iPhone Safari 右滑、Android 返回鍵、LINE |
+| N4 | **底部五顆按鈕不必先回主畫面才能點下一個** | 目前點一顆會開抽屜／頁面，要先關才能點別顆。改為單一 `activePage` 狀態：點另一顆時**直接取代**目前的抽屜（先關舊的再開新的），再點同一顆＝關閉；底部導覽要高於抽屜（或抽屜不遮住導覽）。改 `App.tsx`、`TopBar.tsx`（請使用者貼目前版本） |
+| N5 | **主畫面使用者設定的篩選模式要能儲存**，不用每次重新按自己的模式 | 把篩選狀態（類型、進階篩選、「我的紀錄」眼睛與分區模式、排序）存 `localStorage`（鍵例如 `boardgame-filters`），開啟時還原，「清除篩選」才重設；檢視模式本來就有存（`boardgame-view-mode`）。**待問使用者**：指的是「我的紀錄」三顆眼睛＋分區模式，還是全部篩選？AI 建議全部都存。登入玩家可日後考慮同步雲端（先不做） |
+| N6 | **搜到的英文片段能不能用 Google／瀏覽器內建翻譯？** | **可以，不需要付費 API。** 建議：每段結果加「翻譯」按鈕，開新分頁 `https://translate.google.com/?sl=en&tl=zh-TW&text=<編碼後片段>&op=translate`（片段最長 800 字，網址夠用）；結果區文字設 `lang="en"` 並保持可選取，讓 Safari／Chrome 的「選取文字→翻譯」可用（**瀏覽器內建整頁翻譯對「單一區塊」不可靠，不保證**）；另提供「複製片段」。**提醒**：按翻譯會把片段送到 Google，與「複製提示詞給外部 AI」同樣要在按鈕旁說明，不可宣稱資料仍留在本站（授權疑慮見 PROJECT_CONTEXT 第 7 節）。不做自動翻譯 API（費用與額度未查證） |
+
+## 4. 待辦順序（一次一批，上一批實測完才進下一批）
+
+0. **先問**：使用者目前在哪台電腦、`git pull`／`git status`；N2 的截圖是用什麼開的。
+1. **第 2 批（對應 N1）管理中心「規則書」分頁**：一次選多個 PDF；每列從檔名猜遊戲（比對 `bggName` 與中文名）、類型（檔名含 faq／errata，否則規則書）、語言（有中文字猜 `zh`，否則 `en`）；猜不到顯示「請選擇遊戲」，下拉可搜尋；確認後逐檔上傳，顯示進度與失敗原因，失敗不影響其他檔；詳細視窗「規則」分頁拿掉上傳，只留貼連結與清單。`useGameDocuments` 要改成可指定任意 `bggName`（目前綁單一遊戲）。要改 `AdminCenter.tsx`（已看過）、`useGameDocuments.ts`、`GameDocuments.tsx`（**請使用者貼目前版本**）。
+2. **手機操作批（N2＋N3＋N4）**：底部漏底、返回鍵擴到所有抽屜、五顆導覽直接切換；一起改一批、一起實測。
+3. **N5 篩選記憶**、**N6 翻譯按鈕**（可併入規則助手小改）。
+4. **第 3 批「我的俱樂部」與詳細視窗「我的桌遊」整合**：已玩清單每列可改次數（改 `play_count`＝沒日期的次數，已確認不會重複計算）；詳細視窗「我的桌遊」分頁拿掉想玩／已玩按鈕與遊玩次數，保留「記錄一次遊玩」、最近紀錄、備註；備註改名「我的整體心得」；單次心得沿用 `game_play_sessions.note`；不動資料庫。改 `MyList.tsx`、`PlayCounter.tsx`、`GameModal.tsx`。
+5. **`privacy.html` 補「規則助手搜尋紀錄」**（用途、保留 7 天、只存使用者與遊戲與時間、不存問題內容；若做 N6 也要說明片段會送往 Google）。**在讓朋友實際使用規則助手前做完。**
+6. 中英檢索測試集與命中率評估：使用者挑熟悉的規則書各 5～8 題、標頁碼；中文 PDF 擷取品質（亂碼、被塞空格）尚未測；必要時加每款遊戲專有名詞對照表（管理中心維護）或評估語意搜尋／翻譯 API（兩者都**未查證**）。
+7. 其餘：手機底部 5 顆若擠，把「✦ 規則助手」縮成「規則」；「更新版本」按鈕、章節標題（`section_title` 目前空）、OCR；管理者視窗統一風格；PWA（缺圖示）；VIP 朋友名單（函式 `get_vip_friends` 已建、UI 未做）；推薦牆；站上拖曳調整排名＋匯出 CSV（使用者說晚點再試，細節 PROJECT_CONTEXT 第 9 節）；VIP 鎖定 SQL（資格要含來過聚會的人，執行前先討論）。
+
+## 5. 尚未驗證／小項（有機會就問）
+
+- 第七批手機實測剩餘項目：底部 5 顆是否擠、返回鍵（Android／iPhone Safari／LINE）、詳細視窗大小一致、非 VIP 帳號看不到「規則助手」、VIP 帳號搜尋與剩餘次數。
+- 掃描型 PDF 是否正確報 `NO_TEXT`；訪客／一般會員是否看不到上傳文件（前端已過濾，未親眼確認）。
+- `furuyoni`（旭日戰魂錄）規則書是**日文**，表單只有中文／英文，第一版不收日文。
+- 20 款清單與規則書統計表（遊戲、幾份 PDF、語言、MB／頁數、能否選取文字）仍未提供。PowerShell 量大小：`Get-ChildItem D:\rulebooks -Filter *.pdf | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB,1)}}`。
+- 驗證社群平均是否含管理者那一票（有 5 位以上玩家評分的遊戲，評分數應含管理者；未滿 5 人仍顯示「評分累積中」）。
+- 「獨特性／快速性」是否也改成「度」（使用者尚未回覆）。
+- `to_regclass('public.gathering_plays')` 應為 null；`select bgg_name, cover_slug from public.board_games where cover_slug !~ '^[a-z0-9_-]+$';` 應 0 列（`makeCoverSlug` 新版是否已套用並重新匯入未確認）。
+- 管理中心「近期聚會依月份分組」是否符合使用者說的「新增月份」；`MemberAdmin.tsx` 在手機是否仍擠壓（沒看過檔案，需要時請使用者貼）。
+- 手機完整報到流程（登入→暱稱→自動報到→評分→集點卡）尚未實測，等下次聚會或用另一個 Google 帳號測。
+- 聚會連結 `&openExternalBrowser=1` 在 LINE 的行為：使用者實測過報到流程「沒有問題」。
+
+## 6. 使用者的決定（不要推翻）
+
+- **規則助手＝零生成式 AI API 費用**：只做「檢索＋複製提示詞給使用者自己的 AI」；不申請 API 金鑰；只給 VIP／管理者；不做 `is_active` 開關（索引成功自動啟用，要下架就刪文件）；網站內容用「另存成 PDF 再上傳」；搜尋紀錄保留 7 天、台北時間 0 點重置每日額度（VIP 30 次、管理者不限）；紀錄不存問題內容；只有找到結果才扣次數；規則書授權風險由使用者自行評估（AI 已提醒「能從 BGG 下載不等於有權再上傳與擷取」，非法律意見）。
+- 站名先保留「桌遊規則助手」；左右滑動切換分頁：等頁面都獨立後再做；右上角 Email 登入：先不做（寄信額度與費用）；現場 4 位數報到碼：先不做；「我的桌遊」不做擁有／收納／借出。
+- 遊戲簡介補寫：使用者說太耗時，晚點。
+- 管理者 CSV 分數算進社群評分（當一位評分者）；遊戲卡片顯示「綜合分數」＝700 − `score_rank`。
+- 評分用語統一用「度」：影響度、溝通度、變化度（只改畫面文字；`parseCsv.ts` 的 CSV 欄名如 `溝通性`、`玩家影響性`、`複雜性`、`變化性` 是使用者 Notion 欄名，**絕對不能改**）。
+
+## 7. 與使用者合作的規則（重要）
+
+- 使用者是**程式初學者**，繁體中文；預設會照步驟執行，可一次給最多 4～8 個步驟；回「好」＝完成（不一定貼測試結果，重要項目要再問）；遇到問題會自己停下來問；在 claude.ai 免費額度下工作，**聊天室容易中斷**，接手時**先問實際狀態，不要假設上一則回覆已完成**。
+- 影響資料、隱私的設計決策：先提方案並列「建議預設值」，等他回「照建議」再動工。一次一批。
+- 給法：明確檔案、`Ctrl + F` 搜尋位置、完整程式碼、測試步驟；**量大就給整份檔案**（他多次貼錯位置，也曾把 `adminScores` 貼進 `TrashSection` 而非 `GameModal`，要寫清楚元件與標籤）；每批結尾給測試清單與 `git add` 指令。
+- **每個指令標清楚貼在哪裡**：PowerShell 指令貼 VS Code 終端機；SQL 貼 Supabase SQL Editor（他曾貼錯）。
+- 你**碰不到**他的檔案、也收不到 CSV；要資訊就給 PowerShell／SQL 指令請他貼結果或截圖。**他貼的檔案可能是舊版**，先用 `git status`、`git log`、`Get-Content ... | Select-Object -First 15` 確認；改 `App.tsx`、`AdminPanel.tsx`、`PlayerPanel.tsx`、`GameDocuments.tsx`、`src/components/*` 前先請他貼目前版本。樣式分散在 `src/styles/`，改外觀前先 `Select-String -Path src\styles\*.css -Pattern "\.類別名"` 找 class 在哪。
+- 改完 `npm.cmd run build` 並實測；不要破壞 106 款資料與現有功能；**不要揭露「綜合分數排名」的計算方式**。
 - **不要叫他貼密碼、Secret／service_role key、Google Client Secret。**
-- push 前先 `git status`，**逐檔 `git add`，不要 `git add .`**。**請他用命令列 commit，不要在 TortoiseGit 用 Amend／修改上一次提交**（已發生過一次，見 `PROJECT_CONTEXT.md` 第 2 節）。
-- 不要 add 的雜項：`新增 文字文件.txt`、`trash-step/`、`App.css.bak`、其他 `.zip`、解壓殘留資料夾；`PROJECT_CONTEXT.md`、`QUICKSTART.md` 只在使用者要求時才 commit（2026-10-26 他要求過一次）；`boardgames.csv` 若顯示 deleted，不要 commit（`git restore boardgames.csv`）。
+- push 前 `git status`，**逐檔 `git add`，不要 `git add .`**；請他用命令列 commit，**不要在 TortoiseGit 用 Amend**。不要 add：`新增 文字文件.txt`、`trash-step/`、`App.css.bak`、其他 `.zip`、解壓殘留資料夾、`boardgames.csv`（顯示 deleted 時 `git restore boardgames.csv`）、`client_secret_*.json`；`PROJECT_CONTEXT.md`、`QUICKSTART.md` 只在使用者要求時才 commit。
+- 他一次傳多張手機截圖時，看完後**整理成一批**修改，效率最好。不要把 CSS 交給別的工具壓縮（Gemini 壓縮過，已 `git restore` 還原）。
+- 終端機中文亂碼只是顯示問題；`git diff` 出現 `(END)` 按 `q`；LF/CRLF 警告可忽略。
 
-## 已完成
+## 8. 開場前先確認
 
-- 搜尋、篩選抽屜、類型篩選、缺資料提示、排序、檢視模式切換（清單／4／9）、精簡詳細視窗。
-- 資料搬到 Supabase 並已上線；管理者 Email＋密碼登入；網站匯入 CSV（含附封面圖；CSV 沒有的遊戲**移到垃圾桶**）、上傳／更換封面、規則書與 FAQ 外部連結（`game_documents`）。
-- **✅ Phase 1｜管理權限與資料安全**：`admin_users` ＋ `is_admin()`；`board_games`、`game_documents`、Storage `covers` 的寫入政策全部只認管理者。**登入不等於管理者。**
-- **✅ Phase 2｜玩家 Google 登入與暱稱**：`player_profiles`（暱稱公開、不含 Email）、`src/PlayerPanel.tsx`、`public/privacy.html`。Google OAuth 已發布為正式版、只用基本範圍。
-- **✅ Phase 3｜想玩／已玩／備註與雲端同步**：`public.user_game_status`（主鍵 `(user_id, bgg_name)`、`want_to_play`、`played`、`note` ≤500 字、`want_first_at`／`played_first_at` 由觸發器只在第一次勾選時寫入、`play_count` 0～999）。RLS 只允許本人；**刻意不對 `board_games` 加外鍵**。訪客存 `localStorage`，登入後以雲端為準，首次登入有合併視窗。
-- **✅ 拆檔（2026-10-23）**、**✅ `App.css` 入口檔（2026-10-24）**。
-- **✅ 垃圾桶**：所有人看得到，只有管理者能移入、還原、永久刪除；`removed_at`、`removed_reason`（移入時填原因、可「編輯原因」）。資料庫不改政策。
-- **✅ 回到頂端按鈕**（`BackToTop.tsx`）。
-- **✅ 遊玩紀錄** `game_play_sessions`：總次數＝`play_count`（沒日期的次數）＋有日期的紀錄筆數。
-- **✅ Phase 4 公開評分（資料庫＋前端皆完成）**：整體 1～10（必填）、適合留下來 1～5（必填）、其餘五項選填；未滿 5 人顯示「評分累積中」，門檻在資料庫函式 `get_rating_summaries()` 判斷；個別評分只有本人看得到。
-- **✅ 詳細視窗四分頁**（概覽／評分／我的桌遊／規則）、**遊戲簡介**（管理者可編輯，CSV 欄「簡介」選填）、**中文介紹與影片連結**（`doc_type` 加 `intro`、`video`；影片 `ai_indexed` 永遠不可為 true）。
-- **✅ 社群統計**（2026-10-25 使用者回報已 commit、push）：`useCommunityStats`，每款顯示想玩／已玩人數與月／季／年期間新增，只回傳彙總。
-- **✅ 排行榜**（四個榜：想玩、已玩、整體評分、適合留下來）：2026-10-25 晚使用者上傳的 `TopBar.tsx` 已含「排行榜」按鈕，代表已套用到本機；**commit／push 是否完成、窄螢幕按鈕是否擠在一起尚未確認**（用 `git log --oneline -5` 與 `git status` 查）。
-- **✅ 集點卡 v2（2026-10-25～26，已 commit、push）**：管理者頂端「聚會與集點」視窗（兩個分頁：聚會設定／集點狀況）；每個聚會日指定當天遊戲（`gathering_games`）；玩家在集點卡勾「我玩了」（`gathering_plays`）並評分（已被深夜新規則取代），沒有指定遊戲的舊聚會日沿用舊規則；以前評分過的遊戲不用重評；印章風集點卡（`LoyaltyCard.tsx`＋`loyalty-card.css`）。
-- **✅ 免評分例外**：`gathering_attendees.exempt`，管理者可對出席者按「免評分」，該天直接算 1 點（`loyalty_day_status` 已改）；只有管理者能 UPDATE（RLS 政策 `admin update attendees`）。
-- **✅ 集點卡邀請連結**：管理者在聚會詳情按「🔗 複製集點卡連結」→ `https://網址/?card=日期`；玩家點開後（`useInviteLink.ts`）已登入就自動打開「我的桌遊→集點卡」並標出那一天；未登入頂端出現登入橫幅。**目前只有被管理者列入出席名單的人才看得到那天的紀錄。**
-- **✅ 評分過／勾「我玩了」→ 自動標「已玩」**：資料庫觸發器 `mark_played_from_activity()`（掛在 `game_ratings`、`gathering_plays`），已補過舊資料；前端已即時更新（App.tsx effect）。
-- **✅ 玩家登出選單**：暱稱 ▾ →「修改暱稱與聯絡方式／登出」；頂端列固定在最上方（管理者的登出在頂端列）。
-- **✅ 聯絡方式（LINE／FB 名字）**：獨立資料表 `player_contacts`（只有本人和管理者可讀，anon 無權限，已驗證）；玩家第一次登入或尚未填寫時會跳出設定視窗（必填、可「稍後再說」）；管理者的聚會視窗與集點狀況表會顯示聯絡方式。
-- **✅ 管理者聚會視窗**：改成俱樂部風格；出席者以頭像標籤呈現；新增「搜尋玩家」（可用暱稱或 LINE／FB 名字搜尋）。
-- **✅ 自助報到（2026-10-26，使用者已測試通過；之後改成「單一聚會連結」，見「進行中」1）**：管理者在聚會詳情按「建立報到連結」→ 開關「開放報到」、人數上限（留空＝不限）已改為必填）、複製 `?join=隨機碼` 連結、重設連結；出席名單標示「自己報到」。玩家點連結→（未登入先登入）→ `CheckInDialog`「我來了」→ 呼叫資料庫函式 `join_gathering(p_token)`（security definer，檢查：登入、token 有效、已報到則回 already、開放中、**台北時間聚會當天**、有暱稱、有聯絡方式、未額滿；鎖住該場聚會防止超額）→ 成功後打開集點卡並標出那一天。資料表 `gathering_checkins`（只有管理者可讀寫，anon 無權限）；`gathering_attendees.source`（admin／self）。管理者手動加入超過上限會先跳確認。前端：`src/lib/useCheckinLink.ts`、`src/components/CheckInDialog.tsx`、`LoyaltyAdmin.tsx`、`App.tsx`。
-- **✅ `privacy.html` 已補**：排行榜、集點卡、聯絡方式（聯絡方式那句請確認已 commit）。
-- **✅ VIP／管理中心／同日多場／排行榜名單（2026-10-26）**：見 `PROJECT_CONTEXT.md` 第 12 節。管理者導覽只有一顆「⚙ 管理」（成員與 VIP／聚會與集點／資料匯入）；建立連結前必填遊戲與人數上限（LoyaltyAdmin 用 UI 驗證，未呼叫 admin_create_gathering；2026-10-26 查過該函式**不存在**，可忽略）；集點卡改成 1～4 步驟；排行榜可展開名單，並有「📊 統計表」（VIP 看遊戲總表，管理者另有成員×遊戲矩陣與 CSV）。
-- **✅ 2026-10-26 深夜（以 git log 為準）**：統計表打開時暫時隱藏排行榜抽屜（避免被蓋住）；統計表矩陣可依玩家、遊戲篩選；管理者可刪除成員帳號（`admin_delete_member`，要輸入暱稱確認，不能刪管理者）；`privacy.html` 已更新（VIP 名單、管理者可見內容、報到、帳號刪除）；回到頂端按鈕在手機避開底部導覽（760px 斷點、64px）；`supabase.ts` 明確設定 `persistSession`／`autoRefreshToken`／`navigator.storage.persist()`；VIP 密碼視窗層級修正（`.vip-join-backdrop` z-index 1300，原本被「我的桌遊」抽屜 1200 蓋住）。
-
-## 進行中（開場先問使用者）
-
-1. **報到流程已改版（2026-10-26 深夜，需實測）**：點連結→Google 登入→填暱稱與聯絡方式→**自動報到**（`CheckInDialog` 開啟即呼叫 `join_gathering`）→**已沒有通關密碼**（報到＝自動成為 VIP，2026-10-27 起）→**評分步驟不可跳過**（至少一款當天指定遊戲七項評完才能前往集點卡；以前評過分、被標免評分、沒有指定遊戲則自動略過）→集點卡。沒有「我玩了」勾選，收到連結並報到＝當天有來。
-2. **集點新規則**（`loyalty_day_status` 已改）：出席，且當天指定遊戲**任一款評分完整（七項）**就得 1 點；免評分直接得點；沒指定遊戲的舊聚會日沿用舊規則（用遊玩紀錄日期）。評分可在家補、可修改。
-3. **管理者規則**：聚會**一定要先指定至少一款遊戲＋填人數上限**才能建立／複製連結；上限**不可留空**（`gathering_checkins.capacity` 已設 NOT NULL，今天那場補成 6），隨時可改；已有連結的場次至少保留一款遊戲。
-4. **已移除 `gathering_plays`（「我玩了」資料表）**：`useLoyalty.ts`、`LoyaltyCard.tsx` 已清掉；資料庫已 `drop table`。`admin_delete_member` 已同步拿掉對它的刪除。
-5. **VIP 鎖定 SQL 仍未執行**（見舊說明：6 張表加 `restrictive` 政策 `"vip only"` ＋改 `get_rating_summaries()`），要等朋友都輸入密碼後才做；退路 `drop policy "vip only" on public.表名;`。
-- **待辦**：⓪ **（2026-10-26 深夜已確認 git 已 push、三個函式存在、LINE 實測沒問題；以下僅剩兩項驗證結果未收到：`to_regclass('public.gathering_plays')` 是否為 null、`capacity` 是否 NOT NULL）原清單**：新版 `admin_delete_member` 與 `drop table public.gathering_plays cascade` 是否已執行（驗證：`select to_regclass('public.gathering_plays');` 應為 null）；`gathering_checkins.capacity` 的 NOT NULL 是否已設；`useLoyalty.ts`／`LoyaltyCard.tsx` 清理版與 `CheckInDialog` 的 `needVip` 修正是否已 push；用 `james-test` 試刪帳號是否成功。①手機實測（非 LINE 瀏覽器）完整報到流程；LINE 內開連結的行為；同一天兩場的集點卡 ②PWA：`public/manifest.webmanifest`、`icons/icon-192.png`／`icon-512.png`、`index.html` 的 manifest／theme-color／apple-touch-icon 三行**尚未做（缺圖示）** ③VIP 朋友名單畫面（函式 `get_vip_friends` 已建、UI 未做）、推薦牆 ④可選：報到成功時自動補一筆當天的遊玩紀錄（拿掉「我玩了」後不再自動補）⑤視覺改版（首頁、遊戲卡片、集點卡獨立頁）。
-
-
-## 視覺改版進度（2026-10-26 深夜，第二階段進行中）
-
-**已確認狀態**：`git log` 顯示報到／集點新規則相關提交都已 push（最新 `cce279b`），工作樹乾淨；LINE 內開連結、報到流程使用者回報「沒有問題」；資料庫函式 `admin_delete_member`、`join_gathering`、`loyalty_day_status` 存在，**`admin_create_gathering` 不存在**（前端本來就沒用，可忽略）。`gathering_plays` 已移除與 `capacity` NOT NULL 的驗證結果使用者尚未貼。
-
-**首頁（已提供給使用者，使用者貼回的截圖顯示已套用）**
-- 決定：**收藏清單是首頁主角**，不做「最新加入」區塊（卡片已有 NEW）、**不做「最受歡迎」**（指標未定義）。主視覺縮成一條：左「今天，想玩哪一款？」、右搜尋框，下面一排類型膠囊（`hero.css` 整份換新、`library.css`／`cards.css`／`base.css` 小改，改用 `tokens.css` 變數）。
-- **類型膠囊 `components/CategoryChips.tsx`**：前三個固定**策略、派對、陣營**（主體），之後是已選的副類型，再來「更多類型 ▾」（跳出視窗，可搜尋、多選、AND 規則不變）、「清除類型」。數字是該類型遊戲總數。視窗用 `createPortal`，`.cat-backdrop` z-index 1100。樣式在 `hero.css` 最後面。
-- **排序 `components/SortControl.tsx`**：排序下拉＋升降冪＋「重設」搬到收藏標題列（`library.css` 最後面），不用開抽屜。
-- **`FilterDrawer.tsx` 已瘦身為「進階篩選」**：只剩難度、最佳／推薦人數、時間、我的紀錄；類型區與排序已拿掉（`App.tsx` 同步刪掉 `categorySearch`、`isSubCategoryOpen`、`categories`，`FilterDrawerProps` 不再有 `categories`、`selectedCategories`、`sortBy` 等）。`filter.css` 裡舊的 `.category-chip`／`.category-sub-toggle`／`.category-search` 沒人用，留著無害。
-- 標題列按鈕要從「☰ 篩選與排序」改成 **「☰ 更多篩選」**，並在 `filter.css` 補抽屜靠左樣式（使用者截圖顯示按鈕還沒改，**開場先確認**）。
-- 使用者的 `tokens.css` 現有變數：`--c-cream/paper/forest/forest-dark/caramel/ink/ink-soft/line/danger`、`--radius-s/m/l`、`--shadow-s/m`、`--z-bar/--z-modal`。
-
-**使用者回覆「1 2 3 4 5」＝下一批新增 5 個進階篩選全部都做（尚未動工）**，只用現有資料、不動資料庫：
-1. **「我們有幾個人」**：條件 `minPlayers ≤ N ≤ maxPlayers`（原本的最佳／推薦人數保留）。
-2. **遊戲時間「不超過 X 分鐘」**快速鈕：30／60／90／120。
-3. **難度五級（2026-10-27 使用者改）**：`<1.8`、`1.8～<2.6`、`2.6～<3.2`、`3.2～<3.8`、`≥3.8`，缺值不屬於任何級。五顆膠囊。
-4. **只看新遊戲（30 天內）／只看有封面**（封面是否存在需用 `CoverImage` 的載入結果，**要先想清楚怎麼判斷**，不行就只做「新遊戲」）。
-5. **我的紀錄加「有評分／沒評分」**（用 `ratings.getMine`，登入且評分讀取完成才有意義）。
-新增條件要同步：`activeFilterCount`、`clearFilters`、`filteredGames` 的 useMemo 依賴、`missingDataCount`（如有用到難度／時間）。
-
-**「我的桌遊」抽屜與頂端「集點卡」重複（使用者提出，已拿到 `MyList.tsx`、`mylist.css`、`LoyaltyCard.tsx`，尚未動工）**：已提出方案：拿掉頂端與手機底部導覽的「集點卡」（`TopBar.tsx` 的 `onOpenLoyalty`、`App.tsx` 的 `openMyLoyalty` 與 `inviteKey` 邏輯保留給報到／邀請連結用），只留「我的桌遊」；抽屜頂端加「我的俱樂部」摘要卡（暱稱、VIP 標示、想玩／已玩數、本月點數；點數資料來自 `useMyLoyalty()` 的 `summary`，只有 VIP 才有）；未登入時改成說明登入後能同步什麼、VIP 多什麼，附登入按鈕（用 `signInWithGoogle()`）；想玩／已玩為空時顯示說明與「去逛收藏」按鈕；管理者不顯示集點卡。手機底部導覽由 5 顆減為 4 顆。**使用者尚未回「照建議」**。
-
-**之後的視覺順序**：我的桌遊抽屜 → 排行榜空狀態（說明「為什麼是空的」：沒資料／未滿 5 人／未登入）→ 集點卡獨立頁面 → 管理者視窗統一風格 → 手機全面檢查（遊戲卡片手機版不要硬塞 4／9 欄，檢視模式與實際欄數分開）。
-
-## 想做清單（使用者 2026-10-24 提出，尚未排序）
-
-詳細內容與原話整理在 `PROJECT_CONTEXT.md` 第 9 節。重點：
-- 小功能：新增排序（待確認排什麼；使用者說先跳過）。
-- 「我的桌遊」升級：近期／下次聚會想玩、想玩一鍵移到已玩、依加入時間／排名／時間排序、統計（總次數、總時數、最常玩、每月趨勢）。
-- 集點卡：**v2 已上線**（見「已完成」與 `PROJECT_CONTEXT.md` 第 7 節）。原始需求（完整評分七項、管理者指定參加者、同月 2 點換免費券、一天只算一點、管理者看全部、玩家只看自己）仍有效；**不建議用藍牙／區網偵測**。
-- 揪團與聚會規劃（第三階段）、「今天想玩什麼？」依人數／時間／難度推薦（用現有資料即可，不需 AI）。
-- 訪客紀錄不會跨瀏覽器（只在該瀏覽器的 `localStorage`）；登入 Google 才會雲端同步。
-- **站上拖曳調整排名＋匯出 CSV 給 Notion（使用者說「晚點再嘗試」，尚未動工）**：管理者專用；6 個排名欄位都已在資料庫，不需改資料庫（對照表見 `PROJECT_CONTEXT.md` 第 9 節）；「綜合分數排名」仍由 Notion 算；**使用者尚未回「照建議」**。
-- **AI 規則助手必須用 RAG（使用者明確要求）**：只根據檢索到的規則書片段回答，列出出處（哪本、第幾頁）；找不到依據要明說。**不可從影片查規則**；只讀 `ai_indexed = true` 的文件。見 `PROJECT_CONTEXT.md` 第 6、9 節。
-- 遊戲簡介補寫：使用者說太耗時，晚點再寫。
-
-## 下一步（照順序）
-
-**一次一階段，前一階段測試完才進下一階段。**
-
-1. （已完成）報到流程確認：git 已 push、LINE 實測沒問題。
-2. **視覺改版第二階段（見上方「視覺改版進度」）**：先確認「☰ 更多篩選」改名已套用 → 做 5 個新增篩選（使用者已回「1 2 3 4 5」）→ （「我的桌遊」與集點卡已拆成兩個抽屜，不拿掉集點卡）→ 排行榜空狀態 → 集點卡獨立頁面 → 管理者視窗統一風格 → 手機全面檢查。
-3. 站上拖曳調整排名；排序功能。
-4. 上傳規則書 PDF（**私有** bucket）→ **AI 規則助手（RAG，最重要的長期目標）**→ 揪團／行事曆、帳號刪除流程。順序請與使用者確認。
-5. 詳細視窗的「AI 查詢」分頁等 AI 規則助手做出來再加。
-
-**接續時請這樣開場：**
-1. 問使用者在哪台電腦，`git pull`、`git status`。
-2. 先處理「進行中」的確認。**不要假設上一則回覆的步驟已完成**（聊天室額度曾中斷過數次）。
-3. 新資料表的 RLS 寫入政策**一律用 `auth.uid()` 等於本人，或 `is_admin()`**；改 `App.tsx` 前請他貼目前版本（他貼來的可能是舊版）。
-
-## CSV 匯入的行為（重要）
-
-- 流程：upsert → 上傳封面 → 把「資料庫正常、CSV 沒有」的遊戲**移到垃圾桶**（設 `removed_at`）。**不刪資料列、不刪 Storage 封面。**
-- 預覽分三類：①會移到垃圾桶（紅字名單）；②CSV 有、但目前在垃圾桶（資料會更新、**仍留在垃圾桶**，不自動還原）；③垃圾桶裡本來就有、CSV 也沒有（維持原狀）。想改成自動還原，在 `AdminPanel.tsx` 的 `toRow` 加 `removed_at: null`。
-- 保護：一次移到垃圾桶超過 5 款，要輸入「移除」。
-- CSV「簡介」欄選填：沒有該欄或空白，不覆蓋資料庫原有簡介；CSV 無法清空簡介。
-- 永久刪除（含雲端封面）只在垃圾桶區由管理者手動做；**封面刪除後無法復原**。
-- 地雷：在 Notion 改 `bggName` → 舊的進垃圾桶、新的當新遊戲（封面要重傳）；新舊 `cover_slug` 相同會撞唯一限制。
-- 玩家的想玩／已玩／評分紀錄以 `bgg_name` 對應，**CSV 改 `bggName` 會讓玩家對那款的紀錄失聯**。
-- `makeCoverSlug` 已改為 ASCII 安全版（見 `PROJECT_CONTEXT.md` 第 4 節）；**是否已套用並重新匯入、`cover_slug !~ '^[a-z0-9_-]+$'` 查詢是否為 0 列，尚未確認**。
-- 下次匯入 CSV 後，請使用者執行 `select bgg_name, created_at from public.board_games order by created_at desc limit 5;`，確認舊遊戲的 `created_at` 沒被重設；若被重設，要調整匯入程式。
-
-## 關鍵決定與地雷
-
-- **公開瀏覽、只有管理者能編輯；訪客可以問 AI 但不能改設定。** AI 開放給訪客會花錢，之後要做每日提問次數限制，AI 金鑰只能放後端。
-- Supabase：Project URL 是**根網址** `https://hgeuockbjrzayfdylavq.supabase.co`（不加 `/rest/v1/`）。只有 Publishable key 可放前端。
-- **「Allow new users to sign up」已開啟**，所以所有寫入政策必須只認管理者或本人。新增任何資料表或 bucket 都要重新檢查政策。
-- **Google 的 Client Secret 只存在 Supabase**，絕不放進 Git、前端、Vercel 環境變數或對話。`client_secret_*.json` 要移出專案資料夾並加進 `.gitignore`。
-- 管理者帳號的 Gmail 若同時用 Google 登入，會對到同一個管理者帳號；測玩家身分要用另一個 Google 帳號。建議管理者的 Google 帳號開啟兩步驟驗證。
-- Google OAuth 只用基本範圍；**不要在「資料存取權」新增敏感或受限範圍**，否則會觸發驗證與使用者人數限制（100 位）。人數接近 80 人時回 Google Auth Platform「目標對象」頁面確認。
-- **不採用匿名帳號**。改採「訪客存 `localStorage`＋登入玩家才能評分」。
-- **社群設計決定（使用者）**：不做留言板；評分一律公開；評分項目沿用使用者的用語：喜歡度、玩家影響性（**不要改名成「玩家互動」**）、溝通性、變化性、獨特性、適合留下來程度。複雜度與快速性視為遊戲屬性，不列入評分。社群平均與使用者自己的 Emoji 評價並排顯示，但**不要與「綜合分數排名」混在一起或揭露其算法**。個人想玩／已玩預設只有本人可見，社群只看彙總。排行榜只用彙總，不顯示個別玩家。
-- **不加「讚」按鈕**。
-- `privacy.html` 日後新增功能（評分、遊玩次數、社群統計、排行榜、集點）時要同步更新。帳號刪除：管理者在「管理 → 成員」按「刪除帳號」（admin_delete_member，輸入暱稱確認）。
-- Vercel 的 `VITE_SUPABASE_URL`、`VITE_SUPABASE_PUBLISHABLE_KEY` 必須存成 **Config**（不是 Secret），名稱不能錯。本機 `.env.local` 不在 Git 裡，換電腦要重建。
-- Supabase 免費專案閒置一週會暫停；檔案儲存免費額度約 1 GB。
-- 資料庫主鍵是 `bgg_name`；前端 `id` 只是流水號，**絕對不能用來對應圖片或使用者資料**。
-- 缺值保留 `null`，顯示「未提供」，不要編造。
-- 上線網站只看得到有 push 的檔案；改資料庫內容、上傳封面、跑 SQL **不需要 push**。
-- 瀏覽器 Console 裡大量封面 404 是正常的。匯入 CSV 或上傳封面後，要重新整理網頁才會看到最新資料。
-- `BoardGame` 型別仍由 `src/data/boardGames.generated.ts` 匯出，**不要刪這個檔案**。
-- Brevo 帳號已註冊但目前沒用到。
-- 垃圾桶 0 款時整區隱藏是設計如此，不是壞掉。
-- **Storage 檔名必須是 ASCII**（見 `PROJECT_CONTEXT.md` 第 4 節）。
-- **次數定義**：`play_count`＝沒日期的次數，總次數＝它＋遊玩紀錄筆數；不要混為一個數字存回資料庫。
-- **新建資料表一律加**：`revoke truncate, references, trigger on 表名 from authenticated;`，並確認 `anon` 無權限。
-- **給使用者改程式碼時**：量大就給整份檔案，不要只寫「貼在某行下面」（他多次貼錯位置）。
-- 排序功能：使用者說之後再想，尚未定義。
-
-- **聯絡方式（LINE／FB 名字）是敏感資料**：只放 `player_contacts`，**不可放進公開的 `player_profiles`**；只有本人與管理者能讀。排行榜、社群統計、任何公開畫面都不可顯示。
-- **頂端列（`.topbar`）不可加 `backdrop-filter`、`transform`、`filter`**：會讓裡面 `position: fixed` 的視窗遮罩被關在頂端列裡（暱稱視窗只露出一條，2026-10-26 發生過）。會彈出的視窗一律用 `createPortal(..., document.body)`，`.modal-backdrop` 的 z-index 是 1100（高於頂端列 900）。
-- 集點資格由資料庫函式 `loyalty_day_status` 判斷（`exempt` 或「出席＋當天指定遊戲任一款評分完整」）；`gathering_attendees` 的 INSERT／DELETE／UPDATE 只有管理者；玩家不能自己改出席或免評分。
-- 評分過就視為已玩（觸發器，只掛在 game_ratings）；取消不會取消已玩。
-- 管理者聚會視窗的玩家清單來自 `player_profiles`，聯絡方式來自 `player_contacts`（管理者才讀得到）。
-
-- **連結（2026-10-26 起合併成一個）**：管理者只傳 `?join=隨機碼` 的聚會連結（報到＋集點卡）；`?card=日期` 仍支援但介面已不提供。`?card=日期`（集點卡連結）只是「登入後打開我的集點卡並標出那天」的捷徑，**不會讓任何人變成出席者**；`?join=隨機碼`（報到連結）才會把玩家列入出席名單，受開關、當天、上限限制，隨機碼只有管理者讀得到。已報到的人在聚會結束後再點連結也會回 `ended`（已過期），要看集點卡請按底部「集點卡」（2026-10-27 改）。報到＝自動成為 VIP（2026-10-27 改，見最上方更新）；連結只在聚會當天有效。
-- **玩家只能透過 `join_gathering` 自己加入出席名單**；`gathering_attendees` 的寫入政策仍只有管理者。
-- **集點是即時計算，不會因為匯入新 CSV 而消失**：`loyalty_day_status` 只用 `gathering_attendees`、`gathering_games`、`game_play_sessions`、`game_ratings`（皆以 `bgg_name` 文字對應，沒有外鍵到 `board_games`），不讀 `board_games`。遊戲被移到垃圾桶或永久刪除，點數不變；但畫面上該遊戲的名稱會退回顯示 `bgg_name`、且找不到「去評分」按鈕。**真正的風險是在 Notion 改 `bggName`**（舊名稱的紀錄不會跟著換）。兌換紀錄永久保留，點數事後變少時只會顯示 ⚠。
-- **VIP 密碼不可放前端**，驗證只在資料庫函式 `redeem_vip_code`（每帳號 15 分鐘錯 3 次鎖、全站錯 10 次全鎖；管理者可在成員頁解鎖）。**AI 規則助手只給 VIP**，且必須 RAG＋列出處（書名＋頁碼）。**不做 Email 驗證登入**（怕寄信額度與費用），只用 Google；一般登入按鈕不強制選帳號，「切換 Google 帳號」在暱稱選單。
-- 名單隱私：預設只顯示人數；VIP 展開只看暱稱（玩家可在暱稱選單關閉，`player_profiles.hide_in_lists`）；管理者看「暱稱（LINE／FB）」且不受隱藏影響；評分者名單只有管理者。LINE／FB 名字永不給 VIP。
-- 管理者不顯示集點卡。同一天不管幾場只算 1 點（`loyalty_day_status` 已改成依日期分組）。
-
-## 開場前先確認
-
-1. 使用者現在在哪台電腦；分支應為 `master`，先 `git pull`。
-2. `git status`：雜項檔不要 add（見上方清單）；`client_secret_*.json` 不應出現在專案資料夾。
-3. 確認「進行中」的實際狀態，再往下做。
-4. 若要改 `src/App.tsx`、`src/components/*`、`src/AdminPanel.tsx`、`src/PlayerPanel.tsx`、`src/GameDocuments.tsx`，請他貼出目前版本。
+1. 使用者在哪台電腦；分支 `master`；先 `git pull`、`git status`、`git log --oneline -8`。
+2. 確認第 3、5 節的實際狀態，不要假設。
+3. 新資料表的寫入政策一律 `auth.uid()` 等於本人或 `is_admin()`；新建資料表要 `revoke truncate, references, trigger ... from authenticated` 並確認 `anon` 無權限。
