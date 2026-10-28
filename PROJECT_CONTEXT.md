@@ -1,7 +1,77 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案交接文件（精簡版）
 
 > 給接手的 AI 閱讀。**請先讀 `QUICKSTART.md`（懶人包），再讀本文件。**
-> 最後更新：2026-10-27 深夜（最上方先看「2026-10-27 深夜（第五批）更新」，再看「2026-10-27 深夜（第四批）更新」，再看「2026-10-27 深夜（第三批）更新」，再看「2026-10-27 深夜（第二批）更新」，再看「2026-10-27 深夜更新（第一批）」，再看「2026-10-27 傍晚更新」，其次是「2026-10-27 更新」一節，優先閱讀；以下主體為 2026-10-26 深夜版）。這一版把已完成的功能整理成「依主題」的紀錄（取代舊的 A～Q 附錄），內容與決定不變；日期與細節若與 `QUICKSTART.md` 衝突，以 `QUICKSTART.md` 為準。
+> 最後更新：2026-10-28（最上方先看『第七批更新』），再看2026-10-28（最上方先看『第六批更新』），再看2026-10-27 深夜（最上方先看「2026-10-27 深夜（第五批）更新」，再看「2026-10-27 深夜（第四批）更新」，再看「2026-10-27 深夜（第三批）更新」，再看「2026-10-27 深夜（第二批）更新」，再看「2026-10-27 深夜更新（第一批）」，再看「2026-10-27 傍晚更新」，其次是「2026-10-27 更新」一節，優先閱讀；以下主體為 2026-10-26 深夜版）。這一版把已完成的功能整理成「依主題」的紀錄（取代舊的 A～Q 附錄），內容與決定不變；日期與細節若與 `QUICKSTART.md` 衝突，以 `QUICKSTART.md` 為準。
+
+## 2026-10-28（第七批）更新（最新；與下方任何舊內容衝突時，以本節為準）
+
+### 已完成
+- 階段 4 檢索 SQL 已執行並驗證權限（anon 無權限）：`search_rulebook_chunks(p_bgg_name, p_query)`（VIP 驗證、台北時間每日 30 次、管理者不限、只有找到結果才扣次數、順便刪 7 天前紀錄、英文全文檢索 OR 比對、最多 5 段）、`rulebook_search_remaining()`、`rulebook_has_index(p_bgg_name)`、`rulebook_indexed_games()`（列出有索引文件的遊戲，VIP 才有結果）。
+- 規則書資料夾已搬到 `D:\rulebooks\`（專案外，避免 Vite EBUSY）。階段 3 與深色模式修正已 commit。
+- `GameDocuments.tsx`：新增連結與上傳 PDF 合併為單一「新增文件」表單（類型為規則書／FAQ／勘誤時可選「上傳 PDF」）。
+- **規則助手獨立成頁面**（不再是詳細視窗分頁）：`RulebookPage.tsx`（先選遊戲，只列有索引的遊戲，可搜尋）＋`RulebookAssistant.tsx`（中文問題、建議英文關鍵字、英文搜尋框、結果含頁碼、兩個複製提示詞按鈕）。導覽列第 5 顆「✦ 規則助手」，只有 VIP／管理者看得到（後端仍驗證 `is_vip()`）。
+- `lib/zhEnGlossary.ts`：內建通用中英對照（約 40 組詞，含旭日戰魂錄「茶會」→ tea ceremony），中文問題自動建議英文關鍵字；搜尋框只接受英文，純中文不會搜尋也不扣次數。
+- `lib/useBackClose.ts`：開啟視窗時手機「返回」只關視窗；目前套用在 `GameModal`、`RulebookPage`，✕ 保留。**尚未擴到其他抽屜**。
+- 詳細視窗固定大小（`vip.css` 最底：`.game-modal.has-tabs` 寬 460、高 `min(720px, 100dvh-40px)`，手機全螢幕）。
+
+### 使用者決定／想法（尚未動工）
+- **第 2 批：管理中心加「規則書」分頁**：一次選多個 PDF；每列從檔名猜遊戲（比對 `bggName` 與中文名）、類型（檔名含 faq／errata）、語言（有中文字猜中文，否則英文）；猜不到就「請選擇遊戲」，下拉可搜尋；全部確認後逐檔上傳、顯示進度與失敗原因，失敗不影響其他檔；詳細視窗「規則」分頁拿掉上傳，只留貼連結與清單。`useGameDocuments` 需改成可指定任意 `bggName`（目前綁單一遊戲）。要改 `AdminCenter.tsx`（已看過）。
+- **第 3 批：「我的俱樂部」與詳細視窗「我的桌遊」整合**：已玩清單每列可改次數（改「沒日期的次數」`play_count`，已確認它就是沒日期的歷史次數，不會重複計算）；詳細視窗「我的桌遊」分頁拿掉想玩／已玩按鈕與遊玩次數，保留「記錄一次遊玩」、最近紀錄與備註；備註改名「我的整體心得」；單次心得沿用 `game_play_sessions.note`；不動資料庫。要改 `MyList.tsx`、`PlayCounter.tsx`、`GameModal.tsx`。
+- 手機底部導覽現在 5 顆，若擠就把「規則助手」縮短為「規則」。
+- 每款遊戲專有名詞對照表（管理中心維護）：之後再做。
+
+### 尚未驗證／待處理（接手先問）
+1. 這批是否已 build、commit、push（`git log`）。`TopBar.tsx` 是否已加 `onOpenRules`、`canUseRules`；`App.tsx` 是否已加 `RulebookPage`。
+2. 手機實測：底部 5 顆是否擠、返回鍵是否只關視窗（Android／iPhone Safari／LINE）、詳細視窗大小是否一致。
+3. 用非 VIP 帳號確認看不到「規則助手」；用 VIP 帳號實測搜尋與剩餘次數。
+4. 中文 PDF 擷取品質、`rules-en` 語言是否已改 `en`、建立中英檢索測試集（使用者要挑熟悉的規則書各 5～8 題，標頁碼）仍待做。
+5. `privacy.html` 尚未補「規則助手搜尋紀錄」說明（用途、保留 7 天、只存使用者與遊戲與時間、不存問題內容）。
+6. 20 款清單與規則書統計表仍未提供。
+
+### 下一步
+第 2 批（管理中心批次上傳）→ 第 3 批（我的俱樂部整合）→ `privacy.html` → 手機返回鍵擴到其他抽屜 → 檢索測試集與命中率評估（必要時加每款遊戲對照表或查證語意搜尋／免費翻譯 API，兩者都未查證）。
+
+---
+
+## 2026-10-28（第六批）更新（最新；與下方任何舊內容衝突時，以本節為準；第四、五批的方向仍有效，但被本節修正的地方以本節為準）
+
+### 使用者決定（覆蓋第五批）
+- **不做 `is_active` 啟用／停用開關**：索引成功後自動啟用，系統把 `ai_indexed` 設為 true 當「可被搜尋」標記；要下架就刪文件（切塊 cascade 刪除，前端刪除按鈕會一併刪 Storage 的 PDF）。
+- 使用者會放：規則書（中英文）、FAQ（多為英文）、中文規則網站。**網站內容用「另存成 PDF 再上傳」**（Chrome：Ctrl+P → 另存為 PDF → 取消頁首頁尾）。不做自動抓網頁。
+- **搜尋紀錄保留 7 天**；**不啟用 pg_cron**，改在搜尋函式內順便清掉 7 天前的紀錄。**每日額度以台北時間凌晨 0 點重置**（VIP 每日 30 次、管理者不限）。
+- 新表沿用 `bgg_name` 與文件 `id`；**`rulebook_chunks` 只存 `document_id`，不存 `bgg_name`**（靠 `game_documents` 對應，改名不會失聯）。
+- **CSV 不需要新增任何欄位**；文件在網站管理者介面上傳，與 CSV 無關。在 Notion 改 `bggName` 的地雷照舊。
+- 規則書授權：使用者決定不設開關、一律啟用；AI 已提醒「能從 BGG 下載不等於有權再上傳與擷取」，**這不是法律意見**，風險由使用者自行評估；第一版只回傳最多 5 段短片段，不提供下載。
+
+### 已完成（階段 2 第一部分，SQL 已執行並驗證）
+- `game_documents` 新增欄位：`index_status`（`none／pending／processing／completed／failed`，預設 none）、`index_error_code`、`page_count`、`edition`、`file_hash`、`source_note`（≤200 字）、`indexed_version`（預設 0）；新增約束：只有 `rulebook／faq／errata` 可 `ai_indexed = true`。
+- 新表 `rulebook_chunks`（`document_id` 外鍵 cascade、`index_version`、`chunk_index`、`page_number`、`section_title`、`content`；RLS 開啟、**anon 與 authenticated 完全沒有直接權限**）、`rulebook_search_log`（只存 `user_id`、`bgg_name`、`created_at`，不存問題內容；RLS 開啟、無直接權限）。
+- 私有 bucket `rulebooks`（限 `application/pdf`、50 MB、只有管理者可讀寫，四條政策 `rulebooks admin read/insert/update/delete`）。
+- 函式（security definer、`search_path=''`、anon 無權限、authenticated 可執行但內部檢查 `is_admin()`）：`admin_replace_rulebook_chunks(p_document uuid, p_chunks jsonb, p_page_count int, p_file_hash text)`（寫入新版本切塊，成功才切換 `indexed_version`、設 `ai_indexed = true`、`index_status = 'completed'`、刪舊版；同一交易）、`admin_mark_rulebook_failed(p_document uuid, p_code text)`。
+- 六項驗證查詢使用者都貼了截圖，全部符合預期。
+
+### 已完成（階段 3：管理者上傳與文字擷取；使用者已 build、實測）
+- 已安裝 `pdfjs-dist`。新增 `src/lib/extractPdfText.ts`（瀏覽器端擷取、同一頁內切段、每段最多 800 字、不跨頁、中日文之間不補空格、掃描 PDF 回 `NO_TEXT`、最多 3000 段、算 SHA-256）；改 `src/lib/useGameDocuments.ts`（新增 `uploadDoc`：先擷取，成功才上傳 PDF 到 `rulebooks/{docId}.pdf`，再 insert 文件列，再呼叫 `admin_replace_rulebook_chunks`；任何一步失敗都復原文件列與檔案；`deleteDoc` 對上傳文件會先刪 Storage 檔）；改 `src/GameDocuments.tsx`（管理者看得到上傳表單與索引狀態；**非管理者只看到外部連結**）。`GameModal.tsx` 沒改。
+- **pdf.js 新版 API 注意**：結束時要呼叫 `loadingTask.destroy()`，不是 `pdf.destroy()`（會 build 失敗）。
+- 實測：上傳 `Ayar_rulebook`（en，20 頁）、`Bable-English`（en，12 頁）、`rules-en`（天際礦脈資料夾，32 頁）都 `completed`，`indexed_version = 1`；英文預覽乾淨、頁碼正確；未登入開 `.../storage/v1/object/public/rulebooks/<檔名>.pdf` 回 `Bucket not found`（原檔不公開）。
+
+### 尚未驗證／待處理（接手先問）
+1. **這批程式（`package.json`、`package-lock.json`、`src/lib/extractPdfText.ts`、`src/lib/useGameDocuments.ts`、`src/GameDocuments.tsx`）是否已 commit、push 未確認**；用 `git status`、`git log` 查。逐檔 add，不要 `git add .`。
+2. **中文 PDF 的擷取品質尚未測**（有無亂碼、是否被塞空格）；`天際礦脈_水印.pdf` 當時還在下載。上傳後用這兩個查詢看：
+   - `select d.title, d.language, d.index_status, d.ai_indexed, d.page_count, d.indexed_version, count(c.id) as chunks from public.game_documents d left join public.rulebook_chunks c on c.document_id = d.id and c.index_version = d.indexed_version where d.source_type = 'upload' group by d.id;`
+   - `select page_number, left(content, 150) as preview from public.rulebook_chunks order by id limit 15;`
+3. **`rules-en` 的語言被設成 `zh`**，疑似選錯；已建議 `update public.game_documents set language = 'en' where title = 'rules-en';`，是否已執行未確認。
+4. 還沒測：掃描型 PDF 是否正確報 `NO_TEXT`；訪客／一般會員是否看不到上傳文件（前端已過濾，但沒親眼確認）。
+5. **使用者的規則書資料夾在專案內**（`D:\BoardGameResultAI\rulebook\ayar`、`bable`、`skymines`、`新幕桜降る代に決闘を 基本セット`），Vite 監看出現 `EBUSY` 錯誤；已建議搬到 `D:\rulebooks\` 或在 `.gitignore` 加 `rulebook/`，是否做了未確認。`furuyoni` 是**日文**，表單只有中文／英文，第一版不收日文。
+6. 20 款清單、規則書統計表仍未提供；實際只上傳了 3 份測試。
+
+### 下一步
+- **階段 4：檢索**。①用真實規則書比較中文檢索方式（`pgroonga` 與 `pg_trgm`，兩者都可用但都未啟用；`zhparser` 不在清單；英文可用內建全文檢索）；**目前不啟用任何擴充**。②**跨語言問題尚未解決**：使用者用中文提問，但多數規則書與 FAQ 是英文，中文關鍵字比不到英文內文；候選做法：使用者輸入英文術語、為每款遊戲維護中英術語對照、之後評估語意搜尋（向量，需 embedding，有費用與依賴考量），請先與使用者討論再動工。③寫 `search_rulebook_chunks(p_bgg_name text, p_query text)`：驗證 `is_vip()` → 用 advisory lock 鎖該使用者 → 檢查今日台北時間次數（VIP 30、管理者不限）→ 只搜該遊戲 `ai_indexed = true` 且 `index_status = 'completed'` 的文件、且 `index_version = indexed_version` 的切塊 → 最多 5 段並限制長度 → **只有找到結果才寫入 `rulebook_search_log`**（無結果、錯誤、超額都不扣）→ 順便刪 7 天前紀錄；`revoke ... from public, anon`，只 grant authenticated。④建立中英文檢索測試集（20～50 題，人工標註正確段落，看是否出現在前 5 筆）。
+- **階段 5**：詳細視窗第 5 分頁「規則助手」（只給 VIP／管理者、且該遊戲有索引完成的文件才顯示）、顯示片段與頁碼、一鍵複製提示詞（說明會送到使用者自選的外部 AI）、`privacy.html` 補搜尋紀錄說明（用途、7 天保留、只有必要流程寫入）。需先請使用者貼最新的 `GameModal.tsx` 等檔案。
+- 之後再做：「更新版本」按鈕（`admin_replace_rulebook_chunks` 已支援新版成功才切換）、章節標題（`section_title` 目前為空）、OCR。
+- 第三批待辦 2（驗證社群平均含管理者那一票）、第二批小項、手機報到流程實測仍有效。
+
+---
 
 ## 2026-10-27 深夜（第五批）更新（最新；與下方任何舊內容衝突時，以本節為準；「第四批」的方向與分階段計畫仍有效，本節是補充與修正）
 
