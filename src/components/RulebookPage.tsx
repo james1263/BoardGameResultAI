@@ -88,7 +88,6 @@ export default function RulebookPage({
             </p>
           ) : (
             <>
-              <p className="ra-hint">選一款遊戲，再搜尋它的規則書（只列有規則書索引的遊戲）。</p>
               <input
                 className="ra-search"
                 type="search"

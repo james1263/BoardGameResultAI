@@ -5,6 +5,7 @@ import {
     type RulebookChunk,
 } from '../lib/useRulebookSearch'
 import { hasChinese, suggestKeywords } from '../lib/zhEnGlossary'
+import InfoHint from './InfoHint'
 
 async function copyText(text: string): Promise<boolean> {
     try {
@@ -153,12 +154,11 @@ ${parts}`
 
     return (
         <div className="ra">
-            <p className="ra-hint">
-                這是規則書段落檢索，不是 AI 回答。找到的原文會附上頁碼，可複製給你自己的 AI 整理成中文。
-            </p>
-
             <label className="ra-field">
-                <span>中文問題</span>
+                <span>
+                    中文問題
+                    <InfoHint text="這是規則書段落檢索，不是 AI 回答。找到的原文會附上頁碼，可複製給你自己的 AI 整理成中文。" />
+                </span>
                 <textarea
                     rows={2}
                     value={question}
@@ -171,7 +171,7 @@ ${parts}`
                 <div className="ra-suggest">
                     {suggestions.length === 0 ? (
                         <p className="ra-notice">
-                            內建對照表找不到對應的英文詞，請按下方「複製英文搜尋提示詞」請你的 AI 轉換。
+                            內建對照表沒有對應的英文詞，可按下方「複製英文搜尋提示詞」請你的 AI 轉換。
                         </p>
                     ) : (
                         <>
@@ -275,7 +275,7 @@ ${parts}`
                         })}
                     </ul>
                     <p className="ra-notice">
-                        按「翻譯成繁體中文」會開新分頁，並把這段英文傳送到 Google 翻譯。請勿翻譯包含個人或機密資訊的內容。
+                        按「翻譯成繁體中文」會把這段英文傳到 Google 翻譯，請勿翻譯個人或機密內容。
                     </p>
                     <button className="ra-btn" type="button" onClick={copyAnswerPrompt}>
                         複製給 AI 的提示詞（含問題與片段）

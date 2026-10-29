@@ -187,15 +187,10 @@ export default function MyGatherings({
                 <p className="mylist-empty">
                   {isAdmin
                     ? '還沒有任何聚會。'
-                    : '還沒有出席過的聚會。用聚會連結報到，或由管理者把你加入名單後，這裡就會出現。'}
+                    : '還沒有出席過的聚會。'}
                 </p>
               ) : (
                 <>
-                  <p className="mg-muted">
-                    {isAdmin
-                      ? '你是管理者，這裡列出全部場次，最新的在最上面。'
-                      : '只列出你出席過的場次，最新的在最上面。'}
-                  </p>
                   {groups.map((group, index) => {
                     const open = isMonthOpen(group.key, index)
                     return (
@@ -322,11 +317,6 @@ export default function MyGatherings({
                         })}
                       </ul>
                     )}
-                    <p className="mg-muted">
-                      {isAdmin
-                        ? '你是管理者，看得到聯絡方式與報到來源；其他人看不到。'
-                        : '選擇隱藏暱稱的玩家會顯示為「匿名玩家」。'}
-                    </p>
                   </details>
 
                   {noteGames.length === 0 ? (
@@ -353,7 +343,7 @@ export default function MyGatherings({
                   )}
                   {!isAdmin && noteGames.length > 0 && (
                     <p className="mg-muted">
-                      沒看到你玩的遊戲？請聯絡管理者把它加進當天指定遊戲，才能記錄這場的心得。
+                      沒看到遊戲？請管理者把它加進當天指定遊戲。
                     </p>
                   )}
                 </>

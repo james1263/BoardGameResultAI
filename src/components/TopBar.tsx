@@ -55,7 +55,6 @@ export default function TopBar({
           </span>
           <span className="sb-brand-text">
             <strong>桌遊規則助手</strong>
-            <small>BOARD GAME COMPANION</small>
           </span>
         </a>
 
@@ -121,7 +120,7 @@ export default function TopBar({
             <span className="sb-ico" aria-hidden="true">
               ♥
             </span>
-            <span>我的桌遊</span>
+            <span>俱樂部</span>
             {myListCount > 0 && <span className="sb-count">{myListCount}</span>}
           </button>
           {showJoinVip && (

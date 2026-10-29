@@ -58,7 +58,6 @@ import CoverImage from './components/CoverImage'
 import TopBar, { type NavPage } from './components/TopBar'
 import { useBackClose } from './lib/useBackClose'
 import { loadFilters, saveFilters } from './lib/filterStorage'
-import ViewToggle from './components/ViewToggle'
 import FilterDrawer from './components/FilterDrawer'
 import GameCard from './components/GameCard'
 import GameModal from './components/GameModal'
@@ -748,7 +747,6 @@ function Library({
         <section className="hero">
           <div className="hero-inner">
             <div className="hero-copy">
-              <p className="eyebrow">YOUR BOARD GAME LIBRARY</p>
               <h1>
                 今天，想玩<span>哪一款？</span>
               </h1>
@@ -762,7 +760,18 @@ function Library({
                 onChange={(event) => setSearchText(event.target.value)}
                 aria-label="搜尋桌遊名稱"
               />
-              <span className="search-hint">搜尋</span>
+              <button
+                type="button"
+                className="search-filter-btn"
+                aria-label="更多篩選"
+                onClick={() => setIsFilterOpen(true)}
+              >
+                <span aria-hidden="true">☰</span>
+                <span>篩選</span>
+                {activeFilterCount > 0 && (
+                  <span className="filter-badge">{activeFilterCount}</span>
+                )}
+              </button>
             </label>
           </div>
           <CategoryChips
@@ -777,9 +786,6 @@ function Library({
         <section className="library">
           <div className="section-heading">
             <div className="heading-actions">
-              <span className="game-count">
-                顯示 {displayedGameCount} / {boardGames.length} 款
-              </span>
               <SortControl
                 sortBy={sortBy}
                 setSortBy={setSortBy}
@@ -791,17 +797,13 @@ function Library({
                 }
                 onReset={resetSort}
               />
-              <ViewToggle viewMode={viewMode} onChange={changeViewMode} />
-              <button
-                className="filter-toggle-button"
-                type="button"
-                onClick={() => setIsFilterOpen(true)}
-              >
-                ☰ 更多篩選
-                {activeFilterCount > 0 && (
-                  <span className="filter-badge">{activeFilterCount}</span>
-                )}
-              </button>
+              {(searchText !== '' ||
+                activeFilterCount > 0 ||
+                selectedCategories.length > 0) && (
+                <span className="game-count">
+                  顯示 {displayedGameCount} / {boardGames.length} 款
+                </span>
+              )}
             </div>
           </div>
 
@@ -811,6 +813,8 @@ function Library({
             displayedGameCount={displayedGameCount}
             clearDisabled={searchText === '' && activeFilterCount === 0}
             onClear={clearFilters}
+            viewMode={viewMode}
+            onViewModeChange={changeViewMode}
             playerCounts={playerCounts}
             groupSizes={groupSizes}
             groupSize={groupSize}
@@ -842,9 +846,6 @@ function Library({
             </span>
             <span>
               <CheckIcon /> 已玩
-            </span>
-            <span className="status-legend-tip">
-              點封面右下角的圖示即可標記；登入後可跨裝置保存
             </span>
           </p>
           {missingDataCount > 0 && (

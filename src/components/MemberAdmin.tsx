@@ -17,10 +17,18 @@ const SOURCE_LABEL: Record<string, string> = {
     admin: '管理者授予',
 }
 
+type MemberFilter = 'all' | 'vip' | 'normal'
+const FILTER_ORDER: MemberFilter[] = ['all', 'vip', 'normal']
+const FILTER_LABEL: Record<MemberFilter, string> = {
+    all: '全部',
+    vip: 'VIP',
+    normal: '一般',
+}
+
 export default function MemberAdmin() {
     const [members, setMembers] = useState<Member[]>([])
     const [search, setSearch] = useState('')
-    const [filter, setFilter] = useState<'all' | 'vip' | 'normal'>('all')
+    const [filter, setFilter] = useState<MemberFilter>('all')
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState('')
     const [busyId, setBusyId] = useState<string | null>(null)
@@ -142,21 +150,28 @@ export default function MemberAdmin() {
                 已設定暱稱的玩家 {members.length} 位，其中 VIP {vipCount} 位。
             </p>
 
-            <div className="ma-tools">
+            <div className="cls-searchbox">
                 <input
                     type="search"
+                    className="cls-search-input"
                     placeholder="搜尋暱稱或 LINE／FB 名字"
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                 />
-                <select
-                    value={filter}
-                    onChange={(event) => setFilter(event.target.value as typeof filter)}
+                <button
+                    type="button"
+                    className={`search-filter-btn ${filter !== 'all' ? 'on' : ''}`}
+                    aria-label={`篩選：${FILTER_LABEL[filter]}，點一下切換`}
+                    onClick={() =>
+                        setFilter(
+                            (current) =>
+                                FILTER_ORDER[(FILTER_ORDER.indexOf(current) + 1) % FILTER_ORDER.length],
+                        )
+                    }
                 >
-                    <option value="all">全部</option>
-                    <option value="vip">只看 VIP</option>
-                    <option value="normal">只看一般會員</option>
-                </select>
+                    <span aria-hidden="true">☰</span>
+                    <span>{FILTER_LABEL[filter]}</span>
+                </button>
             </div>
 
             {message && <p className="pd-error">{message}</p>}

@@ -12,8 +12,11 @@ import {
   type MineGroup,
   type NumericFilter,
   type RatingFilter,
+  type ViewMode,
 } from '../lib/libraryTypes'
 import { EyeIcon } from './Icons'
+import InfoHint from './InfoHint'
+import ViewToggle from './ViewToggle'
 
 function NumberSelect({
   label,
@@ -52,6 +55,8 @@ export type FilterDrawerProps = {
   displayedGameCount: number
   clearDisabled: boolean
   onClear: () => void
+  viewMode: ViewMode
+  onViewModeChange: (mode: ViewMode) => void
 
   playerCounts: number[]
   groupSizes: number[]
@@ -127,7 +132,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
         <section className="filter-panel" aria-label="桌遊進階篩選">
           <div className="filter-heading">
             <div>
-              <p className="eyebrow">FIND YOUR GAME</p>
               <h3>進階篩選</h3>
             </div>
             <button
@@ -141,8 +145,17 @@ export default function FilterDrawer(props: FilterDrawerProps) {
           </div>
           <div className="filter-group">
             <div className="filter-group-title">
-              <span>我們有幾個人？</span>
-              <span className="filter-group-hint">可選區間，例如 3～5 人</span>
+              <span>檢視方式</span>
+            </div>
+            <ViewToggle viewMode={props.viewMode} onChange={props.onViewModeChange} />
+          </div>
+
+          <div className="filter-group">
+            <div className="filter-group-title">
+              <span>
+                我們有幾個人？
+                <InfoHint text="可選區間，例如 3～5 人。只列出整個人數區間都玩得起來的遊戲；只選一邊，就是剛好這個人數。" />
+              </span>
             </div>
             <div className="filter-range">
               <NumberSelect
@@ -161,9 +174,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
                 onChange={props.setGroupSizeMax}
               />
             </div>
-            <p className="filter-group-hint">
-              只列出整個人數區間都玩得起來的遊戲；只選一邊，就是剛好這個人數。
-            </p>
           </div>
 
           <div className="filter-grid filter-grid-spaced">
@@ -183,8 +193,10 @@ export default function FilterDrawer(props: FilterDrawerProps) {
 
           <div className="filter-group">
             <div className="filter-group-title">
-              <span>遊戲時間</span>
-              <span className="filter-group-hint">不超過幾分鐘（再按一次取消）</span>
+              <span>
+                遊戲時間
+                <InfoHint text="不超過幾分鐘；再按一次可取消。" />
+              </span>
             </div>
             <div className="filter-pills">
               {TIME_LIMITS.map((limit) => {
@@ -206,8 +218,10 @@ export default function FilterDrawer(props: FilterDrawerProps) {
 
           <div className="filter-group">
             <div className="filter-group-title">
-              <span>BGG 難度</span>
-              <span className="filter-group-hint">可複選</span>
+              <span>
+                BGG 難度
+                <InfoHint text="可複選。" />
+              </span>
             </div>
             <div className="filter-pills filter-pills-5">
               {DIFFICULTY_LEVELS.map((level) => {
@@ -240,12 +254,12 @@ export default function FilterDrawer(props: FilterDrawerProps) {
             </label>
           </div>
 
-          <p className="drawer-tip">桌遊類型請在首頁上方的膠囊選擇。</p>
-
           <div className="mine-filter">
             <div className="category-heading">
-              <span>我的紀錄</span>
-              <span className="category-hint">按眼睛可隱藏該類遊戲</span>
+              <span>
+                我的紀錄
+                <InfoHint text="按眼睛可隱藏該類遊戲。想玩的遊戲就算也玩過，仍歸在「想玩」區。" />
+              </span>
             </div>
 
             <div className="mine-eyes">
@@ -274,9 +288,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
               />
               <span>依我的紀錄分區顯示</span>
             </label>
-            <p className="mine-note">
-              想玩的遊戲就算也玩過，仍歸在「想玩」區。
-            </p>
 
             <div className="filter-group">
               <div className="filter-group-title">

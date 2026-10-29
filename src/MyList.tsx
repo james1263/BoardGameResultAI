@@ -28,15 +28,33 @@ type SortKey =
     | 'recent'
     | 'recent-rev'
 
-const SORT_LABELS: Record<SortKey, string> = {
-    added: '加入時間（新→舊）',
-    'added-rev': '加入時間（舊→新）',
-    name: '名稱（A→Z）',
-    'name-rev': '名稱（Z→A）',
-    count: '遊玩次數（多→少）',
-    'count-rev': '遊玩次數（少→多）',
-    recent: '最近遊玩（新→舊）',
-    'recent-rev': '最近遊玩（舊→新）',
+const SORT_FIELDS: { key: 'added' | 'name' | 'count' | 'recent'; label: string }[] = [
+    { key: 'added', label: '加入時間' },
+    { key: 'name', label: '名稱' },
+    { key: 'count', label: '遊玩次數' },
+    { key: 'recent', label: '最近遊玩' },
+]
+
+// 方向按鈕上的字：第一個是預設方向，第二個是反向
+const SORT_DIRECTIONS: Record<'added' | 'name' | 'count' | 'recent', [string, string]> = {
+    added: ['新→舊', '舊→新'],
+    name: ['A→Z', 'Z→A'],
+    count: ['多→少', '少→多'],
+    recent: ['新→舊', '舊→新'],
+}
+
+// 最常玩要顯示前幾名（只記在這個瀏覽器）
+type TopN = 3 | 5 | 10
+const TOP_CHOICES: TopN[] = [3, 5, 10]
+const TOP_KEY = 'boardgame-stats-top-n'
+function loadTopN(): TopN {
+    try {
+        const value = Number(localStorage.getItem(TOP_KEY))
+        if (value === 5 || value === 10) return value
+    } catch {
+        // 讀不到就用預設
+    }
+    return 3
 }
 
 function splitSort(key: SortKey): { field: 'added' | 'name' | 'count' | 'recent'; reversed: boolean } {
@@ -154,7 +172,6 @@ function ClubHeader({
         <div className="club-card">
             <div className="club-top">
                 <div>
-                    <p className="club-kicker">MY CLUB</p>
                     <h2>我的俱樂部</h2>
                 </div>
                 <button
@@ -250,6 +267,8 @@ export default function MyList({
     // 想玩、已玩各自記住排序；切換分頁只清空搜尋
     const [sortWant, setSortWant] = useState<SortKey>('added')
     const [sortPlayed, setSortPlayed] = useState<SortKey>('added')
+    const [topN, setTopN] = useState<TopN>(loadTopN)
+    const [showHoursNote, setShowHoursNote] = useState(false)
     // 分頁切換不另建瀏覽歷史：返回鍵與 ✕ 一律回「我的俱樂部」首頁
     useBackClose(() => setView('home'), isOpen && mode !== 'loyalty' && view !== 'home')
 
@@ -261,8 +280,18 @@ export default function MyList({
             setSearch('')
             setSortWant('added')
             setSortPlayed('added')
+            setShowHoursNote(false)
         }
     }, [isOpen, mode])
+
+    function changeTopN(next: TopN) {
+        setTopN(next)
+        try {
+            localStorage.setItem(TOP_KEY, String(next))
+        } catch {
+            // 存不了就算了
+        }
+    }
 
     function openStats() {
         setStatsTab('overview')
@@ -360,7 +389,7 @@ export default function MyList({
         return {
             totalPlays,
             hours: Math.round(totalMinutes / 6) / 10,
-            top: rows.slice(0, 3),
+            top: rows.slice(0, 10),
         }
     }, [boardGames, personal.entries, playSessions])
 
@@ -474,12 +503,6 @@ export default function MyList({
                     </div>
 
                     <div className="mylist-body">
-                        {!personal.isLoggedIn && (
-                            <p className="mylist-hint">
-                                目前存在這個瀏覽器；用 Google 登入後可跨裝置保存。
-                            </p>
-                        )}
-
                         {statsTab === 'overview' ? (
                             <>
                             <div className="mystat-grid">
@@ -493,21 +516,50 @@ export default function MyList({
                                     <strong>{stats.totalPlays}</strong>
                                     <small>次</small>
                                 </div>
-                                <div className="mystat-box">
-                                    <span>總時數（約）</span>
+                                <button
+                                    type="button"
+                                    className="mystat-box mystat-box-btn"
+                                    aria-expanded={showHoursNote}
+                                    onClick={() => setShowHoursNote((value) => !value)}
+                                >
+                                    <span>
+                                        總時數（約）
+                                        <i className="mystat-i" aria-hidden="true">i</i>
+                                    </span>
                                     <strong>{stats.totalPlays > 0 ? stats.hours : 0}</strong>
                                     <small>小時</small>
-                                </div>
+                                </button>
                             </div>
 
-                            <h3 className="mystat-title">最常玩 TOP 3</h3>
+                            {showHoursNote && (
+                                <p className="mystat-foot">
+                                    總時數是用「次數 × BGG 標示的遊戲時間」估算，沒有時間資料的遊戲不計入，僅供參考。
+                                </p>
+                            )}
+
+                            <div className="mystat-title-row">
+                                <h3 className="mystat-title">最常玩 TOP {topN}</h3>
+                                <div className="mystat-topn" role="group" aria-label="顯示名次數量">
+                                    {TOP_CHOICES.map((choice) => (
+                                        <button
+                                            key={choice}
+                                            type="button"
+                                            className={`mystat-topn-btn ${topN === choice ? 'active' : ''}`}
+                                            aria-pressed={topN === choice}
+                                            onClick={() => changeTopN(choice)}
+                                        >
+                                            {choice}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                             {stats.top.length === 0 ? (
                                 <p className="mylist-empty">
                                     還沒有遊玩次數。在「已玩」分頁調整次數，或在遊戲視窗記錄一次遊玩，這裡就會統計。
                                 </p>
                             ) : (
                                 <ol className="mystat-top">
-                                    {stats.top.map(({ game, total }, index) => (
+                                    {stats.top.slice(0, topN).map(({ game, total }, index) => (
                                         <li key={game.bggName}>
                                             <span className="mystat-rank">{index + 1}</span>
                                             <div className="mylist-thumb">{renderCover(game)}</div>
@@ -524,9 +576,6 @@ export default function MyList({
                                 </ol>
                             )}
 
-                            <p className="mystat-foot">
-                                總時數是用「次數 × BGG 標示的遊戲時間」估算，沒有時間資料的遊戲不計入，僅供參考。
-                            </p>
                             </>
                         ) : (
                             <>
@@ -549,34 +598,47 @@ export default function MyList({
                                 </div>
                             ) : (
                                 <>
-                                    <div className="cls-tools">
+                                    <div className="cls-searchbox">
                                         <input
                                             type="search"
-                                            className="cls-search"
+                                            className="cls-search-input"
                                             placeholder="搜尋遊戲名稱"
                                             value={search}
                                             onChange={(event) => setSearch(event.target.value)}
                                         />
+                                    </div>
+                                    <div className="cls-sortrow">
                                         <select
-                                            className="cls-sort"
-                                            aria-label="排序方式"
-                                            value={sortKey}
+                                            className="cls-sort-field"
+                                            aria-label="排序欄位"
+                                            value={splitSort(sortKey).field}
                                             onChange={(event) =>
                                                 setSortKey(event.target.value as SortKey)
                                             }
                                         >
-                                            {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
-                                                <option key={key} value={key}>
-                                                    {SORT_LABELS[key]}
+                                            {SORT_FIELDS.map((item) => (
+                                                <option key={item.key} value={item.key}>
+                                                    {item.label}
                                                 </option>
                                             ))}
                                         </select>
+                                        <button
+                                            type="button"
+                                            className="cls-sort-dir"
+                                            onClick={() => {
+                                                const { field, reversed } = splitSort(sortKey)
+                                                setSortKey((reversed ? field : `${field}-rev`) as SortKey)
+                                            }}
+                                        >
+                                            {splitSort(sortKey).reversed ? '↑' : '↓'}{' '}
+                                            {SORT_DIRECTIONS[splitSort(sortKey).field][splitSort(sortKey).reversed ? 1 : 0]}
+                                        </button>
                                     </div>
-                                    <p className="cls-count">
-                                        {search.trim()
-                                            ? `找到 ${shown.length} / ${sourceCount} 款`
-                                            : `共 ${sourceCount} 款`}
-                                    </p>
+                                    {search.trim() && (
+                                        <p className="cls-count">
+                                            找到 {shown.length} / {sourceCount} 款
+                                        </p>
+                                    )}
 
                                     {shown.length === 0 ? (
                                         <p className="mylist-empty">找不到符合的遊戲。</p>
@@ -711,7 +773,6 @@ export default function MyList({
                             <span className="club-menu-icon" aria-hidden="true">▤</span>
                             <span className="club-menu-text">
                                 <b>我的統計</b>
-                                <small>想玩、已玩清單與遊玩統計</small>
                             </span>
                             <span className="club-menu-count">
                                 想玩 {wantGames.length}・已玩 {playedGames.length}
@@ -730,7 +791,6 @@ export default function MyList({
                                     <span className="club-menu-icon" aria-hidden="true">📅</span>
                                     <span className="club-menu-text">
                                         <b>我的場次</b>
-                                        <small>出席過的聚會、當天遊戲與出席者</small>
                                     </span>
                                     <span className="club-menu-arrow" aria-hidden="true">›</span>
                                 </button>
@@ -744,7 +804,6 @@ export default function MyList({
                                     <span className="club-menu-icon" aria-hidden="true">📝</span>
                                     <span className="club-menu-text">
                                         <b>補記遊玩</b>
-                                        <small>補記過去玩過的遊戲與日期</small>
                                     </span>
                                     <span className="club-menu-arrow" aria-hidden="true">›</span>
                                 </button>

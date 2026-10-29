@@ -9,6 +9,7 @@ import {
 } from '../lib/useGamePeople'
 import { rankGames } from '../lib/leaderboards'
 import StatsTables from './StatsTables'
+import InfoHint from './InfoHint'
 
 type BoardKey = 'want' | 'played' | 'overall' | 'keep'
 type Period = 'all' | 'month' | 'quarter' | 'year'
@@ -180,8 +181,8 @@ export default function Leaderboard({
   const note = isCountBoard
     ? period === 'all'
       ? '依目前的總人數排名，只統計 VIP 玩家。'
-      : '依該期間「新增」的人數排名（下方小字是目前總人數）。'
-    : '需滿 5 位玩家評分才會上榜。'
+      : '依該期間「新增」的人數排名（下方小字是目前總人數），只統計 VIP 玩家。'
+    : '每款遊戲需滿 5 位玩家評分才會上榜。'
   function renderEmpty(): ReactNode {
     if (isCountBoard) {
       const label = board === 'want' ? '想玩' : '已玩'
@@ -191,7 +192,6 @@ export default function Leaderboard({
           <div className="lb-empty">
             <span className="lb-empty-icon" aria-hidden="true">🗓</span>
             <b>{periodLabel}還沒有新增的{label}</b>
-            <p>這個榜只算該期間「新增」的人數，換成「全部」可以看到目前的總人數。</p>
             <button
               type="button"
               className="lb-empty-btn"
@@ -206,10 +206,7 @@ export default function Leaderboard({
         <div className="lb-empty">
           <span className="lb-empty-icon" aria-hidden="true">🎲</span>
           <b>還沒有人標記{label}</b>
-          <p>
-            VIP 玩家在遊戲封面按 {board === 'want' ? '♥' : '✓'} 後，就會出現在這裡。
-            一般會員與訪客不會被統計。
-          </p>
+          <p>VIP 玩家在遊戲封面按 {board === 'want' ? '♥' : '✓'} 後會出現在這裡。</p>
           <button type="button" className="lb-empty-btn" onClick={onClose}>
             去逛收藏
           </button>
@@ -230,10 +227,7 @@ export default function Leaderboard({
       <div className="lb-empty">
         <span className="lb-empty-icon" aria-hidden="true">⭐</span>
         <b>評分累積中</b>
-        <p>
-          每款遊戲要滿 5 位玩家評分，才會出現在這個榜；評分人數不足時，不會公開任何平均。
-          VIP 會員可以在遊戲詳細視窗的「評分」分頁評分。
-        </p>
+        <p>每款遊戲滿 5 位玩家評分才會上榜。</p>
         <button
           type="button"
           className="lb-empty-btn"
@@ -300,7 +294,9 @@ export default function Leaderboard({
             )}
 
             <div className="mylist-body">
-              <p className="lb-note">{note}</p>
+              <div className="lb-hintrow">
+                <InfoHint text={note} />
+              </div>
 
               {ranked.length === 0 ? (
                 renderEmpty()

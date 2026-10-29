@@ -2377,3 +2377,211 @@ body {
   color: #6b7a6f;
   white-space: nowrap;
 }
+
+/* ===== 我的統計／俱樂部精簡（2026-10-29 傍晚） ===== */
+.mylist-header h2 {
+  color: #34463c;
+  opacity: 1;
+}
+
+.mystat-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.mystat-title-row .mystat-title { margin: 0; }
+.mystat-topn { display: inline-flex; gap: 4px; }
+.mystat-topn-btn {
+  min-width: 32px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid rgba(69, 107, 80, 0.25);
+  border-radius: 999px;
+  background: transparent;
+  color: #456b50;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mystat-topn-btn.active {
+  background: #456b50;
+  border-color: #456b50;
+  color: #fff;
+}
+
+.mystat-box-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mystat-i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: rgba(183, 138, 90, 0.16);
+  color: #9a7448;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+
+.cls-searchbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 6px 0 12px;
+  border: 1px solid rgba(183, 138, 90, 0.4);
+  border-radius: 12px;
+  background: #fffdf7;
+}
+.cls-searchbox:focus-within { border-color: #456b50; }
+.cls-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #34463c;
+  font: inherit;
+  font-size: 16px;
+}
+.cls-sort-inline {
+  flex: none;
+  max-width: 7.8em;
+  padding: 6px 4px 6px 8px;
+  border: 0;
+  border-left: 1px solid rgba(183, 138, 90, 0.3);
+  border-radius: 0;
+  background: transparent;
+  color: #456b50;
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* ===== 第二批：管理中心手機版、小「i」縮小、搜尋欄內篩選鈕 ===== */
+
+/* 管理中心手機版：視窗高度要跟著遮罩（已扣掉底部導覽列），上下才不會被切掉 */
+@media (max-width: 760px) {
+  .ma-backdrop .ac-modal {
+    height: 100%;
+    max-height: 100%;
+  }
+}
+
+/* 說明用小「i」：縮小、淺底色、低調 */
+.info-hint-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(183, 138, 90, 0.16);
+  color: #9a7448;
+  font-size: 9px;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1;
+  vertical-align: 1px;
+}
+.info-hint-btn::after {
+  /* 圖示小但手指仍好點 */
+  content: '';
+  position: absolute;
+  inset: -9px;
+}
+.mystat-i {
+  width: 14px;
+  height: 14px;
+}
+
+/* 排行榜說明列（只放一顆小 i） */
+.lb-hintrow {
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  margin: 0 0 8px;
+}
+
+/* 搜尋欄裡的「篩選」鈕（取代原本的「搜尋」小標籤） */
+.search-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(69, 107, 80, 0.12);
+  color: #365b40;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.search-filter-btn:hover {
+  background: rgba(69, 107, 80, 0.2);
+}
+
+/* ===== 第三批：統計排序列、TOP 按鈕縮小、管理中心搜尋欄 ===== */
+.mystat-topn-btn {
+  min-width: 26px;
+  height: 24px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+.mystat-topn-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.cls-sortrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+.cls-sort-field,
+.cls-sort-dir {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(183, 138, 90, 0.35);
+  border-radius: 999px;
+  background: #fffdf7;
+  color: #34463c;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cls-sort-dir {
+  white-space: nowrap;
+}
+
+.search-filter-btn.on {
+  background: #456b50;
+  color: #fff;
+}
+.ma-body .cls-searchbox {
+  margin: 8px 0 12px;
+}
