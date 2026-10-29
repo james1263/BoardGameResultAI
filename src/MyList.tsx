@@ -236,6 +236,7 @@ export default function MyList({
     isOpen,
     mode,
     focusDate,
+    openGatheringId,
     isAdmin,
     isVip,
     todayPending,
@@ -252,6 +253,7 @@ export default function MyList({
     isOpen: boolean
     mode: MyListMode
     focusDate?: string | null
+    openGatheringId?: string | null
     isAdmin: boolean
     isVip: boolean
     todayPending: boolean
@@ -261,7 +263,7 @@ export default function MyList({
     onOpenLoyalty: () => void
     renderCover: (game: BoardGame) => ReactNode
 }) {
-    const [view, setView] = useState<View>('home')
+    const [view, setView] = useState<View>(openGatheringId ? 'gatherings' : 'home')
     const [statsTab, setStatsTab] = useState<StatsTab>('overview')
     const [search, setSearch] = useState('')
     // 想玩、已玩各自記住排序；切換分頁只清空搜尋
@@ -439,6 +441,7 @@ export default function MyList({
                 personal={personal}
                 playSessions={playSessions}
                 isAdmin={isAdmin}
+                initialGatheringId={openGatheringId ?? null}
                 onBack={() => setView('home')}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
@@ -665,7 +668,7 @@ export default function MyList({
                                                                         aria-label="減少遊玩次數"
                                                                         title={
                                                                             (entry?.playCount ?? 0) <= 0 && summary.count > 0
-                                                                                ? '有日期的紀錄請在遊戲視窗「我的桌遊」分頁刪除'
+                                                                                ? '有日期的紀錄請在遊戲視窗「我的紀錄」分頁刪除'
                                                                                 : undefined
                                                                         }
                                                                         disabled={!personal.canEdit || (entry?.playCount ?? 0) <= 0}
@@ -748,7 +751,7 @@ export default function MyList({
     return (
         <>
             <div className="mylist-backdrop" onClick={onClose} />
-            <aside className="mylist-drawer" role="dialog" aria-label="我的桌遊">
+            <aside className="mylist-drawer" role="dialog" aria-label="我的俱樂部">
                 <div className="mylist-body club-body">
                     <ClubHeader isAdmin={isAdmin} isVip={isVip} onClose={onClose} />
                     {todayPending && (

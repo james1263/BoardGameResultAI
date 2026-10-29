@@ -115,6 +115,8 @@ function Library({
   // 導覽列的頁面一次只開一個：點另一顆直接取代，再點同一顆就關閉
   const [activePage, setActivePage] = useState<NavPage | null>(null)
   const [myListMode, setMyListMode] = useState<MyListMode>('list')
+  // 從遊戲視窗跳到俱樂部「我的場次」的指定聚會（用完會在導覽時清掉）
+  const [jumpGatheringId, setJumpGatheringId] = useState<string | null>(null)
   const isMyListOpen = activePage === 'mylist' || activePage === 'loyalty'
   const isLeaderboardOpen = activePage === 'leaderboard'
   const isRulesOpen = activePage === 'rules'
@@ -204,13 +206,27 @@ function Library({
 
   // 底部／頂端導覽：點另一顆直接取代目前的頁面，再點同一顆＝關閉
   function goHome() {
+    setJumpGatheringId(null)
     setSelectedGame(null)
     setIsFilterOpen(false)
     setActivePage(null)
   }
 
+  // 遊戲視窗「各場次的私人心得」→ 直接打開俱樂部裡那場聚會的詳情
+  function openGatheringFromGame(gatheringId: string) {
+    setSelectedGame(null)
+    setSelectedTab('overview')
+    setIsFilterOpen(false)
+    setInviteFocus(null)
+    setInviteKey((count) => count + 1)
+    setMyListMode('list')
+    setJumpGatheringId(gatheringId)
+    setActivePage('mylist')
+  }
+
   function goPage(page: NavPage) {
     // 點導覽時，先關掉開著的詳細視窗與進階篩選，避免視窗疊在一起
+    setJumpGatheringId(null)
     setSelectedGame(null)
     setIsFilterOpen(false)
     if (activePage === page) {
@@ -928,6 +944,7 @@ function Library({
           game={selectedGame}
           coverVersion={coverVersions[selectedGame.coverSlug] ?? 0}
           initialTab={selectedTab}
+          onOpenGathering={openGatheringFromGame}
           isAdmin={isAdmin}
           adminScores={adminScores.get(selectedGame.bggName) ?? null}
           personal={personal}
@@ -983,6 +1000,7 @@ function Library({
           }, 50)
         }}
         focusDate={inviteFocus}
+        openGatheringId={jumpGatheringId}
         boardGames={boardGames}
         personal={personal}
         playSessions={playSessions}

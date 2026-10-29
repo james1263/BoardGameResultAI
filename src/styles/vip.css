@@ -2664,3 +2664,22 @@ body {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* ===== 第六批：遊戲視窗頂端沒有標題後，✕ 靠右；場次心得的「查看聚會」 ===== */
+.modal-topbar {
+  justify-content: flex-end;
+}
+.gn-mine-head {
+  flex-wrap: wrap;
+}
+.gn-mine-go {
+  margin-left: auto;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: #456b50;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}

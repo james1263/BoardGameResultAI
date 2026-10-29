@@ -4,7 +4,13 @@ import { useMyGatherings } from '../lib/useMyGatherings'
 import InfoHint from './InfoHint'
 
 // 遊戲詳細視窗「我的紀錄」：這款遊戲在各場聚會留下的私人心得（只讀）
-export default function GameGatheringNotes({ bggName }: { bggName: string }) {
+export default function GameGatheringNotes({
+  bggName,
+  onOpenGathering,
+}: {
+  bggName: string
+  onOpenGathering?: (gatheringId: string) => void
+}) {
   const mine = useMyGameNotes(bggName)
   const gatherings = useMyGatherings()
 
@@ -29,7 +35,7 @@ export default function GameGatheringNotes({ bggName }: { bggName: string }) {
     <details className="gn-mine">
       <summary>
         各場次的私人心得（{items.length}）
-        <InfoHint text="只有你看得到。要修改或刪除，請到「俱樂部」→「我的場次」該場聚會裡。" />
+        <InfoHint text="只有你看得到。要修改或刪除，點「查看聚會」到那場聚會裡。" />
       </summary>
       <ul className="gn-mine-list">
         {items.map((item) => (
@@ -37,6 +43,15 @@ export default function GameGatheringNotes({ bggName }: { bggName: string }) {
             <div className="gn-mine-head">
               <b>{item.date ? item.date.replace(/-/g, '/') : ''}</b>
               <span>{item.title}</span>
+              {onOpenGathering && (
+                <button
+                  type="button"
+                  className="gn-mine-go"
+                  onClick={() => onOpenGathering(item.gatheringId)}
+                >
+                  查看聚會 ›
+                </button>
+              )}
             </div>
             <p>{item.privateNote}</p>
           </li>

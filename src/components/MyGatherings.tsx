@@ -50,6 +50,7 @@ export default function MyGatherings({
   personal,
   playSessions,
   isAdmin,
+  initialGatheringId,
   onBack,
   onClose,
   onOpenGame,
@@ -59,13 +60,14 @@ export default function MyGatherings({
   personal: PersonalApi
   playSessions: PlaySessionsApi
   isAdmin: boolean
+  initialGatheringId?: string | null
   onBack: () => void
   onClose: () => void
   onOpenGame: (game: BoardGame) => void
   renderCover: (game: BoardGame) => ReactNode
 }) {
   const list = useMyGatherings()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(initialGatheringId ?? null)
   const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
   const detail = useGatheringDetail(selectedId)
   const notes = useMyGatheringNotes(selectedId)

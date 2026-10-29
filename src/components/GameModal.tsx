@@ -42,6 +42,7 @@ export default function GameModal({
   onTrash,
   isTrashing,
   initialTab,
+  onOpenGathering,
   onClose,
 }: {
   game: LibraryGame
@@ -59,6 +60,7 @@ export default function GameModal({
   onTrash: () => void
   isTrashing: boolean
   initialTab?: TabKey
+  onOpenGathering?: (gatheringId: string) => void
   onClose: () => void
 }) {
   const [tab, setTab] = useState<TabKey>(initialTab ?? 'overview')
@@ -84,7 +86,6 @@ export default function GameModal({
       >
         <div className="modal-fixed">
           <div className="modal-topbar">
-            <h3 className="modal-section-title">GAME PROFILE</h3>
             <button
               className="modal-close"
               type="button"
@@ -172,7 +173,7 @@ export default function GameModal({
               />
 
               <div className="modal-section">
-                <h3 className="modal-section-title">GAME ATTRIBUTES</h3>
+                <h3 className="modal-section-title">遊戲特色</h3>
                 <div className="rating-list">
                   <RatingDots label="快速性" value={game.speedEmoji} />
                   <RatingDots label="變化度" value={game.changeEmoji} />
@@ -184,7 +185,7 @@ export default function GameModal({
               </div>
 
               <div className="modal-section">
-                <h3 className="modal-section-title">COMMUNITY RATING</h3>
+                <h3 className="modal-section-title">大家的評分</h3>
                 <CommunitySummary
                   bggName={game.bggName}
                   api={ratings}
@@ -192,7 +193,7 @@ export default function GameModal({
                 />
               </div>
               <div className="modal-section">
-                <h3 className="modal-section-title">COMMUNITY ACTIVITY</h3>
+                <h3 className="modal-section-title">社群動態</h3>
                 <CommunityStats
                   bggName={game.bggName}
                   api={communityStats}
@@ -302,7 +303,7 @@ export default function GameModal({
           {tab === 'mine' && (
             <>
               <div className="modal-section">
-                <h3 className="modal-section-title">MY PLAYS</h3>
+                <h3 className="modal-section-title">遊玩紀錄</h3>
                 <p className="personal-hint">
                   目前累計{' '}
                   {personal.getEntry(game.bggName).playCount +
@@ -319,7 +320,6 @@ export default function GameModal({
               </div>
 
               <div className="modal-section">
-                <h3 className="modal-section-title">MY OVERALL NOTES</h3>
                 <PersonalNote
                   key={`${game.bggName}-${personal.status}`}
                   value={personal.getEntry(game.bggName).note}
@@ -331,7 +331,10 @@ export default function GameModal({
                 {!personal.isLoggedIn && (
                   <p className="personal-hint">登入後即可跨裝置保存</p>
                 )}
-                {personal.isLoggedIn && <GameGatheringNotes bggName={game.bggName} />}
+                {personal.isLoggedIn && <GameGatheringNotes
+                    bggName={game.bggName}
+                    onOpenGathering={onOpenGathering}
+                  />}
               </div>
             </>
           )}
