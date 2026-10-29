@@ -26,7 +26,7 @@ export default function CommunityStats({
           {s.playedYear}
         </span>
       </div>
-      <p className="rate-note">只統計已登入的玩家，只顯示人數。</p>
+      <p className="rate-note">只統計 VIP 玩家，只顯示人數。</p>
     </div>
   )
 }

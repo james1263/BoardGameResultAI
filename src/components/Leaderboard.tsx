@@ -179,7 +179,7 @@ export default function Leaderboard({
 
   const note = isCountBoard
     ? period === 'all'
-      ? '依目前的總人數排名，只統計已登入的玩家。'
+      ? '依目前的總人數排名，只統計 VIP 玩家。'
       : '依該期間「新增」的人數排名（下方小字是目前總人數）。'
     : '需滿 5 位玩家評分才會上榜。'
   function renderEmpty(): ReactNode {
@@ -207,8 +207,8 @@ export default function Leaderboard({
           <span className="lb-empty-icon" aria-hidden="true">🎲</span>
           <b>還沒有人標記{label}</b>
           <p>
-            登入的玩家在遊戲封面按 {board === 'want' ? '♥' : '✓'} 後，就會出現在這裡。
-            沒有登入的訪客不會被統計。
+            VIP 玩家在遊戲封面按 {board === 'want' ? '♥' : '✓'} 後，就會出現在這裡。
+            一般會員與訪客不會被統計。
           </p>
           <button type="button" className="lb-empty-btn" onClick={onClose}>
             去逛收藏

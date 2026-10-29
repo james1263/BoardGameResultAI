@@ -48,7 +48,7 @@ export default function LoyaltyCard({
   if (!loyalty.isLoggedIn) {
     return (
       <p className="mylist-hint">
-        集點卡需要用 Google 登入才能使用，點數會記在你的帳號上。
+        集點卡是 VIP 專屬功能：請先用 Google 登入，再成為 VIP。點數會記在你的帳號上。
       </p>
     )
   }

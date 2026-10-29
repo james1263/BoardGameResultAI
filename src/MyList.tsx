@@ -16,14 +16,33 @@ type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
-type View = 'home' | 'list' | 'stats' | 'gatherings' | 'addplay'
-type SortKey = 'added' | 'name' | 'count' | 'recent'
+type View = 'home' | 'stats' | 'gatherings' | 'addplay'
+type StatsTab = 'overview' | 'want' | 'played'
+type SortKey =
+    | 'added'
+    | 'added-rev'
+    | 'name'
+    | 'name-rev'
+    | 'count'
+    | 'count-rev'
+    | 'recent'
+    | 'recent-rev'
 
 const SORT_LABELS: Record<SortKey, string> = {
     added: '加入時間（新→舊）',
-    name: '名稱',
+    'added-rev': '加入時間（舊→新）',
+    name: '名稱（A→Z）',
+    'name-rev': '名稱（Z→A）',
     count: '遊玩次數（多→少）',
+    'count-rev': '遊玩次數（少→多）',
     recent: '最近遊玩（新→舊）',
+    'recent-rev': '最近遊玩（舊→新）',
+}
+
+function splitSort(key: SortKey): { field: 'added' | 'name' | 'count' | 'recent'; reversed: boolean } {
+    const reversed = key.endsWith('-rev')
+    const field = (reversed ? key.slice(0, -4) : key) as 'added' | 'name' | 'count' | 'recent'
+    return { field, reversed }
 }
 
 // 搜尋時忽略大小寫、空白與標點
@@ -37,12 +56,16 @@ function toTime(value?: string | null): number | null {
     return Number.isNaN(time) ? null : time
 }
 
-// 數字大的排前面；沒有資料（null）的永遠排最後
-function compareDescMissingLast(a: number | null, b: number | null): number {
+// 預設數字大的排前面、reversed 時小的排前面；沒有資料（null）的永遠排最後
+function compareMissingLast(
+    a: number | null,
+    b: number | null,
+    reversed: boolean,
+): number {
     if (a === null && b === null) return 0
     if (a === null) return 1
     if (b === null) return -1
-    return b - a
+    return reversed ? a - b : b - a
 }
 
 // 讀自己的暱稱（只在抽屜打開時才會執行）
@@ -222,26 +245,42 @@ export default function MyList({
     renderCover: (game: BoardGame) => ReactNode
 }) {
     const [view, setView] = useState<View>('home')
-    const [tab, setTab] = useState<Tab>('want')
+    const [statsTab, setStatsTab] = useState<StatsTab>('overview')
     const [search, setSearch] = useState('')
-    const [sortKey, setSortKey] = useState<SortKey>('added')
+    // 想玩、已玩各自記住排序；切換分頁只清空搜尋
+    const [sortWant, setSortWant] = useState<SortKey>('added')
+    const [sortPlayed, setSortPlayed] = useState<SortKey>('added')
+    // 分頁切換不另建瀏覽歷史：返回鍵與 ✕ 一律回「我的俱樂部」首頁
     useBackClose(() => setView('home'), isOpen && mode !== 'loyalty' && view !== 'home')
 
-    // 每次打開都回到首頁
+    // 每次打開都回到首頁，統計頁預設「概況」
     useEffect(() => {
         if (isOpen) {
             setView('home')
-            setTab('want')
+            setStatsTab('overview')
             setSearch('')
-            setSortKey('added')
+            setSortWant('added')
+            setSortPlayed('added')
         }
     }, [isOpen, mode])
 
-    function openList(next: Tab) {
-        setTab(next)
+    function openStats() {
+        setStatsTab('overview')
         setSearch('')
-        setSortKey('added')
-        setView('list')
+        setView('stats')
+    }
+
+    function switchStatsTab(next: StatsTab) {
+        setStatsTab(next)
+        setSearch('')
+    }
+
+    // 目前清單是哪一份（概況分頁不用清單）
+    const tab: Tab = statsTab === 'want' ? 'want' : 'played'
+    const sortKey = tab === 'want' ? sortWant : sortPlayed
+    function setSortKey(next: SortKey) {
+        if (tab === 'want') setSortWant(next)
+        else setSortPlayed(next)
     }
 
     const wantGames = useMemo(
@@ -278,19 +317,23 @@ export default function MyList({
                 }
             })
 
+        const { field, reversed } = splitSort(sortKey)
         rows.sort((a, b) => {
+            const byName = a.game.name.localeCompare(b.game.name, 'zh-Hant')
+            if (field === 'name') return reversed ? -byName : byName
             let result = 0
-            if (sortKey === 'added') {
-                result = compareDescMissingLast(a.added, b.added)
-            } else if (sortKey === 'count') {
-                result = compareDescMissingLast(
+            if (field === 'added') {
+                result = compareMissingLast(a.added, b.added, reversed)
+            } else if (field === 'count') {
+                result = compareMissingLast(
                     a.total > 0 ? a.total : null,
                     b.total > 0 ? b.total : null,
+                    reversed,
                 )
-            } else if (sortKey === 'recent') {
-                result = compareDescMissingLast(a.last, b.last)
+            } else if (field === 'recent') {
+                result = compareMissingLast(a.last, b.last, reversed)
             }
-            return result || a.game.name.localeCompare(b.game.name, 'zh-Hant')
+            return result || byName
         })
 
         return rows.map((row) => row.game)
@@ -325,7 +368,6 @@ export default function MyList({
 
     const isLoyalty = mode === 'loyalty'
     const isLoading = personal.isLoggedIn && personal.status === 'loading'
-    const listTitle = tab === 'want' ? '想玩清單' : '已玩清單'
     const sourceCount = tab === 'want' ? wantGames.length : playedGames.length
 
     // ---------- 集點卡（維持原樣） ----------
@@ -335,7 +377,7 @@ export default function MyList({
                 <div className="mylist-backdrop" onClick={onClose} />
                 <aside className="mylist-drawer" role="dialog" aria-label="集點卡">
                     <div className="mylist-header">
-                        <h2>我的統計</h2>
+                        <h2>集點卡</h2>
                         <button
                             className="mylist-close"
                             type="button"
@@ -389,7 +431,7 @@ export default function MyList({
         )
     }
 
-    // ---------- 我的統計 ----------
+    // ---------- 我的統計（概況｜想玩｜已玩） ----------
     if (view === 'stats') {
         return (
             <>
@@ -407,79 +449,27 @@ export default function MyList({
                         </button>
                     </div>
 
-                    <div className="mylist-body">
-                        {!personal.isLoggedIn && (
-                            <p className="mylist-hint">
-                                目前存在這個瀏覽器；用 Google 登入後可跨裝置保存。
-                            </p>
-                        )}
-
-                        <div className="mystat-grid">
-                            <div className="mystat-box">
-                                <span>玩過</span>
-                                <strong>{playedGames.length}</strong>
-                                <small>款</small>
-                            </div>
-                            <div className="mystat-box">
-                                <span>總遊玩次數</span>
-                                <strong>{stats.totalPlays}</strong>
-                                <small>次</small>
-                            </div>
-                            <div className="mystat-box">
-                                <span>總時數（約）</span>
-                                <strong>{stats.totalPlays > 0 ? stats.hours : 0}</strong>
-                                <small>小時</small>
-                            </div>
-                        </div>
-
-                        <h3 className="mystat-title">最常玩 TOP 3</h3>
-                        {stats.top.length === 0 ? (
-                            <p className="mylist-empty">
-                                還沒有遊玩次數。在「已玩清單」調整次數，或在遊戲視窗記錄一次遊玩，這裡就會統計。
-                            </p>
-                        ) : (
-                            <ol className="mystat-top">
-                                {stats.top.map(({ game, total }, index) => (
-                                    <li key={game.bggName}>
-                                        <span className="mystat-rank">{index + 1}</span>
-                                        <div className="mylist-thumb">{renderCover(game)}</div>
-                                        <button
-                                            type="button"
-                                            className="mylist-name"
-                                            onClick={() => onOpenGame(game)}
-                                        >
-                                            {game.name}
-                                        </button>
-                                        <b className="mystat-count">{total} 次</b>
-                                    </li>
-                                ))}
-                            </ol>
-                        )}
-
-                        <p className="mystat-foot">
-                            總時數是用「次數 × BGG 標示的遊戲時間」估算，沒有時間資料的遊戲不計入，僅供參考。
-                        </p>
-                    </div>
-                </aside>
-            </>
-        )
-    }
-
-    // ---------- 想玩／已玩清單 ----------
-    if (view === 'list') {
-        return (
-            <>
-                <div className="mylist-backdrop" onClick={onClose} />
-                <aside className="mylist-drawer" role="dialog" aria-label={listTitle}>
-                    <div className="mylist-header">
-                        <h2>{listTitle}</h2>
+                    <div className="lb-tabs">
                         <button
-                            className="mylist-close"
                             type="button"
-                            aria-label="關閉"
-                            onClick={() => setView('home')}
+                            className={`lb-tab ${statsTab === 'overview' ? 'active' : ''}`}
+                            onClick={() => switchStatsTab('overview')}
                         >
-                            ×
+                            概況
+                        </button>
+                        <button
+                            type="button"
+                            className={`lb-tab ${statsTab === 'want' ? 'active' : ''}`}
+                            onClick={() => switchStatsTab('want')}
+                        >
+                            想玩 {wantGames.length}
+                        </button>
+                        <button
+                            type="button"
+                            className={`lb-tab ${statsTab === 'played' ? 'active' : ''}`}
+                            onClick={() => switchStatsTab('played')}
+                        >
+                            已玩 {playedGames.length}
                         </button>
                     </div>
 
@@ -490,150 +480,202 @@ export default function MyList({
                             </p>
                         )}
 
-                        {isLoading ? (
-                            <p className="mylist-empty">讀取中…</p>
-                        ) : sourceCount === 0 ? (
-                            <div className="mylist-empty">
-                                <p>
-                                    {tab === 'want'
-                                        ? '還沒有想玩的遊戲。在遊戲封面按 ♥，就會出現在這裡。'
-                                        : '還沒有已玩的遊戲。在遊戲封面按 ✓，就會出現在這裡。'}
-                                </p>
-                                <button
-                                    type="button"
-                                    className="mylist-browse"
-                                    onClick={onBrowse}
-                                >
-                                    去逛收藏
-                                </button>
+                        {statsTab === 'overview' ? (
+                            <>
+                            <div className="mystat-grid">
+                                <div className="mystat-box">
+                                    <span>玩過</span>
+                                    <strong>{playedGames.length}</strong>
+                                    <small>款</small>
+                                </div>
+                                <div className="mystat-box">
+                                    <span>總遊玩次數</span>
+                                    <strong>{stats.totalPlays}</strong>
+                                    <small>次</small>
+                                </div>
+                                <div className="mystat-box">
+                                    <span>總時數（約）</span>
+                                    <strong>{stats.totalPlays > 0 ? stats.hours : 0}</strong>
+                                    <small>小時</small>
+                                </div>
                             </div>
+
+                            <h3 className="mystat-title">最常玩 TOP 3</h3>
+                            {stats.top.length === 0 ? (
+                                <p className="mylist-empty">
+                                    還沒有遊玩次數。在「已玩」分頁調整次數，或在遊戲視窗記錄一次遊玩，這裡就會統計。
+                                </p>
+                            ) : (
+                                <ol className="mystat-top">
+                                    {stats.top.map(({ game, total }, index) => (
+                                        <li key={game.bggName}>
+                                            <span className="mystat-rank">{index + 1}</span>
+                                            <div className="mylist-thumb">{renderCover(game)}</div>
+                                            <button
+                                                type="button"
+                                                className="mylist-name"
+                                                onClick={() => onOpenGame(game)}
+                                            >
+                                                {game.name}
+                                            </button>
+                                            <b className="mystat-count">{total} 次</b>
+                                        </li>
+                                    ))}
+                                </ol>
+                            )}
+
+                            <p className="mystat-foot">
+                                總時數是用「次數 × BGG 標示的遊戲時間」估算，沒有時間資料的遊戲不計入，僅供參考。
+                            </p>
+                            </>
                         ) : (
                             <>
-                                <div className="cls-tools">
-                                    <input
-                                        type="search"
-                                        className="cls-search"
-                                        placeholder="搜尋遊戲名稱"
-                                        value={search}
-                                        onChange={(event) => setSearch(event.target.value)}
-                                    />
-                                    <select
-                                        className="cls-sort"
-                                        aria-label="排序方式"
-                                        value={sortKey}
-                                        onChange={(event) =>
-                                            setSortKey(event.target.value as SortKey)
-                                        }
+                            {isLoading ? (
+                                <p className="mylist-empty">讀取中…</p>
+                            ) : sourceCount === 0 ? (
+                                <div className="mylist-empty">
+                                    <p>
+                                        {tab === 'want'
+                                            ? '還沒有想玩的遊戲。在遊戲封面按 ♥，就會出現在這裡。'
+                                            : '還沒有已玩的遊戲。在遊戲封面按 ✓，就會出現在這裡。'}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        className="mylist-browse"
+                                        onClick={onBrowse}
                                     >
-                                        {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
-                                            <option key={key} value={key}>
-                                                {SORT_LABELS[key]}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        去逛收藏
+                                    </button>
                                 </div>
-                                <p className="cls-count">
-                                    {search.trim()
-                                        ? `找到 ${shown.length} / ${sourceCount} 款`
-                                        : `共 ${sourceCount} 款`}
-                                </p>
+                            ) : (
+                                <>
+                                    <div className="cls-tools">
+                                        <input
+                                            type="search"
+                                            className="cls-search"
+                                            placeholder="搜尋遊戲名稱"
+                                            value={search}
+                                            onChange={(event) => setSearch(event.target.value)}
+                                        />
+                                        <select
+                                            className="cls-sort"
+                                            aria-label="排序方式"
+                                            value={sortKey}
+                                            onChange={(event) =>
+                                                setSortKey(event.target.value as SortKey)
+                                            }
+                                        >
+                                            {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+                                                <option key={key} value={key}>
+                                                    {SORT_LABELS[key]}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <p className="cls-count">
+                                        {search.trim()
+                                            ? `找到 ${shown.length} / ${sourceCount} 款`
+                                            : `共 ${sourceCount} 款`}
+                                    </p>
 
-                                {shown.length === 0 ? (
-                                    <p className="mylist-empty">找不到符合的遊戲。</p>
-                                ) : (
-                                    <ul className="mylist-list">
-                                        {shown.map((game) => {
-                                            const entry = personal.entries[game.bggName]
-                                            const summary = playSessions.getSummary(game.bggName)
-                                            const total = (entry?.playCount ?? 0) + summary.count
-                                            return (
-                                                <li className="mylist-item" key={game.bggName}>
-                                                    <div className="mylist-thumb">{renderCover(game)}</div>
-                                                    <div className="mylist-info">
+                                    {shown.length === 0 ? (
+                                        <p className="mylist-empty">找不到符合的遊戲。</p>
+                                    ) : (
+                                        <ul className="mylist-list">
+                                            {shown.map((game) => {
+                                                const entry = personal.entries[game.bggName]
+                                                const summary = playSessions.getSummary(game.bggName)
+                                                const total = (entry?.playCount ?? 0) + summary.count
+                                                return (
+                                                    <li className="mylist-item" key={game.bggName}>
+                                                        <div className="mylist-thumb">{renderCover(game)}</div>
+                                                        <div className="mylist-info">
+                                                            <button
+                                                                type="button"
+                                                                className="mylist-name"
+                                                                onClick={() => onOpenGame(game)}
+                                                            >
+                                                                {game.name}
+                                                            </button>
+                                                            {tab === 'played' ? (
+                                                                <div className="mylist-counter">
+                                                                    <button
+                                                                        type="button"
+                                                                        className="mylist-counter-btn"
+                                                                        aria-label="減少遊玩次數"
+                                                                        title={
+                                                                            (entry?.playCount ?? 0) <= 0 && summary.count > 0
+                                                                                ? '有日期的紀錄請在遊戲視窗「我的桌遊」分頁刪除'
+                                                                                : undefined
+                                                                        }
+                                                                        disabled={!personal.canEdit || (entry?.playCount ?? 0) <= 0}
+                                                                        onClick={() =>
+                                                                            personal.updateEntry(
+                                                                                game.bggName,
+                                                                                { playCount: (entry?.playCount ?? 0) - 1 },
+                                                                                { skipPlayedRule: true },
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        −
+                                                                    </button>
+                                                                    <span className="mylist-counter-value">{total} 次</span>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="mylist-counter-btn"
+                                                                        aria-label="增加遊玩次數"
+                                                                        disabled={!personal.canEdit || (entry?.playCount ?? 0) >= 999}
+                                                                        onClick={() =>
+                                                                            personal.updateEntry(
+                                                                                game.bggName,
+                                                                                { playCount: (entry?.playCount ?? 0) + 1 },
+                                                                                { skipPlayedRule: true },
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        ＋
+                                                                    </button>
+                                                                    {summary.lastPlayedOn && (
+                                                                        <span className="mylist-counter-last">
+                                                                            最近：{summary.lastPlayedOn.replaceAll('-', '/')}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                total > 0 && (
+                                                                    <p className="mylist-meta">
+                                                                        玩過 {total} 次
+                                                                        {summary.lastPlayedOn &&
+                                                                            ` · 最近：${summary.lastPlayedOn.replaceAll('-', '/')}`}
+                                                                    </p>
+                                                                )
+                                                            )}
+                                                            {entry?.note && (
+                                                                <p className="mylist-note">{entry.note}</p>
+                                                            )}
+                                                        </div>
                                                         <button
                                                             type="button"
-                                                            className="mylist-name"
-                                                            onClick={() => onOpenGame(game)}
+                                                            className="mylist-remove"
+                                                            disabled={!personal.canEdit}
+                                                            onClick={() =>
+                                                                personal.updateEntry(
+                                                                    game.bggName,
+                                                                    tab === 'want'
+                                                                        ? { wantToPlay: false }
+                                                                        : { played: false },
+                                                                )
+                                                            }
                                                         >
-                                                            {game.name}
+                                                            移除
                                                         </button>
-                                                        {tab === 'played' ? (
-                                                            <div className="mylist-counter">
-                                                                <button
-                                                                    type="button"
-                                                                    className="mylist-counter-btn"
-                                                                    aria-label="減少遊玩次數"
-                                                                    title={
-                                                                        (entry?.playCount ?? 0) <= 0 && summary.count > 0
-                                                                            ? '有日期的紀錄請在遊戲視窗「我的桌遊」分頁刪除'
-                                                                            : undefined
-                                                                    }
-                                                                    disabled={!personal.canEdit || (entry?.playCount ?? 0) <= 0}
-                                                                    onClick={() =>
-                                                                        personal.updateEntry(
-                                                                            game.bggName,
-                                                                            { playCount: (entry?.playCount ?? 0) - 1 },
-                                                                            { skipPlayedRule: true },
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    −
-                                                                </button>
-                                                                <span className="mylist-counter-value">{total} 次</span>
-                                                                <button
-                                                                    type="button"
-                                                                    className="mylist-counter-btn"
-                                                                    aria-label="增加遊玩次數"
-                                                                    disabled={!personal.canEdit || (entry?.playCount ?? 0) >= 999}
-                                                                    onClick={() =>
-                                                                        personal.updateEntry(
-                                                                            game.bggName,
-                                                                            { playCount: (entry?.playCount ?? 0) + 1 },
-                                                                            { skipPlayedRule: true },
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    ＋
-                                                                </button>
-                                                                {summary.lastPlayedOn && (
-                                                                    <span className="mylist-counter-last">
-                                                                        最近：{summary.lastPlayedOn.replaceAll('-', '/')}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        ) : (
-                                                            total > 0 && (
-                                                                <p className="mylist-meta">
-                                                                    玩過 {total} 次
-                                                                    {summary.lastPlayedOn &&
-                                                                        ` · 最近：${summary.lastPlayedOn.replaceAll('-', '/')}`}
-                                                                </p>
-                                                            )
-                                                        )}
-                                                        {entry?.note && (
-                                                            <p className="mylist-note">{entry.note}</p>
-                                                        )}
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        className="mylist-remove"
-                                                        disabled={!personal.canEdit}
-                                                        onClick={() =>
-                                                            personal.updateEntry(
-                                                                game.bggName,
-                                                                tab === 'want'
-                                                                    ? { wantToPlay: false }
-                                                                    : { played: false },
-                                                            )
-                                                        }
-                                                    >
-                                                        移除
-                                                    </button>
-                                                </li>
-                                            )
-                                        })}
-                                    </ul>
-                                )}
+                                                    </li>
+                                                )
+                                            })}
+                                        </ul>
+                                    )}
+                                </>
+                            )}
                             </>
                         )}
                     </div>
@@ -664,40 +706,15 @@ export default function MyList({
                         <button
                             type="button"
                             className="club-menu-item club-menu-single"
-                            onClick={() => openList('want')}
-                        >
-                            <span className="club-menu-icon" aria-hidden="true">♥</span>
-                            <span className="club-menu-text">
-                                <b>想玩 {wantGames.length} 款</b>
-                                <small>想玩的遊戲清單</small>
-                            </span>
-                            <span className="club-menu-arrow" aria-hidden="true">›</span>
-                        </button>
-                    </div>
-                    <div className="club-list club-more">
-                        <button
-                            type="button"
-                            className="club-menu-item club-menu-single"
-                            onClick={() => openList('played')}
-                        >
-                            <span className="club-menu-icon" aria-hidden="true">✓</span>
-                            <span className="club-menu-text">
-                                <b>已玩 {playedGames.length} 款</b>
-                                <small>玩過的遊戲與次數</small>
-                            </span>
-                            <span className="club-menu-arrow" aria-hidden="true">›</span>
-                        </button>
-                    </div>
-                    <div className="club-list club-more">
-                        <button
-                            type="button"
-                            className="club-menu-item club-menu-single"
-                            onClick={() => setView('stats')}
+                            onClick={openStats}
                         >
                             <span className="club-menu-icon" aria-hidden="true">▤</span>
                             <span className="club-menu-text">
                                 <b>我的統計</b>
-                                <small>玩過幾款、總次數、最常玩的遊戲</small>
+                                <small>想玩、已玩清單與遊玩統計</small>
+                            </span>
+                            <span className="club-menu-count">
+                                想玩 {wantGames.length}・已玩 {playedGames.length}
                             </span>
                             <span className="club-menu-arrow" aria-hidden="true">›</span>
                         </button>
