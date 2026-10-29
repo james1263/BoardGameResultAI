@@ -4,9 +4,7 @@ import type { AdminScores, LibraryGame } from '../lib/libraryTypes'
 import type { PersonalApi } from '../lib/personalApi'
 import GameDocuments from '../GameDocuments'
 import CoverImage from './CoverImage'
-import StatusButtons from './StatusButtons'
 import RatingDots from './RatingDots'
-import PlayCounter from './PlayCounter'
 import PersonalNote from './PersonalNote'
 import PlaySessions from './PlaySessions'
 import DescriptionEditor from './DescriptionEditor'
@@ -234,33 +232,48 @@ export default function GameModal({
             isAdmin ? (
               <div className="modal-section">
                 <h3 className="modal-section-title">管理者評分（來自 CSV）</h3>
-                <div className="rating-list">
-                  <RatingDots label="喜歡度" value={game.likeEmoji} />
-                  <RatingDots label="溝通度" value={game.communicationEmoji} />
-                  <RatingDots label="獨特性" value={game.uniqueEmoji} />
-                  <RatingDots label="影響度" value={game.playerImpactEmoji} />
-                  <RatingDots label="變化度" value={game.changeEmoji} />
-                </div>
-                <div className="rate-grid" style={{ marginTop: 12 }}>
-                  <div className="rate-grid-item">
-                    <span>整體</span>
-                    <strong>
-                      {adminScores == null
-                        ? '未玩過'
-                        : `${adminScores.overall} / 10`}
-                    </strong>
+                {adminScores == null ? (
+                  <div className="rate-grid" style={{ marginTop: 12 }}>
+                    {[
+                      '喜歡度',
+                      '溝通度',
+                      '獨特性',
+                      '影響度',
+                      '變化度',
+                      '整體',
+                      '適合留下來',
+                    ].map((label) => (
+                      <div className="rate-grid-item" key={label}>
+                        <span>{label}</span>
+                        <strong>未玩過</strong>
+                      </div>
+                    ))}
                   </div>
-                  <div className="rate-grid-item">
-                    <span>適合留下來</span>
-                    <strong>
-                      {adminScores == null
-                        ? '未玩過'
-                        : adminScores.keep == null
-                          ? '未提供'
-                          : `${adminScores.keep} / 5`}
-                    </strong>
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="rating-list">
+                      <RatingDots label="喜歡度" value={game.likeEmoji} />
+                      <RatingDots label="溝通度" value={game.communicationEmoji} />
+                      <RatingDots label="獨特性" value={game.uniqueEmoji} />
+                      <RatingDots label="影響度" value={game.playerImpactEmoji} />
+                      <RatingDots label="變化度" value={game.changeEmoji} />
+                    </div>
+                    <div className="rate-grid" style={{ marginTop: 12 }}>
+                      <div className="rate-grid-item">
+                        <span>整體</span>
+                        <strong>{adminScores.overall} / 10</strong>
+                      </div>
+                      <div className="rate-grid-item">
+                        <span>適合留下來</span>
+                        <strong>
+                          {adminScores.keep == null
+                            ? '未提供'
+                            : `${adminScores.keep} / 5`}
+                        </strong>
+                      </div>
+                    </div>
+                  </>
+                )}
                 <p className="rate-note">
                   這是你在 Notion 的評分，重新匯入 CSV 就會自動更新。整體由 Ranking
                   engine、適合留下來由分數排名換算；還沒玩過的遊戲（Ranking engine
@@ -287,17 +300,13 @@ export default function GameModal({
           {tab === 'mine' && (
             <>
               <div className="modal-section">
-                <h3 className="modal-section-title">MY COLLECTION</h3>
-                <StatusButtons
-                  bggName={game.bggName}
-                  personal={personal}
-                  variant="inline"
-                />
-                <PlayCounter
-                  bggName={game.bggName}
-                  personal={personal}
-                  datedCount={playSessions.getSummary(game.bggName).count}
-                />
+                <h3 className="modal-section-title">MY PLAYS</h3>
+                <p className="personal-hint">
+                  目前累計{' '}
+                  {personal.getEntry(game.bggName).playCount +
+                    playSessions.getSummary(game.bggName).count}{' '}
+                  次。要標記想玩／已玩或直接改次數，請到底部「我的桌遊」清單。
+                </p>
                 <PlaySessions
                   key={game.bggName}
                   bggName={game.bggName}
@@ -307,7 +316,7 @@ export default function GameModal({
               </div>
 
               <div className="modal-section">
-                <h3 className="modal-section-title">PERSONAL NOTES</h3>
+                <h3 className="modal-section-title">MY OVERALL NOTES</h3>
                 <PersonalNote
                   key={`${game.bggName}-${personal.status}`}
                   value={personal.getEntry(game.bggName).note}

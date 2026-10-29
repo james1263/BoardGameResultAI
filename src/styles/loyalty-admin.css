@@ -120,7 +120,7 @@
 /* 新增聚會 */
 .lga-new {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   gap: 10px;
 }
 
@@ -132,6 +132,11 @@
   background: #fff;
   color: #34463c;
   font: inherit;
+}
+
+.lga-new input:nth-of-type(3),
+.lga-new button {
+  grid-column: 1 / -1;
 }
 
 .lga-search {
