@@ -130,7 +130,7 @@ export default function GameModal({
                       ☆
                     </span>
                     <span className="modal-score">{game.bggScore}</span>
-                    <span className="modal-score-label">BGG SCORE</span>
+                    <span className="modal-score-label">BGG 分數</span>
                   </>
                 )}
               </div>
@@ -173,7 +173,6 @@ export default function GameModal({
               />
 
               <div className="modal-section">
-                <h3 className="modal-section-title">遊戲特色</h3>
                 <div className="rating-list">
                   <RatingDots label="快速性" value={game.speedEmoji} />
                   <RatingDots label="變化度" value={game.changeEmoji} />
@@ -185,7 +184,6 @@ export default function GameModal({
               </div>
 
               <div className="modal-section">
-                <h3 className="modal-section-title">大家的評分</h3>
                 <CommunitySummary
                   bggName={game.bggName}
                   api={ratings}
@@ -193,7 +191,6 @@ export default function GameModal({
                 />
               </div>
               <div className="modal-section">
-                <h3 className="modal-section-title">社群動態</h3>
                 <CommunityStats
                   bggName={game.bggName}
                   api={communityStats}
@@ -303,7 +300,6 @@ export default function GameModal({
           {tab === 'mine' && (
             <>
               <div className="modal-section">
-                <h3 className="modal-section-title">遊玩紀錄</h3>
                 <p className="personal-hint">
                   目前累計{' '}
                   {personal.getEntry(game.bggName).playCount +

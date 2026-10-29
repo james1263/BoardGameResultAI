@@ -915,7 +915,6 @@ function Library({
             ✦
           </div>
           <div className="assistant-copy">
-            <p className="eyebrow">COMING NEXT</p>
             <h2>你的桌遊規則 AI 助手</h2>
             <p>未來可以上傳規則書 PDF，直接用中文詢問遊戲規則。</p>
           </div>
