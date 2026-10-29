@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-10-29 06:30（併入 2026-10-28 17:30 之後的第十五、十六批狀態與第 10 節介面重整方向）。本檔已把原本重複的「各批更新」依主題合併成最終狀態；被後來決定取代的舊方案已移除。
+> 最後更新：2026-10-29 09:55（已併入 `生成後.md`：第十五、十六批、贈送免費券、新遊戲置頂、第 10 節介面重整與 10.1 已決定規格）。本檔已把原本重複的「各批更新」依主題合併成最終狀態；被後來決定取代的舊方案已移除。
 
 ## 1. 專案簡介與技術架構
 
@@ -33,6 +33,7 @@
 | `gathering_games` | 當天指定遊戲。（`gathering_plays`「我玩了」已 drop。） |
 | `gathering_checkins` | `gathering_id` pk、`token`（隨機唯一）、`is_open`、`capacity`（1～500，**NOT NULL**）。只有管理者可讀寫。 |
 | `loyalty_redemptions` | 免費券使用紀錄：`user_id`、`redeemed_at`、`redeemed_by`（補登有值、自動用券 null）、`used_on`（用在哪天，補登為 null；`(user_id, used_on)` 唯一）。永久保留、無刪除功能。 |
+| `loyalty_grants` | 管理者贈送免費券紀錄：`id`、`user_id`、`quantity`（1～5）、`granted_at`；Supabase 確認有此表（2026-10-29）。**RLS、`revoke`、贈送券如何計入 `loyalty_totals`／`settle_vouchers` 尚未查證**，請使用者匯出表權限與函式定義後補寫。 |
 | `vip_members` | `granted_by`＝password／checkin／admin；只有管理者可讀寫。`vip_settings`（單列密碼雜湊）、`vip_attempts` 前端讀不到。 |
 | `rulebook_chunks` | `document_id`（外鍵 cascade）、`index_version`、`chunk_index`、`page_number`、`section_title`（目前空）、`content`。**只存 `document_id`，不存 `bgg_name`**（靠 `game_documents` 對應，改名不失聯）。RLS 開、anon／authenticated 完全無直接權限。 |
 | `rulebook_search_log` | 只存 `user_id`、`bgg_name`、`created_at`，**不存問題內容**；RLS 開、無直接權限；保留 7 天。 |
@@ -40,7 +41,7 @@
 **函式**（security definer 一律 `set search_path = ''`，`revoke ... from public, anon`，需要的才 grant；改函式前請使用者在 SQL Editor 匯出實際定義）：
 - 身分：`is_admin()`、`is_vip()`（`is_admin() or exists vip_members`）。
 - 評分／統計：`get_rating_summaries()`（玩家＋管理者 CSV 換算合併）、社群統計彙總函式（只回人數）、`admin_get_all_ratings`（僅管理者）、`get_game_people`（VIP 只回暱稱且排除隱藏者，管理者含 LINE／FB）。
-- 集點：`loyalty_day_status(p_user)`（核心，不讀 `board_games`）、`loyalty_point_days`、`loyalty_totals`（回 `total_points, month_points, earned_vouchers, usable_vouchers`）、`settle_vouchers(uuid)`、`trg_settle_vouchers()`＋觸發器 `settle_vouchers_on_rating`、`settle_vouchers_on_attendee`、`get_my_loyalty_summary`、`get_my_loyalty_days`、`admin_get_loyalty_overview`、`admin_get_loyalty_days`、`admin_redeem_voucher`（舊版，只補登）。內部函式已 revoke。
+- 集點：`loyalty_day_status(p_user)`（核心，不讀 `board_games`）、`loyalty_point_days`、`loyalty_totals`（回 `total_points, month_points, earned_vouchers, usable_vouchers`）、`settle_vouchers(uuid)`、`trg_settle_vouchers()`＋觸發器 `settle_vouchers_on_rating`、`settle_vouchers_on_attendee`、`get_my_loyalty_summary`、`get_my_loyalty_days`、`admin_get_loyalty_overview`、`admin_get_loyalty_days`、`admin_redeem_voucher`（舊版，只補登）、`admin_grant_voucher(p_user, p_qty)`（贈送 1～5 張，函式內容未查）。內部函式已 revoke。
 - 報到／VIP：`join_gathering(p_token)`、`redeem_vip_code`、`admin_set_vip_code`（至少 4 字）、`admin_set_vip`、`admin_list_members`、`get_vip_friends`（UI 未做）、`admin_vip_lock_info`、`admin_clear_vip_lock`、`get_hide_in_lists`／`set_hide_in_lists`、`admin_delete_member`（不能刪管理者）。`admin_create_gathering` **不存在**（前端本來就沒用）。
 - 觸發器：`set_user_game_status_times()`、`mark_played_from_activity()`（只掛 `game_ratings`）、`game_ratings_set_updated_at`。
 - 規則助手：`admin_replace_rulebook_chunks(p_document, p_chunks jsonb, p_page_count, p_file_hash)`、`admin_mark_rulebook_failed(p_document, p_code)`（內部檢查 `is_admin()`）、`search_rulebook_chunks(p_bgg_name, p_query)`、`rulebook_search_remaining()`、`rulebook_has_index(p_bgg_name)`、`rulebook_indexed_games()`。
@@ -60,15 +61,15 @@
 
 ## 4. 主要功能規則（已完成）
 
-- **首頁與篩選**：收藏清單是主角（不做「最新加入」「最受歡迎」）。主視覺縮成一條「今天，想玩哪一款？」＋搜尋框＋類型膠囊（`CategoryChips`：策略、派對、陣營固定在前，已選副類型，「更多類型 ▾」視窗可搜尋、多選、AND；數字是該類型總數，視窗用 `createPortal`、`.cat-backdrop` z-index 1100）。排序在標題列（`SortControl`：下拉＋升降冪＋「重設」，重設位置固定不跑位）。「☰ 更多篩選」抽屜（`FilterDrawer`，標題列 sticky）：我們有幾個人（**最少～最多區間，整個區間都玩得起來才列出**，缺值不排除；只選一邊＝剛好該人數；顛倒自動對調）、最佳／推薦人數、時間不超過 30／60／90／120 分、BGG 難度五級（`<1.8`、`1.8～<2.6`、`2.6～<3.2`、`3.2～<3.8`、`≥3.8`，缺值不屬任何級，五顆同一排）、只看新遊戲（30 天內）、評分狀態（我評過／我還沒評，需登入且評分讀取完成）、我的紀錄（三顆眼睛：想玩／未標記／已玩＋「依我的紀錄分區顯示」，`getMineGroup()`：有想玩→want，否則有已玩→played，否則 untouched）。「只看有封面」不做。新增條件要同步 `activeFilterCount`、`clearFilters`、`filteredGames` 的 useMemo 依賴、`missingDataCount`，**以及 `filterStorage.ts` 的 `SavedFilters`、`DEFAULT_FILTERS`、`loadFilters`、`saveFilters`，與 `App.tsx` 寫入記憶的 `useEffect`**。檢視模式 `list`／`grid-4`／`grid-9`（存 `localStorage` 鍵 `boardgame-view-mode`）；手機不硬塞 4／9 欄；卡片等高、按鈕貼底；`@media (hover: none)` 取消 hover 上抬。手機收藏標題列不顯示標題、控制列佔滿整行。
+- **首頁與篩選**：收藏清單是主角（不做「最新加入」「最受歡迎」）。主視覺縮成一條「今天，想玩哪一款？」＋搜尋框＋類型膠囊（`CategoryChips`：策略、派對、陣營固定在前，已選副類型，「更多類型 ▾」視窗可搜尋、多選、AND；數字是該類型總數，視窗用 `createPortal`、`.cat-backdrop` z-index 1100）。排序在標題列（`SortControl`：下拉＋升降冪＋「重設」，重設位置固定不跑位）。「☰ 更多篩選」抽屜（`FilterDrawer`，標題列 sticky）：我們有幾個人（**最少～最多區間，整個區間都玩得起來才列出**，缺值不排除；只選一邊＝剛好該人數；顛倒自動對調）、最佳／推薦人數、時間不超過 30／60／90／120 分、BGG 難度五級（`<1.8`、`1.8～<2.6`、`2.6～<3.2`、`3.2～<3.8`、`≥3.8`，缺值不屬任何級，五顆同一排）、只看新遊戲（30 天內）、評分狀態（我評過／我還沒評，需登入且評分讀取完成）、我的紀錄（三顆眼睛：想玩／未標記／已玩＋「依我的紀錄分區顯示」，`getMineGroup()`：有想玩→want，否則有已玩→played，否則 untouched）。「只看有封面」不做。新增條件要同步 `activeFilterCount`、`clearFilters`、`filteredGames` 的 useMemo 依賴、`missingDataCount`，**以及 `filterStorage.ts` 的 `SavedFilters`、`DEFAULT_FILTERS`、`loadFilters`、`saveFilters`，與 `App.tsx` 寫入記憶的 `useEffect`**。檢視模式 `list`／`grid-4`／`grid-9`（存 `localStorage` 鍵 `boardgame-view-mode`）；手機不硬塞 4／9 欄；卡片等高、按鈕貼底；`@media (hover: none)` 取消 hover 上抬。手機收藏標題列不顯示標題、控制列佔滿整行。**新遊戲置頂（2026-10-29，`App.tsx`）**：`isPinnedGame`＋`PIN_DAYS = 15`，`createdAt` 在 15 天內且 `rankingEngine` 空白或非整數（例如 .5 結尾）才置頂，任一條件結束即取消；`filteredGames` 排序後把置頂的放最前，任何排序都生效（仍受搜尋與篩選限制）；開「依我的紀錄分區顯示」時只在各分區內置頂；NEW 標示仍是 30 天（`NEW_GAME_DAYS`）。
 - **篩選記憶**（`lib/filterStorage.ts`，鍵 `boardgame-filters`，內容 `{version:1, filters:{…}}`）：存類型（載入時已不存在的類型略過）、難度、人數區間、最佳／推薦人數、時間、只看新遊戲、評分狀態、「我的紀錄」眼睛與分區、排序欄位與方向；**搜尋文字不存**；讀取失敗或版本不符退回預設；「清除篩選」「重設」會存回預設；只存這支瀏覽器，換裝置不同步。評分狀態在登出時本來就不生效（`ratingFilterActive`），所以不會造成空白畫面。
 - **詳細視窗（`GameModal.tsx`）**刻意精簡（不要再放排名、人數、類型、時間、難度）：四分頁 **概覽**（簡介、遊戲屬性、大家的評分摘要、管理者的封面上傳與「移到垃圾桶」）、**評分**、**我的桌遊**（**只有**：累計次數說明、`PlaySessions`〔記錄一次遊玩、最近紀錄〕、`PersonalNote`「我的整體心得」；**沒有**想玩／已玩按鈕與次數計數器，那些在卡片封面圖示與「我的俱樂部」清單）、**規則**（只顯示文件清單，分三區：🔗 網頁與規則連結、▶ 教學影片、📄 規則書 PDF〔只有管理者看得到〕；管理者可刪除；新增 PDF 與貼連結都在管理中心「規則書」分頁；連結只接受 http(s)；清單新的在上）；固定大小（`vip.css`：`.game-modal.has-tabs` 寬 460、高 `min(720px,100dvh-40px)`，手機全螢幕）；`TABS` 陣列＋`tab === 'xxx'` 切換。卡片按鈕叫「詳細資料」。**（2026-10-29：詳細視窗有改版方向，見第 10 節，尚未動工；以上仍是現況。）**
 - **垃圾桶**：所有人看得到，只有管理者能移入（填原因）、還原、永久刪除、編輯原因；0 款整區隱藏是設計如此。
 - **想玩／已玩**（`usePersonalCollection.ts`）：訪客存 `localStorage`（鍵 `boardgame-personal-collection`），登入後以雲端為準（先改畫面再寫雲端，失敗還原）；首次登入合併視窗（聯集、備註保留雲端、次數取大值、雲端寫入成功才清本機）；訪客紀錄不跨瀏覽器。計數器 0～999，按「已玩」不加次數（為 0 才設 1）；**按「＋」記次數時若尚未已玩會一併標已玩**（`skipPlayedRule: true`）；評分過、記錄遊玩也自動標已玩（觸發器＋前端即時更新）；取消不會取消已玩。
 - **「我的俱樂部」清單（`MyList.tsx`）**：想玩／已玩兩個清單；**已玩清單每列有 − 次數 ＋**（改 `play_count`，帶 `skipPlayedRule: true`；顯示的總次數＝`playCount`＋有日期紀錄筆數；有日期紀錄而 `playCount` 為 0 時 − 為灰並提示到遊戲視窗刪除；上限 999；旁邊顯示最近一次日期；樣式 `.mylist-counter*` 在 `vip.css` 底部）；想玩清單只顯示「玩過 N 次・最近」；「我的統計」入口在清單上方。
 - **公開評分**：整體 1～10＋適合留下來 1～5 必填，其餘五項選填；未滿 5 人顯示「評分累積中」；社群平均與自己的 Emoji 評價並排，**不與「綜合分數」混用**。項目用語：喜歡度、**影響度（不要改成「玩家互動」）**、溝通度、變化度、獨特性；複雜度、快速性是遊戲屬性不列入評分；**完整評分＝七項皆非空**。
-- **管理者評分換算**（`computeAdminScores`，前端與資料庫兩邊要一致）：整體依 `ranking_engine`：≤25→10、≤50→9、≤65→8、≤80→7、其餘→6；適合留下來依 `score_rank`，**只在玩過的遊戲間排名**（同分並列、不含垃圾桶）：名次 ≤30→5、≤60→4、≤90→3、其餘→2；**`ranking_engine` 以 .5 結尾＝沒玩過**，七項都不計（資料庫以 `ranking_engine = floor(...)` 判斷），評分頁顯示「未玩過」；喜歡度、影響度、溝通度、變化度、獨特性取 CSV 對應 `*_emoji` 欄字元數（去掉 U+FE0F 與空白，上限 5，0 個視為沒有）。管理者的 CSV 分數算一位評分者進社群評分（排除 `admin_users` 的 `game_ratings` 避免重複）；影響：玩家門檻 5 人含管理者那一票，排行榜評分榜與適合留下來榜同樣含管理者。管理者評分頁顯示五個圓點加「整體 N/10」「適合留下來 N/5」。
-- **社群統計**：每款顯示想玩／已玩人數與月／季／年「期間新增」（以 `*_first_at`）；只回傳彙總；訪客不計；**不加「讚」按鈕、不做留言板**。
+- **管理者評分換算**（`computeAdminScores`，前端與資料庫兩邊要一致）：整體依 `ranking_engine`：≤25→10、≤50→9、≤65→8、≤80→7、其餘→6；適合留下來依 `score_rank`，**只在玩過的遊戲間排名**（同分並列、不含垃圾桶）：名次 ≤30→5、≤60→4、≤90→3、其餘→2；**`ranking_engine` 以 .5 結尾＝沒玩過**，七項都不計（資料庫以 `ranking_engine = floor(...)` 判斷），評分頁顯示「未玩過」；喜歡度、影響度、溝通度、變化度、獨特性取 CSV 對應 `*_emoji` 欄字元數（去掉 U+FE0F 與空白，上限 5，0 個視為沒有）。管理者的 CSV 分數算一位評分者進社群評分（排除 `admin_users` 的 `game_ratings` 避免重複）；影響：玩家門檻 5 人含管理者那一票，排行榜評分榜與適合留下來榜同樣含管理者。管理者評分頁顯示五個圓點加「整體 N/10」「適合留下來 N/5」；**沒玩過（`adminScores` 為 null）時七項一律顯示「未玩過」、不顯示圓點**（2026-10-29，`GameModal.tsx`）。
+- **社群統計**：每款顯示想玩／已玩人數與月／季／年「期間新增」（以 `*_first_at`）；只回傳彙總；訪客不計；不加「讚」按鈕；**留言板：2026-10-29 使用者改變主意，要做自願公開的留言（兩欄私人／公開，見第 10.1 節），尚未動工**。
 - **排行榜**：想玩、已玩（全部／本月／本季／本年）、整體評分、適合留下來（滿 5 人才上榜，平均到小數 1 位）；同分並列、前 10 名；可展開名單（見第 5 節隱私）；「📊 統計表」（VIP 看遊戲總表，管理者另有成員×遊戲矩陣，可依玩家／遊戲篩選，可匯出 CSV）；統計表打開時暫時隱藏排行榜抽屜。空狀態（`renderEmpty()`）會說明為什麼是空的並附按鈕（看全部期間／去逛收藏／先看想玩榜）；評分榜空時刻意不顯示「目前有幾款在累積」。
 - **簡介**：管理者在「概覽」編輯，使用者說太耗時先跳過；若請 AI 擬稿，只寫「這款在玩什麼」一到兩句自己的話，不翻譯或改寫 BGG 簡介。
 - **`privacy.html`**：日後新增功能要同步更新。已涵蓋遊玩紀錄、評分、社群統計、排行榜、集點卡、聯絡方式、VIP 名單、管理者可見內容、報到、帳號刪除、免費券自動使用紀錄、報到即 VIP；評分名稱已改「度」；**2026-10-28 已補規則助手搜尋紀錄（帳號、遊戲、時間，不存內容，保留 7 天）與「翻譯／複製會把片段交給 Google 或使用者自選的外部服務」的說明。**
@@ -85,10 +86,10 @@
 - **報到流程**：點連結 → Google 登入 → 填暱稱與聯絡方式 → **自動報到**（`CheckInDialog` 開啟即呼叫 `join_gathering`，失敗才出現「我來了」）→ 評分（至少一款當天指定遊戲七項評完；以前評過、免評分、沒指定遊戲則略過）→ 集點卡。**沒有通關密碼步驟、沒有「我玩了」勾選**（收到連結並報到＝當天有來）。手動加入的玩家：底部「集點卡」出現**紅點**（`useTodayTask`：今天有他的聚會、已指定遊戲、尚未得點才亮；切回網頁會重新讀取），集點卡最上方有「今天要做的事」卡（`lc-today`）直達該遊戲評分分頁；不做自動彈出評分。
 - **風險提醒**：聚會連結傳進群組後，當天收到的人都能變 VIP；擋板只有「人數上限」與「只有當天有效」，上限請照實際人數填。
 - **集點規則**（`loyalty_day_status`）：出席，且當天指定遊戲**任一款七項評分完整**得 1 點（評分可在家補、可修改、可以是以前評的）；`exempt` 免評分直接得點；沒指定遊戲的舊聚會日沿用舊規則（`game_play_sessions` 日期、每款都評完整）；一天不管幾場只算 1 點。不讀 `board_games`：遊戲被移垃圾桶或刪除不影響點數（畫面名稱退回 `bgg_name`、無「去評分」按鈕）；真正風險是在 Notion 改 `bggName`。不用藍牙／區網偵測。
-- **免費券 v2**：同一個月**第 2 點當下自動變 1 張券，月點數歸零**（`month_points = 該月計入點數 % 2`，管理者表「本月」欄是餘數 0／1，總點數看「總 N 點」）；**券拿到的隔天起才能用**；**有券又有來的人，當天一定使用，不能累積**：聚會日「達成」且有可用券時，`settle_vouchers` 自動寫一筆 `loyalty_redemptions`（`used_on`＝該聚會日、`redeemed_by` null），**用券那天不集點**；只處理 **2026-10-27 以後**的聚會日；觸發時機為評分／出席異動的觸發器（內有 exception 保護，不擋評分）與兩個讀取函式先補算；**事後修改或刪除評分不退點數、不退券**；評分仍是前提，**不需管理者確認**。玩家端（`LoyaltyCard.tsx`）：評分前顯示「你有 N 張免費券可以用，評分完成後會自動使用」、用掉後顯示「今天已自動使用 1 張免費券」、印章「已用券」、「其中 N 張明天起才能用」、「免費券使用紀錄」；**沒有使用視窗**（`use_my_voucher` 已 drop）。管理者端：三個小分頁「聚會設定／集點狀況／免費券紀錄」；集點狀況一人一張卡（排序：可用券多→本月點數多→總點數多，可勾「只顯示有點數或有券的人」）；「補登」只補登現場已給過的券。已兌換超過累積顯示 ⚠（測試帳號曾顯示「已兌換 1、累積 0」，若非測試資料要查）。
+- **免費券 v2**：同一個月**第 2 點當下自動變 1 張券，月點數歸零**（`month_points = 該月計入點數 % 2`，管理者表「本月」欄是餘數 0／1，總點數看「總 N 點」）；**券拿到的隔天起才能用**；**有券又有來的人，當天一定使用，不能累積**：聚會日「達成」且有可用券時，`settle_vouchers` 自動寫一筆 `loyalty_redemptions`（`used_on`＝該聚會日、`redeemed_by` null），**用券那天不集點**；只處理 **2026-10-27 以後**的聚會日；觸發時機為評分／出席異動的觸發器（內有 exception 保護，不擋評分）與兩個讀取函式先補算；**事後修改或刪除評分不退點數、不退券**；評分仍是前提，**不需管理者確認**。玩家端（`LoyaltyCard.tsx`）：評分前顯示「你有 N 張免費券可以用，評分完成後會自動使用」、用掉後顯示「今天已自動使用 1 張免費券」、印章「已用券」、「其中 N 張明天起才能用」、「免費券使用紀錄」；**沒有使用視窗**（`use_my_voucher` 已 drop）。管理者端：三個小分頁「聚會設定／集點狀況／免費券紀錄」；集點狀況一人一張卡（排序：可用券多→本月點數多→總點數多，可勾「只顯示有點數或有券的人」）；「補登」只補登現場已給過的券（保留，例外用）；另有「贈送」按鈕（`grantVoucher`，`window.prompt` 輸入 1～5 張，呼叫 `admin_grant_voucher`），下方「🎁 管理者贈送紀錄」表格讀 `loyalty_grants`（最近 300 筆）。已兌換超過累積顯示 ⚠（測試帳號曾顯示「已兌換 1、累積 0」，若非測試資料要查）。
 - **集點卡畫面**（`LoyaltyCard.tsx`、`loyalty-card.css`）：印章風；點數、免費券、兩個印章格包進 `lc-wallet`；規則收進 `<details className="lc-fold">`；近期紀錄預設只顯示最近 5 筆（`RECENT_DAYS`），其餘按「顯示全部 N 筆」，邀請連結日期在被收起部分時自動全展開；1～4 步驟；舊聚會日沒指定遊戲時顯示「你已經在這天的出席名單上。管理者還沒指定要評分的遊戲……」。評分狀態來自 `ratings`（只在 `Library` 呼叫一次，不要在 `LoyaltyCard` 再呼叫）。同一天兩場的集點卡尚未實測。
 - **名單隱私**：預設只顯示人數；VIP 展開只看暱稱（玩家可在暱稱選單關閉 `hide_in_lists`）；管理者看「暱稱（LINE／FB）」且不受隱藏影響；評分者名單只有管理者；LINE／FB 名字永不給 VIP。
-- **管理中心**（`AdminCenter.tsx`，導覽只有一顆「⚙ 管理」，開關由 `App` 的 `activePage === 'admin'` 控制：`isOpen`／`onToggle`／`onClose`）：大分頁「成員」「聚會集點」「規則書」「資料匯入」（四等分膠囊、圖示在上，視窗固定大小、內容在 `.ac-body` 捲動；樣式 `ac-`／`ma-`／`rb-` 在 `vip.css`）。「規則書」分頁見第 7 節。「成員與 VIP」：搜尋、VIP 開關、密碼設定、鎖定解鎖、刪除帳號（輸入暱稱確認）。「聚會集點」（`LoyaltyAdmin.tsx`，`lga-` 開頭）：新增聚會、近期聚會**依月份分組**（預設展開最新一個月與本月，點某天詳情就地展開在該列下方）、出席者頭像標籤（可搜暱稱或 LINE／FB 名字、顯示聯絡方式、免評分、來源標籤）、指定遊戲。樣式分散在 `vip.css`（`ma-`、`ac-`）、`loyalty.css`（`loy-`）、`admin.css`（`admin-`）、`loyalty-admin.css`（`lga-`）。
+- **管理中心**（`AdminCenter.tsx`，導覽只有一顆「⚙ 管理」，開關由 `App` 的 `activePage === 'admin'` 控制：`isOpen`／`onToggle`／`onClose`）：大分頁「成員」「聚會集點」「規則書」「資料匯入」（四等分膠囊、圖示在上，視窗固定大小、內容在 `.ac-body` 捲動；樣式 `ac-`／`ma-`／`rb-` 在 `vip.css`）。「規則書」分頁見第 7 節。「成員與 VIP」：搜尋、VIP 開關、密碼設定、鎖定解鎖、刪除帳號（輸入暱稱確認）。「聚會集點」（`LoyaltyAdmin.tsx`，`lga-` 開頭）：新增聚會（`.lga-new` 兩欄：日期＋場次一列、備註一列、按鈕一列）、近期聚會**依月份分組**（預設展開最新一個月與本月，點某天詳情就地展開在該列下方）、出席者頭像標籤（可搜暱稱或 LINE／FB 名字、顯示聯絡方式、免評分、來源標籤）、指定遊戲。樣式分散在 `vip.css`（`ma-`、`ac-`）、`loyalty.css`（`loy-`）、`admin.css`（`admin-`）、`loyalty-admin.css`（`lga-`）。
 
 ## 6. 視覺風格與樣式地雷
 
@@ -180,3 +181,11 @@
 6. 第 8 節的「揪團與聚會規劃」（報名、候補）與首頁「近期聚會」要不要同一批；另外使用者 2026-10-27 晚上提過行事曆構想（VIP 填早上／下午／晚上可參加時段、每個日期一份最多 5 款的想玩清單、管理者開放報名並列候選遊戲，分三階段：可參加時段→管理者活動報名與候補→轉成正式聚會），要和首頁「近期聚會」合併規劃，避免做兩套。
 7. 「攻略」目前沒有資料來源；規則 PDF 維持只給 AI 檢索、不公開。
 8. 導覽列改版會動到 `NavPage`、`TopBar`、`sitebar`、手機 `--nav-h` 與 `useBackClose`，影響大，最後才做。
+
+### 10.1 已決定的規格（使用者 2026-10-29 回覆；與上方衝突清單第 1、2 項衝突時，以此為準）
+- **留言板**：推翻「不做留言板」，改為**自願公開**。每則場次心得有兩欄「私人留言」「公開留言」，都選填，中間有「複製」按鈕（私人→公開或相反）；私人存在自己的紀錄，公開存到遊戲留言板。建議一則綁一款遊戲、每欄 ≤200 字；新表 `gathering_notes`（`user_id, gathering_id, bgg_name, private_note, public_note, updated_at`，唯一 `(user_id, gathering_id, bgg_name)`），RLS 只有本人；公開內容只透過 security definer 函式給 VIP，隱藏暱稱者顯示「匿名玩家」。`privacy.html` 要同步。（建議，未執行。）
+- **兩個留言入口**：①遊戲詳細視窗的留言板（以該遊戲評論為主）；②主畫面新增「最新留言」區（大家最新公開留言，標明針對哪款遊戲），與「近期聚會」同在首頁。
+- **我的場次**：只有出席該場的人看得到；顯示出席者暱稱與當天指定遊戲（管理者新增遊戲後出席者立刻看得到）；隱藏暱稱者顯示「匿名玩家」；管理者看全部含 LINE／FB。**建議設計（未執行）**：新增 security definer 函式（`set search_path = ''`，`revoke ... from public, anon`），內部檢查呼叫者在 `gathering_attendees` 或是管理者，回傳出席者暱稱（`hide_in_lists` 者回「匿名玩家」，管理者另回聯絡方式）與 `gathering_games`。
+- **補記過去的場次**：沿用現有 `game_play_sessions`（日期、人數、單次心得），要把入口做在「我的紀錄」直接選遊戲。總次數＝`play_count`＋有日期紀錄筆數，補記一筆自動 +1，不改。**出席聚會不自動算玩過一次**（只知指定遊戲，要算由玩家自己按「我玩了這款」）。`game_play_sessions` 與場次心得先分開。
+- **心得跳窗**：評分完成得點、或自動用券後跳一次，可「稍後再寫」；沒寫的在「我的場次」標「待填」。
+- **分批**：A 我的場次（只讀，**使用者選為下一批**）→B 補記入口→C 心得兩欄＋跳窗→D 遊戲留言板→E 首頁「最新留言」＋「近期聚會」→導覽列最後。
