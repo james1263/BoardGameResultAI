@@ -396,19 +396,12 @@ export default function MyList({
                 <div className="mylist-backdrop" onClick={onClose} />
                 <aside className="mylist-drawer" role="dialog" aria-label="我的統計">
                     <div className="mylist-header">
-                        <button
-                            className="mylist-back"
-                            type="button"
-                            onClick={() => setView('home')}
-                        >
-                            ‹ 返回
-                        </button>
                         <h2>我的統計</h2>
                         <button
                             className="mylist-close"
                             type="button"
                             aria-label="關閉"
-                            onClick={onClose}
+                            onClick={() => setView('home')}
                         >
                             ×
                         </button>
