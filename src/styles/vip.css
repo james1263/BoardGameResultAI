@@ -1868,3 +1868,7 @@ body {
   opacity: 0.5;
   cursor: default;
 }
+
+.modal-backdrop {
+  z-index: 1220;
+}

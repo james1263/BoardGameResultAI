@@ -992,7 +992,6 @@ function Library({
           setCoverMessage('')
           setSelectedTab(tab ?? 'overview')
           setSelectedGame(game)
-          setActivePage(null)
         }}
         renderCover={(game) => (
           <CoverImage
@@ -1018,7 +1017,6 @@ function Library({
         onOpenGame={(game) => {
           setCoverMessage('')
           setSelectedGame(game)
-          setActivePage(null)
         }}
         renderCover={(game) => (
           <CoverImage
