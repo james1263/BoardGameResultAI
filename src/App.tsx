@@ -69,6 +69,19 @@ import BackToTop from './components/BackToTop'
 import { useTrashActions } from './lib/useTrashActions'
 import { updateDescription } from './lib/saveDescription'
 
+// 新遊戲置頂：上架 15 天內，而且還沒有排名（Ranking engine 空白或不是整數，例如 .5 結尾）
+// 兩個條件任一個先結束，就不再置頂
+const PIN_DAYS = 15
+
+function isPinnedGame(game: LibraryGame, nowMs: number): boolean {
+  if (!game.createdAt) return false
+  const age = nowMs - new Date(game.createdAt).getTime()
+  if (age >= PIN_DAYS * 24 * 60 * 60 * 1000) return false
+  const hasRank =
+    game.rankingEngine != null && Number.isInteger(game.rankingEngine)
+  return !hasRank
+}
+
 function Library({
   allGames,
   onGamesChange,
@@ -438,7 +451,7 @@ function Library({
 
     const direction = sortDirection === 'asc' ? 1 : -1
 
-    return filtered.sort((a, b) => {
+    const sorted = filtered.sort((a, b) => {
       if (sortBy === 'name') {
         return a.name.localeCompare(b.name, 'zh-Hant') * direction
       }
@@ -485,6 +498,12 @@ function Library({
 
       return compareNullableNumbers(aValue, bValue, direction)
     })
+
+    // 置頂的新遊戲放最前面（任何排序都一樣），其餘維持原排序
+    return [
+      ...sorted.filter((game) => isPinnedGame(game, nowMs)),
+      ...sorted.filter((game) => !isPinnedGame(game, nowMs)),
+    ]
   }, [
     searchText,
     selectedCategories,
