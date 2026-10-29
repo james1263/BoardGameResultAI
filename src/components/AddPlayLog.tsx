@@ -100,15 +100,12 @@ export default function AddPlayLog({
       <div className="mylist-backdrop" onClick={onClose} />
       <aside className="mylist-drawer" role="dialog" aria-label="補記遊玩">
         <div className="mylist-header">
-          <button className="mylist-back" type="button" onClick={onBack}>
-            ‹ 返回
-          </button>
           <h2>補記遊玩</h2>
           <button
             className="mylist-close"
             type="button"
             aria-label="關閉"
-            onClick={onClose}
+            onClick={onBack}
           >
             ×
           </button>

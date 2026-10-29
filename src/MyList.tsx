@@ -10,6 +10,7 @@ import { useMyLoyalty } from './lib/useLoyalty'
 import { PROFILE_SAVED_EVENT, signInWithGoogle } from './lib/googleLogin'
 import MyGatherings from './components/MyGatherings'
 import AddPlayLog from './components/AddPlayLog'
+import { useBackClose } from './lib/useBackClose'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 export type Tab = 'want' | 'played'
@@ -240,6 +241,7 @@ export default function MyList({
 }) {
     const [view, setView] = useState<View>('home')
     const [tab, setTab] = useState<Tab>('want')
+    useBackClose(() => setView('home'), isOpen && mode !== 'loyalty' && view !== 'home')
 
     // 每次打開都回到首頁、想玩分頁
     useEffect(() => {
@@ -296,12 +298,12 @@ export default function MyList({
                 <div className="mylist-backdrop" onClick={onClose} />
                 <aside className="mylist-drawer" role="dialog" aria-label="集點卡">
                     <div className="mylist-header">
-                        <h2>集點卡</h2>
+                        <h2>我的統計</h2>
                         <button
                             className="mylist-close"
                             type="button"
                             aria-label="關閉"
-                            onClick={onClose}
+                            onClick={() => setView('home')}
                         >
                             ×
                         </button>

@@ -10,6 +10,7 @@ import {
   type MyGathering,
 } from '../lib/useMyGatherings'
 import GatheringNoteDialog from './GatheringNoteDialog'
+import { useBackClose } from '../lib/useBackClose'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -111,6 +112,7 @@ export default function MyGatherings({
     if (selectedId) setSelectedId(null)
     else onBack()
   }
+  useBackClose(() => setSelectedId(null), selectedId !== null)
 
   // 出席不會自動算玩過；玩家按「我玩了這款」才記一筆（日期＝聚會日、人數＝出席人數）
   async function markPlayed(
@@ -144,15 +146,12 @@ export default function MyGatherings({
       <div className="mylist-backdrop" onClick={onClose} />
       <aside className="mylist-drawer" role="dialog" aria-label="我的場次">
         <div className="mylist-header">
-          <button className="mylist-back" type="button" onClick={handleBack}>
-            ‹ 返回
-          </button>
           <h2>{selectedId ? '場次詳情' : '我的場次'}</h2>
           <button
             className="mylist-close"
             type="button"
             aria-label="關閉"
-            onClick={onClose}
+            onClick={handleBack}
           >
             ×
           </button>
