@@ -1100,3 +1100,25 @@ body {
   font-size: 0.85rem;
   color: #8a5a1c;
 }
+
+/* ===== 我的場次 ===== */
+.mg-muted { margin: 8px 0; font-size: 13px; color: var(--c-ink-soft, #6b7a70); }
+.mg-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.mg-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; background: var(--c-paper, #fbf7ec); border: 1px solid var(--c-line, #e3dccb); border-radius: var(--radius-m, 12px); text-align: left; cursor: pointer; font: inherit; color: var(--c-ink, #34463c); }
+.mg-date { flex: none; width: 52px; padding: 6px 0; text-align: center; background: #e4ebdc; border-radius: 10px; color: var(--c-forest-dark, #365b40); line-height: 1.2; }
+.mg-date small { display: block; font-size: 11px; }
+.mg-date strong { display: block; font-size: 20px; }
+.mg-info { flex: 1; min-width: 0; display: block; }
+.mg-title { display: block; margin: 0; font-size: 16px; font-weight: 700; color: var(--c-ink, #34463c); overflow-wrap: anywhere; }
+.mg-sub { display: block; margin: 2px 0 0; font-size: 13px; color: var(--c-ink-soft, #6b7a70); }
+.mg-arrow { flex: none; font-size: 22px; color: var(--c-ink-soft, #6b7a70); }
+.mg-detail-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.mg-note { margin: 8px 0; padding: 10px 12px; background: var(--c-paper, #fbf7ec); border-radius: 10px; font-size: 14px; color: var(--c-ink, #34463c); overflow-wrap: anywhere; }
+.mg-section-title { margin: 18px 0 8px; font-size: 15px; color: var(--c-ink, #34463c); }
+.mg-games, .mg-people { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.mg-game { padding: 7px 12px; font: inherit; font-size: 14px; color: var(--c-forest-dark, #365b40); background: #e4ebdc; border: 0; border-radius: 999px; cursor: pointer; }
+.mg-game.plain { display: inline-block; cursor: default; color: var(--c-ink-soft, #6b7a70); background: var(--c-paper, #fbf7ec); border: 1px solid var(--c-line, #e3dccb); }
+.mg-chip { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px 12px; font-size: 14px; color: var(--c-ink, #34463c); background: var(--c-paper, #fbf7ec); border: 1px solid var(--c-line, #e3dccb); border-radius: 999px; }
+.mg-chip.me { border-color: var(--c-forest, #456b50); background: #e4ebdc; }
+.mg-chip-sub { font-size: 12px; color: var(--c-ink-soft, #6b7a70); }
+.mg-chip-tags em { margin-left: 4px; padding: 1px 6px; font-size: 11px; font-style: normal; color: var(--c-ink-soft, #6b7a70); background: #fff; border-radius: 6px; }

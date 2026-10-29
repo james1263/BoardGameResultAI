@@ -8,11 +8,12 @@ import { supabase } from './lib/supabase'
 import { useSession } from './lib/useSession'
 import { useMyLoyalty } from './lib/useLoyalty'
 import { PROFILE_SAVED_EVENT, signInWithGoogle } from './lib/googleLogin'
+import MyGatherings from './components/MyGatherings'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
-type View = 'home' | 'stats'
+type View = 'home' | 'stats' | 'gatherings'
 
 // 讀自己的暱稱（只在抽屜打開時才會執行）
 function useMyNickname(userId: string | null): string {
@@ -319,6 +320,19 @@ export default function MyList({
         )
     }
 
+    // ---------- 我的場次 ----------
+    if (view === 'gatherings') {
+        return (
+            <MyGatherings
+                boardGames={boardGames}
+                isAdmin={isAdmin}
+                onBack={() => setView('home')}
+                onClose={onClose}
+                onOpenGame={onOpenGame}
+            />
+        )
+    }
+
     // ---------- 我的統計 ----------
     if (view === 'stats') {
         return (
@@ -442,6 +456,22 @@ export default function MyList({
                             <span className="club-menu-arrow" aria-hidden="true">›</span>
                         </button>
                     </div>
+                    {personal.isLoggedIn && (
+                        <div className="club-list club-more">
+                            <button
+                                type="button"
+                                className="club-menu-item club-menu-single"
+                                onClick={() => setView('gatherings')}
+                            >
+                                <span className="club-menu-icon" aria-hidden="true">📅</span>
+                                <span className="club-menu-text">
+                                    <b>我的場次</b>
+                                    <small>出席過的聚會、當天遊戲與出席者</small>
+                                </span>
+                                <span className="club-menu-arrow" aria-hidden="true">›</span>
+                            </button>
+                        </div>
+                    )}
                     <div className="club-list">
                         <h3 className="club-section-title">
                             {tab === 'want' ? '想玩清單' : '已玩清單'}
