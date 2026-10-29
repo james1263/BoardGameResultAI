@@ -9,6 +9,7 @@ import { useSession } from './lib/useSession'
 import { useMyLoyalty } from './lib/useLoyalty'
 import { PROFILE_SAVED_EVENT, signInWithGoogle } from './lib/googleLogin'
 import MyGatherings from './components/MyGatherings'
+import MyNotes from './components/MyNotes'
 import AddPlayLog from './components/AddPlayLog'
 import { useBackClose } from './lib/useBackClose'
 
@@ -16,7 +17,7 @@ type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
-type View = 'home' | 'stats' | 'gatherings' | 'addplay'
+type View = 'home' | 'stats' | 'gatherings' | 'addplay' | 'notes'
 type StatsTab = 'overview' | 'want' | 'played'
 type SortKey =
     | 'added'
@@ -264,6 +265,8 @@ export default function MyList({
     renderCover: (game: BoardGame) => ReactNode
 }) {
     const [view, setView] = useState<View>(openGatheringId ? 'gatherings' : 'home')
+    // 要直接打開的聚會詳情（從遊戲視窗或「我的心得」跳過來）
+    const [gatheringTarget, setGatheringTarget] = useState<string | null>(openGatheringId ?? null)
     const [statsTab, setStatsTab] = useState<StatsTab>('overview')
     const [search, setSearch] = useState('')
     // 想玩、已玩各自記住排序；切換分頁只清空搜尋
@@ -433,6 +436,22 @@ export default function MyList({
         )
     }
 
+    // ---------- 我的心得 ----------
+    if (view === 'notes') {
+        return (
+            <MyNotes
+                boardGames={boardGames}
+                renderCover={renderCover}
+                onBack={() => setView('home')}
+                onClose={onClose}
+                onOpenGathering={(id) => {
+                    setGatheringTarget(id)
+                    setView('gatherings')
+                }}
+            />
+        )
+    }
+
     // ---------- 我的場次 ----------
     if (view === 'gatherings') {
         return (
@@ -441,7 +460,7 @@ export default function MyList({
                 personal={personal}
                 playSessions={playSessions}
                 isAdmin={isAdmin}
-                initialGatheringId={openGatheringId ?? null}
+                initialGatheringId={gatheringTarget}
                 onBack={() => setView('home')}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
@@ -787,11 +806,27 @@ export default function MyList({
                                 <button
                                     type="button"
                                     className="club-menu-item club-menu-single"
-                                    onClick={() => setView('gatherings')}
+                                    onClick={() => {
+                                        setGatheringTarget(null)
+                                        setView('gatherings')
+                                    }}
                                 >
                                     <span className="club-menu-icon" aria-hidden="true">📅</span>
                                     <span className="club-menu-text">
                                         <b>我的場次</b>
+                                    </span>
+                                    <span className="club-menu-arrow" aria-hidden="true">›</span>
+                                </button>
+                            </div>
+                            <div className="club-list club-more">
+                                <button
+                                    type="button"
+                                    className="club-menu-item club-menu-single"
+                                    onClick={() => setView('notes')}
+                                >
+                                    <span className="club-menu-icon" aria-hidden="true">💬</span>
+                                    <span className="club-menu-text">
+                                        <b>我的心得</b>
                                     </span>
                                     <span className="club-menu-arrow" aria-hidden="true">›</span>
                                 </button>

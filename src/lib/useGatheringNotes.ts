@@ -187,3 +187,44 @@ export function useMyGameNotes(bggName: string) {
     notes: current?.notes ?? [],
   }
 }
+
+export type MyNoteRow = MyNote & { gatheringId: string; bggName: string }
+
+// 我全部的場次心得（所有聚會、所有遊戲；含私人欄，只有本人讀得到）
+export function useAllMyNotes() {
+  const [state, setState] = useState<{ rows: MyNoteRow[]; error: boolean } | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    supabase.rpc('get_my_gathering_notes').then(({ data, error }) => {
+      if (cancelled) return
+      if (error) {
+        console.error('讀取我的心得失敗：', error)
+        setState({ rows: [], error: true })
+        return
+      }
+      const rows = ((data ?? []) as NoteRow[]).map((row) => ({
+        gatheringId: row.gathering_id,
+        bggName: row.bgg_name,
+        privateNote: row.private_note ?? '',
+        publicNote: row.public_note ?? '',
+        publicStatus: (row.public_status === 'hidden' ? 'hidden' : 'visible') as
+          | 'visible'
+          | 'hidden',
+      }))
+      setState({ rows, error: false })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [reloadKey])
+
+  const reload = useCallback(() => setReloadKey((key) => key + 1), [])
+  return {
+    loading: state === null,
+    error: state?.error ?? false,
+    rows: state?.rows ?? [],
+    reload,
+  }
+}

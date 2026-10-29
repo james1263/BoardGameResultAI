@@ -2683,3 +2683,90 @@ body {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* ===== 第八批：我的心得清單 ===== */
+.mn-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mn-item {
+  overflow: hidden;
+  border: 1px solid rgba(183, 138, 90, 0.3);
+  border-radius: 14px;
+  background: #fffdf7;
+}
+.mn-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  color: #34463c;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mn-info { flex: 1; min-width: 0; }
+.mn-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 15px;
+}
+.mn-title span {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7a70;
+}
+.mn-preview {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: 13px;
+  color: #6b7a70;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mn-arrow { color: #9a7448; }
+.mn-detail {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+.mn-field {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(69, 107, 80, 0.06);
+}
+.mn-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #6b7a70;
+}
+.mn-field p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.mn-del,
+.mn-go {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mn-del { color: #a14d3a; }
+.mn-go { justify-self: start; color: #456b50; }
+.mn-error { margin: 0; font-size: 13px; color: #a14d3a; }

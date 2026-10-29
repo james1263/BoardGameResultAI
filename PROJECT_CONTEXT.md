@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-10-29 16:36（已併入：2026-10-29 下午的第二～六批——我的俱樂部精簡、心得頁重做與聚會詳情合併、聚會連結名額、評分說明小符號、想玩／已玩併進「我的統計」＋排序方向、想玩／已玩只統計 VIP）。
+> 最後更新：2026-10-30（已併入 2026-10-29 傍晚至 2026-10-30 的第一～八批介面精簡與心得相關功能；見第 4 節開頭「2026-10-30 現況」）。
 
 ## 1. 專案簡介與技術架構
 
@@ -11,7 +11,7 @@
 - 指令：`npm.cmd run dev`（`http://localhost:5173/`）、`npm.cmd run build`（成功顯示 `✓ built in ...`；chunk 大於 500 kB 警告可忽略）。dev 中斷時 Console 會出現 `ERR_CONNECTION_REFUSED`、`Setting up fake worker`，PDF 上傳也會失敗，先確認 dev 有在跑。
 - 資料更新：Notion → 匯出 CSV → 網站頁尾管理者登入 →「匯入 CSV」→ 預覽 →「確認匯入」（改資料、上傳封面、跑 SQL 不需 push；程式改動才要）。
 - **不要上傳到 Git**：`boardgame_source.zip`、`supabase_import.sql`、`make_supabase_import.py`、`boardgames.csv`、`categories_check.txt`、`covers_needed.txt`、`list_categories.py`、`generate_boardgames.backup.py`、`.env.local`、`App.css.bak`、`client_secret_*.json`。曾因 TortoiseGit Amend 造成 master 與 origin/master 分岔（修法：備份後 `git reset --mixed origin/master` 再逐檔 add）。
-- **程式結構**：`src/App.css` 只有 `@import`，**順序有影響不要調換**：`tokens`、`base`、`topbar`、`hero`、`library`、`filter`、`cards`、`modal`、`admin`、`mylist`、`footer`、`trash`、`docs`、`backtotop`、`tabs`、`ratings`、`leaderboard`、`loyalty`、`loyalty-card`、`loyalty-admin`、`account`、`sitebar`；`vip.css` 最後載入（近期覆蓋樣式貼在最底下）。`src/App.tsx` 只留 `Library` 的狀態與篩選／排序，導覽頁面用單一 `activePage`（`NavPage`，定義在 `TopBar.tsx`）。`src/components/`：`TopBar`、`ViewToggle`、`CategoryChips`、`SortControl`、`FilterDrawer`、`GameCard`、`GameModal`、`MergeDialog`、`PersonalToast`、`TrashSection`、`CoverImage`、`StatusButtons`、`RatingDots`、`RatingSection`、`PlayCounter`（無人使用，保留）、`PlaySessions`、`PersonalNote`、`DescriptionEditor`、`BackToTop`、`Leaderboard`、`CommunityStats`、`LoyaltyCard`、`CheckInDialog`、`InAppBrowserNotice`、`VipJoinDialog`、`VipLock`、`MemberAdmin`、`AdminCenter`、`StatsTables`、`RulebookPage`、`RulebookAssistant`、`RulebookBatchUpload`、`MyGatherings`、`GatheringNotePanel`（取代已刪除的 `GatheringNoteDialog`）、`AddPlayLog`、`InfoHint`、`Icons`；`src/lib/`：`libraryTypes`、`filterStorage`、`gameFormat`、`fetchBoardGames`、`personalApi`、`useTrashActions`、`usePersonalCollection`、`useGamePlaySessions`、`useGameRatings`、`useGameDocuments`、`docLabels`、`useCommunityStats`、`leaderboards`、`useLoyalty`、`useTodayTask`、`useVip`、`useGamePeople`、`adminEvents`、`saveDescription`、`useIsAdmin`、`useSession`、`useInviteLink`、`useCheckinLink`、`googleLogin`、`uploadCover`、`parseCsv`、`extractPdfText`、`zhEnGlossary`、`useBackClose`、`ratingHints`、`useRulebookSearch`、`useMyGatherings`、`useGatheringNotes`、`supabase`；另有 `src/AdminPanel.tsx`、`PlayerPanel.tsx`、`MyList.tsx`（畫面叫「我的桌遊／我的俱樂部」）、`LoyaltyAdmin.tsx`、`GameDocuments.tsx`（在 `src/` 底下）。實際清單以本機為準。
+- **程式結構**：`src/App.css` 只有 `@import`，**順序有影響不要調換**：`tokens`、`base`、`topbar`、`hero`、`library`、`filter`、`cards`、`modal`、`admin`、`mylist`、`footer`、`trash`、`docs`、`backtotop`、`tabs`、`ratings`、`leaderboard`、`loyalty`、`loyalty-card`、`loyalty-admin`、`account`、`sitebar`；`vip.css` 最後載入（近期覆蓋樣式貼在最底下）。`src/App.tsx` 只留 `Library` 的狀態與篩選／排序，導覽頁面用單一 `activePage`（`NavPage`，定義在 `TopBar.tsx`）。`src/components/`：`TopBar`、`ViewToggle`、`CategoryChips`、`SortControl`、`FilterDrawer`、`GameCard`、`GameModal`、`MergeDialog`、`PersonalToast`、`TrashSection`、`CoverImage`、`StatusButtons`、`RatingDots`、`RatingSection`、`PlayCounter`（無人使用，保留）、`PlaySessions`、`PersonalNote`、`DescriptionEditor`、`BackToTop`、`Leaderboard`、`CommunityStats`、`LoyaltyCard`、`CheckInDialog`、`InAppBrowserNotice`、`VipJoinDialog`、`VipLock`、`MemberAdmin`、`AdminCenter`、`StatsTables`、`RulebookPage`、`RulebookAssistant`、`RulebookBatchUpload`、`MyGatherings`、`GatheringNotePanel`（取代已刪除的 `GatheringNoteDialog`）、`AddPlayLog`、`MyNotes`、`GameGatheringNotes`、`InfoHint`、`Icons`；`src/lib/`：`libraryTypes`、`filterStorage`、`gameFormat`、`fetchBoardGames`、`personalApi`、`useTrashActions`、`usePersonalCollection`、`useGamePlaySessions`、`useGameRatings`、`useGameDocuments`、`docLabels`、`useCommunityStats`、`leaderboards`、`useLoyalty`、`useTodayTask`、`useVip`、`useGamePeople`、`adminEvents`、`saveDescription`、`useIsAdmin`、`useSession`、`useInviteLink`、`useCheckinLink`、`googleLogin`、`uploadCover`、`parseCsv`、`extractPdfText`、`zhEnGlossary`、`useBackClose`、`ratingHints`、`useRulebookSearch`、`useMyGatherings`、`useGatheringNotes`、`supabase`；另有 `src/AdminPanel.tsx`、`PlayerPanel.tsx`、`MyList.tsx`（畫面叫「我的桌遊／我的俱樂部」）、`LoyaltyAdmin.tsx`、`GameDocuments.tsx`（在 `src/` 底下）。實際清單以本機為準。
 - `src/data/boardGames.generated.ts`：本機備用資料與 `BoardGame` 型別，**不要手改、不要刪**；`public/covers/` 是舊封面備援。
 - 空間用量（2026-10-28）：`rulebooks` 13 份 116.8 MB、`covers` 98 張 6.2 MB、資料庫 14 MB；免費額度未自行查證，以後台 Usage 為準。
 
@@ -62,6 +62,18 @@
 - 匯入後請使用者執行 `select bgg_name, created_at from public.board_games order by created_at desc limit 5;` 確認舊遊戲 `created_at` 沒被重設。
 
 ## 4. 主要功能規則（已完成）
+
+> **2026-10-30 現況（優先於本節下面同名敘述；舊敘述中的「我的桌遊」＝現在的「俱樂部」，詳細視窗分頁「我的桌遊」＝現在的「我的紀錄」）**
+> - **導覽列**第五顆叫「俱樂部」（`NavPage` 仍是 `'mylist'`）；英文副標拿掉。
+> - **主畫面**：搜尋欄內有「篩選」鈕（開 `FilterDrawer`）；排序控制後面才出現「顯示 N / 106 款」（只在有搜尋／篩選／選類型時）；`ViewToggle` 在 `FilterDrawer` 最上面（props `viewMode`、`onViewModeChange`）；圖例只留愛心／勾勾。新增篩選條件時仍要同步 `activeFilterCount`、`clearFilters`、`filterStorage.ts` 等（見下）。
+> - **詳細視窗**四分頁：概覽、評分、**我的紀錄**（`MY PLAYS` 區：累計次數＋小 i＋`PlaySessions`；`PersonalNote`；**`GameGatheringNotes`**「各場次的私人心得（N）」可收合、唯讀、每筆「查看聚會 ›」）、規則；視窗內沒有英文小標；`onOpenGathering` 由 `App.tsx` 的 `openGatheringFromGame` 實作（關視窗、`inviteKey`＋1 重掛 `MyList`、`jumpGatheringId`→`MyList.openGatheringId`→初始 `view='gatherings'`→`MyGatherings.initialGatheringId`；`goPage`／`goHome` 會清掉 `jumpGatheringId`）。
+> - **俱樂部首頁**四列：▤ 我的統計（右側小字想玩／已玩）、📅 我的場次、💬 我的心得、📝 補記遊玩（後三列登入者才有）。內部 `view`：`home | stats | gatherings | addplay | notes`；`gatheringTarget` 狀態傳給 `MyGatherings` 當初始聚會。
+> - **我的統計**：分頁概況｜想玩｜已玩；概況有 TOP 3／5／10（`boardgame-stats-top-n`）、點「總時數」才展開估算說明；想玩／已玩的搜尋欄內含排序（`SORT_FIELDS`：加入時間／名稱／遊玩次數／最近遊玩；`SORT_DIRECTIONS` 方向文字；`SortKey` 仍以 `-rev` 結尾為反向；樣式 `cls-searchbox`／`cls-sort-field`／`cls-sort-dir`，下拉用 16px 避免 iPhone 放大）。
+> - **我的心得（`MyNotes.tsx`，第八批，待實測）**：資料來自 `get_my_gathering_notes()`（不帶參數＝全部）；每列封面＋遊戲名＋日期＋前 50 字（優先私人），展開看全文、可分別「刪除」私人／公開（`saveGatheringNote` 另一欄原樣傳回；兩欄皆空＝整則刪除）、「到這場聚會編輯 ›」跳到聚會詳情。樣式 `mn-*` 貼在 `vip.css` 底部。**注意**：只刪一欄時，`save_gathering_note` 仍會檢查出席／聚會日／指定遊戲，失敗會顯示原因。
+> - **排行榜**：說明文字改成 `lb-hintrow` 內的一顆 `InfoHint`；空榜單說明縮短。**規則助手**頂端說明改 `InfoHint`。**管理中心成員**：搜尋＋循環篩選鈕（`cls-searchbox`＋`search-filter-btn`）。
+> - **`InfoHint`**：14px、淺焦糖底（`rgba(183,138,90,.16)`）、`::after` 放大點擊範圍；泡泡在抽屜／視窗邊緣是否被切未全面驗證。
+> - **管理中心手機版**：`.ma-backdrop .ac-modal{height:100%;max-height:100%}`（手機版）。
+> - 新增 CSS 都貼在 `vip.css` 最底下：`search-filter-btn`、`lb-hintrow`、`mystat-title-row`／`mystat-topn*`／`mystat-box-btn`／`mystat-i`、`cls-searchbox`／`cls-search-input`／`cls-sort-field`／`cls-sort-dir`、`gn-mine*`、`mn-*`、`.modal-topbar{justify-content:flex-end}`。舊的 `cls-sortrow`、`cls-sort-inline` 已不用，可日後清理。
 
 - **首頁與篩選**：收藏清單是主角。類型膠囊（`CategoryChips`，「更多類型」視窗 `.cat-backdrop` 1100）；排序在標題列；「☰ 更多篩選」抽屜（人數區間、最佳／推薦人數、時間、難度五級、只看新遊戲 30 天、評分狀態、我的紀錄三顆眼睛＋分區顯示）。新增篩選條件要同步 `activeFilterCount`、`clearFilters`、`filteredGames` 依賴、`missingDataCount`、`filterStorage.ts` 的 `SavedFilters`／`DEFAULT_FILTERS`／`loadFilters`／`saveFilters` 與 `App.tsx` 的寫入 `useEffect`。檢視模式 `list`／`grid-4`／`grid-9`（`boardgame-view-mode`）。**新遊戲置頂**：`isPinnedGame`＋`PIN_DAYS = 15`，`createdAt` 15 天內且 `rankingEngine` 空白或非整數才置頂，任何排序都生效；分區顯示時只在各分區內置頂；NEW 標示 30 天。
 - **篩選記憶**：`lib/filterStorage.ts`，鍵 `boardgame-filters`（`{version:1, filters}`）；搜尋文字不存；只存該瀏覽器。
@@ -156,4 +168,4 @@
 - **兩個留言入口（尚未做）**：①遊戲詳細視窗的留言板（含「別處玩過也能留言」，直接綁遊戲、不需出席）；②主畫面「最新留言」區。
 - **我的場次**：已完成（第 4 節）。**補記過去的場次**：已完成，沿用 `game_play_sessions`；**出席不自動算玩過**。
 - **心得跳窗**：評分完成得點、或自動用券後問「現在寫／稍後再寫」，不可阻擋評分或集點流程；未記錄的在「我的場次」清單以灰色小字「已記錄心得 N/M」呈現（使用者決定保持此寫法）。
-- **分批（2026-10-29 16:36 狀態）**：返回機制（已做）→ 我的俱樂部精簡＋補記遊玩可選垃圾桶遊戲（已做）→ 心得頁重做＋刪除＋場次詳情合併（已做）→ 評分說明小符號、想玩／已玩併進「我的統計」＋排序方向、想玩／已玩只統計 VIP（已 push，使用者尚未回報實測）→ **我的心得清單（下一批）** → 自動跳窗 → D 遊戲留言板 → E 首頁「最新留言」＋「近期聚會」→ 導覽列。
+- **分批（2026-10-29 16:36 狀態）**：返回機制（已做）→ 我的俱樂部精簡＋補記遊玩可選垃圾桶遊戲（已做）→ 心得頁重做＋刪除＋場次詳情合併（已做）→ 評分說明小符號、想玩／已玩併進「我的統計」＋排序方向、想玩／已玩只統計 VIP（已 push，使用者尚未回報實測）→ 我的心得清單（2026-10-30 已寫好 `MyNotes.tsx`，待 push 與實測） → 自動跳窗 → D 遊戲留言板 → E 首頁「最新留言」＋「近期聚會」→ 導覽列。
