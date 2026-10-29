@@ -1872,3 +1872,51 @@ body {
 .modal-backdrop {
   z-index: 1220;
 }
+
+/* ===== 我的俱樂部：集點小字、清單搜尋與排序 ===== */
+.club-pts-line {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #6b6454;
+}
+.cls-tools {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+.cls-search,
+.cls-sort {
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #d9cfba;
+  border-radius: 10px;
+  background: #fbf7ec;
+  color: #34463c;
+  font-size: 16px;
+  font-family: inherit;
+}
+.cls-search {
+  flex: 1;
+  min-width: 0;
+}
+.cls-sort {
+  flex: 0 0 auto;
+  max-width: 48%;
+}
+.cls-count {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #6b6454;
+}
+
+.ap-removed {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #eadfca;
+  color: #6b6454;
+  font-size: 11px;
+  font-weight: normal;
+}

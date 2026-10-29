@@ -3,6 +3,8 @@ import type { BoardGame } from '../data/boardGames.generated'
 import type { PersonalApi } from '../lib/personalApi'
 import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
 
+type PlayableGame = BoardGame & { removedAt?: string | null }
+
 // 比對時忽略大小寫、空白與標點
 function normalize(text: string): string {
   return text.toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '')
@@ -15,14 +17,14 @@ export default function AddPlayLog({
   onBack,
   onClose,
 }: {
-  boardGames: BoardGame[]
+  boardGames: PlayableGame[]
   personal: PersonalApi
   playSessions: PlaySessionsApi
   onBack: () => void
   onClose: () => void
 }) {
   const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState<BoardGame | null>(null)
+  const [selected, setSelected] = useState<PlayableGame | null>(null)
   const [date, setDate] = useState(todayLocal)
   const [players, setPlayers] = useState('')
   const [note, setNote] = useState('')
@@ -32,7 +34,7 @@ export default function AddPlayLog({
   const matches = useMemo(() => {
     const q = normalize(query)
     if (!q) return []
-    const found: { game: BoardGame; rank: number }[] = []
+    const found: { game: PlayableGame; rank: number }[] = []
     for (const game of boardGames) {
       const names = [normalize(game.name), normalize(game.bggName)]
       if (names.some((name) => name.startsWith(q))) found.push({ game, rank: 0 })
@@ -127,6 +129,9 @@ export default function AddPlayLog({
                 {selected ? (
                   <div className="ap-picked">
                     <b>{selected.name}</b>
+                    {selected.removedAt && (
+                      <span className="ap-removed">已移除</span>
+                    )}
                     <button
                       type="button"
                       className="play-sessions-link"
@@ -163,6 +168,9 @@ export default function AddPlayLog({
                               }}
                             >
                               {game.name}
+                              {game.removedAt && (
+                                <span className="ap-removed">已移除</span>
+                              )}
                               {game.bggName !== game.name && (
                                 <small>{game.bggName}</small>
                               )}

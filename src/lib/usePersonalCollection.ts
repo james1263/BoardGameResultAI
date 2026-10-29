@@ -7,6 +7,8 @@ export type PersonalEntry = {
     played: boolean
     note: string
     playCount: number
+    wantFirstAt?: string | null
+    playedFirstAt?: string | null
 }
 
 export type PersonalCollection = Record<string, PersonalEntry>
@@ -21,6 +23,8 @@ type StatusRow = {
     played: boolean
     note: string
     play_count: number | null
+    want_first_at?: string | null
+    played_first_at?: string | null
 }
 
 const STORAGE_KEY = 'boardgame-personal-collection'
@@ -157,7 +161,9 @@ export function usePersonalCollection() {
 
         supabase
             .from(TABLE)
-            .select('bgg_name, want_to_play, played, note, play_count')
+            .select(
+                'bgg_name, want_to_play, played, note, play_count, want_first_at, played_first_at',
+            )
             .eq('user_id', userId)
             .then(({ data, error }) => {
                 if (cancelled) return
@@ -174,6 +180,8 @@ export function usePersonalCollection() {
                         played: row.played,
                         note: row.note,
                         playCount: clampCount(row.play_count),
+                        wantFirstAt: row.want_first_at ?? null,
+                        playedFirstAt: row.played_first_at ?? null,
                     }
                     if (isEmptyEntry(entry)) continue
                     next[row.bgg_name] = entry
@@ -254,7 +262,7 @@ export function usePersonalCollection() {
         },
         [userId, status],
     )
-    
+
     // 首次合併：本機有紀錄、雲端讀取完成、而且使用者還沒選「不加入」
     const localCount = Object.keys(local).length
     const needsMerge =
