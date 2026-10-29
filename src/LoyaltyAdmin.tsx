@@ -468,6 +468,15 @@ export default function LoyaltyAdmin() {
             setMessage('請先填人數上限（1～500 的整數），才能建立聚會連結。')
             return
         }
+        const manual =
+            (attendees[gatheringId] ?? []).length -
+            (selfAttendees[gatheringId] ?? []).length
+        if (manual >= value) {
+            setMessage(
+                `手動加入的人數（${manual}）已經達到人數上限（${value}），沒有名額留給聚會連結，所以不能建立連結。請提高人數上限，或取消部分手動加入。`,
+            )
+            return
+        }
         setBusy(true)
         setMessage('')
         const { data, error } = await supabase
@@ -730,6 +739,12 @@ export default function LoyaltyAdmin() {
         effectiveCapacity !== null
             ? Math.max(0, effectiveCapacity - selectedAttendees.length)
             : null
+
+    // 連結名額＝人數上限－手動加入的人數；手動加入已滿就不能建立連結
+    const linkQuota =
+        effectiveCapacity !== null ? Math.max(0, effectiveCapacity - manualCount) : null
+    const linkBlocked =
+        effectiveCapacity !== null && manualCount >= effectiveCapacity
 
     const playerQuery = playerSearch.trim().toLocaleLowerCase()
     const visiblePlayers = playerQuery
@@ -1086,8 +1101,8 @@ export default function LoyaltyAdmin() {
                                                                     <h4 className="lga-sub">④ 聚會連結（報到＋集點卡）</h4>
                                                                     {linkSlots !== null && (
                                                                         <p className="loy-admin-note">
-                                                                            上限 {effectiveCapacity} 人・手動加入 {manualCount} 人・自己報到{' '}
-                                                                            {selectedSelf.length} 人・<b>連結還可報到 {linkSlots} 人</b>
+                                                                            上限 {effectiveCapacity} 人・手動加入 {manualCount} 人・連結名額 {linkQuota} 人
+                                                                            （已報到 {selectedSelf.length} 人）・<b>還可報到 {linkSlots} 人</b>
                                                                         </p>
                                                                     )}
                                                                     <p className="loy-admin-note">
@@ -1101,11 +1116,19 @@ export default function LoyaltyAdmin() {
                                                                                     請先完成 ① 指定遊戲、② 人數上限，才能建立連結。
                                                                                 </p>
                                                                             )}
+                                                                            {linkBlocked && (
+                                                                                <p className="loy-admin-note">
+                                                                                    手動加入的人數已達人數上限，沒有名額留給聚會連結，所以不能建立連結。
+                                                                                </p>
+                                                                            )}
                                                                             <button
                                                                                 type="button"
                                                                                 className="lga-outline"
                                                                                 disabled={
-                                                                                    busy || selectedGames.length === 0 || draftCapacity === null
+                                                                                    busy ||
+                                                                                    selectedGames.length === 0 ||
+                                                                                    draftCapacity === null ||
+                                                                                    linkBlocked
                                                                                 }
                                                                                 onClick={() => createCheckin(selected.id)}
                                                                             >

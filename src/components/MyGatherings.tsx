@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { PersonalApi } from '../lib/personalApi'
 import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
@@ -9,7 +9,7 @@ import {
   type GatheringAttendee,
   type MyGathering,
 } from '../lib/useMyGatherings'
-import GatheringNoteDialog, { type NoteGame } from './GatheringNoteDialog'
+import GatheringNotePanel, { type NoteGame } from './GatheringNotePanel'
 import { useBackClose } from '../lib/useBackClose'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
@@ -67,11 +67,12 @@ export default function MyGatherings({
   const list = useMyGatherings()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
-  const [noteGameName, setNoteGameName] = useState<string | null>(null)
   const detail = useGatheringDetail(selectedId)
   const notes = useMyGatheringNotes(selectedId)
   const noteStatus = useNoteStatus()
   const selected = list.rows.find((row) => row.id === selectedId) ?? null
+  // 心得區會把「有未存變更」的檢查函式放進來
+  const guardRef = useRef<(() => boolean) | null>(null)
 
   const gameByName = useMemo(() => {
     const map = new Map<string, BoardGame>()
@@ -79,7 +80,6 @@ export default function MyGatherings({
     return map
   }, [boardGames])
 
-  // 心得頁用的當天遊戲清單（含封面所需的遊戲資料）
   const noteGames = useMemo<NoteGame[]>(
     () =>
       (detail.detail?.games ?? []).map((g) => ({
@@ -118,23 +118,44 @@ export default function MyGatherings({
     }))
   }
 
+  // 詳情 → 清單：有未存的心得會先跳出確認，不直接離開
+  function leaveDetail() {
+    if (guardRef.current?.()) return
+    setSelectedId(null)
+  }
+
   function handleBack() {
-    if (selectedId) setSelectedId(null)
+    if (selectedId) leaveDetail()
     else onBack()
   }
-  useBackClose(() => setSelectedId(null), selectedId !== null)
+  useBackClose(leaveDetail, selectedId !== null)
 
   const gatheredOn = selected?.gatheredOn ?? ''
   const isFuture = gatheredOn !== '' && gatheredOn > todayLocal()
   // 管理者可以看全部場次，但只有真的在出席名單上的人才能記錄心得
   const iAmAttendee = detail.detail?.attendees.some((person) => person.me) ?? false
+  const blockedReason: string | null = isFuture
+    ? '聚會還沒到，聚會當天或之後才能記錄心得。'
+    : !iAmAttendee
+      ? '你不在這場聚會的出席名單上，所以不能記錄心得。'
+      : notes.error
+        ? '心得讀取失敗，請稍後再試。'
+        : notes.loading
+          ? '心得讀取中…'
+          : null
 
   return (
     <>
-      <div className="mylist-backdrop" onClick={onClose} />
+      <div
+        className="mylist-backdrop"
+        onClick={() => {
+          if (selectedId && guardRef.current?.()) return
+          onClose()
+        }}
+      />
       <aside className="mylist-drawer" role="dialog" aria-label="我的場次">
         <div className="mylist-header">
-          <h2>{selectedId ? '場次詳情' : '我的場次'}</h2>
+          <h2>{selectedId ? '聚會詳情' : '我的場次'}</h2>
           <button
             className="mylist-close"
             type="button"
@@ -237,16 +258,17 @@ export default function MyGatherings({
             </>
           )}
 
-          {/* ---------- 場次詳情 ---------- */}
+          {/* ---------- 聚會詳情（資訊＋遊戲＋心得合在同一個畫面） ---------- */}
           {selectedId && (
             <>
               {selected && (
-                <div className="mg-detail-head">
-                  <DateBadge iso={selected.gatheredOn} />
-                  <div className="mg-info">
-                    <h3 className="mg-title">{selected.title}</h3>
-                    <p className="mg-sub">{dateParts(selected.gatheredOn).full}</p>
-                  </div>
+                <div className="gn3-summary">
+                  <h3>{selected.title}</h3>
+                  <p>
+                    {dateParts(selected.gatheredOn).full}（
+                    {dateParts(selected.gatheredOn).weekday}）・
+                    {detail.detail?.attendees.length ?? selected.attendeeCount} 人出席
+                  </p>
                 </div>
               )}
               {selected?.note && <p className="mg-note">{selected.note}</p>}
@@ -268,133 +290,78 @@ export default function MyGatherings({
                 <p className="mylist-empty">看不到這場聚會的資料。</p>
               ) : (
                 <>
-                  <h3 className="mg-section-title">
-                    當天指定遊戲（{detail.detail.games.length}）
-                  </h3>
-                  {detail.detail.games.length === 0 ? (
+                  <details className="gn3-people">
+                    <summary>出席者（{detail.detail.attendees.length}）</summary>
+                    {detail.detail.attendees.length === 0 ? (
+                      <p className="mg-muted">還沒有人。</p>
+                    ) : (
+                      <ul className="mg-people">
+                        {detail.detail.attendees.map((person, index) => {
+                          const source = isAdmin ? sourceLabel(person) : null
+                          return (
+                            <li
+                              key={index}
+                              className={`mg-chip${person.me ? ' me' : ''}`}
+                            >
+                              <span className="mg-chip-name">
+                                {person.n}
+                                {person.me && '（你）'}
+                              </span>
+                              {isAdmin && person.c && (
+                                <span className="mg-chip-sub">（{person.c}）</span>
+                              )}
+                              {isAdmin && (
+                                <span className="mg-chip-tags">
+                                  {source && <em>{source}</em>}
+                                  {person.e && <em>免評分</em>}
+                                  {person.h && <em>隱藏暱稱</em>}
+                                </span>
+                              )}
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
+                    <p className="mg-muted">
+                      {isAdmin
+                        ? '你是管理者，看得到聯絡方式與報到來源；其他人看不到。'
+                        : '選擇隱藏暱稱的玩家會顯示為「匿名玩家」。'}
+                    </p>
+                  </details>
+
+                  {noteGames.length === 0 ? (
                     <p className="mg-muted">管理者還沒有指定遊戲。</p>
                   ) : (
-                    <ul className="mg-game-list">
-                      {detail.detail.games.map((g) => {
-                        const game = gameByName.get(g.b)
-                        const label = g.n || g.b
-                        const note = notes.get(g.b)
-                        return (
-                          <li className="mg-game-row" key={g.b}>
-                            <div className="mg-game-main">
-                              {game ? (
-                                <button
-                                  type="button"
-                                  className="mg-game"
-                                  onClick={() => onOpenGame(game)}
-                                >
-                                  {label}
-                                </button>
-                              ) : (
-                                <span className="mg-game plain">{label}</span>
-                              )}
-                              {isFuture && (
-                                <span className="mg-future">聚會還沒到</span>
-                              )}
-                            </div>
-                            {iAmAttendee && !isFuture && (
-                              <div className="mg-note-line">
-                                <button
-                                  type="button"
-                                  className="mg-note-btn"
-                                  disabled={notes.loading || notes.error}
-                                  onClick={() => setNoteGameName(g.b)}
-                                >
-                                  {note ? '編輯心得' : '✎ 記錄心得'}
-                                </button>
-                                {note && (
-                                  <span className="mg-note-state">
-                                    已記錄心得
-                                    {note.publicNote !== '' &&
-                                      (note.publicStatus === 'hidden'
-                                        ? '・公開留言已被管理者隱藏'
-                                        : '・公開中')}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </li>
-                        )
-                      })}
-                    </ul>
+                    <GatheringNotePanel
+                      key={selectedId}
+                      gatheringId={selectedId}
+                      gatheredOn={gatheredOn}
+                      games={noteGames}
+                      blockedReason={blockedReason}
+                      getNote={notes.get}
+                      personal={personal}
+                      playSessions={playSessions}
+                      renderCover={renderCover}
+                      onOpenGame={onOpenGame}
+                      onChanged={() => {
+                        notes.reload()
+                        noteStatus.reload()
+                      }}
+                      guardRef={guardRef}
+                      onLeave={() => setSelectedId(null)}
+                    />
                   )}
-                  {!isAdmin && (
+                  {!isAdmin && noteGames.length > 0 && (
                     <p className="mg-muted">
                       沒看到你玩的遊戲？請聯絡管理者把它加進當天指定遊戲，才能記錄這場的心得。
                     </p>
                   )}
-
-                  <h3 className="mg-section-title">
-                    出席者（{detail.detail.attendees.length}）
-                  </h3>
-                  {detail.detail.attendees.length === 0 ? (
-                    <p className="mg-muted">還沒有人。</p>
-                  ) : (
-                    <ul className="mg-people">
-                      {detail.detail.attendees.map((person, index) => {
-                        const source = isAdmin ? sourceLabel(person) : null
-                        return (
-                          <li
-                            key={index}
-                            className={`mg-chip${person.me ? ' me' : ''}`}
-                          >
-                            <span className="mg-chip-name">
-                              {person.n}
-                              {person.me && '（你）'}
-                            </span>
-                            {isAdmin && person.c && (
-                              <span className="mg-chip-sub">（{person.c}）</span>
-                            )}
-                            {isAdmin && (
-                              <span className="mg-chip-tags">
-                                {source && <em>{source}</em>}
-                                {person.e && <em>免評分</em>}
-                                {person.h && <em>隱藏暱稱</em>}
-                              </span>
-                            )}
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  )}
-
-                  <p className="mg-muted">
-                    {isAdmin
-                      ? '你是管理者，看得到聯絡方式與報到來源；其他人看不到。'
-                      : '選擇隱藏暱稱的玩家會顯示為「匿名玩家」。'}
-                  </p>
                 </>
               )}
             </>
           )}
         </div>
       </aside>
-
-      {noteGameName && selected && noteGames.length > 0 && (
-        <GatheringNoteDialog
-          key={selected.id}
-          gatheringId={selected.id}
-          gatheringTitle={selected.title}
-          gatheredOn={selected.gatheredOn}
-          attendeeCount={detail.detail?.attendees.length ?? selected.attendeeCount}
-          games={noteGames}
-          initialBggName={noteGameName}
-          getNote={notes.get}
-          personal={personal}
-          playSessions={playSessions}
-          renderCover={renderCover}
-          onChanged={() => {
-            notes.reload()
-            noteStatus.reload()
-          }}
-          onClose={() => setNoteGameName(null)}
-        />
-      )}
     </>
   )
 }
