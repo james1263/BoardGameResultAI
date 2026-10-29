@@ -371,6 +371,7 @@ export default function MyList({
                 onBack={() => setView('home')}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
+                renderCover={renderCover}
             />
         )
     }

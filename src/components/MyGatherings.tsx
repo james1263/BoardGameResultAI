@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { PersonalApi } from '../lib/personalApi'
 import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
@@ -9,7 +9,7 @@ import {
   type GatheringAttendee,
   type MyGathering,
 } from '../lib/useMyGatherings'
-import GatheringNoteDialog from './GatheringNoteDialog'
+import GatheringNoteDialog, { type NoteGame } from './GatheringNoteDialog'
 import { useBackClose } from '../lib/useBackClose'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
@@ -53,6 +53,7 @@ export default function MyGatherings({
   onBack,
   onClose,
   onOpenGame,
+  renderCover,
 }: {
   boardGames: BoardGame[]
   personal: PersonalApi
@@ -61,14 +62,12 @@ export default function MyGatherings({
   onBack: () => void
   onClose: () => void
   onOpenGame: (game: BoardGame) => void
+  renderCover: (game: BoardGame) => ReactNode
 }) {
   const list = useMyGatherings()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
-  const [noteTarget, setNoteTarget] = useState<{
-    bggName: string
-    name: string
-  } | null>(null)
+  const [noteGameName, setNoteGameName] = useState<string | null>(null)
   const detail = useGatheringDetail(selectedId)
   const notes = useMyGatheringNotes(selectedId)
   const noteStatus = useNoteStatus()
@@ -79,6 +78,17 @@ export default function MyGatherings({
     for (const game of boardGames) map.set(game.bggName, game)
     return map
   }, [boardGames])
+
+  // 心得頁用的當天遊戲清單（含封面所需的遊戲資料）
+  const noteGames = useMemo<NoteGame[]>(
+    () =>
+      (detail.detail?.games ?? []).map((g) => ({
+        bggName: g.b,
+        name: g.n || g.b,
+        game: gameByName.get(g.b) ?? null,
+      })),
+    [detail.detail, gameByName],
+  )
 
   // 依月份分組：月份新到舊、月份內也是新到舊；沒有場次的月份不會出現
   const groups = useMemo(() => {
@@ -114,31 +124,9 @@ export default function MyGatherings({
   }
   useBackClose(() => setSelectedId(null), selectedId !== null)
 
-  // 出席不會自動算玩過；玩家按「我玩了這款」才記一筆（日期＝聚會日、人數＝出席人數）
-  async function markPlayed(
-    bggName: string,
-    date: string,
-    players: number | null,
-  ) {
-    const ok = await playSessions.addSession(bggName, {
-      playedOn: date,
-      playerCount: players,
-      note: '',
-    })
-    if (!ok) return
-    // 有紀錄就一定玩過；略過「次數 0 時設為 1」的規則，避免總次數多算
-    if (!personal.getEntry(bggName).played) {
-      personal.updateEntry(bggName, { played: true }, { skipPlayedRule: true })
-    }
-  }
-
   const gatheredOn = selected?.gatheredOn ?? ''
   const isFuture = gatheredOn !== '' && gatheredOn > todayLocal()
-  const defaultPlayers = detail.detail
-    ? Math.min(Math.max(detail.detail.attendees.length, 1), 99)
-    : null
-  const canRecord = personal.canEdit && playSessions.status === 'ready'
-  // 管理者可以看全部場次，但只有真的在出席名單上的人才能寫心得
+  // 管理者可以看全部場次，但只有真的在出席名單上的人才能記錄心得
   const iAmAttendee = detail.detail?.attendees.some((person) => person.me) ?? false
 
   return (
@@ -222,8 +210,8 @@ export default function MyGatherings({
                                       <b className="mg-title">
                                         {row.title}
                                         {pending && status && (
-                                          <span className="mg-todo">
-                                            待填 {status.doneCount}/{status.gameCount}
+                                          <span className="mg-quiet">
+                                            已記錄心得 {status.doneCount}/{status.gameCount}
                                           </span>
                                         )}
                                       </b>
@@ -290,9 +278,6 @@ export default function MyGatherings({
                       {detail.detail.games.map((g) => {
                         const game = gameByName.get(g.b)
                         const label = g.n || g.b
-                        const recorded = playSessions
-                          .getSessions(g.b)
-                          .some((item) => item.playedOn === gatheredOn)
                         const note = notes.get(g.b)
                         return (
                           <li className="mg-game-row" key={g.b}>
@@ -308,21 +293,8 @@ export default function MyGatherings({
                               ) : (
                                 <span className="mg-game plain">{label}</span>
                               )}
-                              {recorded ? (
-                                <span className="mg-play-btn done">✓ 已記錄</span>
-                              ) : isFuture ? (
+                              {isFuture && (
                                 <span className="mg-future">聚會還沒到</span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="mg-play-btn"
-                                  disabled={!canRecord || playSessions.busy}
-                                  onClick={() =>
-                                    void markPlayed(g.b, gatheredOn, defaultPlayers)
-                                  }
-                                >
-                                  我玩了這款
-                                </button>
                               )}
                             </div>
                             {iAmAttendee && !isFuture && (
@@ -331,15 +303,13 @@ export default function MyGatherings({
                                   type="button"
                                   className="mg-note-btn"
                                   disabled={notes.loading || notes.error}
-                                  onClick={() =>
-                                    setNoteTarget({ bggName: g.b, name: label })
-                                  }
+                                  onClick={() => setNoteGameName(g.b)}
                                 >
-                                  {note ? '編輯心得' : '✎ 寫心得'}
+                                  {note ? '編輯心得' : '✎ 記錄心得'}
                                 </button>
                                 {note && (
                                   <span className="mg-note-state">
-                                    已寫心得
+                                    已記錄心得
                                     {note.publicNote !== '' &&
                                       (note.publicStatus === 'hidden'
                                         ? '・公開留言已被管理者隱藏'
@@ -353,12 +323,11 @@ export default function MyGatherings({
                       })}
                     </ul>
                   )}
-                  <p className="mg-muted">
-                    按「我玩了這款」會記一筆遊玩（日期＝這場聚會、人數＝出席人數），
-                    並標成已玩。
-                    {!isAdmin &&
-                      '沒看到你玩的遊戲？請聯絡管理者把它加進當天指定遊戲，才能寫這場的心得。'}
-                  </p>
+                  {!isAdmin && (
+                    <p className="mg-muted">
+                      沒看到你玩的遊戲？請聯絡管理者把它加進當天指定遊戲，才能記錄這場的心得。
+                    </p>
+                  )}
 
                   <h3 className="mg-section-title">
                     出席者（{detail.detail.attendees.length}）
@@ -406,20 +375,24 @@ export default function MyGatherings({
         </div>
       </aside>
 
-      {noteTarget && selected && (
+      {noteGameName && selected && noteGames.length > 0 && (
         <GatheringNoteDialog
-          key={`${selected.id}:${noteTarget.bggName}`}
+          key={selected.id}
           gatheringId={selected.id}
-          bggName={noteTarget.bggName}
-          gameName={noteTarget.name}
           gatheringTitle={selected.title}
-          initial={notes.get(noteTarget.bggName)}
-          onClose={() => setNoteTarget(null)}
-          onSaved={() => {
-            setNoteTarget(null)
+          gatheredOn={selected.gatheredOn}
+          attendeeCount={detail.detail?.attendees.length ?? selected.attendeeCount}
+          games={noteGames}
+          initialBggName={noteGameName}
+          getNote={notes.get}
+          personal={personal}
+          playSessions={playSessions}
+          renderCover={renderCover}
+          onChanged={() => {
             notes.reload()
             noteStatus.reload()
           }}
+          onClose={() => setNoteGameName(null)}
         />
       )}
     </>
