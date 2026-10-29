@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { PersonalApi } from '../lib/personalApi'
 import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
+import { useMyGatheringNotes, useNoteStatus } from '../lib/useGatheringNotes'
 import {
   useGatheringDetail,
   useMyGatherings,
   type GatheringAttendee,
   type MyGathering,
 } from '../lib/useMyGatherings'
+import GatheringNoteDialog from './GatheringNoteDialog'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -62,7 +64,13 @@ export default function MyGatherings({
   const list = useMyGatherings()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
+  const [noteTarget, setNoteTarget] = useState<{
+    bggName: string
+    name: string
+  } | null>(null)
   const detail = useGatheringDetail(selectedId)
+  const notes = useMyGatheringNotes(selectedId)
+  const noteStatus = useNoteStatus()
   const selected = list.rows.find((row) => row.id === selectedId) ?? null
 
   const gameByName = useMemo(() => {
@@ -128,6 +136,8 @@ export default function MyGatherings({
     ? Math.min(Math.max(detail.detail.attendees.length, 1), 99)
     : null
   const canRecord = personal.canEdit && playSessions.status === 'ready'
+  // 管理者可以看全部場次，但只有真的在出席名單上的人才能寫心得
+  const iAmAttendee = detail.detail?.attendees.some((person) => person.me) ?? false
 
   return (
     <>
@@ -195,27 +205,41 @@ export default function MyGatherings({
                         </button>
                         {open && (
                           <ul className="mg-list">
-                            {group.rows.map((row) => (
-                              <li key={row.id}>
-                                <button
-                                  type="button"
-                                  className="mg-item"
-                                  onClick={() => setSelectedId(row.id)}
-                                >
-                                  <DateBadge iso={row.gatheredOn} />
-                                  <span className="mg-info">
-                                    <b className="mg-title">{row.title}</b>
-                                    <span className="mg-sub">
-                                      {dateParts(row.gatheredOn).full}・
-                                      {row.attendeeCount} 人出席
+                            {group.rows.map((row) => {
+                              const status = noteStatus.get(row.id)
+                              const pending =
+                                status !== null &&
+                                status.gameCount > 0 &&
+                                status.doneCount < status.gameCount
+                              return (
+                                <li key={row.id}>
+                                  <button
+                                    type="button"
+                                    className="mg-item"
+                                    onClick={() => setSelectedId(row.id)}
+                                  >
+                                    <DateBadge iso={row.gatheredOn} />
+                                    <span className="mg-info">
+                                      <b className="mg-title">
+                                        {row.title}
+                                        {pending && status && (
+                                          <span className="mg-todo">
+                                            待填 {status.doneCount}/{status.gameCount}
+                                          </span>
+                                        )}
+                                      </b>
+                                      <span className="mg-sub">
+                                        {dateParts(row.gatheredOn).full}・
+                                        {row.attendeeCount} 人出席
+                                      </span>
                                     </span>
-                                  </span>
-                                  <span className="mg-arrow" aria-hidden="true">
-                                    ›
-                                  </span>
-                                </button>
-                              </li>
-                            ))}
+                                    <span className="mg-arrow" aria-hidden="true">
+                                      ›
+                                    </span>
+                                  </button>
+                                </li>
+                              )
+                            })}
                           </ul>
                         )}
                       </section>
@@ -270,34 +294,60 @@ export default function MyGatherings({
                         const recorded = playSessions
                           .getSessions(g.b)
                           .some((item) => item.playedOn === gatheredOn)
+                        const note = notes.get(g.b)
                         return (
                           <li className="mg-game-row" key={g.b}>
-                            {game ? (
-                              <button
-                                type="button"
-                                className="mg-game"
-                                onClick={() => onOpenGame(game)}
-                              >
-                                {label}
-                              </button>
-                            ) : (
-                              <span className="mg-game plain">{label}</span>
-                            )}
-                            {recorded ? (
-                              <span className="mg-play-btn done">✓ 已記錄</span>
-                            ) : isFuture ? (
-                              <span className="mg-future">聚會還沒到</span>
-                            ) : (
-                              <button
-                                type="button"
-                                className="mg-play-btn"
-                                disabled={!canRecord || playSessions.busy}
-                                onClick={() =>
-                                  void markPlayed(g.b, gatheredOn, defaultPlayers)
-                                }
-                              >
-                                我玩了這款
-                              </button>
+                            <div className="mg-game-main">
+                              {game ? (
+                                <button
+                                  type="button"
+                                  className="mg-game"
+                                  onClick={() => onOpenGame(game)}
+                                >
+                                  {label}
+                                </button>
+                              ) : (
+                                <span className="mg-game plain">{label}</span>
+                              )}
+                              {recorded ? (
+                                <span className="mg-play-btn done">✓ 已記錄</span>
+                              ) : isFuture ? (
+                                <span className="mg-future">聚會還沒到</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="mg-play-btn"
+                                  disabled={!canRecord || playSessions.busy}
+                                  onClick={() =>
+                                    void markPlayed(g.b, gatheredOn, defaultPlayers)
+                                  }
+                                >
+                                  我玩了這款
+                                </button>
+                              )}
+                            </div>
+                            {iAmAttendee && !isFuture && (
+                              <div className="mg-note-line">
+                                <button
+                                  type="button"
+                                  className="mg-note-btn"
+                                  disabled={notes.loading || notes.error}
+                                  onClick={() =>
+                                    setNoteTarget({ bggName: g.b, name: label })
+                                  }
+                                >
+                                  {note ? '編輯心得' : '✎ 寫心得'}
+                                </button>
+                                {note && (
+                                  <span className="mg-note-state">
+                                    已寫心得
+                                    {note.publicNote !== '' &&
+                                      (note.publicStatus === 'hidden'
+                                        ? '・公開留言已被管理者隱藏'
+                                        : '・公開中')}
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </li>
                         )
@@ -306,7 +356,9 @@ export default function MyGatherings({
                   )}
                   <p className="mg-muted">
                     按「我玩了這款」會記一筆遊玩（日期＝這場聚會、人數＝出席人數），
-                    並標成已玩。要寫心得或刪除，請到該遊戲視窗的「我的桌遊」分頁。
+                    並標成已玩。
+                    {!isAdmin &&
+                      '沒看到你玩的遊戲？請聯絡管理者把它加進當天指定遊戲，才能寫這場的心得。'}
                   </p>
 
                   <h3 className="mg-section-title">
@@ -354,6 +406,23 @@ export default function MyGatherings({
           )}
         </div>
       </aside>
+
+      {noteTarget && selected && (
+        <GatheringNoteDialog
+          key={`${selected.id}:${noteTarget.bggName}`}
+          gatheringId={selected.id}
+          bggName={noteTarget.bggName}
+          gameName={noteTarget.name}
+          gatheringTitle={selected.title}
+          initial={notes.get(noteTarget.bggName)}
+          onClose={() => setNoteTarget(null)}
+          onSaved={() => {
+            setNoteTarget(null)
+            notes.reload()
+            noteStatus.reload()
+          }}
+        />
+      )}
     </>
   )
 }
