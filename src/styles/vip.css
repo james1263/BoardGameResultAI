@@ -2349,3 +2349,23 @@ body {
   border-top: 1px solid #e6dcc4;
   background: #fbf7ec;
 }
+
+.info-hint { position: relative; display: inline-flex; vertical-align: middle; margin-left: 5px; }
+.info-hint-btn {
+  width: 18px; height: 18px; padding: 0; border-radius: 50%;
+  border: 1px solid #B78A5A; background: #FBF7EC; color: #8a6a3d;
+  font-size: 11px; font-weight: 700; font-style: italic; line-height: 1;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+}
+.info-hint-bubble {
+  display: none; position: absolute; top: calc(100% + 6px); left: -8px; z-index: 5;
+  width: max-content; max-width: min(240px, 70vw);
+  padding: 8px 10px; border-radius: 8px;
+  background: #34463C; color: #FBF7EC;
+  font-size: 13px; font-weight: 400; font-style: normal; line-height: 1.5; text-align: left;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.info-hint.is-open .info-hint-bubble { display: block; }
+@media (hover: hover) {
+  .info-hint:hover .info-hint-bubble { display: block; }
+}

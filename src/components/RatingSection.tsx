@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useVip } from '../lib/useVip'
 import VipLock from './VipLock'
+import InfoHint from './InfoHint'
+import { RATING_HINTS_BY_KEY } from '../lib/ratingHints'
 import {
-  RATING_FIELDS,
-  type MyRating,
-  type RatingKey,
-  type RatingsApi,
+    RATING_FIELDS,
+    type MyRating,
+    type RatingKey,
+    type RatingsApi,
 } from '../lib/useGameRatings'
 
 type Draft = {
@@ -85,7 +87,12 @@ export function CommunitySummary({
                         const value = summary.avgs[field.key]
                         return (
                             <div className="rate-grid-item" key={field.key}>
-                                <span>{field.label}</span>
+                                <span>
+                                    {field.label}
+                                    {RATING_HINTS_BY_KEY[field.key] && (
+                                        <InfoHint text={RATING_HINTS_BY_KEY[field.key]} />
+                                    )}
+                                </span>
                                 <strong>{value == null ? '累積中' : value.toFixed(1)}</strong>
                             </div>
                         )
@@ -185,7 +192,10 @@ export default function RatingSection({
                             ))}
                         </div>
 
-                        <p className="rate-label">{KEEP_LABEL}（1～5，必填）</p>
+                        <p className="rate-label">
+                            {KEEP_LABEL}（1～5，必填）
+                            <InfoHint text={RATING_HINTS_BY_KEY.keep} />
+                        </p>
                         <div className="rate-scale rate-scale-5">
                             {[1, 2, 3, 4, 5].map((n) => (
                                 <button
@@ -212,7 +222,12 @@ export default function RatingSection({
                         {showDetail &&
                             OPTIONAL_FIELDS.map((field) => (
                                 <div className="rate-row" key={field.key}>
-                                    <p className="rate-label">{field.label}</p>
+                                    <p className="rate-label">
+                                        {field.label}
+                                        {RATING_HINTS_BY_KEY[field.key] && (
+                                            <InfoHint text={RATING_HINTS_BY_KEY[field.key]} />
+                                        )}
+                                    </p>
                                     <div className="rate-scale rate-scale-5">
                                         {[1, 2, 3, 4, 5].map((n) => (
                                             <button

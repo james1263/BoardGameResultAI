@@ -1,4 +1,6 @@
 import { countRatingSymbols } from '../lib/gameFormat'
+import { RATING_HINTS_BY_LABEL } from '../lib/ratingHints'
+import InfoHint from './InfoHint'
 
 const RATING_DOT_COLORS: Record<string, string> = {
   快速性: '#8a6a72',
@@ -18,10 +20,14 @@ export default function RatingDots({
 }) {
   const count = Math.min(countRatingSymbols(value), 10)
   const color = RATING_DOT_COLORS[label] ?? '#7d8a74'
+  const hint = RATING_HINTS_BY_LABEL[label]
 
   return (
     <div className="rating-item">
-      <span className="rating-label">{label}</span>
+      <span className="rating-label">
+        {label}
+        {hint && <InfoHint text={hint} />}
+      </span>
       {count > 0 ? (
         <span
           className="rating-dots"
