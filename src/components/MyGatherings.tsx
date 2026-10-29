@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
+import type { PersonalApi } from '../lib/personalApi'
+import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
 import {
   useGatheringDetail,
   useMyGatherings,
   type GatheringAttendee,
+  type MyGathering,
 } from '../lib/useMyGatherings'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
@@ -41,12 +44,16 @@ function sourceLabel(person: GatheringAttendee): string | null {
 
 export default function MyGatherings({
   boardGames,
+  personal,
+  playSessions,
   isAdmin,
   onBack,
   onClose,
   onOpenGame,
 }: {
   boardGames: BoardGame[]
+  personal: PersonalApi
+  playSessions: PlaySessionsApi
   isAdmin: boolean
   onBack: () => void
   onClose: () => void
@@ -54,6 +61,7 @@ export default function MyGatherings({
 }) {
   const list = useMyGatherings()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
   const detail = useGatheringDetail(selectedId)
   const selected = list.rows.find((row) => row.id === selectedId) ?? null
 
@@ -63,10 +71,63 @@ export default function MyGatherings({
     return map
   }, [boardGames])
 
+  // 依月份分組：月份新到舊、月份內也是新到舊；沒有場次的月份不會出現
+  const groups = useMemo(() => {
+    const map = new Map<string, MyGathering[]>()
+    for (const row of list.rows) {
+      const key = row.gatheredOn.slice(0, 7)
+      const rows = map.get(key)
+      if (rows) rows.push(row)
+      else map.set(key, [row])
+    }
+    return Array.from(map, ([key, rows]) => ({ key, rows })).sort((a, b) =>
+      b.key.localeCompare(a.key),
+    )
+  }, [list.rows])
+
+  const currentMonth = todayLocal().slice(0, 7)
+
+  // 預設展開最新一個月與本月，其餘摺疊；點月份標題可切換
+  function isMonthOpen(key: string, index: number): boolean {
+    return openMonths[key] ?? (index === 0 || key === currentMonth)
+  }
+
+  function toggleMonth(key: string, index: number) {
+    setOpenMonths((current) => ({
+      ...current,
+      [key]: !(current[key] ?? (index === 0 || key === currentMonth)),
+    }))
+  }
+
   function handleBack() {
     if (selectedId) setSelectedId(null)
     else onBack()
   }
+
+  // 出席不會自動算玩過；玩家按「我玩了這款」才記一筆（日期＝聚會日、人數＝出席人數）
+  async function markPlayed(
+    bggName: string,
+    date: string,
+    players: number | null,
+  ) {
+    const ok = await playSessions.addSession(bggName, {
+      playedOn: date,
+      playerCount: players,
+      note: '',
+    })
+    if (!ok) return
+    // 有紀錄就一定玩過；略過「次數 0 時設為 1」的規則，避免總次數多算
+    if (!personal.getEntry(bggName).played) {
+      personal.updateEntry(bggName, { played: true }, { skipPlayedRule: true })
+    }
+  }
+
+  const gatheredOn = selected?.gatheredOn ?? ''
+  const isFuture = gatheredOn !== '' && gatheredOn > todayLocal()
+  const defaultPlayers = detail.detail
+    ? Math.min(Math.max(detail.detail.attendees.length, 1), 99)
+    : null
+  const canRecord = personal.canEdit && playSessions.status === 'ready'
 
   return (
     <>
@@ -88,7 +149,7 @@ export default function MyGatherings({
         </div>
 
         <div className="mylist-body">
-          {/* ---------- 場次清單 ---------- */}
+          {/* ---------- 場次清單（依月份摺疊） ---------- */}
           {!selectedId && (
             <>
               {list.loading ? (
@@ -114,29 +175,52 @@ export default function MyGatherings({
                 <>
                   <p className="mg-muted">
                     {isAdmin
-                      ? '你是管理者，這裡列出全部場次。'
-                      : '只列出你出席過的場次。'}
+                      ? '你是管理者，這裡列出全部場次，最新的在最上面。'
+                      : '只列出你出席過的場次，最新的在最上面。'}
                   </p>
-                  <ul className="mg-list">
-                    {list.rows.map((row) => (
-                      <li key={row.id}>
+                  {groups.map((group, index) => {
+                    const open = isMonthOpen(group.key, index)
+                    return (
+                      <section key={group.key}>
                         <button
                           type="button"
-                          className="mg-item"
-                          onClick={() => setSelectedId(row.id)}
+                          className="mg-month"
+                          aria-expanded={open}
+                          onClick={() => toggleMonth(group.key, index)}
                         >
-                          <DateBadge iso={row.gatheredOn} />
-                          <span className="mg-info">
-                            <b className="mg-title">{row.title}</b>
-                            <span className="mg-sub">
-                              {dateParts(row.gatheredOn).full}・{row.attendeeCount} 人出席
-                            </span>
+                          <span>
+                            {group.key.replace('-', '/')}：{group.rows.length}場
                           </span>
-                          <span className="mg-arrow" aria-hidden="true">›</span>
+                          <span aria-hidden="true">{open ? '▾' : '▸'}</span>
                         </button>
-                      </li>
-                    ))}
-                  </ul>
+                        {open && (
+                          <ul className="mg-list">
+                            {group.rows.map((row) => (
+                              <li key={row.id}>
+                                <button
+                                  type="button"
+                                  className="mg-item"
+                                  onClick={() => setSelectedId(row.id)}
+                                >
+                                  <DateBadge iso={row.gatheredOn} />
+                                  <span className="mg-info">
+                                    <b className="mg-title">{row.title}</b>
+                                    <span className="mg-sub">
+                                      {dateParts(row.gatheredOn).full}・
+                                      {row.attendeeCount} 人出席
+                                    </span>
+                                  </span>
+                                  <span className="mg-arrow" aria-hidden="true">
+                                    ›
+                                  </span>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </section>
+                    )
+                  })}
                 </>
               )}
             </>
@@ -179,12 +263,15 @@ export default function MyGatherings({
                   {detail.detail.games.length === 0 ? (
                     <p className="mg-muted">管理者還沒有指定遊戲。</p>
                   ) : (
-                    <ul className="mg-games">
+                    <ul className="mg-game-list">
                       {detail.detail.games.map((g) => {
                         const game = gameByName.get(g.b)
                         const label = g.n || g.b
+                        const recorded = playSessions
+                          .getSessions(g.b)
+                          .some((item) => item.playedOn === gatheredOn)
                         return (
-                          <li key={g.b}>
+                          <li className="mg-game-row" key={g.b}>
                             {game ? (
                               <button
                                 type="button"
@@ -196,11 +283,31 @@ export default function MyGatherings({
                             ) : (
                               <span className="mg-game plain">{label}</span>
                             )}
+                            {recorded ? (
+                              <span className="mg-play-btn done">✓ 已記錄</span>
+                            ) : isFuture ? (
+                              <span className="mg-future">聚會還沒到</span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="mg-play-btn"
+                                disabled={!canRecord || playSessions.busy}
+                                onClick={() =>
+                                  void markPlayed(g.b, gatheredOn, defaultPlayers)
+                                }
+                              >
+                                我玩了這款
+                              </button>
+                            )}
                           </li>
                         )
                       })}
                     </ul>
                   )}
+                  <p className="mg-muted">
+                    按「我玩了這款」會記一筆遊玩（日期＝這場聚會、人數＝出席人數），
+                    並標成已玩。要寫心得或刪除，請到該遊戲視窗的「我的桌遊」分頁。
+                  </p>
 
                   <h3 className="mg-section-title">
                     出席者（{detail.detail.attendees.length}）

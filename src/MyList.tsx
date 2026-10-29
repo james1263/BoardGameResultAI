@@ -9,11 +9,12 @@ import { useSession } from './lib/useSession'
 import { useMyLoyalty } from './lib/useLoyalty'
 import { PROFILE_SAVED_EVENT, signInWithGoogle } from './lib/googleLogin'
 import MyGatherings from './components/MyGatherings'
+import AddPlayLog from './components/AddPlayLog'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
-type View = 'home' | 'stats' | 'gatherings'
+type View = 'home' | 'stats' | 'gatherings' | 'addplay'
 
 // 讀自己的暱稱（只在抽屜打開時才會執行）
 function useMyNickname(userId: string | null): string {
@@ -325,10 +326,25 @@ export default function MyList({
         return (
             <MyGatherings
                 boardGames={boardGames}
+                personal={personal}
+                playSessions={playSessions}
                 isAdmin={isAdmin}
                 onBack={() => setView('home')}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
+            />
+        )
+    }
+
+    // ---------- 補記遊玩 ----------
+    if (view === 'addplay') {
+        return (
+            <AddPlayLog
+                boardGames={boardGames}
+                personal={personal}
+                playSessions={playSessions}
+                onBack={() => setView('home')}
+                onClose={onClose}
             />
         )
     }
@@ -457,20 +473,36 @@ export default function MyList({
                         </button>
                     </div>
                     {personal.isLoggedIn && (
-                        <div className="club-list club-more">
-                            <button
-                                type="button"
-                                className="club-menu-item club-menu-single"
-                                onClick={() => setView('gatherings')}
-                            >
-                                <span className="club-menu-icon" aria-hidden="true">📅</span>
-                                <span className="club-menu-text">
-                                    <b>我的場次</b>
-                                    <small>出席過的聚會、當天遊戲與出席者</small>
-                                </span>
-                                <span className="club-menu-arrow" aria-hidden="true">›</span>
-                            </button>
-                        </div>
+                        <>
+                            <div className="club-list club-more">
+                                <button
+                                    type="button"
+                                    className="club-menu-item club-menu-single"
+                                    onClick={() => setView('gatherings')}
+                                >
+                                    <span className="club-menu-icon" aria-hidden="true">📅</span>
+                                    <span className="club-menu-text">
+                                        <b>我的場次</b>
+                                        <small>出席過的聚會、當天遊戲與出席者</small>
+                                    </span>
+                                    <span className="club-menu-arrow" aria-hidden="true">›</span>
+                                </button>
+                            </div>
+                            <div className="club-list club-more">
+                                <button
+                                    type="button"
+                                    className="club-menu-item club-menu-single"
+                                    onClick={() => setView('addplay')}
+                                >
+                                    <span className="club-menu-icon" aria-hidden="true">📝</span>
+                                    <span className="club-menu-text">
+                                        <b>補記遊玩</b>
+                                        <small>補記過去玩過的遊戲與日期</small>
+                                    </span>
+                                    <span className="club-menu-arrow" aria-hidden="true">›</span>
+                                </button>
+                            </div>
+                        </>
                     )}
                     <div className="club-list">
                         <h3 className="club-section-title">

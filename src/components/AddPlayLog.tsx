@@ -1,0 +1,222 @@
+import { useMemo, useState, type FormEvent } from 'react'
+import type { BoardGame } from '../data/boardGames.generated'
+import type { PersonalApi } from '../lib/personalApi'
+import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
+
+// 比對時忽略大小寫、空白與標點
+function normalize(text: string): string {
+  return text.toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '')
+}
+
+export default function AddPlayLog({
+  boardGames,
+  personal,
+  playSessions,
+  onBack,
+  onClose,
+}: {
+  boardGames: BoardGame[]
+  personal: PersonalApi
+  playSessions: PlaySessionsApi
+  onBack: () => void
+  onClose: () => void
+}) {
+  const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState<BoardGame | null>(null)
+  const [date, setDate] = useState(todayLocal)
+  const [players, setPlayers] = useState('')
+  const [note, setNote] = useState('')
+  const [message, setMessage] = useState('')
+
+  // 輸入就列出最多 8 款：開頭相符排前面，其次是包含
+  const matches = useMemo(() => {
+    const q = normalize(query)
+    if (!q) return []
+    const found: { game: BoardGame; rank: number }[] = []
+    for (const game of boardGames) {
+      const names = [normalize(game.name), normalize(game.bggName)]
+      if (names.some((name) => name.startsWith(q))) found.push({ game, rank: 0 })
+      else if (names.some((name) => name.includes(q))) found.push({ game, rank: 1 })
+    }
+    found.sort((a, b) => a.rank - b.rank)
+    return found.slice(0, 8).map((item) => item.game)
+  }, [query, boardGames])
+
+  const canSave =
+    personal.canEdit && playSessions.status === 'ready' && !playSessions.busy
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    if (!selected) {
+      window.alert('請先選擇遊戲。')
+      return
+    }
+
+    const count = players.trim() === '' ? null : Number(players)
+    if (count !== null && (!Number.isInteger(count) || count < 1 || count > 99)) {
+      window.alert('玩家人數請填 1～99 的整數，或留空。')
+      return
+    }
+    if (!date || date > todayLocal()) {
+      window.alert('請選擇今天或更早的日期。')
+      return
+    }
+
+    const duplicated = playSessions
+      .getSessions(selected.bggName)
+      .some((item) => item.playedOn === date)
+    if (
+      duplicated &&
+      !window.confirm('這天已經有這款遊戲的紀錄了，還要再記一筆嗎？')
+    ) {
+      return
+    }
+
+    const ok = await playSessions.addSession(selected.bggName, {
+      playedOn: date,
+      playerCount: count,
+      note: note.trim(),
+    })
+    if (!ok) return
+
+    // 有紀錄就一定玩過；略過「次數 0 時設為 1」的規則，避免總次數多算
+    if (!personal.getEntry(selected.bggName).played) {
+      personal.updateEntry(
+        selected.bggName,
+        { played: true },
+        { skipPlayedRule: true },
+      )
+    }
+
+    setMessage(`已記錄：${selected.name}（${date.replaceAll('-', '/')}）`)
+    setSelected(null)
+    setQuery('')
+    setPlayers('')
+    setNote('')
+  }
+
+  return (
+    <>
+      <div className="mylist-backdrop" onClick={onClose} />
+      <aside className="mylist-drawer" role="dialog" aria-label="補記遊玩">
+        <div className="mylist-header">
+          <button className="mylist-back" type="button" onClick={onBack}>
+            ‹ 返回
+          </button>
+          <h2>補記遊玩</h2>
+          <button
+            className="mylist-close"
+            type="button"
+            aria-label="關閉"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="mylist-body">
+          <p className="mg-muted">
+            補記過去玩過的遊戲。每記一筆，該遊戲的總遊玩次數會自動 +1，並標成已玩。
+          </p>
+
+          {message && <p className="ap-ok">{message}</p>}
+
+          {!personal.isLoggedIn ? (
+            <p className="mylist-empty">登入後才能記錄遊玩。</p>
+          ) : (
+            <form className="play-sessions-form" onSubmit={handleSubmit}>
+              <div className="ap-field">
+                <span className="ap-label">遊戲</span>
+                {selected ? (
+                  <div className="ap-picked">
+                    <b>{selected.name}</b>
+                    <button
+                      type="button"
+                      className="play-sessions-link"
+                      onClick={() => {
+                        setSelected(null)
+                        setMessage('')
+                      }}
+                    >
+                      更換
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      className="ap-search"
+                      placeholder="輸入遊戲名稱（中文或英文）"
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                    />
+                    {query.trim() !== '' && matches.length === 0 && (
+                      <p className="mg-muted">找不到符合的遊戲。</p>
+                    )}
+                    {matches.length > 0 && (
+                      <ul className="ap-results">
+                        {matches.map((game) => (
+                          <li key={game.bggName}>
+                            <button
+                              type="button"
+                              className="ap-result"
+                              onClick={() => {
+                                setSelected(game)
+                                setMessage('')
+                              }}
+                            >
+                              {game.name}
+                              {game.bggName !== game.name && (
+                                <small>{game.bggName}</small>
+                              )}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <label>
+                <span>日期</span>
+                <input
+                  type="date"
+                  value={date}
+                  max={todayLocal()}
+                  onChange={(event) => setDate(event.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                <span>玩家人數（選填）</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={99}
+                  value={players}
+                  onChange={(event) => setPlayers(event.target.value)}
+                />
+              </label>
+              <label>
+                <span>心得（選填，200 字內）</span>
+                <textarea
+                  rows={2}
+                  maxLength={200}
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                />
+              </label>
+              <div className="play-sessions-actions">
+                <button type="submit" disabled={!canSave || !selected}>
+                  {playSessions.busy ? '儲存中…' : '儲存'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </aside>
+    </>
+  )
+}

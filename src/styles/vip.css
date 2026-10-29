@@ -1122,3 +1122,20 @@ body {
 .mg-chip.me { border-color: var(--c-forest, #456b50); background: #e4ebdc; }
 .mg-chip-sub { font-size: 12px; color: var(--c-ink-soft, #6b7a70); }
 .mg-chip-tags em { margin-left: 4px; padding: 1px 6px; font-size: 11px; font-style: normal; color: var(--c-ink-soft, #6b7a70); background: #fff; border-radius: 6px; }
+
+/* ===== 我的場次 v2：月份摺疊、場次內記錄、補記遊玩 ===== */
+.mg-month { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 14px; padding: 10px 12px; font: inherit; font-weight: 700; color: var(--c-ink, #34463c); background: #e4ebdc; border: 0; border-radius: 10px; cursor: pointer; }
+.mg-game-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.mg-game-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mg-play-btn { flex: none; padding: 7px 12px; font: inherit; font-size: 13px; color: #fff; background: var(--c-forest, #456b50); border: 0; border-radius: 999px; cursor: pointer; }
+.mg-play-btn:disabled { opacity: 0.5; cursor: default; }
+.mg-play-btn.done { color: var(--c-forest-dark, #365b40); background: #e4ebdc; }
+.mg-future { flex: none; font-size: 12px; color: var(--c-ink-soft, #6b7a70); }
+.ap-field { display: flex; flex-direction: column; gap: 6px; }
+.ap-label { font-size: 13px; color: var(--c-ink-soft, #6b7a70); }
+.ap-search { width: 100%; box-sizing: border-box; padding: 9px 10px; font: inherit; border: 1px solid var(--c-line, #e3dccb); border-radius: 8px; }
+.ap-results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ap-result { display: flex; flex-direction: column; align-items: flex-start; width: 100%; padding: 8px 10px; font: inherit; color: var(--c-ink, #34463c); text-align: left; background: var(--c-paper, #fbf7ec); border: 1px solid var(--c-line, #e3dccb); border-radius: 8px; cursor: pointer; }
+.ap-result small { font-size: 12px; color: var(--c-ink-soft, #6b7a70); }
+.ap-picked { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; color: var(--c-ink, #34463c); background: #e4ebdc; border-radius: 8px; }
+.ap-ok { margin: 8px 0; padding: 8px 10px; font-size: 14px; color: var(--c-forest-dark, #365b40); background: #e4ebdc; border-radius: 8px; }
