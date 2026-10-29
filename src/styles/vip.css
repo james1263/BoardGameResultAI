@@ -2585,3 +2585,82 @@ body {
 .ma-body .cls-searchbox {
   margin: 8px 0 12px;
 }
+
+/* ===== 第四批：排序併進搜尋欄，樣式和主畫面「篩選」鈕一致 ===== */
+.cls-searchbox .cls-sort-field,
+.cls-searchbox .cls-sort-dir {
+  flex: none;
+  height: 34px;
+  border: 0;
+  border-radius: 10px;
+  background-color: rgba(69, 107, 80, 0.12);
+  color: #365b40;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cls-searchbox .cls-sort-field {
+  /* 16px 才不會讓 iPhone 點下去自動放大 */
+  font-size: 16px;
+  padding: 0 24px 0 10px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23365b40' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+.cls-searchbox .cls-sort-dir {
+  font-size: 14px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+/* ===== 第五批：我的紀錄分頁，各場次的私人心得 ===== */
+.gn-mine {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(183, 138, 90, 0.25);
+}
+.gn-mine summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: #34463c;
+}
+.gn-mine summary::-webkit-details-marker { display: none; }
+.gn-mine summary::after {
+  content: '▾';
+  margin-left: 6px;
+  color: #9a7448;
+}
+.gn-mine[open] summary::after { content: '▴'; }
+.gn-mine-list {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.gn-mine-list li {
+  padding: 10px 12px;
+  border: 1px solid rgba(183, 138, 90, 0.3);
+  border-radius: 12px;
+  background: #fffdf7;
+}
+.gn-mine-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b7a70;
+}
+.gn-mine-head b { color: #34463c; }
+.gn-mine-list p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #34463c;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

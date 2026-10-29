@@ -8,6 +8,8 @@ import RatingDots from './RatingDots'
 import PersonalNote from './PersonalNote'
 import PlaySessions from './PlaySessions'
 import DescriptionEditor from './DescriptionEditor'
+import GameGatheringNotes from './GameGatheringNotes'
+import InfoHint from './InfoHint'
 import CommunityStats from './CommunityStats'
 import type { CommunityStatsApi } from '../lib/useCommunityStats'
 import RatingSection, { CommunitySummary } from './RatingSection'
@@ -18,7 +20,7 @@ import type { RatingsApi } from '../lib/useGameRatings'
 const TABS = [
   { key: 'overview', label: '概覽' },
   { key: 'ratings', label: '評分' },
-  { key: 'mine', label: '我的桌遊' },
+  { key: 'mine', label: '我的紀錄' },
   { key: 'rules', label: '規則' },
 ] as const
 
@@ -305,7 +307,8 @@ export default function GameModal({
                   目前累計{' '}
                   {personal.getEntry(game.bggName).playCount +
                     playSessions.getSummary(game.bggName).count}{' '}
-                  次。要標記想玩／已玩或直接改次數，請到底部「我的桌遊」清單。
+                  次
+                  <InfoHint text="要標記想玩／已玩或直接改次數，請到「俱樂部」→「我的統計」。" />
                 </p>
                 <PlaySessions
                   key={game.bggName}
@@ -328,6 +331,7 @@ export default function GameModal({
                 {!personal.isLoggedIn && (
                   <p className="personal-hint">登入後即可跨裝置保存</p>
                 )}
+                {personal.isLoggedIn && <GameGatheringNotes bggName={game.bggName} />}
               </div>
             </>
           )}

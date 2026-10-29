@@ -147,3 +147,43 @@ export async function saveGatheringNote(
   }
   return { ok: false, message: '儲存失敗：' + (text || '請稍後再試。') }
 }
+
+export type GameNote = { gatheringId: string; privateNote: string }
+
+// 我在「這一款遊戲」各場聚會留下的私人心得（只讀，來源是原本的場次心得，不另存副本）
+export function useMyGameNotes(bggName: string) {
+  const [state, setState] = useState<{
+    name: string
+    notes: GameNote[]
+    error: boolean
+  } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    supabase.rpc('get_my_gathering_notes').then(({ data, error }) => {
+      if (cancelled) return
+      if (error) {
+        console.error('讀取這款遊戲的場次心得失敗：', error)
+        setState({ name: bggName, notes: [], error: true })
+        return
+      }
+      const notes = ((data ?? []) as NoteRow[])
+        .filter((row) => row.bgg_name === bggName && (row.private_note ?? '').trim() !== '')
+        .map((row) => ({
+          gatheringId: row.gathering_id,
+          privateNote: row.private_note ?? '',
+        }))
+      setState({ name: bggName, notes, error: false })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [bggName])
+
+  const current = state && state.name === bggName ? state : null
+  return {
+    loading: current === null,
+    error: current?.error ?? false,
+    notes: current?.notes ?? [],
+  }
+}

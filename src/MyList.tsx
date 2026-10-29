@@ -606,8 +606,6 @@ export default function MyList({
                                             value={search}
                                             onChange={(event) => setSearch(event.target.value)}
                                         />
-                                    </div>
-                                    <div className="cls-sortrow">
                                         <select
                                             className="cls-sort-field"
                                             aria-label="排序欄位"
