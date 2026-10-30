@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   defaultDocTitle,
@@ -26,6 +26,22 @@ type Row = {
   message: string
   guessed: boolean
 }
+type StorageUsage = {
+  buckets: { bucket_id: string; file_count: number; total_bytes: number }[]
+  files: { name: string; size: number }[]
+}
+
+type UploadedDoc = {
+  id: string
+  bgg_name: string
+  title: string | null
+  doc_type: string
+  created_at: string
+  storage_path: string | null
+}
+
+// 免費方案的檔案儲存額度。請對照 Supabase 後台 Usage，數字不對就改這裡
+const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024
 
 // ── 從檔名猜遊戲／類型／語言 ──────────────────────────────
 
@@ -94,6 +110,35 @@ function guessLanguage(fileName: string): Lang {
 
 function formatMb(bytes: number): string {
   return (bytes / 1024 / 1024).toFixed(1) + ' MB'
+}
+
+function UsageBar({
+  usage,
+  error,
+}: {
+  usage: StorageUsage | null
+  error: string
+}) {
+  if (error) return <p className="admin-error">{error}</p>
+  if (!usage) return <p className="rb-hint">讀取容量中…</p>
+  const rulebooks = usage.buckets.find((b) => b.bucket_id === 'rulebooks')
+  const total = usage.buckets.reduce((sum, b) => sum + b.total_bytes, 0)
+  const percent = Math.min(100, Math.round((total / STORAGE_LIMIT_BYTES) * 100))
+  const left = Math.max(0, STORAGE_LIMIT_BYTES - total)
+  return (
+    <div className="rb-usage">
+      <p>
+        檔案儲存：已用 {formatMb(total)} / {formatMb(STORAGE_LIMIT_BYTES)}，
+        剩餘 {formatMb(left)}
+      </p>
+      <div className="rb-usage-bar" aria-hidden="true">
+        <div style={{ width: `${percent}%` }} />
+      </div>
+      <small>
+        規則書 {rulebooks?.file_count ?? 0} 份、{formatMb(rulebooks?.total_bytes ?? 0)}（封面等其他檔案也算在總量內）
+      </small>
+    </div>
+  )
 }
 
 const LARGE_FILE_BYTES = 15 * 1024 * 1024
@@ -213,7 +258,33 @@ function GamePicker({
 // ── 元件 ─────────────────────────────────────────────
 
 export default function RulebookBatchUpload() {
-  const [mode, setMode] = useState<'pdf' | 'link'>('pdf')
+  const [mode, setMode] = useState<'pdf' | 'link' | 'files'>('pdf')
+  const [usage, setUsage] = useState<StorageUsage | null>(null)
+  const [usageError, setUsageError] = useState('')
+  const [uploaded, setUploaded] = useState<UploadedDoc[]>([])
+  const [fileSearch, setFileSearch] = useState('')
+
+  const loadUsage = useCallback(async () => {
+    const [usageResult, docsResult] = await Promise.all([
+      supabase.rpc('admin_rulebook_storage_usage'),
+      supabase
+        .from('game_documents')
+        .select('id, bgg_name, title, doc_type, created_at, storage_path')
+        .eq('source_type', 'upload')
+        .order('created_at', { ascending: false }),
+    ])
+    if (usageResult.error) {
+      setUsageError('讀取容量失敗：' + usageResult.error.message)
+    } else {
+      setUsageError('')
+      setUsage(usageResult.data as StorageUsage)
+    }
+    if (!docsResult.error) setUploaded((docsResult.data ?? []) as UploadedDoc[])
+  }, [])
+
+  useEffect(() => {
+    void loadUsage()
+  }, [loadUsage, mode])
   const [games, setGames] = useState<GameOption[]>([])
   const [gamesError, setGamesError] = useState('')
 
@@ -396,6 +467,7 @@ export default function RulebookBatchUpload() {
     }
 
     setRunning(false)
+    void loadUsage()
   }
 
   function clearDone() {
@@ -440,15 +512,24 @@ export default function RulebookBatchUpload() {
     setLinkDone('')
     const message = await docsApi.deleteDoc(doc)
     if (message) setLinkError(message)
+    else void loadUsage()
   }
 
   const pending = rows.filter((r) => r.status === 'ready' || r.status === 'error')
   const doneCount = rows.filter((r) => r.status === 'done').length
   const errorCount = rows.filter((r) => r.status === 'error').length
   const missingGame = pending.filter((r) => !r.bggName).length
+  const sizeByName = new Map((usage?.files ?? []).map((f) => [f.name, f.size]))
+  const fileQuery = compact(fileSearch)
+  const shownUploaded = uploaded.filter((doc) => {
+    const game = games.find((g) => g.bgg_name === doc.bgg_name)
+    const text = compact(`${doc.bgg_name} ${game?.name ?? ''} ${doc.title ?? ''}`)
+    return !fileQuery || text.includes(fileQuery)
+  })
 
   return (
     <div className="rb">
+      <UsageBar usage={usage} error={usageError} />
       <div className="rb-seg" role="tablist">
         <button
           type="button"
@@ -470,9 +551,67 @@ export default function RulebookBatchUpload() {
         >
           貼連結／管理文件
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'files'}
+          className={mode === 'files' ? 'active' : ''}
+          disabled={running}
+          onClick={() => setMode('files')}
+        >
+          已上傳
+        </button>
       </div>
 
       {gamesError && <p className="admin-error">{gamesError}</p>}
+
+      {mode === 'files' && (
+        <>
+          <h3>已上傳的規則書</h3>
+          <input
+            type="search"
+            className="rb-search"
+            placeholder="搜尋遊戲名稱或檔名"
+            value={fileSearch}
+            onChange={(event) => setFileSearch(event.target.value)}
+          />
+          {shownUploaded.length === 0 ? (
+            <p className="rb-hint">沒有符合的上傳文件。</p>
+          ) : (
+            <ul className="rb-list">
+              {shownUploaded.map((doc) => {
+                const game = games.find((g) => g.bgg_name === doc.bgg_name)
+                const size = sizeByName.get(doc.storage_path ?? `${doc.id}.pdf`)
+                return (
+                  <li className="rb-row" key={doc.id}>
+                    <div className="rb-row-head">
+                      <span className="rb-file">
+                        {game?.name || doc.bgg_name}
+                        <small>
+                          {doc.title ?? ''}
+                          {size != null ? `　${formatMb(size)}` : ''}
+                        </small>
+                      </span>
+                      <button
+                        type="button"
+                        className="admin-link"
+                        onClick={() => {
+                          setLinkGame(doc.bgg_name)
+                          setLinkError('')
+                          setLinkDone('')
+                          setMode('link')
+                        }}
+                      >
+                        前往刪除
+                      </button>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </>
+      )}
 
       {mode === 'pdf' && (
         <>
