@@ -557,7 +557,7 @@ export default function MyList({
     if (view === 'addplay') {
         return (
             <AddPlayLog
-                boardGames={boardGames}
+                boardGames={lookupGames}
                 personal={personal}
                 playSessions={playSessions}
                 onBack={() => setView('board')}
@@ -816,7 +816,7 @@ export default function MyList({
                                                                         </p>
                                                                     )
                                                                 )}
-                                                                {tab === 'played' && (
+                                                                {(
                                                                     <PlayedGameRecord
                                                                         bggName={game.bggName}
                                                                         gameName={game.name}
