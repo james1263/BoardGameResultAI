@@ -60,6 +60,30 @@ export default function PlannedGatheringsAdmin({
     void load()
   }, [load])
 
+  // 管理者專用：每位 VIP／管理者想玩的遊戲，只用來算「社群有 N 人想玩」
+  const [wantMap, setWantMap] = useState<Map<string, Set<string>> | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    void supabase.rpc('admin_get_want_to_play').then(({ data, error }) => {
+      if (cancelled || error || !data) return
+      setWantMap(
+        new Map(
+          (data as { user_id: string; games: string[] | null }[]).map(
+            (row) => [row.user_id, new Set(row.games ?? [])] as [string, Set<string>],
+          ),
+        ),
+      )
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  const wantHint = (bggName: string): string =>
+    wantMap
+      ? `社群有 ${[...wantMap.values()].filter((set) => set.has(bggName)).length} 人想玩`
+      : ''
+  const wantHintStyle = { marginLeft: 8, fontSize: '0.8em', color: '#8a6d46' }
+
   const gameNameMap = useMemo(
     () => new Map(allGames.map((game) => [game.bggName, game.name])),
     [allGames],
@@ -236,7 +260,12 @@ export default function PlannedGatheringsAdmin({
           <ul className="loy-picker-results">
             {matches.map((game) => (
               <li key={game.bggName}>
-                <span>{game.name}</span>
+                <span>
+                  {game.name}
+                  {wantHint(game.bggName) && (
+                    <small style={wantHintStyle}>{wantHint(game.bggName)}</small>
+                  )}
+                </span>
                 <button
                   type="button"
                   className="loy-mini-btn"
@@ -258,7 +287,12 @@ export default function PlannedGatheringsAdmin({
           <ul className="loy-picked">
             {form.games.map((bggName) => (
               <li key={bggName}>
-                <span>{gameNameMap.get(bggName) ?? bggName}</span>
+                <span>
+                  {gameNameMap.get(bggName) ?? bggName}
+                  {wantHint(bggName) && (
+                    <small style={wantHintStyle}>{wantHint(bggName)}</small>
+                  )}
+                </span>
                 <button
                   type="button"
                   className="loy-mini-btn"
