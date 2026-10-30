@@ -96,6 +96,18 @@ export function useGameNotesBoard(
     return ''
   }
 
+  // 直接從留言清單刪除自己的公開留言（聚會心得的公開欄、別處玩過的留言都可以）
+  async function deleteMine(noteId: string): Promise<string> {
+    setBusyId(noteId)
+    const { error: rpcError } = await supabase.rpc('delete_my_public_note', {
+      p_note: noteId,
+    })
+    setBusyId(null)
+    if (rpcError) return '刪除失敗：' + rpcError.message
+    await load()
+    return ''
+  }
+
   // 儲存自己的留言；空字串＝刪除。回傳錯誤訊息，成功回傳空字串
   async function saveMine(content: string): Promise<string> {
     setSaving(true)
@@ -125,6 +137,7 @@ export function useGameNotesBoard(
     busyId,
     saving,
     setHidden,
+    deleteMine,
     saveMine,
   }
 }

@@ -4,11 +4,13 @@ import { useGameNotesBoard, type BoardNote } from '../lib/useGameNotesBoard'
 function NoteItem({
   note,
   actionLabel,
+  danger,
   busy,
   onAction,
 }: {
   note: BoardNote
   actionLabel?: string
+  danger?: boolean
   busy?: boolean
   onAction?: () => void
 }) {
@@ -20,7 +22,7 @@ function NoteItem({
         {actionLabel && onAction && (
           <button
             type="button"
-            className="gb-action"
+            className={`gb-action${danger ? ' gb-danger' : ''}`}
             disabled={busy}
             onClick={onAction}
           >
@@ -113,6 +115,22 @@ export default function GameNotesBoard({
     setMessage(await api.setHidden(note.id, false))
   }
 
+  async function removeMine(note: BoardNote) {
+    if (!window.confirm('確定要刪除這則留言嗎？刪除後無法復原。')) return
+    setMessage(await api.deleteMine(note.id))
+  }
+
+  // 自己的留言一律可以直接刪除；管理者對別人的留言是「隱藏」
+  function actionFor(note: BoardNote) {
+    if (note.isMine) {
+      return { label: '刪除', danger: true, run: () => void removeMine(note) }
+    }
+    if (isAdmin) {
+      return { label: '隱藏', danger: false, run: () => void hide(note) }
+    }
+    return null
+  }
+
   return (
     <div className="gb-board">
       <button
@@ -148,15 +166,19 @@ export default function GameNotesBoard({
           )}
           {api.notes.length > 0 && (
             <ul className="gb-list">
-              {api.notes.map((note) => (
-                <NoteItem
-                  key={note.id}
-                  note={note}
-                  actionLabel={isAdmin ? '隱藏' : undefined}
-                  busy={api.busyId === note.id}
-                  onAction={isAdmin ? () => void hide(note) : undefined}
-                />
-              ))}
+              {api.notes.map((note) => {
+                const action = actionFor(note)
+                return (
+                  <NoteItem
+                    key={note.id}
+                    note={note}
+                    actionLabel={action?.label}
+                    danger={action?.danger}
+                    busy={api.busyId === note.id}
+                    onAction={action?.run}
+                  />
+                )
+              })}
             </ul>
           )}
 
