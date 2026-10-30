@@ -262,6 +262,8 @@ export default function MyList({
     isAdmin,
     isVip,
     todayPending,
+    plannedUnseen = 0,
+    onPlannedSeen,
     onClose,
     onBrowse,
     onOpenGame,
@@ -279,6 +281,8 @@ export default function MyList({
     isAdmin: boolean
     isVip: boolean
     todayPending: boolean
+    plannedUnseen?: number
+    onPlannedSeen?: () => void
     onClose: () => void
     onBrowse: () => void
     onOpenGame: (game: BoardGame, tab?: 'ratings' | 'discussion') => void
@@ -312,6 +316,11 @@ export default function MyList({
             setShowHoursNote(false)
         }
     }, [isOpen, mode])
+
+    // 進入「近期聚會」就把目前的預計聚會記成已看過
+    useEffect(() => {
+        if (isOpen && view === 'upcoming') onPlannedSeen?.()
+    }, [isOpen, view, onPlannedSeen])
 
     // 只記住排序
     useEffect(() => {
@@ -893,6 +902,20 @@ export default function MyList({
                                     <b>近期聚會</b>
                                     <span className="club-menu-sub">預計開的桌遊、登記可以參加</span>
                                 </span>
+                                {plannedUnseen > 0 && (
+                                    <span
+                                        className="club-menu-count"
+                                        style={{
+                                            background: '#b5483a',
+                                            color: '#fff',
+                                            borderRadius: 999,
+                                            padding: '1px 9px',
+                                            fontWeight: 700,
+                                        }}
+                                    >
+                                        {plannedUnseen} 場新的
+                                    </span>
+                                )}
                                 <span className="club-menu-arrow" aria-hidden="true">›</span>
                             </button>
                         </div>

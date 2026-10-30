@@ -68,6 +68,7 @@ import BackToTop from './components/BackToTop'
 import { useTrashActions } from './lib/useTrashActions'
 import { updateDescription } from './lib/saveDescription'
 import NotePrompt from './components/NotePrompt'
+import { usePlannedUnseen } from './lib/usePlannedUnseen'
 
 // 新遊戲置頂：上架 15 天內，而且還沒有排名（Ranking engine 空白或不是整數，例如 .5 結尾）
 // 兩個條件任一個先結束，就不再置頂
@@ -143,6 +144,8 @@ function Library({
   const vip = useVip()
   const people = useGamePeople(vip.isVip)
   const adminRatings = useAdminRatings(isAdmin)
+  // 還沒看過的新預計聚會數（只有 VIP／管理者；顯示在導覽列「俱樂部」與俱樂部首頁）
+  const planned = usePlannedUnseen(session?.user?.id ?? null, vip.isVip || isAdmin)
   // 導覽列的頁面一次只開一個：點另一顆直接取代，再點同一顆就關閉
   const [activePage, setActivePage] = useState<NavPage | null>(null)
   const [myListMode, setMyListMode] = useState<MyListMode>('list')
@@ -303,10 +306,6 @@ function Library({
     const age = nowMs - new Date(game.createdAt).getTime()
     return age < NEW_GAME_DAYS * 24 * 60 * 60 * 1000
   }
-  const myListCount = boardGames.filter((game) => {
-    const entry = personal.entries[game.bggName]
-    return entry !== undefined && (entry.wantToPlay || entry.played)
-  }).length
   const [coverVersions, setCoverVersions] = useState<Record<string, number>>({})
   const [isUploadingCover, setIsUploadingCover] = useState(false)
   const [coverMessage, setCoverMessage] = useState('')
@@ -802,7 +801,7 @@ function Library({
       )}
       <InAppBrowserNotice />
       <TopBar
-        myListCount={myListCount}
+        clubBadge={planned.unseenCount}
         activePage={activePage}
         onGoPage={goPage}
         onGoHome={goHome}
@@ -1033,6 +1032,8 @@ function Library({
         key={inviteKey}
         mode={myListMode}
         todayPending={todayTask.pending}
+        plannedUnseen={planned.unseenCount}
+        onPlannedSeen={planned.markAllSeen}
         onOpenLoyalty={openMyLoyalty}
         isAdmin={isAdmin}
         isVip={vip.isVip}

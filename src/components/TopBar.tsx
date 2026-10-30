@@ -10,7 +10,7 @@ import { useVip } from '../lib/useVip'
 export type NavPage = 'leaderboard' | 'rules' | 'admin' | 'loyalty' | 'mylist'
 
 export default function TopBar({
-  myListCount,
+  clubBadge,
   activePage,
   onGoPage,
   onGoHome,
@@ -18,7 +18,8 @@ export default function TopBar({
   canUseRules,
   onCloseAdmin,
 }: {
-  myListCount: number
+  // 俱樂部圖示上的小數字：還沒看過的新預計聚會數（0 就不顯示）
+  clubBadge: number
   activePage: NavPage | null
   onGoPage: (page: NavPage) => void
   onGoHome: () => void
@@ -121,7 +122,11 @@ export default function TopBar({
               ♥
             </span>
             <span>俱樂部</span>
-            {myListCount > 0 && <span className="sb-count">{myListCount}</span>}
+            {clubBadge > 0 && (
+              <span className="sb-count" aria-label={`${clubBadge} 場新的預計聚會`}>
+                {clubBadge}
+              </span>
+            )}
           </button>
           {showJoinVip && (
             <button
