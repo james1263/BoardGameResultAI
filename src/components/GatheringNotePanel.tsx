@@ -389,7 +389,7 @@ export default function GatheringNotePanel({
                     <p className="gn2-hint">
                         {pane === 'private'
                             ? '只有你看得到，管理者在網站上也看不到。'
-                            : 'VIP 可以閱讀；依你的暱稱設定顯示名稱。清空公開欄再儲存，就會撤回公開留言（私人留言會保留）。公開留言的閱讀頁面還在準備中。'}
+                            : 'VIP 可以閱讀；依你的暱稱設定顯示名稱。清空公開欄再儲存，就會撤回公開留言（私人留言會保留）。'}
                     </p>
 
                     <button

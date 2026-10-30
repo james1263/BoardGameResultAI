@@ -205,6 +205,11 @@ export default function GameModal({
                   bggName={game.bggName}
                   isAdmin={isAdmin}
                   enabled={vip.isVip || isAdmin}
+                  canWrite={
+                    isAdmin ||
+                    personal.getEntry(game.bggName).played ||
+                    ratings.getMine(game.bggName) !== null
+                  }
                 />
               </div>
 

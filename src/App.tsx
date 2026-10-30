@@ -67,6 +67,7 @@ import TrashSection from './components/TrashSection'
 import BackToTop from './components/BackToTop'
 import { useTrashActions } from './lib/useTrashActions'
 import { updateDescription } from './lib/saveDescription'
+import NotePrompt from './components/NotePrompt'
 
 // 新遊戲置頂：上架 15 天內，而且還沒有排名（Ranking engine 空白或不是整數，例如 .5 結尾）
 // 兩個條件任一個先結束，就不再置頂
@@ -1098,6 +1099,11 @@ function Library({
           }}
         />
       )}
+      <NotePrompt
+        boardGames={boardGames}
+        ratings={ratings}
+        onWriteNow={openGatheringFromGame}
+      />
       <BackToTop />
       {personal.needsMerge && <MergeDialog personal={personal} />}
 

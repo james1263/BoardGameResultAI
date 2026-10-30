@@ -3072,3 +3072,26 @@ body {
   cursor: pointer;
   padding: 4px 2px;
 }
+
+/* 留言板：我的留言 */
+.gb-mine-box { margin: 8px 0 10px; padding: 10px 12px; border-radius: 12px; background: #fff; border: 1px solid rgba(183,138,90,.35); }
+.gb-mine-title { margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #34463c; }
+.gb-warn { margin: 0 0 6px; font-size: 13px; color: #a0522d; }
+.gb-textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid rgba(69,107,80,.3); border-radius: 10px; font-size: 16px; color: #34463c; background: #fbf7ec; resize: vertical; font-family: inherit; }
+.gb-mine-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+.gb-count { font-size: 12px; color: #7a8a80; }
+.gb-save { border: 0; border-radius: 99px; background: #456b50; color: #fff; padding: 6px 16px; font-size: 14px; cursor: pointer; }
+.gb-save:disabled { opacity: .45; cursor: default; }
+
+/* 寫心得提示（不擋畫面的小提示條） */
+.np-toast {
+  position: fixed; left: 12px; right: 12px;
+  bottom: calc(var(--nav-h, 64px) + 12px);
+  z-index: 1230; max-width: 440px; margin: 0 auto;
+  padding: 12px 14px; border-radius: 16px;
+  background: #34463c; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+}
+.np-text { margin: 0 0 10px; font-size: 14px; line-height: 1.5; color: #fbf7ec; }
+.np-actions { display: flex; gap: 8px; }
+.np-now { border: 0; border-radius: 99px; background: #b78a5a; color: #fff; padding: 7px 18px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.np-later { border: 1px solid rgba(251,247,236,.5); border-radius: 99px; background: transparent; color: #fbf7ec; padding: 7px 16px; font-size: 14px; cursor: pointer; }

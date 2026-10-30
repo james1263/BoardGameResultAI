@@ -33,14 +33,67 @@ function NoteItem({
   )
 }
 
+function MyNoteEditor({
+  initial,
+  hidden,
+  saving,
+  onSave,
+}: {
+  initial: string
+  hidden: boolean
+  saving: boolean
+  onSave: (text: string) => Promise<string>
+}) {
+  const [text, setText] = useState(initial)
+  const [message, setMessage] = useState('')
+  const dirty = text.trim() !== initial
+
+  async function handleSave() {
+    setMessage('')
+    const result = await onSave(text)
+    setMessage(result || (text.trim() === '' ? '已刪除。' : '已儲存。'))
+  }
+
+  return (
+    <div className="gb-mine-box">
+      <p className="gb-mine-title">我的留言（公開給 VIP，最多 200 字）</p>
+      {hidden && (
+        <p className="gb-warn">這則留言目前被管理者隱藏，其他人看不到。</p>
+      )}
+      <textarea
+        className="gb-textarea"
+        maxLength={200}
+        rows={3}
+        value={text}
+        placeholder="這款遊戲你想跟大家說什麼？留空儲存就是刪除。"
+        onChange={(event) => setText(event.target.value)}
+      />
+      <div className="gb-mine-actions">
+        <span className="gb-count">{text.length} / 200</span>
+        <button
+          type="button"
+          className="gb-save"
+          disabled={saving || !dirty}
+          onClick={() => void handleSave()}
+        >
+          {saving ? '儲存中…' : text.trim() === '' && initial ? '刪除留言' : '儲存'}
+        </button>
+      </div>
+      {message && <p className="gb-empty">{message}</p>}
+    </div>
+  )
+}
+
 export default function GameNotesBoard({
   bggName,
   isAdmin,
   enabled,
+  canWrite,
 }: {
   bggName: string
   isAdmin: boolean
   enabled: boolean
+  canWrite: boolean
 }) {
   const api = useGameNotesBoard(bggName, enabled, isAdmin)
   const [open, setOpen] = useState(false)
@@ -76,6 +129,20 @@ export default function GameNotesBoard({
         <div className="gb-body">
           {api.loading && <p className="gb-empty">讀取中…</p>}
           {api.error && <p className="gb-empty">{api.error}</p>}
+
+          {!api.loading &&
+            (canWrite ? (
+              <MyNoteEditor
+                key={`${api.myContent}-${api.myHidden}`}
+                initial={api.myContent}
+                hidden={api.myHidden}
+                saving={api.saving}
+                onSave={api.saveMine}
+              />
+            ) : (
+              <p className="gb-empty">標記已玩或評分過這款，就能留言。</p>
+            ))}
+
           {!api.loading && !api.error && api.notes.length === 0 && (
             <p className="gb-empty">還沒有人留言。</p>
           )}

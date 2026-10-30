@@ -106,7 +106,7 @@ export default function LoyaltyCard({
       : isUpcoming
         ? '你已經在這天的出席名單上。管理者還沒指定要評分的遊戲，指定後這裡會出現遊戲，評完分就蓋章。'
         : !day.hasSession
-          ? '還沒有這天的遊玩紀錄：到遊戲的「我的桌遊」分頁新增，日期選這一天'
+          ? '還沒有這天的遊玩紀錄：到遊戲的「我的紀錄」分頁新增，日期選這一天'
           : `評分完整 ${day.ratedCount} / ${day.gameCount} 款，每款都填完七項才算`
     return (
       <li
