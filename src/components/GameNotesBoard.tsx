@@ -1,89 +1,13 @@
 import { useState } from 'react'
-import { useGameNotesBoard, type BoardNote } from '../lib/useGameNotesBoard'
+import {
+  MAX_NOTES_PER_GAME,
+  useGameNotesBoard,
+  type BoardNote,
+} from '../lib/useGameNotesBoard'
+import '../styles/game-tabs.css'
 
-function NoteItem({
-  note,
-  actionLabel,
-  danger,
-  busy,
-  onAction,
-}: {
-  note: BoardNote
-  actionLabel?: string
-  danger?: boolean
-  busy?: boolean
-  onAction?: () => void
-}) {
-  return (
-    <li className="gb-item">
-      <div className="gb-meta">
-        <b className="gb-name">{note.nickname}</b>
-        {note.isMine && <span className="gb-mine">我的</span>}
-        {actionLabel && onAction && (
-          <button
-            type="button"
-            className={`gb-action${danger ? ' gb-danger' : ''}`}
-            disabled={busy}
-            onClick={onAction}
-          >
-            {busy ? '處理中…' : actionLabel}
-          </button>
-        )}
-      </div>
-      <p className="gb-content">{note.content}</p>
-    </li>
-  )
-}
-
-function MyNoteEditor({
-  initial,
-  hidden,
-  saving,
-  onSave,
-}: {
-  initial: string
-  hidden: boolean
-  saving: boolean
-  onSave: (text: string) => Promise<string>
-}) {
-  const [text, setText] = useState(initial)
-  const [message, setMessage] = useState('')
-  const dirty = text.trim() !== initial
-
-  async function handleSave() {
-    setMessage('')
-    const result = await onSave(text)
-    setMessage(result || (text.trim() === '' ? '已刪除。' : '已儲存。'))
-  }
-
-  return (
-    <div className="gb-mine-box">
-      <p className="gb-mine-title">我的留言（公開給 VIP，最多 200 字）</p>
-      {hidden && (
-        <p className="gb-warn">這則留言目前被管理者隱藏，其他人看不到。</p>
-      )}
-      <textarea
-        className="gb-textarea"
-        maxLength={200}
-        rows={3}
-        value={text}
-        placeholder="這款遊戲你想跟大家說什麼？留空儲存就是刪除。"
-        onChange={(event) => setText(event.target.value)}
-      />
-      <div className="gb-mine-actions">
-        <span className="gb-count">{text.length} / 200</span>
-        <button
-          type="button"
-          className="gb-save"
-          disabled={saving || !dirty}
-          onClick={() => void handleSave()}
-        >
-          {saving ? '儲存中…' : text.trim() === '' && initial ? '刪除留言' : '儲存'}
-        </button>
-      </div>
-      {message && <p className="gb-empty">{message}</p>}
-    </div>
-  )
+function formatDate(day: string): string {
+  return day ? day.replaceAll('-', '/') : ''
 }
 
 export default function GameNotesBoard({
@@ -98,11 +22,44 @@ export default function GameNotesBoard({
   canWrite: boolean
 }) {
   const api = useGameNotesBoard(bggName, enabled, isAdmin)
-  const [open, setOpen] = useState(false)
   const [showHidden, setShowHidden] = useState(false)
   const [message, setMessage] = useState('')
+  const [draft, setDraft] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editText, setEditText] = useState('')
 
   if (!enabled) return null
+
+  const myCount = api.myNotes.length
+  const full = myCount >= MAX_NOTES_PER_GAME
+  const myHiddenNotes = api.myNotes.filter((note) => note.hidden)
+  const editableIds = new Set(api.myNotes.map((note) => note.id))
+
+  async function publish() {
+    setMessage('')
+    const result = await api.addNote(draft)
+    if (result) {
+      setMessage(result)
+      return
+    }
+    setDraft('')
+  }
+
+  async function saveEdit(noteId: string) {
+    setMessage('')
+    const result = await api.updateNote(noteId, editText)
+    if (result) {
+      setMessage(result)
+      return
+    }
+    setEditingId(null)
+  }
+
+  async function removeMine(noteId: string) {
+    if (!window.confirm('確定要刪除這則留言嗎？刪除後無法復原。')) return
+    setMessage(await api.deleteMine(noteId))
+    if (editingId === noteId) setEditingId(null)
+  }
 
   async function hide(note: BoardNote) {
     if (!window.confirm(`確定要隱藏「${note.nickname}」的這則留言嗎？之後可以恢復。`)) {
@@ -111,104 +68,206 @@ export default function GameNotesBoard({
     setMessage(await api.setHidden(note.id, true))
   }
 
-  async function restore(note: BoardNote) {
-    setMessage(await api.setHidden(note.id, false))
-  }
-
-  async function removeMine(note: BoardNote) {
-    if (!window.confirm('確定要刪除這則留言嗎？刪除後無法復原。')) return
-    setMessage(await api.deleteMine(note.id))
-  }
-
-  // 自己的留言一律可以直接刪除；管理者對別人的留言是「隱藏」
-  function actionFor(note: BoardNote) {
-    if (note.isMine) {
-      return { label: '刪除', danger: true, run: () => void removeMine(note) }
-    }
-    if (isAdmin) {
-      return { label: '隱藏', danger: false, run: () => void hide(note) }
-    }
-    return null
-  }
-
   return (
     <div className="gb-board">
-      <button
-        type="button"
-        className="gb-toggle"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <span>大家的留言{api.loading ? '' : `（${api.notes.length}）`}</span>
-        <span aria-hidden="true">{open ? '▴' : '▾'}</span>
-      </button>
+      <p className="gb-head">
+        {api.loading ? '讀取中…' : `共 ${api.notes.length} 則留言`}
+      </p>
+      {api.error && <p className="gb-empty">{api.error}</p>}
 
-      {open && (
-        <div className="gb-body">
-          {api.loading && <p className="gb-empty">讀取中…</p>}
-          {api.error && <p className="gb-empty">{api.error}</p>}
-
-          {!api.loading &&
-            (canWrite ? (
-              <MyNoteEditor
-                key={`${api.myContent}-${api.myHidden}`}
-                initial={api.myContent}
-                hidden={api.myHidden}
-                saving={api.saving}
-                onSave={api.saveMine}
-              />
-            ) : (
-              <p className="gb-empty">標記已玩或評分過這款，就能留言。</p>
-            ))}
-
-          {!api.loading && !api.error && api.notes.length === 0 && (
-            <p className="gb-empty">還沒有人留言。</p>
-          )}
-          {api.notes.length > 0 && (
-            <ul className="gb-list">
-              {api.notes.map((note) => {
-                const action = actionFor(note)
-                return (
-                  <NoteItem
-                    key={note.id}
-                    note={note}
-                    actionLabel={action?.label}
-                    danger={action?.danger}
-                    busy={api.busyId === note.id}
-                    onAction={action?.run}
-                  />
-                )
-              })}
-            </ul>
-          )}
-
-          {isAdmin && api.hiddenNotes.length > 0 && (
-            <>
+      {!api.loading &&
+        (canWrite ? (
+          <div className="gb-mine-box">
+            <textarea
+              className="gb-textarea"
+              maxLength={200}
+              rows={3}
+              value={draft}
+              placeholder="這款遊戲你想跟大家說什麼？（公開給 VIP，最多 200 字）"
+              onChange={(event) => setDraft(event.target.value)}
+            />
+            <div className="gb-mine-actions">
+              <span className="gb-count">
+                {draft.length} / 200・你在這款已留 {myCount} / {MAX_NOTES_PER_GAME} 則
+              </span>
               <button
                 type="button"
-                className="gb-hidden-toggle"
-                onClick={() => setShowHidden((value) => !value)}
+                className="gb-save"
+                disabled={api.saving || draft.trim() === '' || full}
+                onClick={() => void publish()}
               >
-                已隱藏的留言（{api.hiddenNotes.length}）{showHidden ? ' ▴' : ' ▾'}
+                {api.saving ? '發表中…' : '發表'}
               </button>
-              {showHidden && (
-                <ul className="gb-list">
-                  {api.hiddenNotes.map((note) => (
-                    <NoteItem
-                      key={note.id}
-                      note={note}
-                      actionLabel="恢復顯示"
-                      busy={api.busyId === note.id}
-                      onAction={() => void restore(note)}
-                    />
-                  ))}
-                </ul>
-              )}
-            </>
-          )}
-          {message && <p className="gb-empty">{message}</p>}
+            </div>
+            {full && (
+              <p className="gb-warn">
+                這款你已經留了 {MAX_NOTES_PER_GAME} 則，刪掉舊的才能再發表。
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="gb-empty">標記已玩或評分過這款，就能留言。</p>
+        ))}
+
+      {myHiddenNotes.length > 0 && (
+        <div className="gb-mine-box">
+          <p className="gb-warn">
+            你有 {myHiddenNotes.length} 則留言被管理者隱藏，其他人看不到。
+          </p>
+          <ul className="gb-list">
+            {myHiddenNotes.map((note) => (
+              <li className="gb-item" key={note.id}>
+                <p className="gb-content">{note.content}</p>
+                <div className="gb-meta">
+                  <button
+                    type="button"
+                    className="gb-action gb-danger"
+                    disabled={api.busyId === note.id}
+                    onClick={() => void removeMine(note.id)}
+                  >
+                    刪除
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
+
+      {!api.loading && !api.error && api.notes.length === 0 && (
+        <p className="gb-empty">還沒有人留言。</p>
+      )}
+
+      {api.notes.length > 0 && (
+        <ul className="gb-list">
+          {api.notes.map((note) => {
+            const busy = api.busyId === note.id
+            const editable = note.isMine && editableIds.has(note.id)
+            const editing = editingId === note.id
+            return (
+              <li className="gb-item" key={note.id}>
+                <div className="gb-meta">
+                  <b className="gb-name">{note.nickname}</b>
+                  {note.isMine && <span className="gb-mine">我的</span>}
+                  {note.postedOn && (
+                    <span className="gb-date">{formatDate(note.postedOn)}</span>
+                  )}
+                </div>
+
+                {editing ? (
+                  <>
+                    <textarea
+                      className="gb-textarea"
+                      maxLength={200}
+                      rows={3}
+                      value={editText}
+                      onChange={(event) => setEditText(event.target.value)}
+                    />
+                    <div className="gb-mine-actions">
+                      <span className="gb-count">{editText.length} / 200</span>
+                      <span className="gb-btn-row">
+                        <button
+                          type="button"
+                          className="gb-action"
+                          disabled={busy}
+                          onClick={() => setEditingId(null)}
+                        >
+                          取消
+                        </button>
+                        <button
+                          type="button"
+                          className="gb-save"
+                          disabled={busy || editText.trim() === ''}
+                          onClick={() => void saveEdit(note.id)}
+                        >
+                          {busy ? '儲存中…' : '儲存'}
+                        </button>
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="gb-content">{note.content}</p>
+                )}
+
+                {!editing && (note.isMine || isAdmin) && (
+                  <div className="gb-btn-row">
+                    {editable && (
+                      <button
+                        type="button"
+                        className="gb-action"
+                        disabled={busy}
+                        onClick={() => {
+                          setEditingId(note.id)
+                          setEditText(note.content)
+                          setMessage('')
+                        }}
+                      >
+                        編輯
+                      </button>
+                    )}
+                    {note.isMine ? (
+                      <button
+                        type="button"
+                        className="gb-action gb-danger"
+                        disabled={busy}
+                        onClick={() => void removeMine(note.id)}
+                      >
+                        {busy ? '處理中…' : '刪除'}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="gb-action"
+                        disabled={busy}
+                        onClick={() => void hide(note)}
+                      >
+                        {busy ? '處理中…' : '隱藏'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      {isAdmin && api.hiddenNotes.length > 0 && (
+        <>
+          <button
+            type="button"
+            className="gb-hidden-toggle"
+            onClick={() => setShowHidden((value) => !value)}
+          >
+            已隱藏的留言（{api.hiddenNotes.length}）{showHidden ? ' ▴' : ' ▾'}
+          </button>
+          {showHidden && (
+            <ul className="gb-list">
+              {api.hiddenNotes.map((note) => (
+                <li className="gb-item" key={note.id}>
+                  <div className="gb-meta">
+                    <b className="gb-name">{note.nickname}</b>
+                  </div>
+                  <p className="gb-content">{note.content}</p>
+                  <div className="gb-btn-row">
+                    <button
+                      type="button"
+                      className="gb-action"
+                      disabled={api.busyId === note.id}
+                      onClick={() =>
+                        void api.setHidden(note.id, false).then(setMessage)
+                      }
+                    >
+                      恢復顯示
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+      {message && <p className="gb-empty">{message}</p>}
     </div>
   )
 }

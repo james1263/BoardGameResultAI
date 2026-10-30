@@ -11,24 +11,22 @@ import type { PersonalApi } from '../lib/personalApi'
 import GameDocuments from '../GameDocuments'
 import CoverImage from './CoverImage'
 import RatingDots from './RatingDots'
-import PersonalNote from './PersonalNote'
-import PlaySessions from './PlaySessions'
 import DescriptionEditor from './DescriptionEditor'
-import GameGatheringNotes from './GameGatheringNotes'
-import InfoHint from './InfoHint'
 import type { CommunityStatsApi } from '../lib/useCommunityStats'
 import RatingSection, { CommunitySummary } from './RatingSection'
 import { useGameDocuments } from '../lib/useGameDocuments'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import type { RatingsApi } from '../lib/useGameRatings'
 import GameNotesBoard from './GameNotesBoard'
+import GamePlayHistory from './GamePlayHistory'
 import { useVip } from '../lib/useVip'
 import '../styles/overview.css'
 
 const TABS = [
   { key: 'overview', label: '概覽' },
   { key: 'ratings', label: '評分' },
-  { key: 'mine', label: '我的紀錄' },
+  { key: 'discussion', label: '討論' },
+  { key: 'history', label: '紀錄' },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -42,7 +40,6 @@ export default function GameModal({
   isAdmin,
   adminScores,
   personal,
-  playSessions,
   ratings,
   onSaveDescription,
   communityStats,
@@ -52,7 +49,6 @@ export default function GameModal({
   onTrash,
   isTrashing,
   initialTab,
-  onOpenGathering,
   allGames,
   onSwitchGame,
   onClose,
@@ -71,14 +67,16 @@ export default function GameModal({
   onCoverUpload: (event: ChangeEvent<HTMLInputElement>) => void
   onTrash: () => void
   isTrashing: boolean
-  initialTab?: TabKey | 'rules'
+  initialTab?: TabKey | 'rules' | 'mine'
   onOpenGathering?: (gatheringId: string) => void
   allGames?: LibraryGame[]
   onSwitchGame?: (game: LibraryGame) => void
   onClose: () => void
 }) {
   const [tab, setTab] = useState<TabKey>(
-    initialTab === undefined || initialTab === 'rules' ? 'overview' : initialTab,
+    initialTab === undefined || initialTab === 'rules' || initialTab === 'mine'
+      ? 'overview'
+      : initialTab,
   )
   const [rulesOpen, setRulesOpen] = useState(initialTab === 'rules')
   const [openType, setOpenType] = useState<string | null>(null)
@@ -312,20 +310,6 @@ export default function GameModal({
                 </details>
               </div>
 
-              <div className="modal-section">
-                <GameNotesBoard
-                  key={game.bggName}
-                  bggName={game.bggName}
-                  isAdmin={isAdmin}
-                  enabled={vip.isVip || isAdmin}
-                  canWrite={
-                    isAdmin ||
-                    personal.getEntry(game.bggName).played ||
-                    ratings.getMine(game.bggName) !== null
-                  }
-                />
-              </div>
-
               {isAdmin && (
                 <div className="cover-upload">
                   <label className="admin-link" style={{ cursor: 'pointer' }}>
@@ -426,44 +410,35 @@ export default function GameModal({
             )
           )}
 
-          {tab === 'mine' && (
-            <>
-              <div className="modal-section">
-                <p className="personal-hint">
-                  目前累計{' '}
-                  {personal.getEntry(game.bggName).playCount +
-                    playSessions.getSummary(game.bggName).count}{' '}
-                  次
-                  <InfoHint text="要標記想玩／已玩或直接改次數，請到「俱樂部」→「我的統計」。" />
-                </p>
-                <PlaySessions
+          {tab === 'discussion' && (
+            <div className="modal-section">
+              {vip.isVip || isAdmin ? (
+                <GameNotesBoard
                   key={game.bggName}
                   bggName={game.bggName}
-                  personal={personal}
-                  api={playSessions}
-                />
-              </div>
-
-              <div className="modal-section">
-                <PersonalNote
-                  key={`${game.bggName}-${personal.status}`}
-                  value={personal.getEntry(game.bggName).note}
-                  disabled={!personal.canEdit}
-                  onSave={(text) =>
-                    personal.updateEntry(game.bggName, { note: text })
+                  isAdmin={isAdmin}
+                  enabled
+                  canWrite={
+                    isAdmin ||
+                    personal.getEntry(game.bggName).played ||
+                    ratings.getMine(game.bggName) !== null
                   }
                 />
-                {!personal.isLoggedIn && (
-                  <p className="personal-hint">登入後即可跨裝置保存</p>
-                )}
-                {personal.isLoggedIn && (
-                  <GameGatheringNotes
-                    bggName={game.bggName}
-                    onOpenGathering={onOpenGathering}
-                  />
-                )}
-              </div>
-            </>
+              ) : (
+                <p className="personal-hint">只有 VIP 可以看到大家的留言。</p>
+              )}
+            </div>
+          )}
+
+          {tab === 'history' && (
+            <div className="modal-section">
+              <GamePlayHistory
+                key={game.bggName}
+                bggName={game.bggName}
+                enabled={vip.isVip || isAdmin}
+                isAdmin={isAdmin}
+              />
+            </div>
           )}
         </div>
       </section>

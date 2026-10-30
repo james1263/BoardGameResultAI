@@ -119,6 +119,32 @@ export default function LoyaltyAdmin() {
     const [voucherUses, setVoucherUses] = useState<VoucherUse[]>([])
     const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
     const [grants, setGrants] = useState<GrantRow[]>([])
+    const [playStatus, setPlayStatus] = useState<{
+        id: string
+        map: Record<string, string | null>
+    } | null>(null)
+
+    // 讀取目前選中聚會各款遊戲的「開團確認狀態」
+    useEffect(() => {
+        if (!selectedId) return
+        let cancelled = false
+        void supabase
+            .rpc('admin_get_gathering_game_status', { p_gathering: selectedId })
+            .then(({ data }) => {
+                if (cancelled || !data) return
+                const map: Record<string, string | null> = {}
+                for (const row of data as {
+                    bgg_name: string
+                    play_status: string | null
+                }[]) {
+                    map[row.bgg_name] = row.play_status
+                }
+                setPlayStatus({ id: selectedId, map })
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [selectedId, gatheringGames])
 
     const gameNameMap = useMemo(
         () => new Map(allGames.map((game) => [game.bggName, game.name])),
@@ -631,6 +657,29 @@ export default function LoyaltyAdmin() {
         setBusy(false)
     }
 
+    async function setGameStatus(
+        gatheringId: string,
+        bggName: string,
+        status: 'played' | 'cancelled' | null,
+    ) {
+        setBusy(true)
+        setMessage('')
+        const { error } = await supabase.rpc('admin_set_game_play_status', {
+            p_gathering: gatheringId,
+            p_bgg_name: bggName,
+            p_status: status,
+        })
+        if (error) {
+            setMessage('設定開團狀態失敗：' + error.message)
+        } else {
+            setPlayStatus((current) =>
+                current && current.id === gatheringId
+                    ? { id: gatheringId, map: { ...current.map, [bggName]: status } }
+                    : current,
+            )
+        }
+        setBusy(false)
+    }
     async function showDetail(row: OverviewRow) {
         setBusy(true)
         setMessage('')
@@ -999,7 +1048,69 @@ export default function LoyaltyAdmin() {
                                                                             ))}
                                                                         </ul>
                                                                     )}
-
+                                                                    {selectedGames.length > 0 && (
+                                                                        <>
+                                                                            <h4 className="lga-sub">開團紀錄確認</h4>
+                                                                            <p className="loy-admin-note">
+                                                                                聚會結束後標記每一款有沒有真的開。只有「實際開團」會出現在遊戲詳情的「紀錄」分頁並計入次數，不影響集點。
+                                                                            </p>
+                                                                            <ul className="loy-picked">
+                                                                                {selectedGames.map((bggName) => {
+                                                                                    const status =
+                                                                                        playStatus && playStatus.id === selected.id
+                                                                                            ? (playStatus.map[bggName] ?? null)
+                                                                                            : null
+                                                                                    const past = selected.gatheredOn <= todayLocal()
+                                                                                    return (
+                                                                                        <li key={`ps-${bggName}`}>
+                                                                                            <span>
+                                                                                                {gameNameMap.get(bggName) ?? bggName}
+                                                                                                {status === 'played'
+                                                                                                    ? '　✅ 實際開團'
+                                                                                                    : status === 'cancelled'
+                                                                                                        ? '　✖ 已取消'
+                                                                                                        : past
+                                                                                                            ? '　⚠ 待確認'
+                                                                                                            : '　未確認'}
+                                                                                            </span>
+                                                                                            <span style={{ display: 'flex', gap: 6 }}>
+                                                                                                {status !== 'played' && (
+                                                                                                    <button
+                                                                                                        type="button"
+                                                                                                        className="loy-mini-btn"
+                                                                                                        disabled={busy}
+                                                                                                        onClick={() => setGameStatus(selected.id, bggName, 'played')}
+                                                                                                    >
+                                                                                                        實際開團
+                                                                                                    </button>
+                                                                                                )}
+                                                                                                {status !== 'cancelled' && (
+                                                                                                    <button
+                                                                                                        type="button"
+                                                                                                        className="loy-mini-btn"
+                                                                                                        disabled={busy}
+                                                                                                        onClick={() => setGameStatus(selected.id, bggName, 'cancelled')}
+                                                                                                    >
+                                                                                                        取消
+                                                                                                    </button>
+                                                                                                )}
+                                                                                                {status !== null && (
+                                                                                                    <button
+                                                                                                        type="button"
+                                                                                                        className="loy-mini-btn"
+                                                                                                        disabled={busy}
+                                                                                                        onClick={() => setGameStatus(selected.id, bggName, null)}
+                                                                                                    >
+                                                                                                        改回未確認
+                                                                                                    </button>
+                                                                                                )}
+                                                                                            </span>
+                                                                                        </li>
+                                                                                    )
+                                                                                })}
+                                                                            </ul>
+                                                                        </>
+                                                                    )}
                                                                     <h4 className="lga-sub">② 人數上限</h4>
                                                                     <p className="loy-admin-note">
                                                                         上限包含你手動加入的人。連結可報到的名額 ＝ 上限 － 目前出席人數。

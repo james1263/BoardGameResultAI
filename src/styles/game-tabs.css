@@ -1,0 +1,82 @@
+/* 遊戲視窗「討論」「紀錄」分頁的補充樣式 */
+.gb-head {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #34463c;
+}
+
+.gb-date {
+  font-size: 12px;
+  color: #7b8a80;
+}
+
+.gb-btn-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.gh-board {
+  display: block;
+}
+
+.gh-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.gh-head h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #34463c;
+}
+
+.gh-total {
+  font-size: 13px;
+  color: #34463c;
+}
+
+.gh-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.gh-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(183, 138, 90, 0.35);
+  border-radius: 12px;
+  background: #fbf7ec;
+  color: #34463c;
+}
+
+.gh-date {
+  font-size: 14px;
+}
+
+.gh-badge {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.gh-badge.played {
+  background: rgba(69, 107, 80, 0.16);
+  color: #365b40;
+}
+
+.gh-badge.planned {
+  background: rgba(183, 138, 90, 0.2);
+  color: #7a5a33;
+}
