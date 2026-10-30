@@ -131,7 +131,7 @@ function Library({
   const adminScores = useMemo(() => computeAdminScores(boardGames), [boardGames])
   const [searchText, setSearchText] = useState('')
   const [selectedGame, setSelectedGame] = useState<LibraryGame | null>(null)
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'ratings' | 'mine' | 'rules'>('overview')
+  const [selectedTab, setSelectedTab] = useState<'overview' | 'ratings' | 'discussion' | 'history' | 'mine' | 'rules'>('overview')
   const isAdmin = useIsAdmin()
   const personal = usePersonalCollection()
   const playSessions = useGamePlaySessions()

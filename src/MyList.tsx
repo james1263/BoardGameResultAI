@@ -12,13 +12,14 @@ import MyGatherings from './components/MyGatherings'
 import MyNotes from './components/MyNotes'
 import AddPlayLog from './components/AddPlayLog'
 import PlayedGameRecord from './components/PlayedGameRecord'
+import ClubBoard from './components/ClubBoard'
 import { useBackClose } from './lib/useBackClose'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
-type View = 'home' | 'stats' | 'gatherings' | 'addplay' | 'notes'
+type View = 'home' | 'stats' | 'gatherings' | 'addplay' | 'notes' | 'board'
 type StatsTab = 'overview' | 'want' | 'played'
 type SortKey =
     | 'added'
@@ -261,7 +262,7 @@ export default function MyList({
     todayPending: boolean
     onClose: () => void
     onBrowse: () => void
-    onOpenGame: (game: BoardGame, tab?: 'ratings') => void
+    onOpenGame: (game: BoardGame, tab?: 'ratings' | 'discussion') => void
     onOpenLoyalty: () => void
     renderCover: (game: BoardGame) => ReactNode
 }) {
@@ -276,7 +277,11 @@ export default function MyList({
     const [topN, setTopN] = useState<TopN>(loadTopN)
     const [showHoursNote, setShowHoursNote] = useState(false)
     // 分頁切換不另建瀏覽歷史：返回鍵與 ✕ 一律回「我的俱樂部」首頁
-    useBackClose(() => setView('home'), isOpen && mode !== 'loyalty' && view !== 'home')
+    // 從留言板進去的「新增遊玩紀錄」「我的心得」，返回時先回留言板
+    useBackClose(
+        () => setView((current) => (current === 'addplay' || current === 'notes' ? 'board' : 'home')),
+        isOpen && mode !== 'loyalty' && view !== 'home',
+    )
 
     // 每次打開都回到首頁，統計頁預設「概況」
     useEffect(() => {
@@ -437,13 +442,31 @@ export default function MyList({
         )
     }
 
+    // ---------- 留言板 ----------
+    if (view === 'board') {
+        return (
+            <ClubBoard
+                boardGames={boardGames}
+                personal={personal}
+                ratings={ratings}
+                isAdmin={isAdmin}
+                isVip={isVip}
+                onBack={() => setView('home')}
+                onClose={onClose}
+                onOpenGame={onOpenGame}
+                onOpenAddPlay={() => setView('addplay')}
+                onOpenMyNotes={() => setView('notes')}
+            />
+        )
+    }
+
     // ---------- 我的心得 ----------
     if (view === 'notes') {
         return (
             <MyNotes
                 boardGames={boardGames}
                 renderCover={renderCover}
-                onBack={() => setView('home')}
+                onBack={() => setView('board')}
                 onClose={onClose}
                 onOpenGathering={(id) => {
                     setGatheringTarget(id)
@@ -477,7 +500,7 @@ export default function MyList({
                 boardGames={boardGames}
                 personal={personal}
                 playSessions={playSessions}
-                onBack={() => setView('home')}
+                onBack={() => setView('board')}
                 onClose={onClose}
             />
         )
@@ -806,6 +829,7 @@ export default function MyList({
                             <span className="club-menu-icon" aria-hidden="true">▤</span>
                             <span className="club-menu-text">
                                 <b>我的統計</b>
+                                <span className="club-menu-sub">想玩、已玩與遊玩次數</span>
                             </span>
                             <span className="club-menu-count">
                                 想玩 {wantGames.length}・已玩 {playedGames.length}
@@ -819,6 +843,20 @@ export default function MyList({
                                 <button
                                     type="button"
                                     className="club-menu-item club-menu-single"
+                                    onClick={() => setView('board')}
+                                >
+                                    <span className="club-menu-icon" aria-hidden="true">💬</span>
+                                    <span className="club-menu-text">
+                                        <b>留言板</b>
+                                        <span className="club-menu-sub">最新留言、發表心得、補記遊玩</span>
+                                    </span>
+                                    <span className="club-menu-arrow" aria-hidden="true">›</span>
+                                </button>
+                            </div>
+                            <div className="club-list club-more">
+                                <button
+                                    type="button"
+                                    className="club-menu-item club-menu-single"
                                     onClick={() => {
                                         setGatheringTarget(null)
                                         setView('gatherings')
@@ -827,32 +865,7 @@ export default function MyList({
                                     <span className="club-menu-icon" aria-hidden="true">📅</span>
                                     <span className="club-menu-text">
                                         <b>我的場次</b>
-                                    </span>
-                                    <span className="club-menu-arrow" aria-hidden="true">›</span>
-                                </button>
-                            </div>
-                            <div className="club-list club-more">
-                                <button
-                                    type="button"
-                                    className="club-menu-item club-menu-single"
-                                    onClick={() => setView('notes')}
-                                >
-                                    <span className="club-menu-icon" aria-hidden="true">💬</span>
-                                    <span className="club-menu-text">
-                                        <b>我的心得</b>
-                                    </span>
-                                    <span className="club-menu-arrow" aria-hidden="true">›</span>
-                                </button>
-                            </div>
-                            <div className="club-list club-more">
-                                <button
-                                    type="button"
-                                    className="club-menu-item club-menu-single"
-                                    onClick={() => setView('addplay')}
-                                >
-                                    <span className="club-menu-icon" aria-hidden="true">📝</span>
-                                    <span className="club-menu-text">
-                                        <b>補記遊玩</b>
+                                        <span className="club-menu-sub">參加過的聚會與心得</span>
                                     </span>
                                     <span className="club-menu-arrow" aria-hidden="true">›</span>
                                 </button>
