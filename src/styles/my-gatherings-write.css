@@ -1,0 +1,24 @@
+/* 我的場次清單：每場下方的「補寫心得」小按鈕 */
+.mg-write-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 2px 6px 6px;
+}
+
+.mg-write-btn {
+  appearance: none;
+  border: 1px solid rgba(69, 107, 80, 0.35);
+  background: transparent;
+  color: #365b40;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.mg-write-btn:hover {
+  background: rgba(69, 107, 80, 0.1);
+}

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { PersonalApi } from '../lib/personalApi'
 import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
@@ -11,6 +11,7 @@ import {
 } from '../lib/useMyGatherings'
 import GatheringNotePanel, { type NoteGame } from './GatheringNotePanel'
 import { useBackClose } from '../lib/useBackClose'
+import '../styles/my-gatherings-write.css'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -68,6 +69,8 @@ export default function MyGatherings({
 }) {
   const list = useMyGatherings()
   const [selectedId, setSelectedId] = useState<string | null>(initialGatheringId ?? null)
+  // 從清單的「補寫心得」進來時，詳情讀好後要捲到心得區
+  const [scrollToNotes, setScrollToNotes] = useState(false)
   const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
   const detail = useGatheringDetail(selectedId)
   const notes = useMyGatheringNotes(selectedId)
@@ -75,6 +78,7 @@ export default function MyGatherings({
   const selected = list.rows.find((row) => row.id === selectedId) ?? null
   // 心得區會把「有未存變更」的檢查函式放進來
   const guardRef = useRef<(() => boolean) | null>(null)
+  const notesRef = useRef<HTMLDivElement | null>(null)
 
   const gameByName = useMemo(() => {
     const map = new Map<string, BoardGame>()
@@ -106,7 +110,8 @@ export default function MyGatherings({
     )
   }, [list.rows])
 
-  const currentMonth = todayLocal().slice(0, 7)
+  const today = todayLocal()
+  const currentMonth = today.slice(0, 7)
 
   // 預設展開最新一個月與本月，其餘摺疊；點月份標題可切換
   function isMonthOpen(key: string, index: number): boolean {
@@ -124,6 +129,7 @@ export default function MyGatherings({
   function leaveDetail() {
     if (guardRef.current?.()) return
     setSelectedId(null)
+    setScrollToNotes(false)
   }
 
   function handleBack() {
@@ -133,18 +139,29 @@ export default function MyGatherings({
   useBackClose(leaveDetail, selectedId !== null)
 
   const gatheredOn = selected?.gatheredOn ?? ''
-  const isFuture = gatheredOn !== '' && gatheredOn > todayLocal()
+  const isFuture = gatheredOn !== '' && gatheredOn > today
   // 管理者可以看全部場次，但只有真的在出席名單上的人才能記錄心得
   const iAmAttendee = detail.detail?.attendees.some((person) => person.me) ?? false
   const blockedReason: string | null = isFuture
     ? '聚會還沒到，聚會當天或之後才能記錄心得。'
     : !iAmAttendee
-      ? '你不在這場聚會的出席名單上，所以不能記錄心得。'
+      ? '你不在這場聚會的出席名單上，所以不能記錄這場的心得。想對這款遊戲留言，請到俱樂部的「留言板」。'
       : notes.error
         ? '心得讀取失敗，請稍後再試。'
         : notes.loading
           ? '心得讀取中…'
           : null
+
+  // 詳情與心得都讀好後，捲到心得區（只捲一次）
+  const detailReady = !detail.loading && !detail.error && detail.detail !== null
+  useEffect(() => {
+    if (!scrollToNotes || !detailReady) return
+    const timer = window.setTimeout(() => {
+      notesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setScrollToNotes(false)
+    }, 60)
+    return () => window.clearTimeout(timer)
+  }, [scrollToNotes, detailReady])
 
   return (
     <>
@@ -216,6 +233,7 @@ export default function MyGatherings({
                                 status !== null &&
                                 status.gameCount > 0 &&
                                 status.doneCount < status.gameCount
+                              const canWrite = row.gatheredOn <= today
                               return (
                                 <li key={row.id}>
                                   <button
@@ -242,6 +260,20 @@ export default function MyGatherings({
                                       ›
                                     </span>
                                   </button>
+                                  {canWrite && (
+                                    <div className="mg-write-row">
+                                      <button
+                                        type="button"
+                                        className="mg-write-btn"
+                                        onClick={() => {
+                                          setScrollToNotes(true)
+                                          setSelectedId(row.id)
+                                        }}
+                                      >
+                                        補寫心得 ›
+                                      </button>
+                                    </div>
+                                  )}
                                 </li>
                               )
                             })}
@@ -321,28 +353,30 @@ export default function MyGatherings({
                     )}
                   </details>
 
-                  {noteGames.length === 0 ? (
-                    <p className="mg-muted">管理者還沒有指定遊戲。</p>
-                  ) : (
-                    <GatheringNotePanel
-                      key={selectedId}
-                      gatheringId={selectedId}
-                      gatheredOn={gatheredOn}
-                      games={noteGames}
-                      blockedReason={blockedReason}
-                      getNote={notes.get}
-                      personal={personal}
-                      playSessions={playSessions}
-                      renderCover={renderCover}
-                      onOpenGame={onOpenGame}
-                      onChanged={() => {
-                        notes.reload()
-                        noteStatus.reload()
-                      }}
-                      guardRef={guardRef}
-                      onLeave={() => setSelectedId(null)}
-                    />
-                  )}
+                  <div ref={notesRef}>
+                    {noteGames.length === 0 ? (
+                      <p className="mg-muted">管理者還沒有指定遊戲。</p>
+                    ) : (
+                      <GatheringNotePanel
+                        key={selectedId}
+                        gatheringId={selectedId}
+                        gatheredOn={gatheredOn}
+                        games={noteGames}
+                        blockedReason={blockedReason}
+                        getNote={notes.get}
+                        personal={personal}
+                        playSessions={playSessions}
+                        renderCover={renderCover}
+                        onOpenGame={onOpenGame}
+                        onChanged={() => {
+                          notes.reload()
+                          noteStatus.reload()
+                        }}
+                        guardRef={guardRef}
+                        onLeave={() => setSelectedId(null)}
+                      />
+                    )}
+                  </div>
                   {!isAdmin && noteGames.length > 0 && (
                     <p className="mg-muted">
                       沒看到遊戲？請管理者把它加進當天指定遊戲。
