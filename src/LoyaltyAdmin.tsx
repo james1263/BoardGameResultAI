@@ -9,6 +9,7 @@ import {
     type LoyaltyDay,
     type Redemption,
 } from './lib/useLoyalty'
+import PlannedGatheringsAdmin from './components/PlannedGatheringsAdmin'
 
 type Gathering = { id: string; gatheredOn: string; title: string; note: string }
 type Player = { id: string; nickname: string }
@@ -867,6 +868,14 @@ export default function LoyaltyAdmin() {
 
             {tab === 'setup' && (
                 <>
+                    <PlannedGatheringsAdmin
+                        allGames={allGames}
+                        gatherings={gatherings.map((g) => ({
+                            id: g.id,
+                            label: gatheringName(g),
+                            gatheredOn: g.gatheredOn,
+                        }))}
+                    />
                     <section className="lga-card">
                         <h3 className="lga-step">
                             <span>1</span>新增聚會

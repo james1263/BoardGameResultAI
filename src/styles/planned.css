@@ -1,0 +1,254 @@
+/* 近期聚會（VIP 頁面）與預計聚會（管理者區塊） */
+
+.pg-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #7a6a55;
+}
+
+.pg-msg {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(183, 138, 90, 0.16);
+  color: #6b4d2a;
+  font-size: 14px;
+}
+
+.pg-list,
+.pg-admin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pg-card,
+.pg-admin-item {
+  background: #fbf7ec;
+  border: 1px solid rgba(52, 70, 60, 0.14);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.pg-card.cancelled,
+.pg-admin-item.off {
+  opacity: 0.66;
+}
+
+.pg-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pg-when {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #7a6a55;
+}
+
+.pg-title {
+  margin: 2px 0 0;
+  font-size: 17px;
+  color: #34463c;
+}
+
+.pg-title-sm {
+  display: block;
+  margin-top: 2px;
+  color: #34463c;
+}
+
+.pg-badge {
+  flex: none;
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 3px 9px;
+  background: rgba(183, 138, 90, 0.2);
+  color: #7a5a33;
+  white-space: nowrap;
+}
+
+.pg-badge.ok {
+  background: rgba(69, 107, 80, 0.16);
+  color: #365b40;
+}
+
+.pg-note {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4a5a50;
+}
+
+.pg-sub {
+  display: block;
+  margin-top: 4px;
+  color: #6c7a70;
+  line-height: 1.5;
+}
+
+.pg-games {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pg-game {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(52, 70, 60, 0.16);
+  border-radius: 10px;
+  padding: 4px 10px 4px 4px;
+  background: #fff;
+  color: #34463c;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pg-game.plain {
+  padding: 6px 10px;
+  cursor: default;
+}
+
+.pg-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 7px;
+  overflow: hidden;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #efe7d6;
+}
+
+.pg-thumb img,
+.pg-thumb > * {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pg-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.pg-count {
+  font-size: 14px;
+  font-weight: 700;
+  color: #365b40;
+}
+
+.pg-closed {
+  font-size: 13px;
+  color: #7a6a55;
+}
+
+.pg-go {
+  border: 1px solid #456b50;
+  border-radius: 999px;
+  padding: 9px 18px;
+  background: #456b50;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pg-go.on {
+  background: transparent;
+  color: #365b40;
+}
+
+.pg-go:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---- 管理者區塊 ---- */
+
+.pg-fold {
+  margin-bottom: 12px;
+}
+
+.pg-fold > summary {
+  cursor: pointer;
+  padding: 10px 4px;
+  font-weight: 700;
+  color: #34463c;
+}
+
+.pg-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pg-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pg-form input,
+.pg-convert select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid rgba(52, 70, 60, 0.25);
+  border-radius: 10px;
+  background: #fff;
+  color: #34463c;
+  font-size: 16px; /* 避免 iPhone 輸入時自動放大 */
+}
+
+.pg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pg-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.pg-convert {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pg-convert select {
+  flex: 1;
+  min-width: 0;
+}
+
+.pg-voters {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font-size: 14px;
+  color: #34463c;
+}
