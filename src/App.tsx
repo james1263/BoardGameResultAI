@@ -983,6 +983,11 @@ function Library({
         <GameModal
           game={selectedGame}
           coverVersion={coverVersions[selectedGame.coverSlug] ?? 0}
+          allGames={boardGames}
+          onSwitchGame={(next) => {
+            setCoverMessage('')
+            setSelectedGame(next)
+          }}
           initialTab={selectedTab}
           onOpenGathering={openGatheringFromGame}
           isAdmin={isAdmin}
