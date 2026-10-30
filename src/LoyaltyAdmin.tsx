@@ -120,6 +120,28 @@ export default function LoyaltyAdmin() {
     const [voucherUses, setVoucherUses] = useState<VoucherUse[]>([])
     const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
     const [grants, setGrants] = useState<GrantRow[]>([])
+    // 管理者專用：每位 VIP／管理者想玩的遊戲（user_id -> 遊戲 bgg_name 集合）
+    const [wantMap, setWantMap] = useState<Map<string, Set<string>> | null>(null)
+    const [expandedWant, setExpandedWant] = useState<string | null>(null)
+
+    useEffect(() => {
+        let cancelled = false
+        void supabase.rpc('admin_get_want_to_play').then(({ data, error }) => {
+            if (cancelled || error || !data) return
+            setWantMap(
+                new Map(
+                    (data as { user_id: string; games: string[] | null }[]).map(
+                        (row) =>
+                            [row.user_id, new Set(row.games ?? [])] as [string, Set<string>],
+                    ),
+                ),
+            )
+        })
+        return () => {
+            cancelled = true
+        }
+    }, [])
+
     const [playStatus, setPlayStatus] = useState<{
         id: string
         map: Record<string, string | null>
@@ -805,6 +827,28 @@ export default function LoyaltyAdmin() {
         )
         : players
 
+    // 想玩提示（只是參考，不自動選人或選遊戲）
+    const hasSelectedAttendees = selectedAttendees.length > 0
+    const wantAmongSelected = (bggName: string) =>
+        selectedAttendees.filter((id) => wantMap?.get(id)?.has(bggName)).length
+    const wantInCommunity = (bggName: string) =>
+        wantMap ? [...wantMap.values()].filter((set) => set.has(bggName)).length : 0
+    const wantHint = (bggName: string): string => {
+        if (!wantMap) return ''
+        return hasSelectedAttendees
+            ? `已選玩家中有 ${wantAmongSelected(bggName)} 人想玩`
+            : `社群有 ${wantInCommunity(bggName)} 人想玩`
+    }
+    const wantCountOf = (userId: string) =>
+        [...(wantMap?.get(userId) ?? [])].filter((name) => gameNameMap.has(name)).length
+    const expandedWantGames = expandedWant
+        ? [...(wantMap?.get(expandedWant) ?? [])]
+            .filter((name) => gameNameMap.has(name))
+            .map((name) => gameNameMap.get(name) ?? name)
+        : []
+    const expandedWantNick = players.find((p) => p.id === expandedWant)?.nickname ?? ''
+    const wantHintStyle = { marginLeft: 8, fontSize: '0.8em', color: '#8a6d46' }
+
     const searchText = gameSearch.trim().toLocaleLowerCase()
     const gameMatches = searchText
         ? allGames
@@ -813,6 +857,11 @@ export default function LoyaltyAdmin() {
                     !selectedGames.includes(game.bggName) &&
                     (game.name.toLocaleLowerCase().includes(searchText) ||
                         game.bggName.toLocaleLowerCase().includes(searchText)),
+            )
+            .sort((x, y) =>
+                hasSelectedAttendees
+                    ? wantAmongSelected(y.bggName) - wantAmongSelected(x.bggName)
+                    : 0,
             )
             .slice(0, 8)
         : []
@@ -1010,6 +1059,11 @@ export default function LoyaltyAdmin() {
                                                                         報到的人會依這份清單評分：任一款評分完整就得 1 點，評分可以在家補。
                                                                         建立連結前至少要有一款。
                                                                     </p>
+                                                                    {wantMap && (
+                                                                        <p className="loy-admin-note">
+                                                                            想玩人數只統計 VIP 玩家，僅供參考，想玩不等於會來。
+                                                                        </p>
+                                                                    )}
                                                                     <div className="lga-new lga-search">
                                                                         <input
                                                                             type="text"
@@ -1022,7 +1076,12 @@ export default function LoyaltyAdmin() {
                                                                         <ul className="loy-picker-results">
                                                                             {gameMatches.map((game) => (
                                                                                 <li key={game.bggName}>
-                                                                                    <span>{game.name}</span>
+                                                                                    <span>
+                                                                                            {game.name}
+                                                                                            {wantHint(game.bggName) && (
+                                                                                                <small style={wantHintStyle}>{wantHint(game.bggName)}</small>
+                                                                                            )}
+                                                                                        </span>
                                                                                     <button
                                                                                         type="button"
                                                                                         className="loy-mini-btn"
@@ -1044,7 +1103,12 @@ export default function LoyaltyAdmin() {
                                                                         <ul className="loy-picked">
                                                                             {selectedGames.map((bggName) => (
                                                                                 <li key={bggName}>
-                                                                                    <span>{gameNameMap.get(bggName) ?? bggName}</span>
+                                                                                    <span>
+                                                                                            {gameNameMap.get(bggName) ?? bggName}
+                                                                                            {wantHint(bggName) && (
+                                                                                                <small style={wantHintStyle}>{wantHint(bggName)}</small>
+                                                                                            )}
+                                                                                        </span>
                                                                                     <button
                                                                                         type="button"
                                                                                         className="loy-mini-btn"
@@ -1169,6 +1233,7 @@ export default function LoyaltyAdmin() {
                                                                     ) : visiblePlayers.length === 0 ? (
                                                                         <p className="loy-admin-note">找不到符合的玩家。</p>
                                                                     ) : (
+                                                                        <>
                                                                         <ul className="lga-chips">
                                                                             {visiblePlayers.map((player) => {
                                                                                 const attending = selectedAttendees.includes(player.id)
@@ -1196,6 +1261,28 @@ export default function LoyaltyAdmin() {
                                                                                         <span className="lga-contact">
                                                                                             {contacts[player.id] ?? '未填聯絡方式'}
                                                                                         </span>
+                                                                                        {wantMap?.has(player.id) && (
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                aria-expanded={expandedWant === player.id}
+                                                                                                onClick={() =>
+                                                                                                    setExpandedWant((current) =>
+                                                                                                        current === player.id ? null : player.id,
+                                                                                                    )
+                                                                                                }
+                                                                                                style={{
+                                                                                                    background: 'none',
+                                                                                                    border: 'none',
+                                                                                                    padding: '0 4px',
+                                                                                                    fontSize: 12,
+                                                                                                    color: '#8a6d46',
+                                                                                                    textDecoration: 'underline',
+                                                                                                    cursor: 'pointer',
+                                                                                                }}
+                                                                                            >
+                                                                                                想玩 {wantCountOf(player.id)} 款 {expandedWant === player.id ? '▴' : '▾'}
+                                                                                            </button>
+                                                                                        )}
                                                                                         {selectedSelf.includes(player.id) && (
                                                                                             <span className="lga-self">自己報到</span>
                                                                                         )}
@@ -1216,6 +1303,14 @@ export default function LoyaltyAdmin() {
                                                                                 )
                                                                             })}
                                                                         </ul>
+                                                                        {expandedWant && wantMap?.has(expandedWant) && (
+                                                                            <p className="loy-admin-note">
+                                                                                {expandedWantNick} 想玩 {expandedWantGames.length} 款：
+                                                                                {expandedWantGames.length > 0 ? expandedWantGames.join('、') : '（沒有）'}
+                                                                                。僅供參考，想玩不等於會來。
+                                                                            </p>
+                                                                        )}
+                                                                        </>
                                                                     )}
 
                                                                     <h4 className="lga-sub">④ 聚會連結（報到＋集點卡）</h4>
