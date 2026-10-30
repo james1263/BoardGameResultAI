@@ -252,6 +252,7 @@ function ClubHeader({
 
 export default function MyList({
     boardGames,
+    trashedGames = [],
     personal,
     playSessions,
     ratings,
@@ -271,6 +272,8 @@ export default function MyList({
     renderCover,
 }: {
     boardGames: ListedGame[]
+    // 垃圾桶裡的遊戲：只用來查封面與名稱（我的場次、我的心得），不進清單與統計
+    trashedGames?: ListedGame[]
     personal: PersonalApi
     playSessions: PlaySessionsApi
     ratings: RatingsApi
@@ -359,6 +362,11 @@ export default function MyList({
         if (tab === 'want') setSortWant(next)
         else setSortPlayed(next)
     }
+
+    const lookupGames = useMemo(
+        () => [...boardGames, ...trashedGames],
+        [boardGames, trashedGames],
+    )
 
     const wantGames = useMemo(
         () => boardGames.filter((game) => personal.entries[game.bggName]?.wantToPlay),
@@ -516,7 +524,7 @@ export default function MyList({
     if (view === 'notes') {
         return (
             <MyNotes
-                boardGames={boardGames}
+                boardGames={lookupGames}
                 renderCover={renderCover}
                 onBack={() => setView('board')}
                 onClose={onClose}
@@ -532,7 +540,7 @@ export default function MyList({
     if (view === 'gatherings') {
         return (
             <MyGatherings
-                boardGames={boardGames}
+                boardGames={lookupGames}
                 personal={personal}
                 playSessions={playSessions}
                 isAdmin={isAdmin}

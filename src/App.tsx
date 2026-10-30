@@ -1048,6 +1048,7 @@ function Library({
         focusDate={inviteFocus}
         openGatheringId={jumpGatheringId}
         boardGames={boardGames}
+        trashedGames={trashedGames}
         personal={personal}
         playSessions={playSessions}
         ratings={ratings}
