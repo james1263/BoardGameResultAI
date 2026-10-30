@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { BoardGame } from './data/boardGames.generated'
 import { usePersonalCollection } from './lib/usePersonalCollection'
 import type { PlaySessionsApi } from './lib/useGamePlaySessions'
@@ -15,6 +15,7 @@ import PlayedGameRecord from './components/PlayedGameRecord'
 import ClubBoard from './components/ClubBoard'
 import UpcomingGatherings from './components/UpcomingGatherings'
 import { useBackClose } from './lib/useBackClose'
+import DrawerToTop from './components/DrawerToTop'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
@@ -51,6 +52,23 @@ const SORT_DIRECTIONS: Record<'added' | 'name' | 'count' | 'recent', [string, st
 type TopN = 3 | 5 | 10
 const TOP_CHOICES: TopN[] = [3, 5, 10]
 const TOP_KEY = 'boardgame-stats-top-n'
+// 想玩、已玩的排序也記在這個瀏覽器（分頁不記，每次都從「概況」開始）
+const STATS_VIEW_KEY = 'boardgame-stats-view'
+function loadStatsView(): { sortWant: SortKey; sortPlayed: SortKey } {
+    const fallback = { sortWant: 'added' as SortKey, sortPlayed: 'added' as SortKey }
+    try {
+        const raw = localStorage.getItem(STATS_VIEW_KEY)
+        if (!raw) return fallback
+        const data = JSON.parse(raw)
+        const sorts = ['added', 'added-rev', 'name', 'name-rev', 'count', 'count-rev', 'recent', 'recent-rev']
+        return {
+            sortWant: sorts.includes(data.sortWant) ? data.sortWant : 'added',
+            sortPlayed: sorts.includes(data.sortPlayed) ? data.sortPlayed : 'added',
+        }
+    } catch {
+        return fallback
+    }
+}
 function loadTopN(): TopN {
     try {
         const value = Number(localStorage.getItem(TOP_KEY))
@@ -272,9 +290,10 @@ export default function MyList({
     const [gatheringTarget, setGatheringTarget] = useState<string | null>(openGatheringId ?? null)
     const [statsTab, setStatsTab] = useState<StatsTab>('overview')
     const [search, setSearch] = useState('')
-    // 想玩、已玩各自記住排序；切換分頁只清空搜尋
-    const [sortWant, setSortWant] = useState<SortKey>('added')
-    const [sortPlayed, setSortPlayed] = useState<SortKey>('added')
+    // 想玩、已玩各自記住排序（也記在這個瀏覽器）；切換分頁只清空搜尋
+    const [sortWant, setSortWant] = useState<SortKey>(() => loadStatsView().sortWant)
+    const [sortPlayed, setSortPlayed] = useState<SortKey>(() => loadStatsView().sortPlayed)
+    const statsBodyRef = useRef<HTMLDivElement>(null)
     const [topN, setTopN] = useState<TopN>(loadTopN)
     const [showHoursNote, setShowHoursNote] = useState(false)
     // 分頁切換不另建瀏覽歷史：返回鍵與 ✕ 一律回「我的俱樂部」首頁
@@ -284,17 +303,24 @@ export default function MyList({
         isOpen && mode !== 'loyalty' && view !== 'home',
     )
 
-    // 每次打開都回到首頁，統計頁預設「概況」
+    // 每次打開都回到首頁；統計預設「概況」、搜尋清空，排序沿用上次的選擇
     useEffect(() => {
         if (isOpen) {
             setView('home')
             setStatsTab('overview')
             setSearch('')
-            setSortWant('added')
-            setSortPlayed('added')
             setShowHoursNote(false)
         }
     }, [isOpen, mode])
+
+    // 只記住排序
+    useEffect(() => {
+        try {
+            localStorage.setItem(STATS_VIEW_KEY, JSON.stringify({ sortWant, sortPlayed }))
+        } catch {
+            // 存不了就算了
+        }
+    }, [sortWant, sortPlayed])
 
     function changeTopN(next: TopN) {
         setTopN(next)
@@ -314,6 +340,7 @@ export default function MyList({
     function switchStatsTab(next: StatsTab) {
         setStatsTab(next)
         setSearch('')
+        statsBodyRef.current?.scrollTo({ top: 0 })
     }
 
     // 目前清單是哪一份（概況分頁不用清單）
@@ -564,7 +591,7 @@ export default function MyList({
                         </button>
                     </div>
 
-                    <div className="mylist-body">
+                    <div className="mylist-body" ref={statsBodyRef}>
                         {statsTab === 'overview' ? (
                             <>
                                 <div className="mystat-grid">
@@ -660,7 +687,7 @@ export default function MyList({
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="cls-searchbox">
+                                        <div className="cls-searchbox cls-sticky">
                                             <input
                                                 type="search"
                                                 className="cls-search-input"
@@ -813,6 +840,7 @@ export default function MyList({
                             </>
                         )}
                     </div>
+                    <DrawerToTop targetRef={statsBodyRef} />
                 </aside>
             </>
         )

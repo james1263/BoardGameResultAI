@@ -1,0 +1,28 @@
+/* 抽屜內「回到最上面」按鈕（貼在 .mylist-drawer 右下角） */
+.drawer-totop {
+    position: absolute;
+    right: 16px;
+    bottom: 20px;
+    z-index: 20;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: #456b50;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(52, 70, 60, 0.3);
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+/* 我的統計：搜尋＋排序列捲動時固定在清單上方 */
+.mylist-body .cls-searchbox.cls-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--c-paper, #fbf7ec);
+    /* 用陰影蓋住 .mylist-body 上方的內距，清單才不會從縫隙露出來 */
+    box-shadow: 0 -16px 0 var(--c-paper, #fbf7ec);
+}
