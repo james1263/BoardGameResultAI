@@ -560,6 +560,7 @@ export default function MyList({
                 boardGames={lookupGames}
                 personal={personal}
                 playSessions={playSessions}
+                canShare={isVip || isAdmin}
                 onBack={() => setView('board')}
                 onClose={onClose}
             />

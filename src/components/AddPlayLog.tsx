@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { PersonalApi } from '../lib/personalApi'
+import { supabase } from '../lib/supabase'
 import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
 
 type PlayableGame = BoardGame & { removedAt?: string | null }
@@ -14,12 +15,15 @@ export default function AddPlayLog({
   boardGames,
   personal,
   playSessions,
+  canShare = false,
   onBack,
   onClose,
 }: {
   boardGames: PlayableGame[]
   personal: PersonalApi
   playSessions: PlaySessionsApi
+  // VIP／管理者才能把心得同時發表到這款遊戲的討論
+  canShare?: boolean
   onBack: () => void
   onClose: () => void
 }) {
@@ -29,6 +33,12 @@ export default function AddPlayLog({
   const [players, setPlayers] = useState('')
   const [note, setNote] = useState('')
   const [message, setMessage] = useState('')
+  const [warning, setWarning] = useState('')
+  const [share, setShare] = useState(false)
+  const [sharing, setSharing] = useState(false)
+
+  // 勾了分享、而且心得有字，才會真的發表
+  const shareNow = canShare && share && note.trim() !== ''
 
   // 輸入就列出最多 8 款：開頭相符排前面，其次是包含
   const matches = useMemo(() => {
@@ -45,7 +55,10 @@ export default function AddPlayLog({
   }, [query, boardGames])
 
   const canSave =
-    personal.canEdit && playSessions.status === 'ready' && !playSessions.busy
+    personal.canEdit &&
+    playSessions.status === 'ready' &&
+    !playSessions.busy &&
+    !sharing
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -90,11 +103,45 @@ export default function AddPlayLog({
       )
     }
 
-    setMessage(`已記錄：${selected.name}（${date.replaceAll('-', '/')}）`)
+    // 遊玩紀錄已存好；要分享的話再發表到討論，失敗不影響紀錄
+    let shareResult = ''
+    if (shareNow) {
+      setSharing(true)
+      shareResult = await postToDiscussion(selected.bggName, note.trim())
+      setSharing(false)
+    }
+
+    setMessage(
+      `已記錄：${selected.name}（${date.replaceAll('-', '/')}）` +
+        (shareNow && shareResult === '' ? '，也已發表到討論' : ''),
+    )
+    setWarning(shareResult)
     setSelected(null)
     setQuery('')
     setPlayers('')
     setNote('')
+    setShare(false)
+  }
+
+  // 發表到這款遊戲的討論；成功回傳空字串，失敗回傳要顯示的說明
+  async function postToDiscussion(bggName: string, content: string): Promise<string> {
+    async function attempt() {
+      return supabase.rpc('add_game_note', {
+        p_bgg_name: bggName,
+        p_content: content,
+      })
+    }
+    let { error } = await attempt()
+    if (error && !error.message.includes('too many')) {
+      // 剛標成已玩，資料庫可能還沒更新：稍等一下再試一次
+      await new Promise((resolve) => window.setTimeout(resolve, 800))
+      ;({ error } = await attempt())
+    }
+    if (!error) return ''
+    if (error.message.includes('too many')) {
+      return '遊玩紀錄已儲存，但這款遊戲的討論你已留滿 10 則，沒有發表。'
+    }
+    return '遊玩紀錄已儲存，但發表到討論失敗，可以之後到這款遊戲的「討論」分頁再發。'
   }
 
   return (
@@ -119,6 +166,7 @@ export default function AddPlayLog({
           </p>
 
           {message && <p className="ap-ok">{message}</p>}
+          {warning && <p className="mg-muted">{warning}</p>}
 
           {!personal.isLoggedIn ? (
             <p className="mylist-empty">登入後才能記錄遊玩。</p>
@@ -138,6 +186,7 @@ export default function AddPlayLog({
                       onClick={() => {
                         setSelected(null)
                         setMessage('')
+                        setWarning('')
                       }}
                     >
                       更換
@@ -165,6 +214,7 @@ export default function AddPlayLog({
                               onClick={() => {
                                 setSelected(game)
                                 setMessage('')
+                                setWarning('')
                               }}
                             >
                               {game.name}
@@ -213,9 +263,26 @@ export default function AddPlayLog({
                   onChange={(event) => setNote(event.target.value)}
                 />
               </label>
+              {canShare && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    id="ap-share"
+                    type="checkbox"
+                    checked={share}
+                    disabled={note.trim() === ''}
+                    onChange={(event) => setShare(event.target.checked)}
+                  />
+                  <label
+                    htmlFor="ap-share"
+                    style={{ display: 'inline', margin: 0, fontSize: 14 }}
+                  >
+                    同時發表到這款遊戲的討論（VIP 都看得到，心得要有字才能勾）
+                  </label>
+                </div>
+              )}
               <div className="play-sessions-actions">
                 <button type="submit" disabled={!canSave || !selected}>
-                  {playSessions.busy ? '儲存中…' : '儲存'}
+                  {playSessions.busy || sharing ? '儲存中…' : '儲存'}
                 </button>
               </div>
             </form>
