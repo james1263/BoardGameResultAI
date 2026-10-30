@@ -131,7 +131,13 @@ export default function UpcomingGatherings({
                     )}
 
                     <div className="pg-foot">
-                      <span className="pg-count">{row.goingCount} 人可以去</span>
+                      <span className="pg-count">
+                        {row.goingCount !== null
+                          ? `${row.goingCount} 人可以去`
+                          : row.iAmGoing && row.status === 'open'
+                            ? '你已登記'
+                            : ''}
+                      </span>
                       {row.status === 'open' ? (
                         <button
                           type="button"

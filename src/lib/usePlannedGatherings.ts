@@ -12,7 +12,8 @@ export type PlannedGathering = {
   status: PlannedStatus
   gatheringId: string | null
   games: string[]
-  goingCount: number
+  // 只有管理者拿得到人數；VIP 是 null（使用者決定 VIP 不看人數）
+  goingCount: number | null
   iAmGoing: boolean
 }
 
@@ -25,7 +26,7 @@ export type PlannedRaw = {
   status: string
   gathering_id: string | null
   games: string[] | null
-  going_count: number
+  going_count: number | null
   i_am_going?: boolean
 }
 
@@ -40,7 +41,7 @@ export function toPlanned(row: PlannedRaw): PlannedGathering {
       row.status === 'cancelled' || row.status === 'converted' ? row.status : 'open',
     gatheringId: row.gathering_id,
     games: row.games ?? [],
-    goingCount: row.going_count ?? 0,
+    goingCount: row.going_count ?? null,
     iAmGoing: row.i_am_going ?? false,
   }
 }
@@ -118,7 +119,10 @@ export function useUpcomingGatherings(enabled: boolean) {
           : {
               ...row,
               iAmGoing: going,
-              goingCount: Math.max(0, row.goingCount + (going ? 1 : -1)),
+              goingCount:
+                row.goingCount === null
+                  ? null
+                  : Math.max(0, row.goingCount + (going ? 1 : -1)),
             },
       ),
     )
