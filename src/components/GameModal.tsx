@@ -16,6 +16,8 @@ import RatingSection, { CommunitySummary } from './RatingSection'
 import { useGameDocuments } from '../lib/useGameDocuments'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import type { RatingsApi } from '../lib/useGameRatings'
+import GameNotesBoard from './GameNotesBoard'
+import { useVip } from '../lib/useVip'
 
 const TABS = [
   { key: 'overview', label: '概覽' },
@@ -65,6 +67,7 @@ export default function GameModal({
 }) {
   const [tab, setTab] = useState<TabKey>(initialTab ?? 'overview')
   const docsApi = useGameDocuments(game.bggName)
+  const vip = useVip()
   useBackClose(onClose)
 
   useEffect(() => {
@@ -194,6 +197,14 @@ export default function GameModal({
                 <CommunityStats
                   bggName={game.bggName}
                   api={communityStats}
+                />
+              </div>
+              <div className="modal-section">
+                <GameNotesBoard
+                  key={game.bggName}
+                  bggName={game.bggName}
+                  isAdmin={isAdmin}
+                  enabled={vip.isVip || isAdmin}
                 />
               </div>
 
@@ -328,9 +339,9 @@ export default function GameModal({
                   <p className="personal-hint">登入後即可跨裝置保存</p>
                 )}
                 {personal.isLoggedIn && <GameGatheringNotes
-                    bggName={game.bggName}
-                    onOpenGathering={onOpenGathering}
-                  />}
+                  bggName={game.bggName}
+                  onOpenGathering={onOpenGathering}
+                />}
               </div>
             </>
           )}

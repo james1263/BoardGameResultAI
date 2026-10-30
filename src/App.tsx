@@ -961,17 +961,6 @@ function Library({
           )}
         </section>
 
-        <section className="assistant-banner">
-          <div className="assistant-icon" aria-hidden="true">
-            ✦
-          </div>
-          <div className="assistant-copy">
-            <h2>你的桌遊規則 AI 助手</h2>
-            <p>未來可以上傳規則書 PDF，直接用中文詢問遊戲規則。</p>
-          </div>
-          <span className="coming-soon">開發中</span>
-        </section>
-
         <TrashSection
           games={trashedGames}
           isAdmin={isAdmin}

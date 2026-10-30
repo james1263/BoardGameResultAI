@@ -2953,8 +2953,122 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-.rb-usage { margin: 0 0 14px; font-size: 14px; }
-.rb-usage p { margin: 0 0 6px; }
-.rb-usage small { color: #7a8a80; }
-.rb-usage-bar { height: 8px; border-radius: 99px; background: rgba(69,107,80,.15); overflow: hidden; margin-bottom: 6px; }
-.rb-usage-bar > div { height: 100%; background: #456b50; border-radius: 99px; }
+.rb-usage {
+  margin: 0 0 14px;
+  font-size: 14px;
+}
+
+.rb-usage p {
+  margin: 0 0 6px;
+}
+
+.rb-usage small {
+  color: #7a8a80;
+}
+
+.rb-usage-bar {
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(69, 107, 80, .15);
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.rb-usage-bar>div {
+  height: 100%;
+  background: #456b50;
+  border-radius: 99px;
+}
+
+/* 遊戲留言板 */
+.gb-board {
+  margin-top: 4px;
+}
+
+.gb-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid rgba(69, 107, 80, .25);
+  border-radius: 12px;
+  background: #fbf7ec;
+  color: #34463c;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.gb-body {
+  margin-top: 8px;
+}
+
+.gb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.gb-item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fbf7ec;
+  border: 1px solid rgba(69, 107, 80, .15);
+}
+
+.gb-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gb-name {
+  color: #34463c;
+  font-size: 14px;
+}
+
+.gb-mine {
+  font-size: 12px;
+  color: #456b50;
+  background: rgba(69, 107, 80, .12);
+  border-radius: 99px;
+  padding: 1px 8px;
+}
+
+.gb-action {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: #a0522d;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.gb-content {
+  margin: 6px 0 0;
+  color: #34463c;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.gb-empty {
+  margin: 6px 2px;
+  color: #7a8a80;
+  font-size: 13px;
+}
+
+.gb-hidden-toggle {
+  margin: 10px 0 6px;
+  border: 0;
+  background: none;
+  color: #7a8a80;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 2px;
+}
