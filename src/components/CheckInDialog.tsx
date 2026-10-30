@@ -6,6 +6,7 @@ import { PROFILE_SAVED_EVENT } from '../lib/googleLogin'
 import { useSession } from '../lib/useSession'
 import { VIP_CHANGED_EVENT } from '../lib/useVip'
 import { RATING_FIELDS, type RatingsApi } from '../lib/useGameRatings'
+import { useBackClose } from '../lib/useBackClose'
 
 type JoinRow = { result_status: string; result_date: string | null }
 type DayInfo = { exempt: boolean; games: string[]; error: string }
@@ -43,6 +44,9 @@ export default function CheckInDialog({
   onDone: (date: string | null) => void
   onClose: () => void
 }) {
+  // 手機返回鍵／右滑：關閉報到視窗（疊在上面的遊戲評分視窗會先關）
+  useBackClose(onClose)
+
   const session = useSession()
   const userId = session?.user?.id ?? null
 

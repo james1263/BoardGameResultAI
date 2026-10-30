@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { VIP_CHANGED_EVENT } from '../lib/useVip'
+import { useBackClose } from '../lib/useBackClose'
 
 const MESSAGES: Record<string, string> = {
     wrong: '密碼不正確，請再試一次。',
@@ -11,6 +12,9 @@ const MESSAGES: Record<string, string> = {
 }
 
 export default function VipJoinDialog({ onClose }: { onClose: () => void }) {
+    // 手機返回鍵／右滑：關閉這個視窗
+    useBackClose(onClose)
+
     const [code, setCode] = useState('')
     const [message, setMessage] = useState('')
     const [busy, setBusy] = useState(false)
