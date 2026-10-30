@@ -72,7 +72,37 @@ import { updateDescription } from './lib/saveDescription'
 // 兩個條件任一個先結束，就不再置頂
 const PIN_DAYS = 15
 
-function isPinnedGame(game: LibraryGame, nowMs: number): boolean {
+const SEEN_NEW_KEY = 'boardgame-seen-new'
+
+function loadSeenNew(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SEEN_NEW_KEY)
+    const list: unknown = raw ? JSON.parse(raw) : []
+    return new Set(
+      Array.isArray(list)
+        ? list.filter((item): item is string => typeof item === 'string')
+        : [],
+    )
+  } catch {
+    return new Set()
+  }
+}
+
+function saveSeenNew(names: Set<string>) {
+  try {
+    localStorage.setItem(SEEN_NEW_KEY, JSON.stringify(Array.from(names)))
+  } catch {
+    // 存不了就算了
+  }
+}
+
+// 新遊戲置頂：上架 15 天內、還沒有排名，而且這個瀏覽器還沒看過
+function isPinnedGame(
+  game: LibraryGame,
+  nowMs: number,
+  seenNew: Set<string>,
+): boolean {
+  if (seenNew.has(game.bggName)) return false
   if (!game.createdAt) return false
   const age = nowMs - new Date(game.createdAt).getTime()
   if (age >= PIN_DAYS * 24 * 60 * 60 * 1000) return false
@@ -245,9 +275,30 @@ function Library({
     setActivePage(page)
   }
   const [nowMs] = useState(() => Date.now())
+  // 這次開啟網站「以前」就看過的新遊戲（這次的畫面不會變，下次開才生效）
+  const [seenNew] = useState(loadSeenNew)
+
+  // 停留 10 秒後，把目前的新遊戲記成「看過了」
+  useEffect(() => {
+    const fresh = boardGames.filter(
+      (game) =>
+        game.createdAt &&
+        nowMs - new Date(game.createdAt).getTime() <
+        NEW_GAME_DAYS * 24 * 60 * 60 * 1000 &&
+        !seenNew.has(game.bggName),
+    )
+    if (fresh.length === 0) return
+    const timer = window.setTimeout(() => {
+      const next = new Set(seenNew)
+      fresh.forEach((game) => next.add(game.bggName))
+      saveSeenNew(next)
+    }, 10000)
+    return () => window.clearTimeout(timer)
+  }, [boardGames, nowMs, seenNew])
 
   function isNewGame(game: LibraryGame): boolean {
     if (!game.createdAt) return false
+    if (seenNew.has(game.bggName)) return false
     const age = nowMs - new Date(game.createdAt).getTime()
     return age < NEW_GAME_DAYS * 24 * 60 * 60 * 1000
   }
@@ -516,8 +567,8 @@ function Library({
 
     // 置頂的新遊戲放最前面（任何排序都一樣），其餘維持原排序
     return [
-      ...sorted.filter((game) => isPinnedGame(game, nowMs)),
-      ...sorted.filter((game) => !isPinnedGame(game, nowMs)),
+      ...sorted.filter((game) => isPinnedGame(game, nowMs, seenNew)),
+      ...sorted.filter((game) => !isPinnedGame(game, nowMs, seenNew)),
     ]
   }, [
     searchText,
@@ -816,10 +867,10 @@ function Library({
               {(searchText !== '' ||
                 activeFilterCount > 0 ||
                 selectedCategories.length > 0) && (
-                <span className="game-count">
-                  顯示 {displayedGameCount} / {boardGames.length} 款
-                </span>
-              )}
+                  <span className="game-count">
+                    顯示 {displayedGameCount} / {boardGames.length} 款
+                  </span>
+                )}
             </div>
           </div>
 

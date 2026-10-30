@@ -18,104 +18,104 @@ let guard: number | undefined
 let listening = false
 
 function onPop(event: PopStateEvent) {
-  if (expectedPops > 0) {
-    // 自己收回歷史造成的，略過
-    expectedPops -= 1
-    window.clearTimeout(guard)
-    sync()
-    return
-  }
-
-  const raw = (event.state as { backDepth?: number } | null)?.backDepth
-  const target = typeof raw === 'number' ? raw : 0
-
-  if (target < depth) {
-    // 使用者按了返回／右滑：只關最上面的層（一次退多步就關多層）
-    let steps = depth - target
-    depth = target
-    const fromPending = Math.min(pendingBack, steps)
-    pendingBack -= fromPending
-    steps -= fromPending
-    const closing: Entry[] = []
-    for (let i = stack.length - 1; i >= 0 && steps > 0; i -= 1) {
-      if (stack[i].pushed) {
-        closing.push(stack[i])
-        stack.splice(i, 1)
-        steps -= 1
-      }
+    if (expectedPops > 0) {
+        // 自己收回歷史造成的，略過
+        expectedPops -= 1
+        window.clearTimeout(guard)
+        sync()
+        return
     }
-    closing.forEach((entry) => entry.close())
-  } else if (target > depth) {
-    // 使用者按了「前進」：我們沒有對應的視窗，退回去
-    expectedPops += 1
-    const gap = target - depth
-    guard = window.setTimeout(() => {
-      expectedPops = 0
-      sync()
-    }, 800)
-    window.history.go(-gap)
-  }
+
+    const raw = (event.state as { backDepth?: number } | null)?.backDepth
+    const target = typeof raw === 'number' ? raw : 0
+
+    if (target < depth) {
+        // 使用者按了返回／右滑：只關最上面的層（一次退多步就關多層）
+        let steps = depth - target
+        depth = target
+        const fromPending = Math.min(pendingBack, steps)
+        pendingBack -= fromPending
+        steps -= fromPending
+        const closing: Entry[] = []
+        for (let i = stack.length - 1; i >= 0 && steps > 0; i -= 1) {
+            if (stack[i].pushed) {
+                closing.push(stack[i])
+                stack.splice(i, 1)
+                steps -= 1
+            }
+        }
+        closing.forEach((entry) => entry.close())
+    } else if (target > depth) {
+        // 使用者按了「前進」：我們沒有對應的視窗，退回去
+        expectedPops += 1
+        const gap = target - depth
+        guard = window.setTimeout(() => {
+            expectedPops = 0
+            sync()
+        }, 800)
+        window.history.go(-gap)
+    }
 }
 
 function sync() {
-  window.clearTimeout(timer)
-  timer = window.setTimeout(flush, 0)
+    window.clearTimeout(timer)
+    timer = window.setTimeout(flush, 120)
 }
 
 function flush() {
-  if (expectedPops > 0) return // 等上一次收回歷史完成再處理
+    if (expectedPops > 0) return // 等上一次收回歷史完成再處理
 
-  const fresh = stack.filter((entry) => !entry.pushed)
+    const fresh = stack.filter((entry) => !entry.pushed)
 
-  // 同一瞬間一關一開：直接沿用舊的那一筆
-  const reuse = Math.min(pendingBack, fresh.length)
-  for (let i = 0; i < reuse; i += 1) fresh[i].pushed = true
-  pendingBack -= reuse
+    // 同一瞬間一關一開：直接沿用舊的那一筆
+    const reuse = Math.min(pendingBack, fresh.length)
+    for (let i = 0; i < reuse; i += 1) fresh[i].pushed = true
+    pendingBack -= reuse
 
-  const toPush = fresh.slice(reuse)
-  if (toPush.length > 0) {
-    if (!listening) {
-      window.addEventListener('popstate', onPop)
-      listening = true
+    const toPush = fresh.slice(reuse)
+    if (toPush.length > 0) {
+        if (!listening) {
+            window.addEventListener('popstate', onPop)
+            listening = true
+        }
+        toPush.forEach((entry) => {
+            depth += 1
+            window.history.pushState({ backDepth: depth }, '')
+            entry.pushed = true
+        })
     }
-    toPush.forEach((entry) => {
-      depth += 1
-      window.history.pushState({ backDepth: depth }, '')
-      entry.pushed = true
-    })
-  }
 
-  if (pendingBack > 0) {
-    const steps = pendingBack
-    pendingBack = 0
-    depth -= steps
-    expectedPops += 1
-    guard = window.setTimeout(() => {
-      expectedPops = 0
-      sync()
-    }, 800)
-    window.history.go(-steps)
-  }
+    if (pendingBack > 0) {
+        const steps = pendingBack
+        pendingBack = 0
+        depth -= steps
+        expectedPops += 1
+        guard = window.setTimeout(() => {
+            expectedPops = 0
+            sync()
+        }, 800)
+        window.history.go(-steps)
+    }
 }
 
 // enabled 預設為 true；導覽頁面這種「一直存在、只是有時開著」的元件，用 enabled 控制
 export function useBackClose(onClose: () => void, enabled = true) {
-  const closeRef = useRef(onClose)
-  useEffect(() => {
-    closeRef.current = onClose
-  })
+    const closeRef = useRef(onClose)
+    useEffect(() => {
+        closeRef.current = onClose
+    })
 
-  useEffect(() => {
-    if (!enabled) return
-    const entry: Entry = { close: () => closeRef.current(), pushed: false }
-    stack.push(entry)
-    sync()
-    return () => {
-      const index = stack.indexOf(entry)
-      if (index === -1) return // 已經被返回鍵移除，不用再收
-      stack.splice(index, 1)
-      if (entry.pushed) pendingBack += 1
-      sync()
-    }
-  }, [enabled])
+    useEffect(() => {
+        if (!enabled) return
+        const entry: Entry = { close: () => closeRef.current(), pushed: false }
+        stack.push(entry)
+        sync()
+        return () => {
+            const index = stack.indexOf(entry)
+            if (index === -1) return // 已經被返回鍵移除，不用再收
+            stack.splice(index, 1)
+            if (entry.pushed) pendingBack += 1
+            sync()
+        }
+    }, [enabled])
 }
