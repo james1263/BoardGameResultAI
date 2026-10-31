@@ -11,16 +11,17 @@ import { rankGames } from '../lib/leaderboards'
 import {
   DIFFICULTY_LEVELS,
   DIFFICULTY_LEVEL_INFO,
+  computeAdminScores,
   getDifficultyLevel,
 } from '../lib/libraryTypes'
-import { usePlayTotals } from '../lib/usePlayTotals'
+import { useRatingCounts } from '../lib/useRatingCounts'
 import { useCommunityStats } from '../lib/useCommunityStats'
 import StatsTables from './StatsTables'
 import InfoHint from './InfoHint'
 import '../styles/leaderboard-filter.css'
 import '../styles/leaderboard-search.css'
 
-type BoardKey = 'want' | 'played' | 'overall' | 'keep' | 'plays'
+type BoardKey = 'want' | 'played' | 'overall' | 'keep' | 'raters'
 type Period = 'all' | 'month' | 'quarter' | 'year'
 
 const BOARDS: { key: BoardKey; label: string }[] = [
@@ -30,7 +31,7 @@ const BOARDS: { key: BoardKey; label: string }[] = [
   { key: 'keep', label: '留下來' },
 ]
 
-const PLAYS_BOARD: { key: BoardKey; label: string } = { key: 'plays', label: '最常玩' }
+const RATERS_BOARD: { key: BoardKey; label: string } = { key: 'raters', label: '評分人數' }
 
 const PERIODS: { key: Period; label: string }[] = [
   { key: 'all', label: '全部' },
@@ -153,8 +154,8 @@ export default function Leaderboard({
     if (!isOpen) setQuery('')
   }, [isOpen])
 
-  // 期間只對想玩、已玩、最常玩有意義
-  const periodApplies = board === 'want' || board === 'played' || board === 'plays'
+  // 期間只對想玩、已玩有意義
+  const periodApplies = board === 'want' || board === 'played'
 
   // 資料篩選（類型、人數、時間、難度）的數量；空結果的提示文字用
   const dataFilterCount =
@@ -197,39 +198,29 @@ export default function Leaderboard({
   }, [isOpen, canSeePeople, isAdmin, reloadPeople, reloadAdminRatings])
 
   const isCountBoard = board === 'want' || board === 'played'
-  const isPlaysBoard = board === 'plays'
-  const canExpand = isPlaysBoard ? false : isCountBoard ? canSeePeople : isAdmin
-  // 「最常玩」只有 VIP／管理者看得到（資料庫函式也會再驗證一次）
-  const canPlays = canSeePeople || isAdmin
-  const boards = canPlays ? [...BOARDS, PLAYS_BOARD] : BOARDS
-  const playTotals = usePlayTotals(isOpen && canPlays)
+  const isRatersBoard = board === 'raters'
+  const canExpand = isCountBoard ? canSeePeople : isAdmin
+  // 「評分人數」只有 VIP／管理者看得到（資料庫函式也會再驗證一次）
+  const canRaters = canSeePeople || isAdmin
+  const boards = canRaters ? [...BOARDS, RATERS_BOARD] : BOARDS
+  const ratingCounts = useRatingCounts(isOpen && canRaters)
+  // 管理者的評分來自 CSV，玩過的遊戲算 1 位評分者（與整體評分榜同一套規則）
+  const adminScores = useMemo(() => computeAdminScores(boardGames), [boardGames])
 
   const rankedAll = useMemo(() => {
     const pool = boardGames.filter((game) => matchesFilters(game, filters))
     const entries = pool.flatMap((game) => {
-      if (board === 'plays') {
-        const t = playTotals.get(game.bggName)
+      if (board === 'raters') {
         const value =
-          period === 'all'
-            ? t.total
-            : period === 'month'
-              ? t.month
-              : period === 'quarter'
-                ? t.quarter
-                : t.year
+          ratingCounts.get(game.bggName) + (adminScores.has(game.bggName) ? 1 : 0)
         if (value <= 0) return []
         return [
           {
             game,
             name: game.name,
             value,
-            display: `${value} 次`,
-            extra:
-              period === 'all'
-                ? t.month > 0
-                  ? `本月 +${t.month}`
-                  : ''
-                : `累計 ${t.total} 次`,
+            display: `${value} 人`,
+            extra: '',
           },
         ]
       }
@@ -286,7 +277,7 @@ export default function Leaderboard({
     })
 
     return rankGames(entries)
-  }, [boardGames, board, period, communityStats, ratings, filters, playTotals])
+  }, [boardGames, board, period, communityStats, ratings, filters, ratingCounts, adminScores])
 
   // 搜尋：只留下符合的，名次維持原樣；排序方向只翻轉顯示順序
   const ranked = useMemo(() => {
@@ -357,10 +348,8 @@ export default function Leaderboard({
     )
   }
 
-  const note = isPlaysBoard
-    ? period === 'all'
-      ? '依累計遊玩次數排名（含沒有日期的歷史次數），只統計 VIP 玩家。'
-      : '本月／本季／本年只計算有日期的遊玩紀錄，不含沒有日期的歷史次數。只統計 VIP 玩家。'
+  const note = isRatersBoard
+    ? '依評分的人數排名，只統計 VIP 玩家，另含管理者的評分。不看分數高低。'
     : isCountBoard
     ? period === 'all'
       ? '依目前的總人數排名，只統計 VIP 玩家。'
@@ -389,39 +378,27 @@ export default function Leaderboard({
         </div>
       )
     }
-    if (isPlaysBoard) {
-      if (playTotals.status === 'loading' || playTotals.status === 'idle') {
+    if (isRatersBoard) {
+      if (ratingCounts.status === 'loading' || ratingCounts.status === 'idle') {
         return (
           <div className="lb-empty">
             <b>讀取中…</b>
           </div>
         )
       }
-      if (playTotals.status === 'error') {
+      if (ratingCounts.status === 'error') {
         return (
           <div className="lb-empty">
-            <b>讀取遊玩次數失敗</b>
+            <b>讀取評分人數失敗</b>
             <p>請稍後再試，或重新整理網頁。</p>
-          </div>
-        )
-      }
-      if (period !== 'all') {
-        const periodLabel = PERIODS.find((item) => item.key === period)?.label ?? ''
-        return (
-          <div className="lb-empty">
-            <span className="lb-empty-icon" aria-hidden="true">🗓</span>
-            <b>{periodLabel}還沒有有日期的遊玩紀錄</b>
-            <button type="button" className="lb-empty-btn" onClick={() => setPeriod('all')}>
-              看全部期間
-            </button>
           </div>
         )
       }
       return (
         <div className="lb-empty">
-          <span className="lb-empty-icon" aria-hidden="true">🎲</span>
-          <b>還沒有遊玩紀錄</b>
-          <p>VIP 玩家在「我的統計」記錄遊玩次數後會出現在這裡。</p>
+          <span className="lb-empty-icon" aria-hidden="true">⭐</span>
+          <b>還沒有人評分</b>
+          <p>VIP 玩家在遊戲視窗的「評分」分頁評分後會出現在這裡。</p>
         </div>
       )
     }
