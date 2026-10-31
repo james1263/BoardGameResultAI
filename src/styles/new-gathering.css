@@ -1,0 +1,61 @@
+/* 管理中心：新增聚會全螢幕流程（NewGatheringWizard.tsx） */
+.ngw-backdrop { position: fixed; inset: 0; z-index: 1260; background: rgba(30, 40, 34, .5); display: flex; justify-content: center; }
+.ngw-panel {
+  width: 100%; max-width: 640px; height: 100%; background: #f5f0e5; color: #34463c;
+  display: flex; flex-direction: column;
+}
+.ngw-header {
+  display: flex; align-items: center; justify-content: space-between; flex: none;
+  padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  background: #fbf7ec; border-bottom: 1px solid #e3dac4;
+}
+.ngw-header h2 { margin: 0; font-size: 18px; color: #34463c; }
+.ngw-close { border: 0; background: none; font-size: 28px; line-height: 1; color: #34463c; cursor: pointer; padding: 0 4px; }
+.ngw-body { flex: 1; overflow-y: auto; padding: 14px 16px 24px; -webkit-overflow-scrolling: touch; }
+.ngw-sec { background: #fbf7ec; border: 1px solid #e3dac4; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+.ngw-sec h3 { margin: 0 0 10px; font-size: 15px; color: #34463c; }
+.ngw-field { display: block; margin-bottom: 10px; }
+.ngw-field span { display: block; margin-bottom: 4px; font-size: 13px; color: #6b7a6f; }
+.ngw-field input, .ngw-search {
+  width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 16px;
+  border: 1px solid #d9cfb8; border-radius: 8px; background: #fff; color: #34463c;
+}
+.ngw-search { margin-bottom: 8px; }
+.ngw-hint { margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: #6b7a6f; }
+.ngw-count { margin: 8px 0 6px; font-size: 12px; color: #6b7a6f; }
+.ngw-results { list-style: none; margin: 0 0 8px; padding: 0; border: 1px solid #d9cfb8; border-radius: 8px; background: #fff; }
+.ngw-results button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 9px 10px; font-size: 14px; color: #34463c; cursor: pointer; }
+.ngw-results li + li { border-top: 1px solid #efe7d3; }
+.ngw-games, .ngw-players { list-style: none; margin: 0; padding: 0; }
+.ngw-game { padding: 8px 0; border-top: 1px solid #efe7d3; }
+.ngw-game:first-child { border-top: 0; }
+.ngw-game-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; }
+.ngw-x { border: 0; background: none; color: #a23b2a; font-size: 13px; cursor: pointer; }
+.ngw-wanters, .ngw-wantlist { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: #6b7a6f; }
+.ngw-wanters .on, .ngw-wantlist .on { color: #2f5a3a; font-weight: 700; }
+.ngw-player { padding: 6px 0; border-top: 1px solid #efe7d3; }
+.ngw-player:first-child { border-top: 0; }
+.ngw-player-row { display: flex; align-items: center; gap: 10px; }
+.ngw-check {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #b78a5a;
+  background: #fff; color: #fff; font-size: 14px; line-height: 1; cursor: pointer; padding: 0;
+}
+.ngw-player.on .ngw-check { background: #456b50; border-color: #456b50; }
+.ngw-pname { flex: 1; min-width: 0; display: flex; flex-direction: column; cursor: pointer; font-size: 14px; }
+.ngw-pname small { font-size: 12px; color: #6b7a6f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ngw-wantbtn { flex: none; border: 0; background: none; font-size: 12px; color: #456b50; cursor: pointer; }
+.ngw-exempt { display: flex; align-items: center; gap: 6px; margin: 6px 0 0 34px; font-size: 13px; color: #34463c; }
+.ngw-wantlist { margin-left: 34px; }
+.ngw-linkopt { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.ngw-linkopt.off { color: #9a9a8a; }
+.ngw-error { margin: 0 0 10px; padding: 10px; border-radius: 8px; background: #f8e3df; color: #8a2f20; font-size: 13px; line-height: 1.5; }
+.ngw-footer {
+  flex: none; display: flex; gap: 10px; justify-content: flex-end; padding: 10px 16px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  background: #fbf7ec; border-top: 1px solid #e3dac4;
+}
+.ngw-primary { border: 0; border-radius: 99px; background: #456b50; color: #fff; padding: 10px 22px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.ngw-cancel { border: 1px solid #d9cfb8; border-radius: 99px; background: #fff; color: #34463c; padding: 10px 18px; font-size: 15px; cursor: pointer; }
+.ngw-primary:disabled, .ngw-cancel:disabled { opacity: .5; }
+.ngw-title-ok { margin: 0 0 8px; font-weight: 700; color: #34463c; }
+.ngw-warn { margin: 0 0 10px; padding-left: 18px; font-size: 14px; color: #8a2f20; }

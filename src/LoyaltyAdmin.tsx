@@ -10,6 +10,7 @@ import {
     type Redemption,
 } from './lib/useLoyalty'
 import PlannedGatheringsAdmin from './components/PlannedGatheringsAdmin'
+import NewGatheringWizard from './components/NewGatheringWizard'
 import './styles/lga-list.css'
 
 type Gathering = { id: string; gatheredOn: string; title: string; note: string }
@@ -84,14 +85,6 @@ function gatheringName(g: Gathering): string {
     return g.title ? `${formatDay(g.gatheredOn)} ${g.title}` : formatDay(g.gatheredOn)
 }
 
-function sortGatherings(list: Gathering[]): Gathering[] {
-    return [...list].sort(
-        (x, y) =>
-            y.gatheredOn.localeCompare(x.gatheredOn) ||
-            x.title.localeCompare(y.title, 'zh-Hant'),
-    )
-}
-
 export default function LoyaltyAdmin() {
     const [tab, setTab] = useState<AdminTab>('setup')
     const [loading, setLoading] = useState(false)
@@ -108,9 +101,7 @@ export default function LoyaltyAdmin() {
     const [allGames, setAllGames] = useState<GameOption[]>([])
     const [overview, setOverview] = useState<OverviewRow[]>([])
     const [selectedId, setSelectedId] = useState<string | null>(null)
-    const [newDate, setNewDate] = useState(todayLocal)
-    const [newTitle, setNewTitle] = useState('')
-    const [newNote, setNewNote] = useState('')
+    const [wizardOpen, setWizardOpen] = useState(false)
     const [gameSearch, setGameSearch] = useState('')
     const [playerSearch, setPlayerSearch] = useState('')
     const [checkins, setCheckins] = useState<Record<string, Checkin>>({})
@@ -351,41 +342,6 @@ export default function LoyaltyAdmin() {
         }
         setOverview(((data ?? []) as OverviewRaw[]).map(toOverview))
         await loadVoucherUses()
-    }
-
-    async function addGathering() {
-        if (!newDate) return
-        setBusy(true)
-        setMessage('')
-        const { data, error } = await supabase
-            .from('gatherings')
-            .insert({
-                gathered_on: newDate,
-                title: newTitle.trim(),
-                note: newNote.trim(),
-            })
-            .select('id, gathered_on, title, note')
-            .single()
-
-        if (error) {
-            setMessage(
-                error.code === '23505'
-                    ? '這一天已經有相同場次名稱的聚會了，請直接選它，或換一個場次名稱（例如：早場、下午場、晚場）。'
-                    : '新增失敗：' + error.message,
-            )
-        } else if (data) {
-            const created: Gathering = {
-                id: data.id,
-                gatheredOn: data.gathered_on,
-                title: data.title ?? '',
-                note: data.note,
-            }
-            setGatherings((current) => sortGatherings([created, ...current]))
-            setSelectedId(created.id)
-            setNewTitle('')
-            setNewNote('')
-        }
-        setBusy(false)
     }
 
     async function deleteGathering(gathering: Gathering) {
@@ -987,40 +943,30 @@ export default function LoyaltyAdmin() {
                         <h3 className="lga-step">
                             <span>1</span>新增聚會
                         </h3>
-                        <div className="lga-new">
-                            <input
-                                type="date"
-                                value={newDate}
-                                onChange={(event) => setNewDate(event.target.value)}
-                            />
-                            <input
-                                type="text"
-                                placeholder="場次（選填，例如：早場、晚場）"
-                                maxLength={20}
-                                value={newTitle}
-                                onChange={(event) => setNewTitle(event.target.value)}
-                            />
-                            <input
-                                type="text"
-                                placeholder="備註（選填，200 字內）"
-                                maxLength={200}
-                                value={newNote}
-                                onChange={(event) => setNewNote(event.target.value)}
-                            />
-                            <button
-                                className="lga-primary"
-                                type="button"
-                                disabled={busy || !newDate}
-                                onClick={addGathering}
-                            >
-                                ＋ 新增聚會
-                            </button>
-                        </div>
+                        <button
+                            className="lga-primary"
+                            type="button"
+                            onClick={() => setWizardOpen(true)}
+                        >
+                            ＋ 新增聚會
+                        </button>
                         <p className="loy-admin-note">
-                            同一天可以新增多場（場次名稱不能重複）。集點是「一天最多 1 點」：
-                            當天出席任何一場，並把任一款指定遊戲的七項評分填完整（或被設為免評分）就得 1 點。
+                            一次完成日期、指定遊戲、參加者與聚會連結。同一天可以新增多場（場次名稱不能重複）。
                         </p>
                     </section>
+                    {wizardOpen && (
+                        <NewGatheringWizard
+                            allGames={allGames}
+                            players={players}
+                            contacts={contacts}
+                            wantMap={wantMap}
+                            onClose={() => setWizardOpen(false)}
+                            onCreated={(id) => {
+                                setWizardOpen(false)
+                                void loadAll().then(() => setSelectedId(id))
+                            }}
+                        />
+                    )}
 
                     <section className="lga-section">
                         <h3 className="lga-step">
