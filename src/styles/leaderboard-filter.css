@@ -6,57 +6,6 @@
   gap: 8px;
   padding: 8px 16px 4px;
 }
-.lbf-toggle,
-.lbf-reset {
-  padding: 6px 14px;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  color: #34463c;
-  background: #fff;
-  border: 1px solid #d9cfb8;
-  border-radius: 999px;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-.lbf-toggle.on {
-  color: #365b40;
-  background: #e9eadb;
-  border-color: #456b50;
-}
-.lbf-reset {
-  color: #a8452f;
-  border-color: #e3c4b8;
-}
-.lbf-panel {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px 10px;
-  width: 100%;
-  padding: 10px;
-  margin-top: 2px;
-  background: #faf6ea;
-  border: 1px solid #e3d9c4;
-  border-radius: 12px;
-}
-.lbf-panel label {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-  font-size: 13px;
-  color: #6b7469;
-}
-.lbf-panel select {
-  width: 100%;
-  min-width: 0;
-  padding: 7px 8px;
-  font-size: 16px; /* 16px 以免 iPhone 自動放大 */
-  color: #34463c;
-  background: #fff;
-  border: 1px solid #d9cfb8;
-  border-radius: 8px;
-}
 
 /* 排行榜分頁變成 5 顆（多了「最常玩」）時，平均分配、字小一點 */
 .lb-tabs.lb-tabs-5 {
