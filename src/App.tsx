@@ -141,11 +141,11 @@ function Library({
   const canFilterByRating = !!session && ratings.status === 'ready'
   const communityStats = useCommunityStats()
   // 打開遊戲視窗時重讀一次社群人數，打勾後再開視窗就是最新的（只在開啟那一刻讀，不影響主畫面）
-  const reloadCommunityStats = communityStats.reload
-  const isGameModalOpen = selectedGame !== null
-  useEffect(() => {
-    if (isGameModalOpen) reloadCommunityStats()
-  }, [isGameModalOpen, reloadCommunityStats])
+  // const reloadCommunityStats = communityStats.reload
+  // const isGameModalOpen = selectedGame !== null
+  // useEffect(() => {
+  //   if (isGameModalOpen) reloadCommunityStats()
+  // }, [isGameModalOpen, reloadCommunityStats])
   const todayTask = useTodayTask(ratings)
   const vip = useVip()
   const people = useGamePeople(vip.isVip)
