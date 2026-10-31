@@ -159,13 +159,15 @@ export default function Leaderboard({
 
   const reloadPeople = people.reload
   const reloadAdminRatings = adminRatings.reload
+  const reloadStats = communityStats.reload
 
-  // 每次打開排行榜都重新讀一次名單，才會是最新的
+  // 每次打開排行榜都重新讀一次人數與名單，才會是最新的
   useEffect(() => {
     if (!isOpen) return
+    reloadStats()
     if (canSeePeople) reloadPeople()
     if (isAdmin) reloadAdminRatings()
-  }, [isOpen, canSeePeople, isAdmin, reloadPeople, reloadAdminRatings])
+  }, [isOpen, canSeePeople, isAdmin, reloadPeople, reloadAdminRatings, reloadStats])
 
   const isCountBoard = board === 'want' || board === 'played'
   const isPlaysBoard = board === 'plays'

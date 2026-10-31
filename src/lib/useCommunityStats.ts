@@ -33,6 +33,7 @@ function n(value: unknown): number {
 // 在 Library 呼叫一次；訪客也讀得到（只有彙總人數）
 export function useCommunityStats() {
   const [stats, setStats] = useState<Record<string, CommunityStats>>({})
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -62,14 +63,16 @@ export function useCommunityStats() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [reloadKey])
 
   const getStats = useCallback(
     (bggName: string): CommunityStats => stats[bggName] ?? EMPTY,
     [stats],
   )
 
-  return { getStats }
+  const reload = useCallback(() => setReloadKey((key) => key + 1), [])
+
+  return { getStats, reload }
 }
 
 export type CommunityStatsApi = ReturnType<typeof useCommunityStats>
