@@ -338,8 +338,6 @@ export default function NewGatheringWizard({
                               )}
                             </p>
                           )}
-                            </p>
-                          )}
                         </li>
                       )
                     })}
