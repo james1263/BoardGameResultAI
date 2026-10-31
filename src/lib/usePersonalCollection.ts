@@ -328,8 +328,11 @@ export function usePersonalCollection() {
         return true
     }, [userId, local])
 
+    // 「不加入」：清掉這個瀏覽器的訪客紀錄，之後不再詢問（不影響雲端資料）
     const declineMerge = useCallback(() => {
         setDeclinedUserId(userId)
+        setLocal({})
+        saveLocal({})
     }, [userId])
 
     const reload = useCallback(() => {
