@@ -13,6 +13,7 @@ import { useCommunityStats } from '../lib/useCommunityStats'
 import StatsTables from './StatsTables'
 import InfoHint from './InfoHint'
 import '../styles/leaderboard-filter.css'
+import '../styles/leaderboard-search.css'
 
 type BoardKey = 'want' | 'played' | 'overall' | 'keep' | 'plays'
 type Period = 'all' | 'month' | 'quarter' | 'year'
@@ -133,20 +134,44 @@ export default function Leaderboard({
   onOpenGame: (game: BoardGame) => void
   renderCover: (game: BoardGame) => ReactNode
 }) {
-  // 排行榜自己讀一份人數：打開時才讀、每次打開都重讀，不影響主畫面
-  const communityStats = useCommunityStats(isOpen)
   const [board, setBoard] = useState<BoardKey>('want')
   const [period, setPeriod] = useState<Period>('all')
   const [openNames, setOpenNames] = useState<string[]>([])
   const [isTableOpen, setIsTableOpen] = useState(false)
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc')
 
-  const activeFilterCount =
+  // 排行榜自己讀一份人數：打開時才讀、每次打開都重讀，不影響主畫面
+  const communityStats = useCommunityStats(isOpen)
+
+  // 關掉排行榜時清掉搜尋文字
+  useEffect(() => {
+    if (!isOpen) setQuery('')
+  }, [isOpen])
+
+  // 期間只對想玩、已玩、最常玩有意義
+  const periodApplies = board === 'want' || board === 'played' || board === 'plays'
+
+  // 資料篩選（類型、人數、時間、難度）的數量；空結果的提示文字用
+  const dataFilterCount =
     (filters.category ? 1 : 0) +
     (filters.players !== 'all' ? 1 : 0) +
     (filters.time !== 'all' ? 1 : 0) +
     (filters.difficulty !== 'all' ? 1 : 0)
+
+  // 「篩選」鈕上的角標：資料篩選＋期間＋排序方向
+  const activeFilterCount =
+    dataFilterCount +
+    (periodApplies && period !== 'all' ? 1 : 0) +
+    (sortDir === 'asc' ? 1 : 0)
+
+  function resetAll() {
+    setFilters(NO_FILTERS)
+    setPeriod('all')
+    setSortDir('desc')
+  }
 
   // 類型選單：依遊戲數由多到少
   const categoryOptions = useMemo(() => {
@@ -177,7 +202,7 @@ export default function Leaderboard({
   const boards = canPlays ? [...BOARDS, PLAYS_BOARD] : BOARDS
   const playTotals = usePlayTotals(isOpen && canPlays)
 
-  const ranked = useMemo(() => {
+  const rankedAll = useMemo(() => {
     const pool = boardGames.filter((game) => matchesFilters(game, filters))
     const entries = pool.flatMap((game) => {
       if (board === 'plays') {
@@ -261,6 +286,19 @@ export default function Leaderboard({
     return rankGames(entries)
   }, [boardGames, board, period, communityStats, ratings, filters, playTotals])
 
+  // 搜尋：只留下符合的，名次維持原樣；排序方向只翻轉顯示順序
+  const ranked = useMemo(() => {
+    const keyword = query.trim().toLowerCase()
+    const matched = keyword
+      ? rankedAll.filter(
+          (entry) =>
+            entry.game.name.toLowerCase().includes(keyword) ||
+            entry.game.bggName.toLowerCase().includes(keyword),
+        )
+      : rankedAll
+    return sortDir === 'asc' ? [...matched].reverse() : matched
+  }, [rankedAll, query, sortDir])
+
   if (!isOpen) return null
 
   function toggleNames(bggName: string) {
@@ -327,16 +365,23 @@ export default function Leaderboard({
       : '依該期間「新增」的人數排名（下方小字是目前總人數），只統計 VIP 玩家。'
     : '每款遊戲需滿 5 位玩家評分才會上榜。'
   function renderEmpty(): ReactNode {
-    if (activeFilterCount > 0) {
+    if (query.trim() && rankedAll.length > 0) {
+      return (
+        <div className="lb-empty">
+          <span className="lb-empty-icon" aria-hidden="true">🔍</span>
+          <b>榜上找不到「{query.trim()}」</b>
+          <button type="button" className="lb-empty-btn" onClick={() => setQuery('')}>
+            清除搜尋
+          </button>
+        </div>
+      )
+    }
+    if (dataFilterCount > 0) {
       return (
         <div className="lb-empty">
           <span className="lb-empty-icon" aria-hidden="true">🔍</span>
           <b>沒有符合篩選的遊戲</b>
-          <button
-            type="button"
-            className="lb-empty-btn"
-            onClick={() => setFilters(NO_FILTERS)}
-          >
+          <button type="button" className="lb-empty-btn" onClick={resetAll}>
             清除篩選
           </button>
         </div>
@@ -473,103 +518,149 @@ export default function Leaderboard({
               ))}
             </div>
 
-            {(isCountBoard || isPlaysBoard) && (
-              <div className="lb-periods">
-                {PERIODS.map((item) => (
+            <div className="lbs">
+              <div className="lbs-bar">
+                <span className="lbs-icon" aria-hidden="true">🔍</span>
+                <input
+                  type="search"
+                  className="lbs-input"
+                  placeholder="搜尋遊戲名稱"
+                  aria-label="搜尋遊戲名稱"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+                {query && (
                   <button
-                    key={item.key}
                     type="button"
-                    className={`lb-period ${period === item.key ? 'active' : ''}`}
-                    onClick={() => setPeriod(item.key)}
+                    className="lbs-clear"
+                    aria-label="清除搜尋"
+                    onClick={() => setQuery('')}
                   >
-                    {item.label}
+                    ×
                   </button>
-                ))}
-              </div>
-            )}
-
-            <div className="lbf">
-              <button
-                type="button"
-                className={`lbf-toggle ${activeFilterCount > 0 ? 'on' : ''}`}
-                aria-expanded={filterOpen}
-                onClick={() => setFilterOpen((value) => !value)}
-              >
-                篩選{activeFilterCount > 0 ? `（${activeFilterCount}）` : ''}
-                {filterOpen ? ' ▴' : ' ▾'}
-              </button>
-              {activeFilterCount > 0 && (
+                )}
                 <button
                   type="button"
-                  className="lbf-reset"
-                  onClick={() => setFilters(NO_FILTERS)}
+                  className={`lbs-filter ${filterOpen || activeFilterCount > 0 ? 'on' : ''}`}
+                  aria-expanded={filterOpen}
+                  onClick={() => setFilterOpen((value) => !value)}
                 >
-                  重設
+                  篩選
+                  {activeFilterCount > 0 && (
+                    <span className="lbs-badge">{activeFilterCount}</span>
+                  )}
                 </button>
-              )}
+              </div>
+
               {filterOpen && (
-                <div className="lbf-panel">
-                  <label>
-                    <span>類型</span>
-                    <select
-                      value={filters.category}
-                      onChange={(event) =>
-                        setFilters((f) => ({ ...f, category: event.target.value }))
-                      }
-                    >
-                      <option value="">不限</option>
-                      {categoryOptions.map(([name, count]) => (
-                        <option key={name} value={name}>
-                          {name}（{count}）
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span>推薦人數</span>
-                    <select
-                      value={filters.players}
-                      onChange={(event) =>
-                        setFilters((f) => ({ ...f, players: event.target.value }))
-                      }
-                    >
-                      {PLAYER_OPTIONS.map((item) => (
-                        <option key={item.key} value={item.key}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span>遊戲時間</span>
-                    <select
-                      value={filters.time}
-                      onChange={(event) =>
-                        setFilters((f) => ({ ...f, time: event.target.value }))
-                      }
-                    >
-                      {TIME_OPTIONS.map((item) => (
-                        <option key={item.key} value={item.key}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span>難度</span>
-                    <select
-                      value={filters.difficulty}
-                      onChange={(event) =>
-                        setFilters((f) => ({ ...f, difficulty: event.target.value }))
-                      }
-                    >
-                      {DIFFICULTY_OPTIONS.map((item) => (
-                        <option key={item.key} value={item.key}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                <div className="lbs-panel">
+                  {periodApplies && (
+                    <div className="lbs-group">
+                      <span className="lbs-label">統計期間</span>
+                      <div className="lbs-chips">
+                        {PERIODS.map((item) => (
+                          <button
+                            key={item.key}
+                            type="button"
+                            className={period === item.key ? 'active' : ''}
+                            onClick={() => setPeriod(item.key)}
+                          >
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="lbs-group">
+                    <span className="lbs-label">排序方式</span>
+                    <div className="lbs-seg">
+                      <button
+                        type="button"
+                        className={sortDir === 'desc' ? 'active' : ''}
+                        onClick={() => setSortDir('desc')}
+                      >
+                        由高到低
+                      </button>
+                      <button
+                        type="button"
+                        className={sortDir === 'asc' ? 'active' : ''}
+                        onClick={() => setSortDir('asc')}
+                      >
+                        由低到高
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="lbs-fields">
+                    <label className="lbs-field">
+                      <span className="lbs-label">類型</span>
+                      <select
+                        value={filters.category}
+                        onChange={(event) =>
+                          setFilters((f) => ({ ...f, category: event.target.value }))
+                        }
+                      >
+                        <option value="">不限</option>
+                        {categoryOptions.map(([name, count]) => (
+                          <option key={name} value={name}>
+                            {name}（{count}）
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="lbs-field">
+                      <span className="lbs-label">推薦人數</span>
+                      <select
+                        value={filters.players}
+                        onChange={(event) =>
+                          setFilters((f) => ({ ...f, players: event.target.value }))
+                        }
+                      >
+                        {PLAYER_OPTIONS.map((item) => (
+                          <option key={item.key} value={item.key}>
+                            {item.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="lbs-field">
+                      <span className="lbs-label">遊戲時間</span>
+                      <select
+                        value={filters.time}
+                        onChange={(event) =>
+                          setFilters((f) => ({ ...f, time: event.target.value }))
+                        }
+                      >
+                        {TIME_OPTIONS.map((item) => (
+                          <option key={item.key} value={item.key}>
+                            {item.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="lbs-field">
+                      <span className="lbs-label">難度</span>
+                      <select
+                        value={filters.difficulty}
+                        onChange={(event) =>
+                          setFilters((f) => ({ ...f, difficulty: event.target.value }))
+                        }
+                      >
+                        {DIFFICULTY_OPTIONS.map((item) => (
+                          <option key={item.key} value={item.key}>
+                            {item.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  {activeFilterCount > 0 && (
+                    <button type="button" className="lbs-reset" onClick={resetAll}>
+                      重設全部
+                    </button>
+                  )}
                 </div>
               )}
             </div>

@@ -1,0 +1,167 @@
+/* 排行榜：搜尋欄＋篩選面板（lbs-*） */
+.lbs {
+  padding: 6px 16px 10px;
+}
+
+.lbs-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 12px;
+  border: 1px solid #d9d2c0;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.lbs-bar:focus-within {
+  border-color: #456b50;
+}
+
+.lbs-icon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.lbs-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 2px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #34463c;
+  font: inherit;
+  font-size: 16px; /* 16px 以上，iPhone 才不會自動放大 */
+}
+
+.lbs-clear {
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: #7a8a80;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lbs-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid #d9d2c0;
+  border-radius: 999px;
+  background: #f5f0e5;
+  color: #34463c;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.lbs-filter.on {
+  border-color: #456b50;
+  background: #456b50;
+  color: #ffffff;
+}
+
+.lbs-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #456b50;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.lbs-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid #e3dccb;
+  border-radius: 14px;
+  background: #fbf7ec;
+}
+
+.lbs-group {
+  display: grid;
+  gap: 6px;
+}
+
+.lbs-label {
+  color: #5b6b61;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lbs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lbs-chips button,
+.lbs-seg button {
+  padding: 8px 14px;
+  border: 1px solid #d9d2c0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #34463c;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.lbs-chips button.active,
+.lbs-seg button.active {
+  border-color: #456b50;
+  background: #456b50;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.lbs-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.lbs-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.lbs-field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.lbs-field select {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #d9d2c0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #34463c;
+  font: inherit;
+  font-size: 16px;
+}
+
+.lbs-reset {
+  justify-self: start;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #456b50;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
