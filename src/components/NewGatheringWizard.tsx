@@ -39,6 +39,7 @@ export default function NewGatheringWizard({
   const [exempt, setExempt] = useState<string[]>([])
   const [playerSearch, setPlayerSearch] = useState('')
   const [openWant, setOpenWant] = useState<string | null>(null)
+  const [openWanters, setOpenWanters] = useState<Record<string, boolean>>({})
   const [makeLink, setMakeLink] = useState(true)
   const [capacity, setCapacity] = useState('')
   const [busy, setBusy] = useState(false)
@@ -76,13 +77,16 @@ export default function NewGatheringWizard({
   }, [players, contacts, playerSearch])
 
   // 想玩這款的人：已選參加者排前面
-  function wanters(bggName: string): { id: string; name: string; picked: boolean }[] {
+  function wanters(
+    bggName: string,
+  ): { id: string; name: string; contact: string; picked: boolean }[] {
     if (!wantMap) return []
     return players
       .filter((player) => wantMap.get(player.id)?.has(bggName))
       .map((player) => ({
         id: player.id,
         name: player.nickname || '（未設暱稱）',
+        contact: (contacts[player.id] ?? '').trim(),
         picked: picked.includes(player.id),
       }))
       .sort((a, b) => Number(b.picked) - Number(a.picked))
@@ -298,15 +302,42 @@ export default function NewGatheringWizard({
                                 '目前沒有人標想玩'
                               ) : (
                                 <>
-                                  想玩：
-                                  {list.map((item, index) => (
-                                    <span key={item.id} className={item.picked ? 'on' : ''}>
-                                      {index > 0 ? '、' : ''}
-                                      {item.name}
+                                  <button
+                                    type="button"
+                                    aria-expanded={!!openWanters[bggName]}
+                                    onClick={() =>
+                                      setOpenWanters((current) => ({
+                                        ...current,
+                                        [bggName]: !current[bggName],
+                                      }))
+                                    }
+                                    style={{
+                                      padding: 0,
+                                      border: 'none',
+                                      background: 'none',
+                                      color: 'inherit',
+                                      font: 'inherit',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    社群有 {list.length} 人想玩 {openWanters[bggName] ? '▴' : '▾'}
+                                  </button>
+                                  {openWanters[bggName] && (
+                                    <span style={{ display: 'block', marginTop: 4, lineHeight: 1.6 }}>
+                                      {list.map((item, index) => (
+                                        <span key={item.id} className={item.picked ? 'on' : ''}>
+                                          {index > 0 ? '、' : ''}
+                                          {item.picked ? '✓ ' : ''}
+                                          {item.name}
+                                          {item.contact ? `（${item.contact}）` : ''}
+                                        </span>
+                                      ))}
                                     </span>
-                                  ))}
+                                  )}
                                 </>
                               )}
+                            </p>
+                          )}
                             </p>
                           )}
                         </li>
