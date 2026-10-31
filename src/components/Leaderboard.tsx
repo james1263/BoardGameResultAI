@@ -9,6 +9,7 @@ import {
 } from '../lib/useGamePeople'
 import { rankGames } from '../lib/leaderboards'
 import { usePlayTotals } from '../lib/usePlayTotals'
+import { useCommunityStats } from '../lib/useCommunityStats'
 import StatsTables from './StatsTables'
 import InfoHint from './InfoHint'
 import '../styles/leaderboard-filter.css'
@@ -110,7 +111,6 @@ function matchesFilters(game: BoardGame, f: Filters): boolean {
 
 export default function Leaderboard({
   boardGames,
-  communityStats,
   ratings,
   canSeePeople,
   isAdmin,
@@ -133,6 +133,8 @@ export default function Leaderboard({
   onOpenGame: (game: BoardGame) => void
   renderCover: (game: BoardGame) => ReactNode
 }) {
+  // 排行榜自己讀一份人數：打開時才讀、每次打開都重讀，不影響主畫面
+  const communityStats = useCommunityStats(isOpen)
   const [board, setBoard] = useState<BoardKey>('want')
   const [period, setPeriod] = useState<Period>('all')
   const [openNames, setOpenNames] = useState<string[]>([])
@@ -159,15 +161,13 @@ export default function Leaderboard({
 
   const reloadPeople = people.reload
   const reloadAdminRatings = adminRatings.reload
-  const reloadStats = communityStats.reload
 
-  // 每次打開排行榜都重新讀一次人數與名單，才會是最新的
+  // 每次打開排行榜都重新讀一次名單，才會是最新的
   useEffect(() => {
     if (!isOpen) return
-    // reloadStats()
     if (canSeePeople) reloadPeople()
     if (isAdmin) reloadAdminRatings()
-  }, [isOpen, canSeePeople, isAdmin, reloadPeople, reloadAdminRatings, reloadStats])
+  }, [isOpen, canSeePeople, isAdmin, reloadPeople, reloadAdminRatings])
 
   const isCountBoard = board === 'want' || board === 'played'
   const isPlaysBoard = board === 'plays'

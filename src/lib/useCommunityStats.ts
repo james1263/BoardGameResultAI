@@ -31,11 +31,12 @@ function n(value: unknown): number {
 }
 
 // 在 Library 呼叫一次；訪客也讀得到（只有彙總人數）
-export function useCommunityStats() {
+export function useCommunityStats(enabled = true) {
   const [stats, setStats] = useState<Record<string, CommunityStats>>({})
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
+    if (!enabled) return
     let cancelled = false
 
     supabase.rpc('get_community_stats').then(({ data, error }) => {
@@ -63,7 +64,7 @@ export function useCommunityStats() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey])
+  }, [enabled, reloadKey])
 
   const getStats = useCallback(
     (bggName: string): CommunityStats => stats[bggName] ?? EMPTY,
