@@ -29,7 +29,7 @@ export default function PlayerPanel() {
   }, isOpen || isMenuOpen)
 
   useEffect(() => {
-    if (!userId || !checked || isAdmin) {
+    if (!userId || !checked) {
       setProfile(null)
       setContact('')
       return
@@ -61,7 +61,8 @@ export default function PlayerPanel() {
 
       // 第一次登入，或還沒填聯絡方式：自動跳出設定視窗（可以按「稍後再說」）
       // 讀取聯絡方式失敗時（例如資料表還沒建立）不打擾玩家
-      if (!found || (!c.error && !contactName)) {
+      // 管理者不強制跳窗（想設定時從頂端暱稱選單進去）
+      if (!isAdmin && (!found || (!c.error && !contactName))) {
         setNickname(found?.nickname ?? '')
         setContactInput(contactName)
         setIsOpen(true)
@@ -76,7 +77,7 @@ export default function PlayerPanel() {
   const [hideInLists, setHideInLists] = useState(false)
 
   useEffect(() => {
-    if (!userId || !checked || isAdmin) return
+    if (!userId || !checked) return
     let cancelled = false
     supabase.rpc('get_hide_in_lists').then(({ data, error }) => {
       if (!cancelled && !error) setHideInLists(data === true)
@@ -183,8 +184,8 @@ export default function PlayerPanel() {
     )
   }
 
-  // 還在檢查身分，或是管理者（管理者的登出在頂端列）
-  if (!checked || isAdmin) return null
+  // 還在檢查身分
+  if (!checked) return null
 
   return (
     <>
