@@ -1,6 +1,6 @@
 # 桌遊規則助手 — 懶人包（給下一個 AI）
 
-> 最後更新：2026-10-31（深夜後）（已併入 `生成後.md` 全部內容：排行榜最常玩榜與新搜尋／篩選、人數重讀、底部導覽 touch-action、**登入狀態短暫消失的根因與修復〔`useSession` 共用快取、`declineMerge` 清訪客紀錄〕**；`生成後.md` 已重置）。**第 2 節最上面的「2.0」是最新增補，與其他段落衝突時以它為準。**
+> 最後更新：2026-10-31（深夜後二）（已併入 `生成後.md` 全部內容：確認頁面內視窗、想玩名單點開版、清單式留言與我的心得、**開遊戲視窗重讀人數造成卡頓的查證與改成打勾時直接調整人數〔`4025cd8`〕**；`生成後.md` 已重置）。**第 2 節最上面的「2.0（最新）」是最新增補，與其他段落衝突時以它為準。**
 > **分工**：本檔＝現況、待辦、合作規則；`PROJECT_CONTEXT.md`＝架構、資料庫、功能規則、規則助手設計；`生成後.md`＝這兩份之後的修改紀錄與文件維護計數（**開工前三份都要讀，衝突時以 `生成後.md` 為準**）。
 > **文件維護規則**見第 9 節。
 
@@ -12,7 +12,22 @@
 
 ## 2. 目前狀態（2026-10-31 深夜）
 
-### 2.0 【最新增補：2026-10-31 深夜後，本檔其他段落與此衝突時以此為準】
+### 2.0（最新）【2026-10-31 深夜後二；本檔其他段落與此衝突時以此為準】
+
+- git：origin/master 最新 `4025cd8`（打勾時直接調整社群人數）；之前 `95184bb`（test：暫時關閉開遊戲視窗時重讀人數）、`614bbf1`（更新生成後.md）、`f8e2d5d`（清單分隔線＋我的心得清單式）、`3c4cd7f`、`6f4f471`、`6259cd0`、`741995e`、`b926b39`、`8da7b09`、`a9b7748`。本次重新產生的三份 .md 在 `4025cd8` 之後，要等使用者 commit／push（該次不計入次數）。開工先 `git pull`、`git log --oneline -5`。
+- 卡頓問題（本輪主線）：使用者在 iPhone 的 Google App 內建瀏覽器回報「開遊戲封面→按 ✕→回主畫面或點俱樂部，會暫時點不了，要等畫面自己動一下才恢復」。懷疑 `6f4f471`（開遊戲視窗時呼叫 `communityStats.reload()`），使用者註解掉那段後回報「不卡了」（`95184bb`），所以確認是那段重讀造成；但為什麼重讀會卡（網路回來後整頁重繪？內建瀏覽器特性？）沒有查出，是推測。
+- 修法（`4025cd8`，使用者已 push，手機實測尚未回報，要主動問）：`src/lib/useCommunityStats.ts` 新增 `adjust(bggName, wantDelta, playedDelta)`，直接改記憶體裡那款的 `wantCount`／`playedCount`（不低於 0，不打網路）；`App.tsx` 刪掉註解掉的重讀區塊，新增 `personalWithStats`（`useMemo`，包住 `personal.updateEntry`），只傳給主畫面的 `GameCard`：打勾時若是 VIP 或管理者、已登入、`personal.status === 'ready'`，就用 `changes.wantToPlay`／`changes.played` 與打勾前的值算差，呼叫 `adjust`。一般會員與訪客不動人數（全站人數只統計 VIP＋管理者）。限制：只調整想玩／已玩總人數，月／季／年期間新增不動；評分完整自動標已玩、新增遊玩紀錄標已玩、`PlayedGameRecord` 等不經過卡片的路徑不會調整，人數要重新整理才更新（`App.tsx` 裡評分自動標已玩的 `useEffect` 用的是原本的 `personal.updateEntry`，刻意不動）。
+- 待實測（4025cd8）：①VIP 帳號卡片點 ♥ 後開那款遊戲，右上角想玩 +1，取消 -1；✓ 已玩同理；②開遊戲封面→✕→馬上點俱樂部，來回 5 次不卡（要在 Google App 內建瀏覽器測）；③一般會員點 ♥ 人數不變；④重新整理後人數與資料庫一致。若又卡，代表原因是重繪而不是 `reload()`，下一步看 `GameModal.tsx` 關閉行為與 `useBackClose.ts`（不要先動 `useBackClose`）。
+- 本輪事故與教訓：使用者曾註解掉 `App.tsx` 174～181 行（報到連結登入後跳集點卡的 `useEffect`，不是目標），且檔案沒存檔所以 `git commit` 顯示沒東西、build 沒變；後來已還原（上傳的 `App.tsx` 該段完整）。要使用者改檔時：先請他用 `Select-String` 貼結果、說清楚「整段從哪一行到哪一行」、改完先 `git status` 確認有 `modified`、再 build、看到 `✓ built` 才 push。專案 TypeScript 把「宣告了沒使用」（TS6133）當錯誤，註解掉一段程式時，它專用的變數宣告也要一起註解，否則 build 失敗。截圖裡 `App.tsx` 174～181 行那段 `useEffect` 的紅線是 React lint「effect 裡同步 setState」提示，不影響執行，未處理。
+- 同批已 push、使用者尚未回報實測（承 `生成後.md` 舊內容）：
+  - `PlaySessions.tsx`（`a9b7748`）：`window.confirm`／`window.alert` 換成 `askConfirm`／`showNotice`；待測刪除遊玩紀錄的頁面內紅色確認視窗、人數填 100 的提示。
+  - 留言板置中修正（`8da7b09`）：`note-list.css` 加 `.nl-item, .nl-item * { text-align: left !important }` 與 `.nl-item .nl-btnrow { justify-content: flex-end }`；若仍置中，用 `Select-String -Path src\styles\*.css -Pattern "text-align: center"` 找規則。
+  - 清單式（`f8e2d5d`）：`note-list.css` 改成無邊框＋淡色分隔線（`.nl-list`、`.nl-main`、`.nl-thumb` 52px）；`NoteListItem.tsx` 新增選填 `badge`、`thumb`、`hideText`；`MyNotes.tsx` 改用 `NoteListItem`（縮圖用 `renderCover(game)` 或 🎲，編輯中強制展開）。討論分頁與留言板外層可能還有舊間距，縮圖樣式是猜的；`my-notes.css` 舊 `.mh-item`、`.mh-head`、`.mh-list` 沒人用，未清。
+  - 想玩名單點開才顯示暱稱與 LINE／FB（`b926b39`、`741995e`、`6259cd0`，使用者回報沒問題）：預計聚會、近期聚會（`LoyaltyAdmin`）、新增聚會流程三處格式一致；`741995e` 是腳本結尾錨點比對錯造成 `tsc` 13 個錯誤，`6259cd0` 修好。以後給指令把 `npm.cmd run build` 與 `git add／commit／push` 分成兩段。
+- 已結案：登入短暫消失兩個修復、排行榜新畫面、底部導覽在 Google App 不再卡（使用者 2026-10-31 回報都沒問題）；備份表 `game_play_sessions_backup_20261031`、`user_game_status_backup_20261031` 已刪（`game_notes_backup_20261030` 還在，未決定是否刪）。
+- 確認某檔案是否已 push：`git log --oneline -3 -- 檔案路徑`。
+
+### 2.0（前二批）【2026-10-31 深夜後；與上面衝突時以上面為準】
 
 - **git**：origin/master 最新 **`a81ca91`**（合併視窗「不加入」清訪客紀錄）；之前依序 `8f8d2c1`（`useSession` 共用快取）、`cbbee7b`（更新生成後.md）、`f56b0a6`（排行榜改版）、`417ffaf`、`d8295fa`、`9cf727c`、`87dea10`、`97047fc`、`58e2232`（上一輪三份 .md）。**三份 .md（本次重新產生）要等使用者 commit／push（該次不計入次數）。** 開工先 `git pull`、`git log --oneline -5`。
 - **登入狀態短暫消失（根因已查明並修復，使用者尚未回報實測）**：
@@ -89,7 +104,9 @@ N1～N6、我的桌遊整合、贈送免費券、新遊戲置頂、我的場次�
 
 ## 4. 待辦順序（一次一批，上一批實測完才進下一批）
 
-> **最新（2026-10-31 深夜後，以此為準）**：①**先問登入短暫消失兩個修復的實測結果**（2.0 的待實測 ①～④）與 `f56b0a6` 排行榜新畫面（左右留白、期間／排序在篩選裡、人數每次重讀）；②清單式留言那批是否 build／push、手機看起來如何；③底部五顆導覽在 Google App 卡住是否還會發生（要使用者貼 `App.tsx` 255～285、365～380 行；不要先動 `useBackClose`）；④`PlaySessions.tsx` 與管理者檔案換 `askConfirm`（先請使用者傳 `PlaySessions.tsx`）；⑤`MyNotes` 是否改清單式；⑥遊戲視窗右上角想玩／已玩人數打勾後才更新（未處理）；⑦備份表 `game_play_sessions_backup_20261031`、`user_game_status_backup_20261031` 穩定幾天後問是否刪除。
+> **最新最新（2026-10-31 深夜後二，以此為準）**：①先問 `4025cd8` 的手機實測（2.0（最新）的四項，尤其是開遊戲封面→✕→點俱樂部來回不卡；要用 Google App 內建瀏覽器）；②問 `a9b7748`、`8da7b09`、`f8e2d5d` 的實測（刪除遊玩紀錄確認視窗、留言板靠左、我的心得清單式）；③待辦：管理者專用檔案的 `confirm`／`prompt` 換 `askConfirm`（`askConfirm` 沒有輸入框，`prompt` 要先決定做法；要請使用者傳 `askConfirm.tsx`、`MemberAdmin.tsx`、`AdminPanel.tsx`、`RulebookBatchUpload.tsx`、`DescriptionEditor.tsx`）、預計聚會想玩名單已完成不用再做、聚會設定版面與開團紀錄預設值（先查 `gathering_games.play_status` 分佈再問）、`game_notes_backup_20261030` 是否刪、舊 `mh-*` 樣式清理、`MyNotes` 之外討論分頁／留言板樣式微調；④之前第 2 項「預計聚會顯示想玩的人」與「遊戲視窗右上角人數打勾後才更新」都已完成。
+
+> **前一版最新（2026-10-31 深夜後，已被上面取代）**：①**先問登入短暫消失兩個修復的實測結果**（2.0 的待實測 ①～④）與 `f56b0a6` 排行榜新畫面（左右留白、期間／排序在篩選裡、人數每次重讀）；②清單式留言那批是否 build／push、手機看起來如何；③底部五顆導覽在 Google App 卡住是否還會發生（要使用者貼 `App.tsx` 255～285、365～380 行；不要先動 `useBackClose`）；④`PlaySessions.tsx` 與管理者檔案換 `askConfirm`（先請使用者傳 `PlaySessions.tsx`）；⑤`MyNotes` 是否改清單式；⑥遊戲視窗右上角想玩／已玩人數打勾後才更新（未處理）；⑦備份表 `game_play_sessions_backup_20261031`、`user_game_status_backup_20261031` 穩定幾天後問是否刪除。
 
 > **深夜更新（以此為準）**：①先問清單式留言那批是否 build／push、手機看起來如何；②**底部五顆導覽卡住**（第 2.0 節最後一項，要使用者貼 App.tsx 片段與 CSS 搜尋結果）；③`PlaySessions.tsx` 與管理者檔案的確認視窗換成 `askConfirm`（先請使用者傳 `PlaySessions.tsx`）；④`MyNotes` 是否也改清單式；⑤使用者說「一目了然」的畫面要再問是哪一頁。下面舊清單中：第 3 項（規則區改版）、第 5 項（統計擁擠）、第 6 項（已玩次數自動 +1，**已改做成「評分完整自動建遊玩紀錄」，見 2.0**）**都已完成**，不要再做。
 
@@ -190,3 +207,4 @@ N1～N6、我的桌遊整合、贈送免費券、新遊戲置頂、我的場次�
 - 2026-10-31（深夜）：使用者 push `59c0526`、`d2b2e26`、`d7e7fb9`（上一輪更新 `生成後.md` 後共 3 次，`生成後.md` 更新次數滿 3），使用者說「更新文件」，已重新產生三份 .md（併入聚會設定第一批、管理者暱稱、標題顏色、我的心得、新增聚會流程）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。
 - 2026-10-31（深夜）：使用者在額度快用完時說「可以先更新這三份 .md」，已重新產生（以增補方式併入 `生成後.md` 全部內容與本輪對話）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。這輪已 push 的 `0871d43`、`20034c8`、`e12d87b`、`5181822` 都已併入，不再計數。
 - 2026-10-31（深夜後）：使用者 push `8f8d2c1`（第 1 次）、`a81ca91`（第 2 次），`生成後.md` 更新次數本已為 3，依規則重新產生三份 .md（併入排行榜、人數重讀、底部導覽 touch-action、登入短暫消失修復）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。上一輪的 `97047fc`、`87dea10`、`d8295fa`、`9cf727c`、`417ffaf`、`f56b0a6` 與 `cbbee7b` 都已併入，不再計數。
+- 2026-10-31（深夜後二）：使用者 push `95184bb`、`4025cd8`（`614bbf1` 是只更新 `生成後.md`，不計入），`生成後.md` 更新次數已滿 3，使用者說「更新這三份 .md」，已重新產生（併入想玩名單、`PlaySessions` 確認視窗、留言板置中、清單式留言、開視窗重讀人數卡頓與 `adjust` 修法）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，該次 push 不計入次數。上一輪的 `a9b7748`、`8da7b09`、`6f4f471`、`b926b39`、`741995e`、`6259cd0`、`f8e2d5d`、`3c4cd7f`、`614bbf1` 都已併入，不再計數。

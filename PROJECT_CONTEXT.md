@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-10-31 深夜後（已併入 `生成後.md` 全部內容；**請同時讀 `QUICKSTART.md` 第 2.0 節與本檔第 11、12 節，與其他段落衝突時以它們為準**）。
+> 最後更新：2026-10-31 深夜後二（已併入 `生成後.md` 全部內容；**請同時讀 `QUICKSTART.md` 第 2.0（最新）節與本檔第 11、12、13 節，與其他段落衝突時以它們為準**）。
 
 ## 1. 專案簡介與技術架構
 
@@ -192,3 +192,13 @@
 - **排行榜**：新函式 `get_play_totals()`（回 `bgg_name, play_total, play_month, play_quarter, play_year`；只有登入的 VIP／管理者；只統計 `played = true`、VIP＋管理者；「全部」＝`play_count`＋有日期紀錄筆數，本月／本季／本年只算有日期的）；前端 `lib/usePlayTotals.ts`、`Leaderboard.tsx`（VIP／管理者五顆榜：想玩、已玩、最常玩、整體評分、適合留下來；一般人與訪客四顆）。`Leaderboard` 內部自己呼叫 `useCommunityStats(isOpen)`（每次打開重讀，`useCommunityStats(enabled = true)` 有 `reloadKey`／`reload`），`App.tsx` 傳入的 `communityStats` prop 被忽略；**不要在 `Leaderboard` 呼叫主畫面那份的 `reload()`（會讓主畫面卡）**。改版（`f56b0a6`）：搜尋欄內「篩選」鈕、`src/styles/leaderboard-search.css`（`lbs-*`）、篩選面板含統計期間與排序方向（由低到高只反轉顯示、名次不變，AI 預設）；舊 `leaderboard-filter.css`（`lbf-*`）與 `vip.css` 舊 `lb-periods` 未清。難度分界（≤2 簡單、2～3 中等、≥3 偏難）為暫定值。
 - **樣式**：`sitebar.css` 的 `.sb-item:hover` 包進 `@media (hover: hover) and (pointer: fine)`；`vip.css` 最底下 `html, body, button, a, .game-card, .status-btn, .sb-item { touch-action: manipulation; }`。
 - **已知未解**：Google App 內建瀏覽器底部五顆導覽點了沒反應（登入修復後待重測）；遊戲視窗右上角想玩／已玩人數打勾後要重新整理才更新。
+
+## 13. 2026-10-31 深夜後二增補（覆蓋前面衝突的敘述）
+
+- `lib/useCommunityStats.ts`：回傳 `{ getStats, reload, adjust }`；`adjust(bggName, wantDelta, playedDelta)` 只改記憶體裡的 `wantCount`／`playedCount`（不低於 0，該款不在表中就以空統計為底），不打網路。`App.tsx` 不再在開遊戲視窗時呼叫 `reload()`（`6f4f471` 加的那段已移除；原因：在 iPhone Google App 內建瀏覽器造成開視窗後關閉暫時點不了，註解掉後使用者回報不卡）。`App.tsx` 新增 `personalWithStats`（`useMemo`，`{...personal, updateEntry}`），只給主畫面 `GameCard`：VIP／管理者、已登入、`status === 'ready'` 時，卡片打勾依 `changes.wantToPlay`／`changes.played` 與打勾前的值算差並呼叫 `adjust`；一般會員與訪客不動。評分自動標已玩的 `useEffect` 與其他元件仍用原始 `personal.updateEntry`，所以那些路徑不調整人數。期間新增（月／季／年）不調整。**第 12 節「遊戲視窗右上角想玩／已玩人數打勾後要重新整理才更新」已改為：卡片打勾會即時調整（`4025cd8`，手機實測待回報）。**
+- `Leaderboard` 仍自己呼叫 `useCommunityStats(isOpen)` 讀一份；不要在 `Leaderboard` 或其他地方呼叫主畫面那份的 `reload()`（已知會造成卡頓）。
+- 專案 TypeScript 設定會把「宣告了沒使用」（TS6133）當成 build 錯誤；註解掉一段程式時，專用變數要一起註解。
+- `lib/askConfirm.tsx`：`PlaySessions.tsx` 已改用 `askConfirm`／`showNotice`（`a9b7748`）。尚未換的仍是管理者專用檔案（`AdminPanel`、`GameDocuments`〔上傳 PDF 刪除〕、`LoyaltyAdmin`、`MemberAdmin`、`NewGatheringWizard`、`PlannedGatheringsAdmin`、`RulebookBatchUpload`、`DescriptionEditor`、`InAppBrowserNotice`）；`askConfirm` 沒有輸入框，原本用 `prompt` 的地方要另外決定做法。
+- 清單式留言（`f8e2d5d`）：`NoteListItem.tsx` 新增選填屬性 `badge`、`thumb`、`hideText`（沒傳＝原樣）；結構 `.nl-row` > [`.nl-thumb`, `.nl-main` > [`.nl-top`、遊戲標籤、內文]]；`note-list.css` 無邊框＋`border-bottom: 1px solid #e3d9c4`、展開 `.is-open` 淡底色、`.nl-thumb` 52px、留言一律靠左（`text-align: left !important`，`8da7b09`）。`MyNotes.tsx` 列表改用 `NoteListItem`（《遊戲名》、`mh-badge` 徽章、縮圖 `renderCover(game)` 或 🎲、`openKey` 狀態、編輯中強制展開並 `hideText`）；資料、SQL、篩選、重新讀取、頂端按鈕不變。第 4 節「我的心得」描述中的卡片版面以此為準；舊 `mh-item`／`mh-head`／`mh-list`（`my-notes.css`）與 `mn-*`（`vip.css`）沒人用，未清。
+- 想玩名單（管理者專用，使用者回報沒問題）：預計聚會（`PlannedGatheringsAdmin`，呼叫 `admin_get_want_to_play_people()`）、正式聚會（`LoyaltyAdmin`，用頁面已載入的 `players`＋`contacts`，`wantersOpen` 的 key 為 `${scope}:${bggName}`，`scope` 為 `search`／`picked`）、新增聚會流程（`NewGatheringWizard`，`wanters()` 多回 `contact`、`openWanters` 狀態）三處格式一致：「社群有 N 人想玩 ▾」點開列「暱稱（LINE／FB）」，已選參加者排前面標 ✓，沒暱稱顯示「（未設暱稱）」。第 2 節「前端尚未接」已過時，前端已接。
+- 備份表：`game_play_sessions_backup_20261031`、`user_game_status_backup_20261031` 已刪；`game_notes_backup_20261030` 仍在（RLS 開、無權限，使用者未決定是否刪）。
