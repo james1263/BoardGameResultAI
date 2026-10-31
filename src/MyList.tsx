@@ -304,9 +304,9 @@ export default function MyList({
     const [topN, setTopN] = useState<TopN>(loadTopN)
     const [showHoursNote, setShowHoursNote] = useState(false)
     // 分頁切換不另建瀏覽歷史：返回鍵與 ✕ 一律回「我的俱樂部」首頁
-    // 從留言板進去的「新增遊玩紀錄」「我的心得」，返回時先回留言板
+    // 「新增遊玩紀錄」從「我的心得」進去，返回先回我的心得
     useBackClose(
-        () => setView((current) => (current === 'addplay' || current === 'notes' ? 'board' : 'home')),
+        () => setView((current) => (current === 'addplay' ? 'notes' : 'home')),
         isOpen && mode !== 'loyalty' && view !== 'home',
     )
 
@@ -514,8 +514,6 @@ export default function MyList({
                 onBack={() => setView('home')}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
-                onOpenAddPlay={() => setView('addplay')}
-                onOpenMyNotes={() => setView('notes')}
             />
         )
     }
@@ -526,8 +524,9 @@ export default function MyList({
             <MyNotes
                 boardGames={lookupGames}
                 renderCover={renderCover}
-                onBack={() => setView('board')}
+                onBack={() => setView('home')}
                 onClose={onClose}
+                onOpenAddPlay={() => setView('addplay')}
                 onOpenGathering={(id) => {
                     setGatheringTarget(id)
                     setView('gatherings')
@@ -561,7 +560,7 @@ export default function MyList({
                 personal={personal}
                 playSessions={playSessions}
                 canShare={isVip || isAdmin}
-                onBack={() => setView('board')}
+                onBack={() => setView('notes')}
                 onClose={onClose}
             />
         )
@@ -940,7 +939,21 @@ export default function MyList({
                                     <span className="club-menu-icon" aria-hidden="true">💬</span>
                                     <span className="club-menu-text">
                                         <b>留言板</b>
-                                        <span className="club-menu-sub">最新留言、發表心得、補記遊玩</span>
+                                        <span className="club-menu-sub">大家的留言、發表留言</span>
+                                    </span>
+                                    <span className="club-menu-arrow" aria-hidden="true">›</span>
+                                </button>
+                            </div>
+                            <div className="club-list club-more">
+                                <button
+                                    type="button"
+                                    className="club-menu-item club-menu-single"
+                                    onClick={() => setView('notes')}
+                                >
+                                    <span className="club-menu-icon" aria-hidden="true">📝</span>
+                                    <span className="club-menu-text">
+                                        <b>我的心得</b>
+                                        <span className="club-menu-sub">公開留言、私人心得、補記遊玩</span>
                                     </span>
                                     <span className="club-menu-arrow" aria-hidden="true">›</span>
                                 </button>

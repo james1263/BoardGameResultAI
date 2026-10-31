@@ -2589,11 +2589,10 @@ body {
 .np-now { border: 0; border-radius: 99px; background: #b78a5a; color: #fff; padding: 7px 18px; font-size: 14px; font-weight: 700; cursor: pointer; }
 .np-later { border: 1px solid rgba(251,247,236,.5); border-radius: 99px; background: transparent; color: #fbf7ec; padding: 7px 16px; font-size: 14px; cursor: pointer; }
 
-/* 俱樂部標題：深綠底上改白字（電腦版） */
-@media (min-width: 761px) {
-  .mylist-drawer h1,
-  .mylist-drawer h2,
-  .mylist-drawer header h2 {
-    color: #fbf7ec !important;
-  }
+/* 標題顏色：只有「我的俱樂部」首頁深綠底用白字；其他抽屜頁（淺底）固定深墨綠 */
+.mylist-drawer .mylist-header h2 {
+  color: #34463c !important;
+}
+.mylist-drawer .club-top h2 {
+  color: #fbf7ec !important;
 }

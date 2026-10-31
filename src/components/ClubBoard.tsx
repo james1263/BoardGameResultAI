@@ -43,8 +43,6 @@ export default function ClubBoard({
   onBack,
   onClose,
   onOpenGame,
-  onOpenAddPlay,
-  onOpenMyNotes,
 }: {
   boardGames: ListedGame[]
   personal: PersonalApi
@@ -54,8 +52,6 @@ export default function ClubBoard({
   onBack: () => void
   onClose: () => void
   onOpenGame: (game: BoardGame, tab?: 'discussion') => void
-  onOpenAddPlay: () => void
-  onOpenMyNotes: () => void
 }) {
   const enabled = isVip || isAdmin
   const [rows, setRows] = useState<NoteRow[]>([])
@@ -175,8 +171,8 @@ export default function ClubBoard({
         </div>
 
         <div className="mylist-body">
-          <div className="cb-actions">
-            {enabled && (
+          {enabled && (
+            <div className="cb-actions">
               <button
                 type="button"
                 className="cb-btn"
@@ -185,14 +181,8 @@ export default function ClubBoard({
               >
                 ＋ 發表留言
               </button>
-            )}
-            <button type="button" className="cb-btn" onClick={onOpenAddPlay}>
-              新增遊玩紀錄
-            </button>
-            <button type="button" className="cb-btn" onClick={onOpenMyNotes}>
-              我的心得
-            </button>
-          </div>
+            </div>
+          )}
 
           {composeOpen && enabled && (
             <div className="cb-compose">
