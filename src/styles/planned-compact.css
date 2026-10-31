@@ -1,0 +1,66 @@
+/* 預計聚會（管理者）：縮小字級與內距，跟「聚會管理」一致 */
+
+.pg-fold .pg-admin-list {
+  gap: 6px;
+}
+
+.pg-fold .pg-admin-item {
+  padding: 8px 10px;
+}
+
+.pg-fold .pg-head {
+  gap: 8px;
+}
+
+.pg-fold .pg-when {
+  margin: 0;
+  font-size: 12px;
+}
+
+.pg-fold .pg-title-sm {
+  font-size: 14px;
+}
+
+.pg-fold .pg-sub {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pg-fold .pg-badge {
+  padding: 2px 9px;
+  font-size: 12px;
+}
+
+.pg-fold .loy-admin-note {
+  margin: 4px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pg-fold .loy-mini-btn {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.pg-fold .pg-admin-actions {
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.pg-fold .pg-form {
+  gap: 8px;
+}
+
+.pg-fold .lga-sub,
+.pg-fold .pg-form h4,
+.pg-fold .pg-form h3 {
+  margin: 10px 0 4px;
+  font-size: 14px;
+}
+
+/* 輸入框維持 16px（iPhone 不會自動放大），只縮內距 */
+.pg-fold .pg-form input,
+.pg-fold .pg-form select,
+.pg-fold .pg-form textarea {
+  padding: 8px 10px;
+}

@@ -106,3 +106,57 @@
   font-weight: 400;
   color: #8a8f84;
 }
+
+/* ---- 聚會詳情（展開後）縮小 ---- */
+.lga-manage .lga-card.lga-detail {
+  margin-top: 6px;
+  padding: 10px 12px;
+}
+
+.lga-manage .lga-detail .lga-detail-head h3 {
+  font-size: 15px;
+}
+
+.lga-manage .lga-detail .lga-sub {
+  margin: 12px 0 4px;
+  font-size: 14px;
+}
+
+.lga-manage .lga-detail .loy-admin-note {
+  margin: 2px 0 4px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.lga-manage .lga-detail .lgp-game {
+  padding: 8px 0;
+}
+
+.lga-manage .lga-detail .lgp-game-name {
+  font-size: 14px;
+}
+
+.lga-manage .lga-detail .lgp-hint,
+.lga-manage .lga-detail .lgp-state,
+.lga-manage .lga-detail .lgp-tag {
+  font-size: 12px;
+}
+
+.lga-manage .lga-detail .lga-outline,
+.lga-manage .lga-detail .lga-danger,
+.lga-manage .lga-detail .loy-mini-btn {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.lga-manage .lga-detail .lga-toggle {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* 搜尋框維持 16px（iPhone 不會自動放大），只縮內距 */
+.lga-manage .lga-detail input[type='search'],
+.lga-manage .lga-detail input[type='text'],
+.lga-manage .lga-detail input:not([type]) {
+  padding: 8px 10px;
+}

@@ -10,6 +10,7 @@ import {
   type PlannedRaw,
 } from '../lib/usePlannedGatherings'
 import '../styles/planned.css'
+import '../styles/planned-compact.css'
 
 type GameOption = { bggName: string; name: string }
 type GatheringOption = { id: string; label: string; gatheredOn: string }
