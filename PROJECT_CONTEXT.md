@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-10-31 深夜後二（已併入 `生成後.md` 全部內容；**請同時讀 `QUICKSTART.md` 第 2.0（最新）節與本檔第 11、12、13 節，與其他段落衝突時以它們為準**）。
+> 最後更新：2026-10-31 下午（已併入 `生成後.md` 全部內容；**請同時讀 `QUICKSTART.md` 第 2.0（最新）節與本檔第 11、12、13、14 節，與其他段落衝突時以它們為準**）。
 
 ## 1. 專案簡介與技術架構
 
@@ -202,3 +202,12 @@
 - 清單式留言（`f8e2d5d`）：`NoteListItem.tsx` 新增選填屬性 `badge`、`thumb`、`hideText`（沒傳＝原樣）；結構 `.nl-row` > [`.nl-thumb`, `.nl-main` > [`.nl-top`、遊戲標籤、內文]]；`note-list.css` 無邊框＋`border-bottom: 1px solid #e3d9c4`、展開 `.is-open` 淡底色、`.nl-thumb` 52px、留言一律靠左（`text-align: left !important`，`8da7b09`）。`MyNotes.tsx` 列表改用 `NoteListItem`（《遊戲名》、`mh-badge` 徽章、縮圖 `renderCover(game)` 或 🎲、`openKey` 狀態、編輯中強制展開並 `hideText`）；資料、SQL、篩選、重新讀取、頂端按鈕不變。第 4 節「我的心得」描述中的卡片版面以此為準；舊 `mh-item`／`mh-head`／`mh-list`（`my-notes.css`）與 `mn-*`（`vip.css`）沒人用，未清。
 - 想玩名單（管理者專用，使用者回報沒問題）：預計聚會（`PlannedGatheringsAdmin`，呼叫 `admin_get_want_to_play_people()`）、正式聚會（`LoyaltyAdmin`，用頁面已載入的 `players`＋`contacts`，`wantersOpen` 的 key 為 `${scope}:${bggName}`，`scope` 為 `search`／`picked`）、新增聚會流程（`NewGatheringWizard`，`wanters()` 多回 `contact`、`openWanters` 狀態）三處格式一致：「社群有 N 人想玩 ▾」點開列「暱稱（LINE／FB）」，已選參加者排前面標 ✓，沒暱稱顯示「（未設暱稱）」。第 2 節「前端尚未接」已過時，前端已接。
 - 備份表：`game_play_sessions_backup_20261031`、`user_game_status_backup_20261031` 已刪；`game_notes_backup_20261030` 仍在（RLS 開、無權限，使用者未決定是否刪）。
+
+
+## 14. 2026-10-31 下午增補（覆蓋前面衝突的敘述）
+
+- **`lib/askConfirm.tsx`**：現在有三個函式：`askConfirm(message, options)`→`Promise<boolean>`、`showNotice(message)`、**`askInput(message, {placeholder, defaultValue, confirmText, danger})`→`Promise<string | null>`**（取代 `window.prompt`，有輸入框，取消回傳 `null`）。訊息區 `maxHeight: 55vh` 可捲動、`overflowWrap: 'anywhere'`（長清單、長網址）。**第 13 節「尚未換的仍是管理者專用檔案」已過時：`AdminPanel`、`MemberAdmin`、`RulebookBatchUpload`、`DescriptionEditor`、`GameDocuments`、`LoyaltyAdmin`、`NewGatheringWizard`、`PlannedGatheringsAdmin`、`InAppBrowserNotice` 都已換（`87b3517`），專案裡沒有 `window.confirm`／`prompt`／`alert`。** 使用處舉例：刪除帳號要輸入暱稱（`MemberAdmin`）、移到垃圾桶超過 5 款要輸入「移除」（`AdminPanel`）、贈送免費券預設 1（`LoyaltyAdmin`）；複製聚會連結或網址失敗時改用 `showNotice` 顯示網址讓使用者長按複製。
+- **聚會設定（`LoyaltyAdmin.tsx`，`ca49514`）**：第 4 節「聚會設定由上而下：預計聚會、①新增聚會、②近期聚會」已改為：預計聚會（`PlannedGatheringsAdmin`，可收合）→**聚會管理**（標題右邊「＋ 新增聚會」開 `NewGatheringWizard`，流程沒變；其下「尚未結束」與「歷史聚會」）。分類（不改資料庫）：`gatheredOn >= 今天`，或已過但 `gathering_games.play_status` 還有 `null`，算尚未結束（日期由近到遠）；其餘歷史（預設收合，展開依月份分組、新到舊；過去且沒有指定遊戲者進歷史）。`loadUnconfirmed()` 直接讀 `gathering_games` 的 `gathering_id, play_status`（失敗就當全部已確認），在 `loadAll` 與 `setGameStatus` 後重讀；`statusOf(g)` 徽章：今天／尚未開始／待確認／已結束；`renderGathering(g)` 畫每一場的列與展開詳情（內容沒變：指定遊戲＋想玩者名字＋開團確認、人數上限、手動加入條列、聚會連結、刪除這一場）。樣式 `src/styles/lga-manage.css`（元件自己 import；`.lga-manage` 前綴縮小列與字級）。`lga-month*` 規則沿用在歷史月份分組（定義在 `vip.css`）。
+- **三種聚會的定義（使用者，不要改名）**：預計聚會＝預告可能開的局，玩家勾「我可以去」；新增聚會＝記錄誰實際到場並建立連結，被記錄或收到連結者評分完整當天指定遊戲任一款得 1 點，評分完整會自動新增當天一筆遊玩紀錄（總次數 +1，不動 `play_count`）；近期聚會＝曾開過的團，供管理者查詢（現在介面叫「聚會管理」的歷史部分）。
+- **樣式清理結果**：已刪 `vip.css` 的 `mn-*`、`my-notes.css` 的 `mh-list／item／head／thumb／headtext／title／date／content`、`leaderboard-filter.css` 的 `lbf-*` 與 `.lbf`、`leaderboard.css` 的 `lb-periods／lb-period／lb-note`。`leaderboard-filter.css` 只剩 `.lb-tabs-5`（`Leaderboard.tsx` 仍 import 它）；`leaderboard-search.css` 全部在用。第 4 節與第 11～13 節提到的「舊 `mh-*`／`mn-*`／`lbf-*`／`lb-periods` 沒人用、未清」已過時。`vip.css` 手機版那行 `gi .ma-backdrop .ac-modal` 使用者已手動刪掉（真正的 `.ma-backdrop .ac-modal` 手機版規則在約 2115 行）。**以後刪 class 前：用 PowerShell 掃 `src` 裡 `.tsx`／`.ts` 是否出現該名稱，並另外搜 `${` 動態拼接。**
+- **資料庫**：備份表 `game_notes_backup_20261030` 已刪，目前沒有任何備份表。`gathering_games` 目前只有 1 筆（2026-10-26 Raiders of Scythia，`played`）；開團紀錄預設值維持「管理者手動確認」，`get_game_play_history` 不改。
