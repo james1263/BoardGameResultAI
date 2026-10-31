@@ -17,6 +17,7 @@ import {
 import { useRatingCounts } from '../lib/useRatingCounts'
 import { useCommunityStats } from '../lib/useCommunityStats'
 import StatsTables from './StatsTables'
+import '../styles/stats-chart.css'
 import InfoHint from './InfoHint'
 import '../styles/leaderboard-filter.css'
 import '../styles/leaderboard-search.css'
@@ -142,7 +143,7 @@ export default function Leaderboard({
   const [board, setBoard] = useState<BoardKey>('want')
   const [period, setPeriod] = useState<Period>('all')
   const [openNames, setOpenNames] = useState<string[]>([])
-  const [isTableOpen, setIsTableOpen] = useState(false)
+  const [page, setPage] = useState<'games' | 'stats'>('games')
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -153,7 +154,10 @@ export default function Leaderboard({
 
   // 關掉排行榜時清掉搜尋文字
   useEffect(() => {
-    if (!isOpen) setQuery('')
+    if (!isOpen) {
+      setQuery('')
+      setPage('games')
+    }
   }, [isOpen])
 
   // 期間只對想玩、已玩有意義
@@ -518,21 +522,12 @@ export default function Leaderboard({
   }
   return (
     <>
-      {!isTableOpen && (
+      {(
         <>
           <div className="mylist-backdrop" onClick={onClose} />
           <aside className="mylist-drawer" role="dialog" aria-label="排行榜">
             <div className="mylist-header">
               <h2>排行榜</h2>
-              {canSeePeople && (
-                <button
-                  type="button"
-                  className="lb-table-btn"
-                  onClick={() => setIsTableOpen(true)}
-                >
-                  📊 統計表
-                </button>
-              )}
               <button
                 className="mylist-close"
                 type="button"
@@ -543,6 +538,40 @@ export default function Leaderboard({
               </button>
             </div>
 
+            {(canSeePeople || isAdmin) && (
+              <div className="lb-pages">
+                <button
+                  type="button"
+                  className={page === 'games' ? 'active' : ''}
+                  onClick={() => setPage('games')}
+                >
+                  遊戲榜
+                </button>
+                <button
+                  type="button"
+                  className={page === 'stats' ? 'active' : ''}
+                  onClick={() => setPage('stats')}
+                >
+                  統計表
+                </button>
+              </div>
+            )}
+
+            {page === 'stats' && (canSeePeople || isAdmin) ? (
+              <div className="mylist-body">
+                <StatsTables
+                  embedded
+                  boardGames={boardGames}
+                  communityStats={communityStats}
+                  ratings={ratings}
+                  people={people}
+                  adminRatings={adminRatings}
+                  isAdmin={isAdmin}
+                  onOpenGame={onOpenGame}
+                />
+              </div>
+            ) : (
+              <>
             <div className={`lb-tabs${boards.length > 4 ? ' lb-tabs-5' : ''}`}>
               {boards.map((item) => (
                 <button
@@ -786,20 +815,10 @@ export default function Leaderboard({
                 </ul>
               )}
             </div>
+              </>
+            )}
           </aside>
         </>
-      )}
-
-      {isTableOpen && (
-        <StatsTables
-          boardGames={boardGames}
-          communityStats={communityStats}
-          ratings={ratings}
-          people={people}
-          adminRatings={adminRatings}
-          isAdmin={isAdmin}
-          onClose={() => setIsTableOpen(false)}
-        />
       )}
     </>
   )
