@@ -11,6 +11,7 @@ import {
   type GameDocument,
 } from '../lib/useGameDocuments'
 import { docIcon, docLabel, indexSuffix } from '../lib/docLabels'
+import '../styles/rb-docs.css'
 
 type GameOption = { bgg_name: string; name: string }
 type DocKind = 'rulebook' | 'faq' | 'errata'
@@ -32,13 +33,10 @@ type StorageUsage = {
   files: { name: string; size: number }[]
 }
 
-type UploadedDoc = {
+type AllDoc = {
   id: string
   bgg_name: string
   title: string | null
-  doc_type: string
-  created_at: string
-  storage_path: string | null
 }
 
 // 免費方案的檔案儲存額度。請對照 Supabase 後台 Usage，數字不對就改這裡
@@ -256,22 +254,91 @@ function GamePicker({
   )
 }
 
+// ── 文件列表裡，單一遊戲展開後的文件 ───────────────────────
+
+function GameDocGroup({
+  bggName,
+  sizeByName,
+  onDeleted,
+}: {
+  bggName: string
+  sizeByName: Map<string, number>
+  onDeleted: () => void
+}) {
+  const docsApi = useGameDocuments(bggName)
+  const [error, setError] = useState('')
+
+  async function remove(doc: GameDocument) {
+    const text =
+      doc.source_type === 'upload'
+        ? '確定要刪除這份文件嗎？PDF 原檔與搜尋索引都會一起刪除，無法復原。'
+        : '確定要刪除這份文件連結嗎？'
+    if (!(await askConfirm(text))) return
+    setError('')
+    const message = await docsApi.deleteDoc(doc)
+    if (message) setError(message)
+    else onDeleted()
+  }
+
+  return (
+    <div className="rbd-body">
+      {docsApi.isLoading && <p className="rb-hint">載入文件中…</p>}
+      {docsApi.loadError && <p className="admin-error">{docsApi.loadError}</p>}
+      {error && <p className="admin-error">{error}</p>}
+      <ul>
+        {docsApi.docs.map((doc) => {
+          const size =
+            doc.source_type === 'upload' ? sizeByName.get(`${doc.id}.pdf`) : undefined
+          return (
+            <li key={doc.id} className="rb-docitem">
+              {doc.source_type === 'external' && isSafeUrl(doc.external_url) ? (
+                <a
+                  className="bgg-link"
+                  href={doc.external_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {docIcon(doc)} {docLabel(doc)} ↗
+                </a>
+              ) : (
+                <span>
+                  {docIcon(doc)} {docLabel(doc)}
+                  {indexSuffix(doc)}
+                  {size != null && <span className="rbd-size">　{formatMb(size)}</span>}
+                </span>
+              )}
+              <button
+                type="button"
+                className="admin-link"
+                onClick={() => remove(doc)}
+              >
+                刪除
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
 // ── 元件 ─────────────────────────────────────────────
 
 export default function RulebookBatchUpload() {
-  const [mode, setMode] = useState<'pdf' | 'link' | 'files'>('pdf')
+  const [mode, setMode] = useState<'pdf' | 'link' | null>(null)
   const [usage, setUsage] = useState<StorageUsage | null>(null)
   const [usageError, setUsageError] = useState('')
-  const [uploaded, setUploaded] = useState<UploadedDoc[]>([])
-  const [fileSearch, setFileSearch] = useState('')
+  const [allDocs, setAllDocs] = useState<AllDoc[]>([])
+  const [listSearch, setListSearch] = useState('')
+  const [openGames, setOpenGames] = useState<string[]>([])
+  const [listTick, setListTick] = useState(0)
 
   const loadUsage = useCallback(async () => {
     const [usageResult, docsResult] = await Promise.all([
       supabase.rpc('admin_rulebook_storage_usage'),
       supabase
         .from('game_documents')
-        .select('id, bgg_name, title, doc_type, created_at, storage_path')
-        .eq('source_type', 'upload')
+        .select('id, bgg_name, title')
         .order('created_at', { ascending: false }),
     ])
     if (usageResult.error) {
@@ -280,7 +347,7 @@ export default function RulebookBatchUpload() {
       setUsageError('')
       setUsage(usageResult.data as StorageUsage)
     }
-    if (!docsResult.error) setUploaded((docsResult.data ?? []) as UploadedDoc[])
+    if (!docsResult.error) setAllDocs((docsResult.data ?? []) as AllDoc[])
   }, [])
 
   useEffect(() => {
@@ -438,7 +505,7 @@ export default function RulebookBatchUpload() {
         if (check.data && check.data.length > 0) {
           updateRow(row.id, {
             status: 'error',
-            message: '這款已有同名的上傳文件。要更新請先在「貼連結」分頁選這款遊戲，刪除舊的。',
+            message: '這款已有同名的上傳文件。要更新請先在下方文件列表刪除舊的。',
           })
           continue
         }
@@ -469,6 +536,7 @@ export default function RulebookBatchUpload() {
 
     setRunning(false)
     void loadUsage()
+    setListTick((n) => n + 1)
   }
 
   function clearDone() {
@@ -500,20 +568,9 @@ export default function RulebookBatchUpload() {
     }
     setLinkTitle('')
     setLinkUrl('')
-    setLinkDone('已新增連結。')
-  }
-
-  async function deleteLinkDoc(doc: GameDocument) {
-    const text =
-      doc.source_type === 'upload'
-        ? '確定要刪除這份文件嗎？PDF 原檔與搜尋索引都會一起刪除，無法復原。'
-        : '確定要刪除這份文件連結嗎？'
-    if (!(await askConfirm(text))) return
-    setLinkError('')
-    setLinkDone('')
-    const message = await docsApi.deleteDoc(doc)
-    if (message) setLinkError(message)
-    else void loadUsage()
+    setLinkDone('已新增連結，可在下方文件列表看到。')
+    void loadUsage()
+    setListTick((n) => n + 1)
   }
 
   const pending = rows.filter((r) => r.status === 'ready' || r.status === 'error')
@@ -521,98 +578,62 @@ export default function RulebookBatchUpload() {
   const errorCount = rows.filter((r) => r.status === 'error').length
   const missingGame = pending.filter((r) => !r.bggName).length
   const sizeByName = new Map((usage?.files ?? []).map((f) => [f.name, f.size]))
-  const fileQuery = compact(fileSearch)
-  const shownUploaded = uploaded.filter((doc) => {
-    const game = games.find((g) => g.bgg_name === doc.bgg_name)
-    const text = compact(`${doc.bgg_name} ${game?.name ?? ''} ${doc.title ?? ''}`)
-    return !fileQuery || text.includes(fileQuery)
-  })
+  const listQuery = compact(listSearch)
+  const groups = (() => {
+    const byGame = new Map<string, AllDoc[]>()
+    for (const doc of allDocs) {
+      const list = byGame.get(doc.bgg_name) ?? []
+      list.push(doc)
+      byGame.set(doc.bgg_name, list)
+    }
+    return [...byGame.entries()]
+      .map(([bggName, docs]) => {
+        const name = games.find((g) => g.bgg_name === bggName)?.name || bggName
+        return { bggName, name, docs }
+      })
+      .filter((group) => {
+        if (!listQuery) return true
+        const text = compact(
+          `${group.bggName} ${group.name} ${group.docs.map((d) => d.title ?? '').join(' ')}`,
+        )
+        return text.includes(listQuery)
+      })
+      .sort((x, y) => x.name.localeCompare(y.name, 'zh-Hant'))
+  })()
+
+  function toggleGame(bggName: string) {
+    setOpenGames((current) =>
+      current.includes(bggName)
+        ? current.filter((n) => n !== bggName)
+        : [...current, bggName],
+    )
+  }
 
   return (
     <div className="rb">
       <UsageBar usage={usage} error={usageError} />
-      <div className="rb-seg" role="tablist">
+      <div className="rb-seg">
         <button
           type="button"
-          role="tab"
-          aria-selected={mode === 'pdf'}
+          aria-pressed={mode === 'pdf'}
           className={mode === 'pdf' ? 'active' : ''}
           disabled={running}
-          onClick={() => setMode('pdf')}
+          onClick={() => setMode(mode === 'pdf' ? null : 'pdf')}
         >
-          上傳 PDF
+          ＋ 上傳 PDF
         </button>
         <button
           type="button"
-          role="tab"
-          aria-selected={mode === 'link'}
+          aria-pressed={mode === 'link'}
           className={mode === 'link' ? 'active' : ''}
           disabled={running}
-          onClick={() => setMode('link')}
+          onClick={() => setMode(mode === 'link' ? null : 'link')}
         >
-          貼連結／管理文件
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'files'}
-          className={mode === 'files' ? 'active' : ''}
-          disabled={running}
-          onClick={() => setMode('files')}
-        >
-          已上傳
+          ＋ 貼連結
         </button>
       </div>
 
       {gamesError && <p className="admin-error">{gamesError}</p>}
-
-      {mode === 'files' && (
-        <>
-          <h3>已上傳的規則書</h3>
-          <input
-            type="search"
-            className="rb-search"
-            placeholder="搜尋遊戲名稱或檔名"
-            value={fileSearch}
-            onChange={(event) => setFileSearch(event.target.value)}
-          />
-          {shownUploaded.length === 0 ? (
-            <p className="rb-hint">沒有符合的上傳文件。</p>
-          ) : (
-            <ul className="rb-list">
-              {shownUploaded.map((doc) => {
-                const game = games.find((g) => g.bgg_name === doc.bgg_name)
-                const size = sizeByName.get(doc.storage_path ?? `${doc.id}.pdf`)
-                return (
-                  <li className="rb-row" key={doc.id}>
-                    <div className="rb-row-head">
-                      <span className="rb-file">
-                        {game?.name || doc.bgg_name}
-                        <small>
-                          {doc.title ?? ''}
-                          {size != null ? `　${formatMb(size)}` : ''}
-                        </small>
-                      </span>
-                      <button
-                        type="button"
-                        className="admin-link"
-                        onClick={() => {
-                          setLinkGame(doc.bgg_name)
-                          setLinkError('')
-                          setLinkDone('')
-                          setMode('link')
-                        }}
-                      >
-                        前往刪除
-                      </button>
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </>
-      )}
 
       {mode === 'pdf' && (
         <>
@@ -730,10 +751,10 @@ export default function RulebookBatchUpload() {
 
       {mode === 'link' && (
         <>
-          <h3>貼連結／管理文件</h3>
+          <h3>貼連結</h3>
           <p className="rb-hint">
-            先選遊戲，下面會列出這款已有的文件（可刪除），也可以新增影片或網頁連結。
-            網址是 YouTube、bilibili、vimeo 會自動當影片，其他當網頁。
+            先選遊戲，再貼影片或網頁連結。網址是 YouTube、bilibili、vimeo 會自動當影片，其他當網頁。
+            新增後會出現在下方文件列表。
           </p>
 
           <form className="rb-fields rb-linkform" onSubmit={submitLink}>
@@ -749,48 +770,6 @@ export default function RulebookBatchUpload() {
 
             {linkGame && (
               <>
-                <div className="rb-doclist">
-                  {docsApi.isLoading && <p className="rb-hint">載入文件中…</p>}
-                  {docsApi.loadError && (
-                    <p className="admin-error">{docsApi.loadError}</p>
-                  )}
-                  {!docsApi.isLoading &&
-                    !docsApi.loadError &&
-                    docsApi.docs.length === 0 && (
-                      <p className="rb-hint">這款還沒有任何文件。</p>
-                    )}
-                  <ul>
-                    {docsApi.docs.map((doc) => (
-                      <li key={doc.id} className="rb-docitem">
-                        {doc.source_type === 'external' &&
-                          isSafeUrl(doc.external_url) ? (
-                          <a
-                            className="bgg-link"
-                            href={doc.external_url}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {docIcon(doc)} {docLabel(doc)} ↗
-                          </a>
-                        ) : (
-                          <span>
-                            {docIcon(doc)} {docLabel(doc)}
-                            {indexSuffix(doc)}
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          className="admin-link"
-                          onClick={() => deleteLinkDoc(doc)}
-                        >
-                          刪除
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <strong>新增連結</strong>
                 <label className="admin-field">
                   <span>
                     標題（選填，例如：官方 FAQ）
@@ -827,6 +806,57 @@ export default function RulebookBatchUpload() {
             )}
           </form>
         </>
+      )}
+
+      <div className="rbd-title">
+        <h3>文件列表</h3>
+        <small>
+          {allDocs.length > 0
+            ? `${new Set(allDocs.map((d) => d.bgg_name)).size} 款遊戲、${allDocs.length} 份文件`
+            : ''}
+        </small>
+      </div>
+      <input
+        type="search"
+        className="rb-search"
+        placeholder="搜尋遊戲名稱或文件名"
+        value={listSearch}
+        onChange={(event) => setListSearch(event.target.value)}
+      />
+      {groups.length === 0 ? (
+        <p className="rb-hint">
+          {allDocs.length === 0 ? '還沒有任何文件。' : '沒有符合的文件。'}
+        </p>
+      ) : (
+        <ul className="rbd-list">
+          {groups.map((group) => {
+            const open = openGames.includes(group.bggName)
+            return (
+              <li className="rbd-group" key={group.bggName}>
+                <button
+                  type="button"
+                  className="rbd-head"
+                  aria-expanded={open}
+                  onClick={() => toggleGame(group.bggName)}
+                >
+                  <span className="rbd-name">{group.name}</span>
+                  <span className="rbd-count">{group.docs.length} 份</span>
+                  <span className="rbd-arrow" aria-hidden="true">
+                    {open ? '▴' : '▾'}
+                  </span>
+                </button>
+                {open && (
+                  <GameDocGroup
+                    key={`${group.bggName}-${listTick}`}
+                    bggName={group.bggName}
+                    sizeByName={sizeByName}
+                    onDeleted={() => void loadUsage()}
+                  />
+                )}
+              </li>
+            )
+          })}
+        </ul>
       )}
     </div>
   )
