@@ -1,6 +1,6 @@
 # 桌遊規則助手 — 懶人包（給下一個 AI）
 
-> 最後更新：2026-10-31 晚（已併入舊版 `生成後.md` 全部內容，以及本輪四批：聚會設定第一批〔想玩者名字、開團確認併入、玩家條列〕、管理者可設暱稱、抽屜標題顏色修正、**「我的心得」改版**、**新增聚會一次完成的全螢幕流程**；`生成後.md` 已重置）。
+> 最後更新：2026-10-31 深夜（已併入 `生成後.md` 全部內容：聚會得點自動建遊玩紀錄、規則區改版、確認視窗改頁面內〔askConfirm〕、卡片標題、清單式留言、底部導覽問題分析；`生成後.md` 已重置）。**第 2 節最上面的「2.0」是最新增補，與其他段落衝突時以它為準。**
 > **分工**：本檔＝現況、待辦、合作規則；`PROJECT_CONTEXT.md`＝架構、資料庫、功能規則、規則助手設計；`生成後.md`＝這兩份之後的修改紀錄與文件維護計數（**開工前三份都要讀，衝突時以 `生成後.md` 為準**）。
 > **文件維護規則**見第 9 節。
 
@@ -10,7 +10,20 @@
 - 網址 https://board-game-result-ai.vercel.app/（GitHub `master` → Vercel 自動部署）。React + TypeScript + Vite + Supabase（免費方案，首爾）。
 - 本機 `D:\BoardGameResultAI`（Windows、PowerShell、`npm.cmd`）；規則書 PDF 放 `D:\rulebooks\`（專案外）。多台電腦見 PROJECT_CONTEXT 第 9 節。
 
-## 2. 目前狀態（2026-10-31 晚）
+## 2. 目前狀態（2026-10-31 深夜）
+
+### 2.0 【最新增補：2026-10-31 深夜，本檔其他段落與此衝突時以此為準】
+
+- **git**：origin/master 最新 **`5181822`**。這輪 push：`0871d43`（統計只計已玩）→`20034c8`（規則連結與影片改版＋統計 ⓘ 微調）→`e12d87b`（討論留言頁面內確認）→`5181822`（共用確認視窗＋卡片標題固定兩行）。**之後還交付了「清單式留言」那批（`NoteListItem.tsx`、`note-list.css`、`GameNotesBoard.tsx`、`ClubBoard.tsx`），使用者是否 build／push 尚未回報，要問。** 三份 .md 與 `生成後.md` 要等使用者 commit／push（不計次數）。
+- **聚會得點自動建遊玩紀錄（已完成、已測，不用再測）**：觸發器 `aa_ratings_add_session`（`AFTER INSERT OR UPDATE ON public.game_ratings`，呼叫 `add_session_from_rating()`；`security definer`、`search_path=''`；**撤銷：`drop trigger aa_ratings_add_session on public.game_ratings;`**）。規則（使用者決定）：①七項評分「從不完整變完整」那次才觸發；②只對「我出席、聚會日已到（台北）、該款是指定遊戲」的**日期最近**一場；③新增一筆 `game_play_sessions`（`played_on`＝聚會日，不動 `play_count`）；④同人同款同日已有紀錄不重複；⑤`exempt` 免評分者不自動增加；⑥舊聚會不回溯；⑦與 `play_status` 互不影響。**所以「出席不自動算玩過」改為「出席不自動算玩過，但評分完整會自動建當天遊玩紀錄」。** 觸發器出錯不吞錯（會讓該次評分一起失敗，刻意）。五個情境用「自動還原的交易」測過全通過（結果 0、1、1、1；沒指定、沒出席皆不新增）。備份表 `game_play_sessions_backup_20261031`、`user_game_status_backup_20261031` 仍在（RLS 開、無權限），**功能穩定幾天後要問使用者是否刪除**。`game_ratings` 七項欄位真名：`overall, like_score, player_impact_score, communication_score, change_score, unique_score, keep_score`。尚未實測：我的場次「我這場有玩這款」勾選與新紀錄是否衝突（理論上沿用同日同款）。
+- **開團紀錄預設值＝不改**（`gathering_games` 只有 3 筆：1 played、1 cancelled、1 未確認且日期已到；使用者自己在聚會設定按一下）。
+- **我的統計**：`MyList.tsx` 的 `stats` 加 `if (!entry?.played) continue`，總次數、總時數、TOP 只算已玩；「移除」仍不清 `play_count`（使用者決定）。概況頁間距與 ⓘ 微調在 `vip.css` 最底下（`.mystat-*`）。
+- **遊戲規則區改版**（`20034c8`，使用者實測 OK）：`src/GameDocuments.tsx` 整份改寫，樣式 `src/styles/game-docs.css`（`gd-*`）；組標題小灰字、每份文件一列整列可點、管理者「刪除」在列右；上傳 PDF 仍只有管理者看得到。舊 class `docs-group-title`、`game-docs-item`、`bgg-link`、`admin-link` 在此元件已不用，可之後清。
+- **遊戲卡片標題忽上忽下（已修、使用者實測 OK）**：`vip.css` 最底下 `.game-card .game-info h3 { display:flex; align-items:center; justify-content:center; min-height:2.7em; line-height:1.3; text-align:center }`。
+- **確認視窗改頁面內（重要）**：Google App／LINE 等內建瀏覽器**不顯示 `window.confirm`／`window.alert`（直接當成取消）**，所以「刪除沒反應」。已新增 `src/lib/askConfirm.tsx`（`askConfirm(message, {confirmText, cancelText, danger})` 回 `Promise<boolean>`、`showNotice(message)`；自己用 `createRoot` 掛到 `document.body`，z-index 2000，**`App.tsx` 不用改**），並換掉：`ClubBoard`、`RatingSection`、`MyNotes`、`GatheringNotePanel`（`handleCopy` 改 async）、`AddPlayLog`（含三個 `window.alert`）；`GameNotesBoard` 用留言下方的兩段式確認（「確定刪除？／取消」，`pending` 狀態）。**使用者實測五項皆 OK。** **尚未換**：管理者專用的 `AdminPanel`、`GameDocuments`、`LoyaltyAdmin`（8 處含 `prompt`）、`MemberAdmin`（含 `prompt`）、`NewGatheringWizard`、`PlannedGatheringsAdmin`、`RulebookBatchUpload`、`DescriptionEditor`、`InAppBrowserNotice`（`prompt` 只在複製失敗時）——管理者用電腦所以不急；`PlaySessions.tsx`（刪遊玩紀錄，**朋友會用到，使用者還沒傳**）。`NotePrompt.tsx`、`RulebookAssistant.tsx` 是搜尋誤判（名字含 `Prompt(`），不需改。以後新增刪除／確認一律用 `askConfirm`，不要用 `window.confirm`。
+- **清單式留言（已交付，待 build／push／實測）**：新元件 `src/components/NoteListItem.tsx`（收合：名字・「我的」・日期、遊戲 chip〔可點開討論〕、內容 2 行＋省略號；點一下展開全文與操作按鈕）＋`src/styles/note-list.css`（`nl-*`，`-webkit-line-clamp: 2`，想一行改 1）。套用在 `GameNotesBoard`（討論分頁）與 `ClubBoard`（留言板）；發表／編輯框 `rows` 3→2＋`nl-short`。**`MyNotes`（我的心得）尚未改**，等使用者看過再決定。
+- **底部五顆導覽在 Google App 內建瀏覽器「點了沒反應、要再點一次」（未解決，下一批第一件事）**：使用者說 Safari 較順、**不要加「請用 Safari」提示（很多朋友用 Android）**。已讀 `useBackClose.ts`、`TopBar.tsx`、`sitebar.css`：`sitebar.css` 的 `.sb-item` 沒有 `touch-action: manipulation`（文件說在別處，未確認）；`TopBar` 按鈕只有 `onClick`；`App.tsx` 的 `goPage` 在 261～279 行，`useBackClose(() => setActivePage(null), activePage !== null || isFilterOpen)` 在 374～376 行（**這兩段使用者還沒貼**）。**假設（未驗證）**：①手機版抽屜／遮罩 `bottom` 用 `--nav-h`，內建瀏覽器的 `env(safe-area-inset-bottom)`／視窗高度與 Safari 不同，遮罩可能蓋到導覽列上緣，第一次點到遮罩（關抽屜），第二次才點到按鈕；②`useBackClose` 的 `history.go(-n)` 在內建瀏覽器行為不同。**請使用者貼**：`App.tsx` 255～285、365～380 行；`Select-String -Path src\styles\*.css -Pattern "nav-h|touch-action"` 的結果；並問「開著哪個視窗時最容易發生」。**不要先動 `useBackClose`（影響所有視窗）。**
+
 
 - **git**：分支 `master`，最新 push **`d7e7fb9`**（新增聚會全螢幕流程）；之前依序是 `d2b2e26`（我的心得改版＋標題顏色修正）、`59c0526` 與 `3652916`（聚會設定第一批＋管理者暱稱）、`1e07eda`（上一輪三份 .md）、`5401962`（清理 `vip.css`）、`79281a2`、`320ab9e`、`73ece9d`、`370b91b`、`af8c15e`。三份 .md（本次重新產生）在 `d7e7fb9` 之後，**要等使用者 commit／push（該次不計入計數）**。使用者有兩台電腦（路徑同為 `D:\BoardGameResultAI`），**開工先 `git pull`**、`git log --oneline -5`。PowerShell 指令貼 VS Code 終端機（曾誤貼進 Supabase SQL Editor）；**Select-String 的中文搜尋字串在終端機可能亂碼而找不到結果，改搜英文或程式碼片段**。`Unlink of file '.git/objects/pack/…idx' failed (y/n)` 回 `n` 即可。
 - **2026-10-31 新增／變動（詳見第 4～5 節）**：
@@ -59,6 +72,9 @@ N1～N6、我的桌遊整合、贈送免費券、新遊戲置頂、我的場次�
 
 ## 4. 待辦順序（一次一批，上一批實測完才進下一批）
 
+> **深夜更新（以此為準）**：①先問清單式留言那批是否 build／push、手機看起來如何；②**底部五顆導覽卡住**（第 2.0 節最後一項，要使用者貼 App.tsx 片段與 CSS 搜尋結果）；③`PlaySessions.tsx` 與管理者檔案的確認視窗換成 `askConfirm`（先請使用者傳 `PlaySessions.tsx`）；④`MyNotes` 是否也改清單式；⑤使用者說「一目了然」的畫面要再問是哪一頁。下面舊清單中：第 3 項（規則區改版）、第 5 項（統計擁擠）、第 6 項（已玩次數自動 +1，**已改做成「評分完整自動建遊玩紀錄」，見 2.0**）**都已完成**，不要再做。
+
+
 0. **先問**：使用者在哪台電腦、`git pull`／`git status`、`git log --oneline -5`（最新應為 `d7e7fb9` 或其後；確認三份 .md 是否已 commit／push）；**實測結果**（第 5 節；使用者多半沒回報，**特別是本輪四批：我的心得、新增聚會流程、聚會設定第一批、管理者暱稱與標題顏色**）；`gathering_notes` 權限檢查（SQL：`select grantee, privilege_type from information_schema.role_table_grants where table_schema='public' and table_name='gathering_notes' and grantee in ('anon','authenticated');` 應「No rows returned」，使用者尚未回報；`game_notes`、`planned_*` 三張表已確認）；`get_rating_summaries()` 是否排除沒玩過遊戲的五項；`loyalty_grants` 權限與計入方式。
 1. **（已做，待實測）管理者可設暱稱**：見第 2 節。若實測發現管理者在 `player_profiles` 仍沒有暱稱、名單空白，再回頭看 `PlayerPanel.tsx`／`TopBar.tsx`。
 2. **預計聚會顯示「想玩的人」（前端，2026-10-31）**：SQL `admin_get_want_to_play_people()` 已建（回 `bgg_name, user_id, nickname, contact_name`；使用者貼回權限結果為 `postgres`、`authenticated`、`service_role` 有 EXECUTE，沒有 `anon`）；**回傳型別要到執行時才驗得出，接好前端後請使用者實測**。使用者已上傳 `PlannedGatheringsAdmin.tsx`。預設做法：只給管理者；遊戲旁「社群有 N 人想玩 ▾」可點開，列出「暱稱（LINE／FB）」；暱稱空白顯示「（未設暱稱）」；函式失敗整段不出現；不動 `admin_get_want_to_play`。正式聚會（`LoyaltyAdmin.tsx`）要不要也加名單：未討論。
@@ -99,6 +115,8 @@ N1～N6、我的桌遊整合、贈送免費券、新遊戲置頂、我的場次�
 - **查空間用量 SQL（Supabase SQL Editor，一次一段）**：①`select bucket_id, count(*) as 檔案數, round(sum((metadata->>'size')::bigint) / 1024.0 / 1024.0, 1) as mb from storage.objects group by bucket_id;` ②`select pg_size_pretty(pg_total_relation_size('public.rulebook_chunks'));` ③`select pg_size_pretty(pg_database_size(current_database()));`
 
 ## 6. 使用者的決定（不要推翻）
+
+- **2026-10-31 深夜新增**：①**不要在網站加「請改用 Safari」之類的提示**（很多朋友用 Android，要真的修好內建瀏覽器的操作）；②留言一律用**清單式**（名字、日期、遊戲、內容 2 行省略，點開看全文，輸入框不要太高）；③確認視窗一律用頁面內的 `askConfirm`；④評分完整會自動建當天遊玩紀錄（規則見 2.0）；⑤開團紀錄預設值不改；⑥統計只算已玩、「移除」不清 `play_count`。
 
 - **規則助手＝零生成式 AI API 費用**：只做「檢索＋複製提示詞給使用者自己的 AI」；只給 VIP／管理者；網站內容用「另存成 PDF 再上傳」；搜尋紀錄保留 7 天、台北時間 0 點重置額度（VIP 30 次、管理者不限）；不存問題內容；只有找到結果才扣次數；授權風險由使用者自行評估。
 - **上傳的 PDF 只給 AI 檢索，不公開**；第一版不做 OCR；PDF 太大只提醒不阻擋。
@@ -150,3 +168,4 @@ N1～N6、我的桌遊整合、贈送免費券、新遊戲置頂、我的場次�
 - 2026-10-31：使用者 push `0fc42d5`、`2e3a06e`（第 1、2 次，上一輪更新 `生成後.md` 後的計數），`生成後.md` 更新次數滿 3，已重新產生兩份主文件（併入第十八～二十批），`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。
 - 2026-10-31（晚）：使用者說上一個聊天室生成 `QUICKSTART.md` 到一半中斷、沒有產出檔案，**不要假設別處有新版**；使用者要求提前重新產生三份 .md（視同「更新文件」）。已併入舊版 `生成後.md` 全部內容與當天聊天室資訊，`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。`79281a2`、`5401962` 兩次 push 已併入主文件，不再計數。
 - 2026-10-31（深夜）：使用者 push `59c0526`、`d2b2e26`、`d7e7fb9`（上一輪更新 `生成後.md` 後共 3 次，`生成後.md` 更新次數滿 3），使用者說「更新文件」，已重新產生三份 .md（併入聚會設定第一批、管理者暱稱、標題顏色、我的心得、新增聚會流程）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。
+- 2026-10-31（深夜）：使用者在額度快用完時說「可以先更新這三份 .md」，已重新產生（以增補方式併入 `生成後.md` 全部內容與本輪對話）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。這輪已 push 的 `0871d43`、`20034c8`、`e12d87b`、`5181822` 都已併入，不再計數。

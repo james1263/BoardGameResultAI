@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-10-31 深夜（已併入舊版 `生成後.md` 全部內容與本輪：聚會設定第一批、管理者可設暱稱、抽屜標題顏色修正、我的心得改版〔新函式 `get_my_all_game_notes`〕、新增聚會全螢幕流程；前次已併入 `vip.css` 清理、新增遊玩紀錄發表到討論、想玩名單函式等）。
+> 最後更新：2026-10-31 深夜（已併入 `生成後.md` 全部內容；**請同時讀 `QUICKSTART.md` 第 2.0 節與本檔第 11 節，與其他段落衝突時以它們為準**）。
 
 ## 1. 專案簡介與技術架構
 
@@ -101,6 +101,8 @@
 
 ## 5. 帳號、VIP、聚會、集點、免費券
 
+> **注意：下文「出席不自動算玩過」已更新為「出席不自動算玩過，但七項評分從不完整變完整時，會自動建當天遊玩紀錄」，詳見第 11 節。**
+
 - **層級**：訪客 → 一般登入 → VIP（評分、集點卡、報到、名單、統計表、規則助手、留言、近期聚會）→ 管理者（也算 VIP，不顯示集點卡）。
 - **登入**：只用 Google OAuth（專案 `board-game-site`，已發布正式版、只用基本範圍；**不要新增敏感範圍**；接近 80 人時回「目標對象」頁確認）。不採匿名帳號、不做 Email 登入。管理者 Gmail 同時 Google 登入會對到管理者帳號，測玩家要用另一個 Google 帳號。
 - **LINE／FB 內建瀏覽器不能 Google 登入**：所有入口走 `googleLogin.ts` 的 `signInWithGoogle()`，偵測後顯示 `InAppBrowserNotice`；聚會連結結尾加 `&openExternalBrowser=1`。
@@ -174,3 +176,11 @@
 - 「攻略」沒有資料來源；「俱樂部近期動態」「近期熱門」「快速功能入口」尚未採用。使用者偏好概覽走「桌遊圖鑑風＋保留米白深綠配色」。
 
 **近期聚會的設計細節（2026-10-30 定稿，已實作）**：一筆預計聚會＝一個日期＋選填開始時間＋標題＋遊戲清單，同一天可多場；VIP 一鍵「我可以去」可隨時取消；**VIP 看不到意願人數與名單、只有管理者看得到**；第一版不做想玩人數統計、人數上限、候補、截止日、通知；取消保留並標示（日期過了才從列表隱藏）；轉正式由管理者手動、保留 `gathering_id` 關聯、**不自動複製遊戲清單、不把意願名單變成報名名單**；過期隱藏但資料保留；入口在俱樂部首頁；管理者區塊在管理中心「聚會設定」最上面。
+
+## 11. 2026-10-31 深夜增補（覆蓋前面衝突的敘述）
+
+- **資料庫**：新函式 `add_session_from_rating()`（`plpgsql`、`security definer`、`search_path=''`、`revoke ... from public, anon, authenticated`）＋觸發器 `aa_ratings_add_session`（`game_ratings` 的 `AFTER INSERT OR UPDATE FOR EACH ROW`；名稱 `aa_` 開頭讓它排在 `settle_vouchers_on_rating` 之前）。`game_ratings` 上共 4 個觸發器：`game_ratings_set_updated_at`（BEFORE UPDATE）、`aa_ratings_add_session`、`settle_vouchers_on_rating`、`trg_ratings_mark_played`。邏輯：新值七項皆非空；UPDATE 時舊值也完整就跳過；用 `gatherings ⋈ gathering_attendees（本人）⋈ gathering_games（該款）`找 `gathered_on <= 今天（台北）` 中日期最近一場；`pg_advisory_xact_lock(hashtextextended(user|game|date,0))`；`not exists` 同人同款同日才 insert（`player_count` null、`note` ''）。**點數仍是 `loyalty_day_status` 即時計算，不是存起來的**。撤銷：`drop trigger aa_ratings_add_session on public.game_ratings;`。`game_play_sessions` 沒有同人同款同日唯一限制（刻意，補記允許重複但前端會先確認）。
+- **前端新增檔案**：`src/lib/askConfirm.tsx`（取代 `window.confirm`／`alert`；Google App 等內建瀏覽器不支援原生視窗）、`src/components/NoteListItem.tsx`＋`src/styles/note-list.css`（清單式留言，`nl-*`，元件自己 import）、`src/GameDocuments.tsx` 改寫＋`src/styles/game-docs.css`（`gd-*`）。`GameNotesBoard` 的刪除／隱藏用 `pending` 狀態做頁面內兩段式確認。
+- **樣式**：`vip.css` 最底下新增 `.game-card .game-info h3`（卡片標題固定兩行高度）與 `.mystat-*` 間距、`.mystat-i {margin-left:3px}`、`.mystat-box-btn span {white-space:nowrap}`。
+- **已知未解**：Google App 內建瀏覽器底部五顆導覽「點了沒反應要再點」，原因未確認（假設見 QUICKSTART 2.0）；管理者專用檔案與 `PlaySessions.tsx` 仍有原生 `confirm`／`prompt`。
+- **三種聚會的定義**（使用者）：預計聚會＝預告可能開的局；新增聚會＝記錄誰實際到場並建立連結，被記錄或收到連結者評分得點；近期聚會＝曾開過的團供管理者參考。
