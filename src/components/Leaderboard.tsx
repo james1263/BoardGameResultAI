@@ -164,7 +164,7 @@ export default function Leaderboard({
   // 每次打開排行榜都重新讀一次人數與名單，才會是最新的
   useEffect(() => {
     if (!isOpen) return
-    reloadStats()
+    // reloadStats()
     if (canSeePeople) reloadPeople()
     if (isAdmin) reloadAdminRatings()
   }, [isOpen, canSeePeople, isAdmin, reloadPeople, reloadAdminRatings, reloadStats])
