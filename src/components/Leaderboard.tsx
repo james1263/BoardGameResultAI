@@ -8,6 +8,11 @@ import {
   type PeopleApi,
 } from '../lib/useGamePeople'
 import { rankGames } from '../lib/leaderboards'
+import {
+  DIFFICULTY_LEVELS,
+  DIFFICULTY_LEVEL_INFO,
+  getDifficultyLevel,
+} from '../lib/libraryTypes'
 import { usePlayTotals } from '../lib/usePlayTotals'
 import { useCommunityStats } from '../lib/useCommunityStats'
 import StatsTables from './StatsTables'
@@ -38,7 +43,7 @@ type Filters = {
   category: string // '' = 不限
   players: string // 'all' | '1' | '2' | '3-4' | '5-6' | '7+'
   time: string // 'all' | '30' | '60' | '120' | '120+'
-  difficulty: string // 'all' | 'easy' | 'mid' | 'hard'
+  difficulty: string // 'all' | '1'～'5'（與主畫面同一套五級）
 }
 
 const NO_FILTERS: Filters = { category: '', players: 'all', time: 'all', difficulty: 'all' }
@@ -60,14 +65,13 @@ const TIME_OPTIONS = [
   { key: '120+', label: '120 分鐘以上' },
 ]
 
-// 難度分界是暫定值（BGG 難度 1～5），想調整就改這裡
-const EASY_MAX = 2
-const MID_MAX = 3
+// 難度五級：沿用主畫面的分級（libraryTypes 的 getDifficultyLevel）
 const DIFFICULTY_OPTIONS = [
   { key: 'all', label: '不限' },
-  { key: 'easy', label: `簡單（${EASY_MAX} 以下）` },
-  { key: 'mid', label: `中等（${EASY_MAX}～${MID_MAX}）` },
-  { key: 'hard', label: `偏難（${MID_MAX} 以上）` },
+  ...DIFFICULTY_LEVELS.map((level) => ({
+    key: String(level),
+    label: `${DIFFICULTY_LEVEL_INFO[level].name}（${DIFFICULTY_LEVEL_INFO[level].range}）`,
+  })),
 ]
 
 function matchesFilters(game: BoardGame, f: Filters): boolean {
@@ -103,9 +107,7 @@ function matchesFilters(game: BoardGame, f: Filters): boolean {
   if (f.difficulty !== 'all') {
     const d = Number(game.bggDifficulty)
     if (!Number.isFinite(d) || d <= 0) return false
-    if (f.difficulty === 'easy' && d > EASY_MAX) return false
-    if (f.difficulty === 'mid' && !(d > EASY_MAX && d < MID_MAX)) return false
-    if (f.difficulty === 'hard' && d < MID_MAX) return false
+    if (String(getDifficultyLevel(d)) !== f.difficulty) return false
   }
   return true
 }
