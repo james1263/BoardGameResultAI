@@ -2596,3 +2596,26 @@ body {
 .mylist-drawer .club-top h2 {
   color: #fbf7ec !important;
 }
+
+/* 我的統計：概況頁間距 */
+.mystat-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.mystat-box {
+  min-width: 0;
+}
+.mystat-title-row {
+  margin: 24px 0 10px;
+}
+.mystat-topn {
+  gap: 6px;
+  flex-shrink: 0;
+}
+.mystat-topn-btn {
+  min-width: 30px;
+  height: 28px;
+  font-size: 13px;
+}
+.mystat-i {
+  margin-left: 6px;
+}
