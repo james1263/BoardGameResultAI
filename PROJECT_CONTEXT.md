@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-10-31 下午（已併入 `生成後.md` 全部內容；**請同時讀 `QUICKSTART.md` 第 2.0（最新）節與本檔第 11、12、13、14 節，與其他段落衝突時以它們為準**）。
+> 最後更新：2026-11-01（已併入 `生成後.md` 全部內容；**請同時讀 `QUICKSTART.md` 第 2.0（最新）節與本檔第 11、12、13、14、15 節，與其他段落衝突時以它們為準**）。
 
 ## 1. 專案簡介與技術架構
 
@@ -211,3 +211,20 @@
 - **三種聚會的定義（使用者，不要改名）**：預計聚會＝預告可能開的局，玩家勾「我可以去」；新增聚會＝記錄誰實際到場並建立連結，被記錄或收到連結者評分完整當天指定遊戲任一款得 1 點，評分完整會自動新增當天一筆遊玩紀錄（總次數 +1，不動 `play_count`）；近期聚會＝曾開過的團，供管理者查詢（現在介面叫「聚會管理」的歷史部分）。
 - **樣式清理結果**：已刪 `vip.css` 的 `mn-*`、`my-notes.css` 的 `mh-list／item／head／thumb／headtext／title／date／content`、`leaderboard-filter.css` 的 `lbf-*` 與 `.lbf`、`leaderboard.css` 的 `lb-periods／lb-period／lb-note`。`leaderboard-filter.css` 只剩 `.lb-tabs-5`（`Leaderboard.tsx` 仍 import 它）；`leaderboard-search.css` 全部在用。第 4 節與第 11～13 節提到的「舊 `mh-*`／`mn-*`／`lbf-*`／`lb-periods` 沒人用、未清」已過時。`vip.css` 手機版那行 `gi .ma-backdrop .ac-modal` 使用者已手動刪掉（真正的 `.ma-backdrop .ac-modal` 手機版規則在約 2115 行）。**以後刪 class 前：用 PowerShell 掃 `src` 裡 `.tsx`／`.ts` 是否出現該名稱，並另外搜 `${` 動態拼接。**
 - **資料庫**：備份表 `game_notes_backup_20261030` 已刪，目前沒有任何備份表。`gathering_games` 目前只有 1 筆（2026-10-26 Raiders of Scythia，`played`）；開團紀錄預設值維持「管理者手動確認」，`get_game_play_history` 不改。
+
+## 15. 2026-11-01 增補（覆蓋前面衝突的敘述）
+
+- **排行榜三頁（`75618ba`，畫面實測使用者回報「還沒測」）**：`Leaderboard.tsx` 的 `page: 'games' | 'players' | 'stats'`（關閉排行榜重設為 `games`；切換列 `lb-pages` 只有 `canSeePeople || isAdmin` 才顯示）。遊戲榜只剩想玩／已玩／整體評分／留下來四顆（`BoardKey` 已移除 `'raters'`／`'people'`；第 4 節與第 12 節「VIP／管理者五顆榜」「最常玩」已過時）。右上「📊 統計表」鈕與 `lb-table-btn` 已移除，統計表改為第三頁、嵌在 `mylist-body`。難度篩選改五級（`3ce2d32`）：入門（<1.8）／輕度（<2.6）／中度（<3.2）／中重（<3.8）／重度，用 `libraryTypes.ts` 的 `getDifficultyLevel`，沒難度資料的遊戲選任何難度都被排除（第 12 節「≤2 簡單、2～3 中等、≥3 偏難」已過時）。
+- **統計表分布圖（`9f2f1e1`）**：`StatsTables.tsx` 新增選填 `embedded`、`onOpenGame`，`onClose` 改選填；分頁「遊戲總表｜分布圖｜（管理者）成員 × 遊戲矩陣」；`ScatterPanel`（原生 SVG、無新套件）X／Y 軸各一個下拉（想玩人數、已玩人數、整體評分、留下來評分、評分人數；預設 X＝整體、Y＝留下來），點選後同位置多款合併成較大的點並全部列在下方、有「查看遊戲」；缺值（評分不滿 5 人）不畫並註明排除幾款；`niceScale` 算刻度。樣式 `src/styles/stats-chart.css`（`lb-pages`、`st-embedded`、`sc-*`、`pb-who`、`lb-pages.pb-toggle`）；`.st-modal.st-embedded` 是猜的。
+- **玩家榜**：新檔 `src/components/PlayersBoard.tsx`、`src/lib/usePlayerStats.ts`（呼叫 `get_player_stats`，型別 `PlayerStat`／`PlayerRating`：`g, o, k, s`）。`Leaderboard` 呼叫 `usePlayerStats(isOpen && (canSeePeople || isAdmin) && page === 'players')`。四個子分頁「玩過最多／評過最多／評分／綜合分數」；款數榜前 10 名同分並列（有搜尋時列出符合者與原名次）；評分與綜合分數榜每筆＝玩家→遊戲→分數（綜合顯示「N／30」），「最高／最低」切換，最多 20 筆並註明總筆數，同分並列、依遊戲名再依暱稱排序；搜尋玩家暱稱（評分榜也搜遊戲名）；「隱藏管理者」勾預設不勾，四個子分頁都有；`InfoHint` 說明規則與綜合分數定義；管理者看到「暱稱（LINE／FB）」，VIP 只有暱稱。
+- **新增資料庫函式**（皆 `plpgsql stable security definer`、`search_path=''`、`revoke ... from public, anon`、`grant execute ... to authenticated`；使用者貼回權限皆只有 `postgres`／`authenticated`／`service_role`）：
+  - **`get_player_stats()`** → `nickname, contact_name, admin_account, played_count, rated_count, ratings(jsonb [{g,o,k,s}])`：VIP 或管理者才能呼叫（否則 `not vip`）；`contact_name` 只有管理者拿得到；**`hide_in_lists` 的玩家 VIP 看不到、管理者看得到**；只列 `vip_members` ∪ `admin_users`；排除垃圾桶遊戲（`board_games.removed_at is null`）；`s`＝六項皆非空才是加總（喜歡、影響、溝通、變化、獨特、適合留下來），否則 null，不含整體。**管理者帳號（`admin_users` 排序第一位，視為 james）的「評過款數」與評分明細不是用他的 `game_ratings`，而是用和 `get_rating_summaries()` 同一套 CSV 換算**（玩過＝`ranking_engine` 為整數；整體依 `ranking_engine` ≤25→10、≤50→9、≤65→8、≤80→7、其餘 6；適合留下來依 `score_rank` 在玩過遊戲間的 `rank()` ≤30→5、≤60→4、≤90→3、其餘 2；五項度取 `*_emoji` 去掉 U+FE0F 與空白後的字元數，上限 5、0 變 null）。**已玩款數（`played_count`）對所有人包括 james 都用 `user_game_status.played`。** 管理者不只一位時只有第一位走 CSV。函式內型別要到執行時才驗得出。
+  - **`get_rating_counts()`**（`50ae63f`）→ `bgg_name, rating_count`：只數 `vip_members` 且排除 `admin_users` 的 `game_ratings`；非 VIP／管理者丟 `not vip`。**現在沒人用。**
+  - **`get_play_totals()`**（第 12 節）也**沒人用**（排行榜「最常玩」榜已移除）。
+- **近期聚會併進集點卡頁（`7ac0210`）**：見 QUICKSTART 2.0（最新）。第 4 節俱樂部首頁的「🎲 近期聚會」列、`view` 的 `upcoming`、「俱樂部圖示徽章」已過時：`MyList.tsx` 的 `View` 現為 `home | stats | gatherings | addplay | notes | board`；集點卡畫面 VIP 非管理者有 `loyaltyTab`（`card`｜`planned`，沿用 `lb-tabs`／`lb-tab`，每次開啟預設 `card`）；`TopBar.tsx` prop `loyaltyBadge`（`sb-count` 數字徽章在「集點卡」，可能與 `sb-dot` 並存）；`App.tsx`：`usePlannedUnseen(..., vip.isVip && !isAdmin)`、`loyaltyBadge={planned.unseenCount}`；看到近期聚會分頁就呼叫 `onPlannedSeen`。
+- **主畫面排序**（`0a80f76`）：`SortControl.tsx` 沒有「最佳人數」「推薦人數」兩個選項；`filterStorage.ts` 載入 `sortBy` 若是 `bestPlayers`／`recommendPlayers` 回 `rankingEngine`；`SortKey` 型別與 `App.tsx` 排序 switch 刻意沒動；篩選抽屜的最佳／推薦人數篩選保留。
+- **規則書管理（`7b90385`）**：第 7 節「`mode` 為 `'pdf' | 'link' | 'files'`、③已上傳分頁」已過時：`RulebookBatchUpload.tsx` 的 `mode` 為 `'pdf' | 'link' | null`（預設都收起）；兩顆入口「＋ 上傳 PDF」「＋ 貼連結」；常駐「文件列表」依遊戲分組、可收合、可搜尋（遊戲名、英文名、文件名）；單一遊戲展開後由 `GameDocGroup` 自己呼叫 `useGameDocuments(bggName)`（刪除沿用 `docsApi.deleteDoc`＋`askConfirm`；PDF 大小用 `sizeByName.get(`${doc.id}.pdf`)`）；上傳或新增連結後 `listTick` 遞增讓各群組重讀；樣式 `src/styles/rb-docs.css`（`rbd-*`）。上傳／索引邏輯沒動。
+- **聚會設定字級**（`3335085`）：`lga-manage.css` 追加縮小規則、新檔 `src/styles/planned-compact.css`（`.pg-fold` 前綴）；`PlannedGatheringsAdmin.tsx` 多一行 import。預計聚會區塊是用覆蓋方式猜的。
+- **`privacy.html`（2026-11-01 版，已 push）**：新增評分條目、資料用途（玩家榜）、VIP 看得到的內容（暱稱、已玩／評過款數、整體與六項加總分數；五項細項、備註、LINE／FB、Email 仍看不到）、玩家榜只列 VIP 與管理者並可選擇不列入名單。第 4 節 `privacy.html` 的「最後更新 2026-10-30」已過時。
+- **使用者決定（2026-11-01）**：以人為主體的表 VIP 也看得到（推翻「個別評分只有本人看得到」，第 2 節 `game_ratings` 列的該句只剩原始資料表權限仍成立，公開管道多了 `get_player_stats()`）；管理者 CSV 評分與一般 VIP 評分一樣處理；james 的玩過最多用他帳號的已玩資料；玩過最多與評過最多要有「隱藏管理者」勾；玩家榜綜合分數＝六項加總、不含整體、最高 30 分。
+- **待決**：⑥我的統計多兩個分頁（綜合評分、自訂 XY）尚未動工，先確認綜合分數公式；批次 C（分布圖玩家模式）、⑨規則助手 RAG；`usePlayTotals.ts`／`get_play_totals()`／`useRatingCounts.ts`／`get_rating_counts()` 是否刪除；導覽列改版（最後做）；站上拖曳調整排名＋匯出 CSV。
