@@ -21,7 +21,7 @@ type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
-type View = 'home' | 'stats' | 'gatherings' | 'addplay' | 'notes' | 'board' | 'upcoming'
+type View = 'home' | 'stats' | 'gatherings' | 'addplay' | 'notes' | 'board'
 type StatsTab = 'overview' | 'want' | 'played'
 type SortKey =
     | 'added'
@@ -300,6 +300,8 @@ export default function MyList({
     const gatheringWriteRef = useRef(false)
     gatheringWriteRef.current = gatheringWrite
     const [statsTab, setStatsTab] = useState<StatsTab>('overview')
+    // 集點卡頁（VIP）的兩個分頁：集點卡｜近期聚會
+    const [loyaltyTab, setLoyaltyTab] = useState<'card' | 'upcoming'>('card')
     const [search, setSearch] = useState('')
     // 想玩、已玩各自記住排序（也記在這個瀏覽器）；切換分頁只清空搜尋
     const [sortWant, setSortWant] = useState<SortKey>(() => loadStatsView().sortWant)
@@ -329,15 +331,19 @@ export default function MyList({
         if (isOpen) {
             setView('home')
             setStatsTab('overview')
+            setLoyaltyTab('card')
             setSearch('')
             setShowHoursNote(false)
         }
     }, [isOpen, mode])
 
-    // 進入「近期聚會」就把目前的預計聚會記成已看過
+    // 看到「近期聚會」分頁就把目前的預計聚會記成已看過
+    const showUpcomingTab = isVip && !isAdmin
     useEffect(() => {
-        if (isOpen && view === 'upcoming') onPlannedSeen?.()
-    }, [isOpen, view, onPlannedSeen])
+        if (isOpen && mode === 'loyalty' && showUpcomingTab && loyaltyTab === 'upcoming') {
+            onPlannedSeen?.()
+        }
+    }, [isOpen, mode, showUpcomingTab, loyaltyTab, onPlannedSeen])
 
     // 只記住排序
     useEffect(() => {
@@ -488,33 +494,62 @@ export default function MyList({
                             ×
                         </button>
                     </div>
+                    {showUpcomingTab && (
+                        <div className="lb-tabs">
+                            <button
+                                type="button"
+                                className={`lb-tab ${loyaltyTab === 'card' ? 'active' : ''}`}
+                                onClick={() => setLoyaltyTab('card')}
+                            >
+                                集點卡
+                            </button>
+                            <button
+                                type="button"
+                                className={`lb-tab ${loyaltyTab === 'upcoming' ? 'active' : ''}`}
+                                onClick={() => setLoyaltyTab('upcoming')}
+                            >
+                                近期聚會
+                                {plannedUnseen > 0 && (
+                                    <span
+                                        style={{
+                                            marginLeft: 6,
+                                            background: '#b5483a',
+                                            color: '#fff',
+                                            borderRadius: 999,
+                                            padding: '1px 7px',
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                        }}
+                                    >
+                                        {plannedUnseen}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                    )}
                     <div className="mylist-body">
-                        <LoyaltyCard
-                            boardGames={boardGames}
-                            ratings={ratings}
-                            personal={personal}
-                            playSessions={playSessions}
-                            focusDate={focusDate}
-                            onOpenGame={onOpenGame}
-                        />
+                        {showUpcomingTab && loyaltyTab === 'upcoming' ? (
+                            <UpcomingGatherings
+                                embedded
+                                boardGames={boardGames}
+                                isVip={isVip}
+                                isAdmin={isAdmin}
+                                renderCover={renderCover}
+                                onOpenGame={onOpenGame}
+                            />
+                        ) : (
+                            <LoyaltyCard
+                                boardGames={boardGames}
+                                ratings={ratings}
+                                personal={personal}
+                                playSessions={playSessions}
+                                focusDate={focusDate}
+                                onOpenGame={onOpenGame}
+                            />
+                        )}
                     </div>
                 </aside>
             </>
-        )
-    }
-
-    // ---------- 近期聚會 ----------
-    if (view === 'upcoming') {
-        return (
-            <UpcomingGatherings
-                boardGames={boardGames}
-                isVip={isVip}
-                isAdmin={isAdmin}
-                renderCover={renderCover}
-                onBack={() => setView('home')}
-                onClose={onClose}
-                onOpenGame={onOpenGame}
-            />
         )
     }
 
@@ -920,36 +955,6 @@ export default function MyList({
                             <span className="club-menu-arrow" aria-hidden="true">›</span>
                         </button>
                     </div>
-                    {(isVip || isAdmin) && (
-                        <div className="club-list club-more">
-                            <button
-                                type="button"
-                                className="club-menu-item club-menu-single"
-                                onClick={() => setView('upcoming')}
-                            >
-                                <span className="club-menu-icon" aria-hidden="true">🎲</span>
-                                <span className="club-menu-text">
-                                    <b>近期聚會</b>
-                                    <span className="club-menu-sub">預計開的桌遊、登記可以參加</span>
-                                </span>
-                                {plannedUnseen > 0 && (
-                                    <span
-                                        className="club-menu-count"
-                                        style={{
-                                            background: '#b5483a',
-                                            color: '#fff',
-                                            borderRadius: 999,
-                                            padding: '1px 9px',
-                                            fontWeight: 700,
-                                        }}
-                                    >
-                                        {plannedUnseen} 場新的
-                                    </span>
-                                )}
-                                <span className="club-menu-arrow" aria-hidden="true">›</span>
-                            </button>
-                        </div>
-                    )}
                     {personal.isLoggedIn && (
                         <>
                             <div className="club-list club-more">

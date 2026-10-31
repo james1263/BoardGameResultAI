@@ -170,8 +170,8 @@ function Library({
   )
   const people = useGamePeople(vip.isVip)
   const adminRatings = useAdminRatings(isAdmin)
-  // 還沒看過的新預計聚會數（只有 VIP／管理者；顯示在導覽列「俱樂部」與俱樂部首頁）
-  const planned = usePlannedUnseen(session?.user?.id ?? null, vip.isVip || isAdmin)
+  // 還沒看過的新預計聚會數（只有 VIP；顯示在導覽列「集點卡」與集點卡頁的「近期聚會」分頁）
+  const planned = usePlannedUnseen(session?.user?.id ?? null, vip.isVip && !isAdmin)
   // 導覽列的頁面一次只開一個：點另一顆直接取代，再點同一顆就關閉
   const [activePage, setActivePage] = useState<NavPage | null>(null)
   const [myListMode, setMyListMode] = useState<MyListMode>('list')
@@ -827,7 +827,7 @@ function Library({
       )}
       <InAppBrowserNotice />
       <TopBar
-        clubBadge={planned.unseenCount}
+        loyaltyBadge={planned.unseenCount}
         activePage={activePage}
         onGoPage={goPage}
         onGoHome={goHome}
