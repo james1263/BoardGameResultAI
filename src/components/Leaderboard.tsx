@@ -11,18 +11,18 @@ import { rankGames } from '../lib/leaderboards'
 import {
   DIFFICULTY_LEVELS,
   DIFFICULTY_LEVEL_INFO,
-  computeAdminScores,
   getDifficultyLevel,
 } from '../lib/libraryTypes'
-import { useRatingCounts } from '../lib/useRatingCounts'
+import { usePlayerStats } from '../lib/usePlayerStats'
 import { useCommunityStats } from '../lib/useCommunityStats'
 import StatsTables from './StatsTables'
+import PlayersBoard from './PlayersBoard'
 import '../styles/stats-chart.css'
 import InfoHint from './InfoHint'
 import '../styles/leaderboard-filter.css'
 import '../styles/leaderboard-search.css'
 
-type BoardKey = 'want' | 'played' | 'overall' | 'keep' | 'raters' | 'people'
+type BoardKey = 'want' | 'played' | 'overall' | 'keep'
 type Period = 'all' | 'month' | 'quarter' | 'year'
 
 const BOARDS: { key: BoardKey; label: string }[] = [
@@ -32,9 +32,7 @@ const BOARDS: { key: BoardKey; label: string }[] = [
   { key: 'keep', label: '留下來' },
 ]
 
-const RATERS_BOARD: { key: BoardKey; label: string } = { key: 'raters', label: '評分人數' }
-// 只有管理者：誰評過最多款遊戲（個人資料，VIP 看不到）
-const PEOPLE_BOARD: { key: BoardKey; label: string } = { key: 'people', label: '評過最多' }
+
 
 const PERIODS: { key: Period; label: string }[] = [
   { key: 'all', label: '全部' },
@@ -143,7 +141,7 @@ export default function Leaderboard({
   const [board, setBoard] = useState<BoardKey>('want')
   const [period, setPeriod] = useState<Period>('all')
   const [openNames, setOpenNames] = useState<string[]>([])
-  const [page, setPage] = useState<'games' | 'stats'>('games')
+  const [page, setPage] = useState<'games' | 'players' | 'stats'>('games')
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -204,38 +202,14 @@ export default function Leaderboard({
   }, [isOpen, canSeePeople, isAdmin, reloadPeople, reloadAdminRatings])
 
   const isCountBoard = board === 'want' || board === 'played'
-  const isRatersBoard = board === 'raters'
   const canExpand = isCountBoard ? canSeePeople : isAdmin
-  // 「評分人數」只有 VIP／管理者看得到（資料庫函式也會再驗證一次）
-  const canRaters = canSeePeople || isAdmin
-  const isPeopleBoard = board === 'people'
-  const boards = isAdmin
-    ? [...BOARDS, PEOPLE_BOARD]
-    : canRaters
-      ? [...BOARDS, RATERS_BOARD]
-      : BOARDS
-  const ratingCounts = useRatingCounts(isOpen && canRaters)
-  // 管理者的評分來自 CSV，玩過的遊戲算 1 位評分者（與整體評分榜同一套規則）
-  const adminScores = useMemo(() => computeAdminScores(boardGames), [boardGames])
+  const boards = BOARDS
+  // 玩家榜資料：切到玩家榜才讀（資料庫函式會再驗證 VIP／管理者）
+  const playerStats = usePlayerStats(isOpen && (canSeePeople || isAdmin) && page === 'players')
 
   const rankedAll = useMemo(() => {
     const pool = boardGames.filter((game) => matchesFilters(game, filters))
     const entries = pool.flatMap((game) => {
-      if (board === 'raters') {
-        const value =
-          ratingCounts.get(game.bggName) + (adminScores.has(game.bggName) ? 1 : 0)
-        if (value <= 0) return []
-        return [
-          {
-            game,
-            name: game.name,
-            value,
-            display: `${value} 人`,
-            extra: '',
-          },
-        ]
-      }
-
       if (board === 'want' || board === 'played') {
         const s = communityStats.getStats(game.bggName)
         const total = board === 'want' ? s.wantCount : s.playedCount
@@ -288,7 +262,7 @@ export default function Leaderboard({
     })
 
     return rankGames(entries)
-  }, [boardGames, board, period, communityStats, ratings, filters, ratingCounts, adminScores])
+  }, [boardGames, board, period, communityStats, ratings, filters])
 
   // 搜尋：只留下符合的，名次維持原樣；排序方向只翻轉顯示順序
   const ranked = useMemo(() => {
@@ -302,29 +276,6 @@ export default function Leaderboard({
       : rankedAll
     return sortDir === 'asc' ? [...matched].reverse() : matched
   }, [rankedAll, query, sortDir])
-
-  // 管理者：每個人評過幾款遊戲（由各款的評分者名單加總）
-  const peopleRanked = useMemo(() => {
-    if (!isAdmin) return []
-    const counts = new Map<string, { label: string; value: number }>()
-    for (const game of boardGames) {
-      for (const person of adminRatings.get(game.bggName)) {
-        const key = `${person.n}|${person.c ?? ''}`
-        const current = counts.get(key)
-        if (current) current.value += 1
-        else counts.set(key, { label: personLabel(person, true), value: 1 })
-      }
-    }
-    const keyword = query.trim().toLowerCase()
-    const all = rankGames(
-      [...counts.values()].map((item) => ({ name: item.label, label: item.label, value: item.value })),
-      10,
-    )
-    const matched = keyword
-      ? all.filter((entry) => entry.label.toLowerCase().includes(keyword))
-      : all
-    return sortDir === 'asc' ? [...matched].reverse() : matched
-  }, [isAdmin, boardGames, adminRatings, query, sortDir])
 
   if (!isOpen) return null
 
@@ -382,11 +333,7 @@ export default function Leaderboard({
     )
   }
 
-  const note = isPeopleBoard
-    ? '依評過的遊戲款數排名，只有管理者看得到。'
-    : isRatersBoard
-    ? '依評分的人數排名，只統計 VIP 玩家，另含管理者的評分。不看分數高低。'
-    : isCountBoard
+  const note = isCountBoard
     ? period === 'all'
       ? '依目前的總人數排名，只統計 VIP 玩家。'
       : '依該期間「新增」的人數排名（下方小字是目前總人數），只統計 VIP 玩家。'
@@ -414,58 +361,6 @@ export default function Leaderboard({
         </div>
       )
     }
-    if (isPeopleBoard) {
-      if (adminRatings.status === 'loading' || adminRatings.status === 'idle') {
-        return (
-          <div className="lb-empty">
-            <b>讀取中…</b>
-          </div>
-        )
-      }
-      if (query.trim()) {
-        return (
-          <div className="lb-empty">
-            <span className="lb-empty-icon" aria-hidden="true">🔍</span>
-            <b>榜上找不到「{query.trim()}」</b>
-            <button type="button" className="lb-empty-btn" onClick={() => setQuery('')}>
-              清除搜尋
-            </button>
-          </div>
-        )
-      }
-      return (
-        <div className="lb-empty">
-          <span className="lb-empty-icon" aria-hidden="true">⭐</span>
-          <b>還沒有人評分</b>
-        </div>
-      )
-    }
-
-    if (isRatersBoard) {
-      if (ratingCounts.status === 'loading' || ratingCounts.status === 'idle') {
-        return (
-          <div className="lb-empty">
-            <b>讀取中…</b>
-          </div>
-        )
-      }
-      if (ratingCounts.status === 'error') {
-        return (
-          <div className="lb-empty">
-            <b>讀取評分人數失敗</b>
-            <p>請稍後再試，或重新整理網頁。</p>
-          </div>
-        )
-      }
-      return (
-        <div className="lb-empty">
-          <span className="lb-empty-icon" aria-hidden="true">⭐</span>
-          <b>還沒有人評分</b>
-          <p>VIP 玩家在遊戲視窗的「評分」分頁評分後會出現在這裡。</p>
-        </div>
-      )
-    }
-
     if (isCountBoard) {
       const label = board === 'want' ? '想玩' : '已玩'
       if (period !== 'all') {
@@ -549,6 +444,13 @@ export default function Leaderboard({
                 </button>
                 <button
                   type="button"
+                  className={page === 'players' ? 'active' : ''}
+                  onClick={() => setPage('players')}
+                >
+                  玩家榜
+                </button>
+                <button
+                  type="button"
                   className={page === 'stats' ? 'active' : ''}
                   onClick={() => setPage('stats')}
                 >
@@ -557,7 +459,18 @@ export default function Leaderboard({
               </div>
             )}
 
-            {page === 'stats' && (canSeePeople || isAdmin) ? (
+            {page === 'players' && (canSeePeople || isAdmin) ? (
+              <div className="mylist-body">
+                <PlayersBoard
+                  players={playerStats.players}
+                  status={playerStats.status}
+                  isAdmin={isAdmin}
+                  boardGames={boardGames}
+                  renderCover={renderCover}
+                  onOpenGame={onOpenGame}
+                />
+              </div>
+            ) : page === 'stats' && (canSeePeople || isAdmin) ? (
               <div className="mylist-body">
                 <StatsTables
                   embedded
@@ -591,8 +504,8 @@ export default function Leaderboard({
                 <input
                   type="search"
                   className="lbs-input"
-                  placeholder={isPeopleBoard ? '搜尋暱稱或 LINE／FB 名字' : '搜尋遊戲名稱'}
-                  aria-label={isPeopleBoard ? '搜尋玩家' : '搜尋遊戲名稱'}
+                  placeholder="搜尋遊戲名稱"
+                  aria-label="搜尋遊戲名稱"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                 />
@@ -606,7 +519,6 @@ export default function Leaderboard({
                     ×
                   </button>
                 )}
-                {!isPeopleBoard && (
                 <button
                   type="button"
                   className={`lbs-filter ${filterOpen || activeFilterCount > 0 ? 'on' : ''}`}
@@ -618,10 +530,9 @@ export default function Leaderboard({
                     <span className="lbs-badge">{activeFilterCount}</span>
                   )}
                 </button>
-                )}
               </div>
 
-              {filterOpen && !isPeopleBoard && (
+              {filterOpen && (
                 <div className="lbs-panel">
                   {periodApplies && (
                     <div className="lbs-group">
@@ -739,27 +650,7 @@ export default function Leaderboard({
                 <InfoHint text={note} />
               </div>
 
-              {isPeopleBoard ? (
-                peopleRanked.length === 0 ? (
-                  renderEmpty()
-                ) : (
-                  <ul className="mylist-list">
-                    {peopleRanked.map((entry, index) => (
-                      <li className="mylist-item" key={`${entry.label}-${index}`}>
-                        <span className={`lb-rank ${entry.rank <= 3 ? 'top' : ''}`}>
-                          {entry.rank}
-                        </span>
-                        <div className="mylist-info">
-                          <span className="mylist-name">{entry.label}</span>
-                        </div>
-                        <div className="lb-value">
-                          <strong>{entry.value} 款</strong>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )
-              ) : ranked.length === 0 ? (
+              {ranked.length === 0 ? (
                 renderEmpty()
               ) : (
                 <ul className="mylist-list">

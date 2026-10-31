@@ -135,3 +135,21 @@
   padding: 4px 10px;
   cursor: pointer;
 }
+
+/* 玩家榜 */
+.pb-who {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #7a8a80;
+}
+.lb-pages.pb-toggle {
+  margin: 0;
+  padding: 2px;
+  gap: 2px;
+}
+.lb-pages.pb-toggle button {
+  flex: none;
+  padding: 4px 10px;
+  font-size: 12px;
+}
