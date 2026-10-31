@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { PersonalApi } from '../lib/personalApi'
 import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
+import { askConfirm, showNotice } from '../lib/askConfirm'
 
 export default function PlaySessions({
   bggName,
@@ -28,11 +29,11 @@ export default function PlaySessions({
 
     const count = players.trim() === '' ? null : Number(players)
     if (count !== null && (!Number.isInteger(count) || count < 1 || count > 99)) {
-      window.alert('玩家人數請填 1～99 的整數，或留空。')
+      void showNotice('玩家人數請填 1～99 的整數，或留空。')
       return
     }
     if (!date || date > todayLocal()) {
-      window.alert('請選擇今天或更早的日期。')
+      void showNotice('請選擇今天或更早的日期。')
       return
     }
 
@@ -54,8 +55,13 @@ export default function PlaySessions({
     setIsOpen(false)
   }
 
-  function handleDelete(id: string) {
-    if (!window.confirm('確定要刪除這筆遊玩紀錄嗎？')) return
+  async function handleDelete(id: string) {
+    const ok = await askConfirm('確定要刪除這筆遊玩紀錄嗎？', {
+      confirmText: '刪除',
+      cancelText: '取消',
+      danger: true,
+    })
+    if (!ok) return
     void api.deleteSession(id)
   }
 
@@ -141,7 +147,7 @@ export default function PlaySessions({
                   type="button"
                   className="play-sessions-link"
                   disabled={api.busy}
-                  onClick={() => handleDelete(item.id)}
+                  onClick={() => void handleDelete(item.id)}
                 >
                   刪除
                 </button>
