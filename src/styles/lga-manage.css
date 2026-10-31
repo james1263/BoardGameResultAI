@@ -1,0 +1,108 @@
+/* 聚會設定：聚會管理（尚未結束＋歷史）縮小版面 */
+
+.lga-manage {
+  margin-top: 14px;
+}
+
+.lga-manage-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.lga-manage .lga-title {
+  margin: 0;
+  font-size: 17px;
+  color: #34463c;
+}
+
+.lga-manage .lga-add {
+  flex: none;
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.lga-group-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 12px 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #5b6b61;
+}
+
+.lga-group-label small {
+  font-size: 12px;
+  font-weight: 400;
+  color: #8a8f84;
+}
+
+.lga-manage .lga-list {
+  gap: 6px;
+}
+
+.lga-manage .lga-row {
+  margin-top: 0;
+  padding: 8px 10px;
+  gap: 10px;
+}
+
+.lga-manage .lga-date {
+  width: 42px;
+  padding: 3px 0;
+}
+
+.lga-manage .lga-date small {
+  font-size: 11px;
+}
+
+.lga-manage .lga-date strong {
+  font-size: 18px;
+}
+
+.lga-manage .lga-row-main strong {
+  font-size: 14px;
+}
+
+.lga-manage .lga-row-main small {
+  font-size: 12px;
+}
+
+.lga-manage .lga-status {
+  padding: 2px 9px;
+  font-size: 12px;
+}
+
+.lga-manage .lga-status.warn {
+  background: rgba(154, 106, 31, 0.16);
+  color: #8a5a14;
+}
+
+/* 歷史聚會：預設收合的一行 */
+.lga-hist-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(52, 70, 60, 0.14);
+  border-radius: 12px;
+  background: #f5f0e5;
+  color: #34463c;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lga-hist-head small {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 400;
+  color: #8a8f84;
+}
