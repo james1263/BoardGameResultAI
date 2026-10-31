@@ -37,8 +37,6 @@ export default function SortControl({
         <option value="bggScore">BGG 分數</option>
         <option value="bggDifficulty">BGG 難度</option>
         <option value="bggTime">遊戲時間</option>
-        <option value="bestPlayers">最佳人數</option>
-        <option value="recommendPlayers">推薦人數</option>
       </select>
       <button
         type="button"

@@ -102,9 +102,12 @@ export function loadFilters(): SavedFilters {
       hiddenGroups: asStringArray(f.hiddenGroups).filter(
         (v): v is MineGroup => MINE_GROUP_VALUES.includes(v as MineGroup),
       ),
-      sortBy: SORT_KEYS.includes(f.sortBy as SortKey)
-        ? (f.sortBy as SortKey)
-        : 'rankingEngine',
+      sortBy:
+        SORT_KEYS.includes(f.sortBy as SortKey) &&
+        f.sortBy !== 'bestPlayers' &&
+        f.sortBy !== 'recommendPlayers'
+          ? (f.sortBy as SortKey)
+          : 'rankingEngine',
       sortDirection: f.sortDirection === 'desc' ? 'desc' : 'asc',
     }
   } catch {
