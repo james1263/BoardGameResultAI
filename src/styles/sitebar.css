@@ -76,9 +76,11 @@
   cursor: pointer;
 }
 
-.sb-item:hover {
-  background: rgba(69, 107, 80, 0.1);
-  color: var(--c-ink);
+@media (hover: hover) and (pointer: fine) {
+  .sb-item:hover {
+    background: rgba(69, 107, 80, 0.1);
+    color: var(--c-ink);
+  }
 }
 
 .sb-item.active {
