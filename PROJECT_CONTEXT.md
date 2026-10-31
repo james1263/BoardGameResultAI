@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-10-31 深夜（已併入 `生成後.md` 全部內容；**請同時讀 `QUICKSTART.md` 第 2.0 節與本檔第 11 節，與其他段落衝突時以它們為準**）。
+> 最後更新：2026-10-31 深夜後（已併入 `生成後.md` 全部內容；**請同時讀 `QUICKSTART.md` 第 2.0 節與本檔第 11、12 節，與其他段落衝突時以它們為準**）。
 
 ## 1. 專案簡介與技術架構
 
@@ -184,3 +184,11 @@
 - **樣式**：`vip.css` 最底下新增 `.game-card .game-info h3`（卡片標題固定兩行高度）與 `.mystat-*` 間距、`.mystat-i {margin-left:3px}`、`.mystat-box-btn span {white-space:nowrap}`。
 - **已知未解**：Google App 內建瀏覽器底部五顆導覽「點了沒反應要再點」，原因未確認（假設見 QUICKSTART 2.0）；管理者專用檔案與 `PlaySessions.tsx` 仍有原生 `confirm`／`prompt`。
 - **三種聚會的定義**（使用者）：預計聚會＝預告可能開的局；新增聚會＝記錄誰實際到場並建立連結，被記錄或收到連結者評分得點；近期聚會＝曾開過的團供管理者參考。
+
+## 12. 2026-10-31 深夜後增補（覆蓋前面衝突的敘述）
+
+- **`lib/useSession.ts` 已改寫（`8f8d2c1`）**：模組層級共用 session（`cached`、`listeners` Set、`start()` 只註冊一次 `getSession` 與 `onAuthStateChange`）；元件 `useState(cached)`，掛載時訂閱；**只有 `SIGNED_OUT` 事件才接受 `null`**，其他事件帶 `null` 忽略。簽名仍是 `useSession(): Session | null`。原因：舊版每個元件掛載都從 `null` 開始，回到頁面時短暫被當成訪客。整站第一次載入時仍會有一瞬間 `null`（正常）。`useVip.ts` 的 `cache` 與 `getSession` 保護不用動。
+- **`usePersonalCollection.declineMerge`（`a81ca91`）**：`setDeclinedUserId(userId)`＋`setLocal({})`＋`saveLocal({})`；按「不加入」＝刪除該瀏覽器的訪客紀錄（不影響雲端），之後 `needsMerge` 因 `localCount = 0` 不再成立。`local` 只在未登入時才寫 `localStorage`，所以清除必須明確呼叫 `saveLocal({})`。
+- **排行榜**：新函式 `get_play_totals()`（回 `bgg_name, play_total, play_month, play_quarter, play_year`；只有登入的 VIP／管理者；只統計 `played = true`、VIP＋管理者；「全部」＝`play_count`＋有日期紀錄筆數，本月／本季／本年只算有日期的）；前端 `lib/usePlayTotals.ts`、`Leaderboard.tsx`（VIP／管理者五顆榜：想玩、已玩、最常玩、整體評分、適合留下來；一般人與訪客四顆）。`Leaderboard` 內部自己呼叫 `useCommunityStats(isOpen)`（每次打開重讀，`useCommunityStats(enabled = true)` 有 `reloadKey`／`reload`），`App.tsx` 傳入的 `communityStats` prop 被忽略；**不要在 `Leaderboard` 呼叫主畫面那份的 `reload()`（會讓主畫面卡）**。改版（`f56b0a6`）：搜尋欄內「篩選」鈕、`src/styles/leaderboard-search.css`（`lbs-*`）、篩選面板含統計期間與排序方向（由低到高只反轉顯示、名次不變，AI 預設）；舊 `leaderboard-filter.css`（`lbf-*`）與 `vip.css` 舊 `lb-periods` 未清。難度分界（≤2 簡單、2～3 中等、≥3 偏難）為暫定值。
+- **樣式**：`sitebar.css` 的 `.sb-item:hover` 包進 `@media (hover: hover) and (pointer: fine)`；`vip.css` 最底下 `html, body, button, a, .game-card, .status-btn, .sb-item { touch-action: manipulation; }`。
+- **已知未解**：Google App 內建瀏覽器底部五顆導覽點了沒反應（登入修復後待重測）；遊戲視窗右上角想玩／已玩人數打勾後要重新整理才更新。
