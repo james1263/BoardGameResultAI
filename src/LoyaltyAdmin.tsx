@@ -823,40 +823,46 @@ export default function LoyaltyAdmin() {
             ...list.filter((p) => !selectedAttendees.includes(p.id)),
         ]
     }
-    const renderWanters = (bggName: string) => {
+    // 想玩這款的人：預設收合，點「▾」才列出「暱稱（LINE／FB）」；已選參加者排前面並標 ✓
+    const renderWanters = (bggName: string, scope: string) => {
         if (!wantMap) return null
         const people = wantersOf(bggName)
         // 想玩的人沒有暱稱（例如還沒設定暱稱的管理者）時，名單上找不到他
         const unnamed = wantInCommunity(bggName) - people.length
         if (people.length === 0 && unnamed <= 0) return null
-        const open = !!wantersOpen[bggName]
-        const shown = open ? people : people.slice(0, 5)
+        const key = `${scope}:${bggName}`
+        const open = !!wantersOpen[key]
         return (
             <span className="lgp-wanters">
-                {shown.map((p) => (
-                    <span
-                        key={p.id}
-                        className={`lgp-tag ${selectedAttendees.includes(p.id) ? 'on' : ''}`}
+                <button
+                    type="button"
+                    className="lgp-more"
+                    aria-expanded={open}
+                    onClick={() =>
+                        setWantersOpen((current) => ({ ...current, [key]: !open }))
+                    }
+                >
+                    {open ? '▴' : '▾'}
+                </button>
+                {open && (
+                    <small
+                        style={{
+                            display: 'block',
+                            marginTop: 4,
+                            color: '#6b5a3c',
+                            lineHeight: 1.6,
+                        }}
                     >
-                        {p.nickname}
-                    </span>
-                ))}
-                {people.length > 5 && (
-                    <button
-                        type="button"
-                        className="lgp-more"
-                        onClick={() =>
-                            setWantersOpen((current) => ({
-                                ...current,
-                                [bggName]: !open,
-                            }))
-                        }
-                    >
-                        {open ? '收合 ▴' : `還有 ${people.length - 5} 人 ▾`}
-                    </button>
-                )}
-                {unnamed > 0 && (
-                    <span className="lgp-unnamed">另有 {unnamed} 人（未設暱稱）</span>
+                        {[
+                            ...people.map((p) => {
+                                const contact = (contacts[p.id] ?? '').trim()
+                                return `${selectedAttendees.includes(p.id) ? '✓ ' : ''}${
+                                    p.nickname || '（未設暱稱）'
+                                }${contact ? `（${contact}）` : ''}`
+                            }),
+                            ...(unnamed > 0 ? [`另有 ${unnamed} 人（未設暱稱）`] : []),
+                        ].join('、')}
+                    </small>
                 )}
             </span>
         )
@@ -1085,7 +1091,7 @@ export default function LoyaltyAdmin() {
                                                                                             {wantHint(game.bggName) && (
                                                                                                 <small style={wantHintStyle}>{wantHint(game.bggName)}</small>
                                                                                             )}
-{renderWanters(game.bggName)}
+{renderWanters(game.bggName, 'search')}
                                                                                         </span>
                                                                                     <button
                                                                                         type="button"
@@ -1130,7 +1136,7 @@ export default function LoyaltyAdmin() {
                     {wantHint(bggName) && (
                         <small className="lgp-hint">{wantHint(bggName)}</small>
                     )}
-                    {renderWanters(bggName)}
+                    {renderWanters(bggName, 'picked')}
                     {(past || status !== null) && (
                         <div className="lgp-status">
                             <span
