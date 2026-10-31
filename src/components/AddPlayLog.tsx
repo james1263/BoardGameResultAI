@@ -3,6 +3,7 @@ import type { BoardGame } from '../data/boardGames.generated'
 import type { PersonalApi } from '../lib/personalApi'
 import { supabase } from '../lib/supabase'
 import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
+import { askConfirm, showNotice } from '../lib/askConfirm'
 
 type PlayableGame = BoardGame & { removedAt?: string | null }
 
@@ -63,17 +64,17 @@ export default function AddPlayLog({
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (!selected) {
-      window.alert('請先選擇遊戲。')
+      await showNotice('請先選擇遊戲。')
       return
     }
 
     const count = players.trim() === '' ? null : Number(players)
     if (count !== null && (!Number.isInteger(count) || count < 1 || count > 99)) {
-      window.alert('玩家人數請填 1～99 的整數，或留空。')
+      await showNotice('玩家人數請填 1～99 的整數，或留空。')
       return
     }
     if (!date || date > todayLocal()) {
-      window.alert('請選擇今天或更早的日期。')
+      await showNotice('請選擇今天或更早的日期。')
       return
     }
 
@@ -82,7 +83,7 @@ export default function AddPlayLog({
       .some((item) => item.playedOn === date)
     if (
       duplicated &&
-      !window.confirm('這天已經有這款遊戲的紀錄了，還要再記一筆嗎？')
+      !(await askConfirm('這天已經有這款遊戲的紀錄了，還要再記一筆嗎？', { danger: false }))
     ) {
       return
     }

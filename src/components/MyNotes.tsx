@@ -7,6 +7,7 @@ import {
 import { useMyGatherings } from '../lib/useMyGatherings'
 import { supabase } from '../lib/supabase'
 import '../styles/my-notes.css'
+import { askConfirm } from '../lib/askConfirm'
 
 type ListedGame = BoardGame & { removedAt?: string | null }
 
@@ -190,7 +191,7 @@ export default function MyNotes({
   async function removeItem(item: Item) {
     const question =
       item.kind === 'gprivate' ? '要刪除這則私人心得嗎？' : '要刪除這則公開留言嗎？刪除後無法復原。'
-    if (!window.confirm(question)) return
+    if (!(await askConfirm(question))) return
     setBusyKey(item.key)
     setMessage('')
 

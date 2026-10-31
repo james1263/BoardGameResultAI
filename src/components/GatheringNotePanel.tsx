@@ -9,6 +9,7 @@ import type { BoardGame } from '../data/boardGames.generated'
 import type { PersonalApi } from '../lib/personalApi'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import { saveGatheringNote, type MyNote } from '../lib/useGatheringNotes'
+import { askConfirm } from '../lib/askConfirm'
 
 const MAX = 200
 
@@ -143,7 +144,7 @@ export default function GatheringNotePanel({
             if (
                 bothEmpty &&
                 (b.priv !== '' || b.pub !== '') &&
-                !window.confirm('兩欄都是空的，儲存會刪除這款在這場的心得，確定嗎？')
+                !(await askConfirm('兩欄都是空的，儲存會刪除這款在這場的心得，確定嗎？'))
             ) {
                 return false
             }
@@ -227,7 +228,7 @@ export default function GatheringNotePanel({
                 : kind === 'pub'
                     ? '公開留言'
                     : '這款在這場的心得（私人與公開）'
-        if (!window.confirm(`確定要刪除${label}嗎？刪除後無法復原。`)) return
+        if (!(await askConfirm(`確定要刪除${label}嗎？刪除後無法復原。`))) return
 
         const nextPriv = kind === 'pub' ? base.priv : ''
         const nextPub = kind === 'priv' ? base.pub : ''
@@ -274,7 +275,7 @@ export default function GatheringNotePanel({
     }
 
     // 複製前一定先問；對方欄有內容會說明會被覆蓋
-    function handleCopy() {
+    async function handleCopy() {
         const fromPrivate = pane === 'private'
         const source = fromPrivate ? draft.priv : draft.pub
         if (source.trim() === '') return
@@ -285,7 +286,7 @@ export default function GatheringNotePanel({
         const warn = targetHas
             ? `\n${fromPrivate ? '公開' : '私人'}欄目前有內容，會被覆蓋。`
             : ''
-        if (!window.confirm(message + warn)) return
+        if (!(await askConfirm(message + warn, { danger: false }))) return
         patchDraft(cur.bggName, fromPrivate ? { pub: source } : { priv: source })
     }
 

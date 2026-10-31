@@ -5,6 +5,7 @@ import type { RatingsApi } from '../lib/useGameRatings'
 import { supabase } from '../lib/supabase'
 import { MAX_NOTES_PER_GAME } from '../lib/useGameNotesBoard'
 import '../styles/club-board.css'
+import { askConfirm } from '../lib/askConfirm'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
@@ -140,7 +141,7 @@ export default function ClubBoard({
   }
 
   async function removeMine(row: NoteRow) {
-    if (!window.confirm('確定要刪除這則留言嗎？刪除後無法復原。')) return
+    if (!(await askConfirm('確定要刪除這則留言嗎？刪除後無法復原。'))) return
     setBusyId(row.id)
     setMessage('')
     const { error: rpcError } = await supabase.rpc('delete_my_public_note', {

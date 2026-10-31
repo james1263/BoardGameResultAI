@@ -68,7 +68,7 @@ export default function GameNotesBoard({
     setMessage(await api.setHidden(note.id, true))
   }
 
-  function renderConfirm(noteId: string, kind: 'delete' | 'hide', onYes: () => void) {
+  function renderConfirm(kind: 'delete' | 'hide', onYes: () => void) {
     return (
       <div className="gb-btn-row">
         <span className="gb-count">
@@ -135,7 +135,7 @@ export default function GameNotesBoard({
               <li className="gb-item" key={note.id}>
                 <p className="gb-content">{note.content}</p>
                 {pending?.id === note.id && pending.kind === 'delete' ? (
-                  renderConfirm(note.id, 'delete', () => void removeMine(note.id))
+                  renderConfirm('delete', () => void removeMine(note.id))
                 ) : (
                   <div className="gb-meta">
                     <button
@@ -211,8 +211,8 @@ export default function GameNotesBoard({
 
                 {!editing && (note.isMine || isAdmin) && pending?.id === note.id &&
                   (note.isMine
-                    ? renderConfirm(note.id, 'delete', () => void removeMine(note.id))
-                    : renderConfirm(note.id, 'hide', () => void hide(note)))}
+                    ? renderConfirm('delete', () => void removeMine(note.id))
+                    : renderConfirm('hide', () => void hide(note)))}
 
                 {!editing && (note.isMine || isAdmin) && pending?.id !== note.id && (
                   <div className="gb-btn-row">

@@ -9,6 +9,7 @@ import {
     type RatingKey,
     type RatingsApi,
 } from '../lib/useGameRatings'
+import { askConfirm } from '../lib/askConfirm'
 
 type Draft = {
     overall: number | null
@@ -143,7 +144,7 @@ export default function RatingSection({
     }
 
     async function handleDelete() {
-        if (!window.confirm('確定要刪除你對這款遊戲的評分嗎？')) return
+        if (!(await askConfirm('確定要刪除你對這款遊戲的評分嗎？'))) return
         if (await api.deleteRating(bggName)) {
             setDraft(toDraft(null))
             setShowDetail(false)
