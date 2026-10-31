@@ -11,11 +11,13 @@ import {
   indexSuffix,
   type DocKind3,
 } from './lib/docLabels'
+import './styles/game-docs.css'
 
+// 組標題只是小標籤，不是按鈕；每份文件自己一列
 const GROUPS: { kind: DocKind3; title: string; adminOnly?: boolean }[] = [
-  { kind: 'web', title: '🔗 網頁與規則連結' },
-  { kind: 'video', title: '▶ 教學影片' },
-  { kind: 'pdf', title: '📄 規則書 PDF（只有管理者看得到，供搜尋用）', adminOnly: true },
+  { kind: 'web', title: '網頁與規則連結' },
+  { kind: 'video', title: '教學影片' },
+  { kind: 'pdf', title: '規則書 PDF（只有管理者看得到，供搜尋用）', adminOnly: true },
 ]
 
 export default function GameDocuments({
@@ -63,31 +65,42 @@ export default function GameDocuments({
         if (items.length === 0) return null
 
         return (
-          <div className="docs-group" key={group.kind}>
-            <h4 className="docs-group-title">{group.title}</h4>
-            <ul>
+          <div className="gd-group" key={group.kind}>
+            <p className="gd-label">{group.title}</p>
+            <ul className="gd-list">
               {items.map((doc) => (
-                <li className="game-docs-item" key={doc.id}>
+                <li className="gd-row" key={doc.id}>
                   {doc.source_type === 'external' &&
                   isSafeUrl(doc.external_url) ? (
                     <a
-                      className="bgg-link"
+                      className="gd-link"
                       href={doc.external_url}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      {docIcon(doc)} {docLabel(doc)} ↗
+                      <span className="gd-icon" aria-hidden="true">
+                        {docIcon(doc)}
+                      </span>
+                      <span className="gd-name">{docLabel(doc)}</span>
+                      <span className="gd-go" aria-hidden="true">
+                        ↗
+                      </span>
                     </a>
                   ) : (
-                    <span>
-                      {docIcon(doc)} {docLabel(doc)}
-                      {isAdmin && indexSuffix(doc)}
+                    <span className="gd-link gd-plain">
+                      <span className="gd-icon" aria-hidden="true">
+                        {docIcon(doc)}
+                      </span>
+                      <span className="gd-name">
+                        {docLabel(doc)}
+                        {isAdmin && indexSuffix(doc)}
+                      </span>
                     </span>
                   )}
 
                   {isAdmin && (
                     <button
-                      className="admin-link"
+                      className="gd-del"
                       type="button"
                       onClick={() => handleDelete(doc)}
                     >

@@ -1,0 +1,94 @@
+/* 遊戲視窗「規則連結與影片」：每份文件一列、整列可點；組標題只是小標籤 */
+.game-docs .gd-group {
+  margin: 0 0 12px;
+}
+
+.game-docs .gd-label {
+  margin: 0 0 6px;
+  color: #8a7f68;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: left;
+}
+
+.game-docs .gd-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game-docs .gd-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.game-docs .gd-link {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid rgba(69, 107, 80, 0.2);
+  border-radius: 12px;
+  background: #fff;
+  color: #34463c;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  text-decoration: none;
+}
+
+.game-docs a.gd-link {
+  cursor: pointer;
+}
+
+.game-docs a.gd-link:hover,
+.game-docs a.gd-link:focus-visible {
+  border-color: rgba(69, 107, 80, 0.45);
+  background: #f6faf4;
+}
+
+.game-docs .gd-plain {
+  background: #fbf7ec;
+  font-weight: 500;
+}
+
+.game-docs .gd-icon {
+  flex: none;
+  font-size: 16px;
+}
+
+.game-docs .gd-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.game-docs .gd-go {
+  flex: none;
+  color: #8a6d46;
+  font-size: 13px;
+}
+
+.game-docs .gd-del {
+  flex: none;
+  min-width: 52px;
+  padding: 0 10px;
+  border: 1px solid rgba(154, 74, 58, 0.35);
+  border-radius: 12px;
+  background: #fff;
+  color: #9a4a3a;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
