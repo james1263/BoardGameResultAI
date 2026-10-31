@@ -49,10 +49,6 @@ export default function NewGatheringWizard({
     () => new Map(allGames.map((game) => [game.bggName, game.name])),
     [allGames],
   )
-  const nickOf = useMemo(
-    () => new Map(players.map((player) => [player.id, player.nickname])),
-    [players],
-  )
 
   const linkAllowed = date >= todayLocal() && games.length > 0
   const linkOn = makeLink && linkAllowed
