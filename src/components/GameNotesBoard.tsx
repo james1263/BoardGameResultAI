@@ -4,6 +4,7 @@ import {
   useGameNotesBoard,
   type BoardNote,
 } from '../lib/useGameNotesBoard'
+import NoteListItem from './NoteListItem'
 import '../styles/game-tabs.css'
 
 function formatDate(day: string): string {
@@ -27,6 +28,7 @@ export default function GameNotesBoard({
   const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
+  const [openId, setOpenId] = useState<string | null>(null)
   // 頁面內確認（Google App 等內建瀏覽器不支援 window.confirm）
   const [pending, setPending] = useState<{ id: string; kind: 'delete' | 'hide' } | null>(null)
 
@@ -95,9 +97,9 @@ export default function GameNotesBoard({
         (canWrite ? (
           <div className="gb-mine-box">
             <textarea
-              className="gb-textarea"
+              className="gb-textarea nl-short"
               maxLength={200}
-              rows={3}
+              rows={2}
               value={draft}
               placeholder="這款遊戲你想跟大家說什麼？（公開給 VIP，最多 200 字）"
               onChange={(event) => setDraft(event.target.value)}
@@ -163,23 +165,19 @@ export default function GameNotesBoard({
           {api.notes.map((note) => {
             const busy = api.busyId === note.id
             const editable = note.isMine && editableIds.has(note.id)
-            const editing = editingId === note.id
-            return (
-              <li className="gb-item" key={note.id}>
-                <div className="gb-meta">
-                  <b className="gb-name">{note.nickname}</b>
-                  {note.isMine && <span className="gb-mine">我的</span>}
-                  {note.postedOn && (
-                    <span className="gb-date">{formatDate(note.postedOn)}</span>
-                  )}
-                </div>
 
-                {editing ? (
-                  <>
+            if (editingId === note.id) {
+              return (
+                <li className="nl-item is-open" key={note.id}>
+                  <div className="nl-edit">
+                    <div className="nl-top">
+                      <b className="nl-name">{note.nickname}</b>
+                      <span className="gb-mine">我的</span>
+                    </div>
                     <textarea
-                      className="gb-textarea"
+                      className="gb-textarea nl-short"
                       maxLength={200}
-                      rows={3}
+                      rows={2}
                       value={editText}
                       onChange={(event) => setEditText(event.target.value)}
                     />
@@ -204,17 +202,29 @@ export default function GameNotesBoard({
                         </button>
                       </span>
                     </div>
-                  </>
-                ) : (
-                  <p className="gb-content">{note.content}</p>
-                )}
+                  </div>
+                </li>
+              )
+            }
 
-                {!editing && (note.isMine || isAdmin) && pending?.id === note.id &&
-                  (note.isMine
-                    ? renderConfirm('delete', () => void removeMine(note.id))
-                    : renderConfirm('hide', () => void hide(note)))}
-
-                {!editing && (note.isMine || isAdmin) && pending?.id !== note.id && (
+            const open = openId === note.id
+            return (
+              <NoteListItem
+                key={note.id}
+                name={note.nickname}
+                mine={note.isMine}
+                date={note.postedOn ? formatDate(note.postedOn) : ''}
+                content={note.content}
+                open={open}
+                onToggle={() => setOpenId(open ? null : note.id)}
+              >
+                {pending?.id === note.id ? (
+                  note.isMine ? (
+                    renderConfirm('delete', () => void removeMine(note.id))
+                  ) : (
+                    renderConfirm('hide', () => void hide(note))
+                  )
+                ) : note.isMine || isAdmin ? (
                   <div className="gb-btn-row">
                     {editable && (
                       <button
@@ -250,8 +260,8 @@ export default function GameNotesBoard({
                       </button>
                     )}
                   </div>
-                )}
-              </li>
+                ) : null}
+              </NoteListItem>
             )
           })}
         </ul>

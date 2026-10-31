@@ -4,6 +4,7 @@ import type { usePersonalCollection } from '../lib/usePersonalCollection'
 import type { RatingsApi } from '../lib/useGameRatings'
 import { supabase } from '../lib/supabase'
 import { MAX_NOTES_PER_GAME } from '../lib/useGameNotesBoard'
+import NoteListItem from './NoteListItem'
 import '../styles/club-board.css'
 import { askConfirm } from '../lib/askConfirm'
 
@@ -66,6 +67,7 @@ export default function ClubBoard({
   const [saving, setSaving] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
+  const [openId, setOpenId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!enabled) return
@@ -224,9 +226,9 @@ export default function ClubBoard({
                 </>
               )}
               <textarea
-                className="gb-textarea"
+                className="gb-textarea nl-short"
                 maxLength={200}
-                rows={3}
+                rows={2}
                 value={draft}
                 placeholder="想跟大家說什麼？（公開給 VIP，最多 200 字）"
                 onChange={(event) => setDraft(event.target.value)}
@@ -281,30 +283,19 @@ export default function ClubBoard({
                     const game = gameByName.get(row.bgg_name)
                     const gameName = row.game_name ?? game?.name ?? row.bgg_name
                     return (
-                      <li className="cb-item" key={row.id}>
-                        <div className="cb-meta">
-                          <b>{row.nickname}</b>
-                          {row.is_mine && <span className="gb-mine">我的</span>}
-                          {row.posted_on && (
-                            <span className="cb-date">
-                              {row.posted_on.replaceAll('-', '/')}
-                            </span>
-                          )}
-                        </div>
-                        <p className="cb-content">{row.content}</p>
-                        <div className="cb-foot">
-                          {game ? (
-                            <button
-                              type="button"
-                              className="cb-chip"
-                              onClick={() => onOpenGame(game, 'discussion')}
-                            >
-                              {gameName} ›
-                            </button>
-                          ) : (
-                            <span className="cb-chip cb-chip-off">{gameName}</span>
-                          )}
-                          {row.is_mine && (
+                      <NoteListItem
+                        key={row.id}
+                        name={row.nickname}
+                        mine={row.is_mine}
+                        date={row.posted_on ? row.posted_on.replaceAll('-', '/') : ''}
+                        gameName={gameName}
+                        onOpenGame={game ? () => onOpenGame(game, 'discussion') : undefined}
+                        content={row.content}
+                        open={openId === row.id}
+                        onToggle={() => setOpenId(openId === row.id ? null : row.id)}
+                      >
+                        {row.is_mine ? (
+                          <div className="nl-btnrow">
                             <button
                               type="button"
                               className="cb-link cb-danger"
@@ -313,9 +304,9 @@ export default function ClubBoard({
                             >
                               {busyId === row.id ? '處理中…' : '刪除'}
                             </button>
-                          )}
-                        </div>
-                      </li>
+                          </div>
+                        ) : null}
+                      </NoteListItem>
                     )
                   })}
                 </ul>

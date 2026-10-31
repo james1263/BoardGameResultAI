@@ -10,6 +10,7 @@ import {
 import { rankGames } from '../lib/leaderboards'
 import StatsTables from './StatsTables'
 import InfoHint from './InfoHint'
+import '../styles/leaderboard-filter.css'
 
 type BoardKey = 'want' | 'played' | 'overall' | 'keep'
 type Period = 'all' | 'month' | 'quarter' | 'year'
@@ -27,6 +28,82 @@ const PERIODS: { key: Period; label: string }[] = [
   { key: 'quarter', label: '本季' },
   { key: 'year', label: '本年' },
 ]
+
+type Filters = {
+  category: string // '' = 不限
+  players: string // 'all' | '1' | '2' | '3-4' | '5-6' | '7+'
+  time: string // 'all' | '30' | '60' | '120' | '120+'
+  difficulty: string // 'all' | 'easy' | 'mid' | 'hard'
+}
+
+const NO_FILTERS: Filters = { category: '', players: 'all', time: 'all', difficulty: 'all' }
+
+const PLAYER_OPTIONS: { key: string; label: string; lo: number; hi: number }[] = [
+  { key: 'all', label: '不限', lo: 0, hi: 0 },
+  { key: '1', label: '1 人', lo: 1, hi: 1 },
+  { key: '2', label: '2 人', lo: 2, hi: 2 },
+  { key: '3-4', label: '3–4 人', lo: 3, hi: 4 },
+  { key: '5-6', label: '5–6 人', lo: 5, hi: 6 },
+  { key: '7+', label: '7 人以上', lo: 7, hi: 99 },
+]
+
+const TIME_OPTIONS = [
+  { key: 'all', label: '不限' },
+  { key: '30', label: '30 分鐘內' },
+  { key: '60', label: '31–60 分鐘' },
+  { key: '120', label: '61–120 分鐘' },
+  { key: '120+', label: '120 分鐘以上' },
+]
+
+// 難度分界是暫定值（BGG 難度 1～5），想調整就改這裡
+const EASY_MAX = 2
+const MID_MAX = 3
+const DIFFICULTY_OPTIONS = [
+  { key: 'all', label: '不限' },
+  { key: 'easy', label: `簡單（${EASY_MAX} 以下）` },
+  { key: 'mid', label: `中等（${EASY_MAX}～${MID_MAX}）` },
+  { key: 'hard', label: `偏難（${MID_MAX} 以上）` },
+]
+
+function matchesFilters(game: BoardGame, f: Filters): boolean {
+  if (f.category && !(game.category ?? []).includes(f.category)) return false
+
+  if (f.players !== 'all') {
+    const opt = PLAYER_OPTIONS.find((item) => item.key === f.players)
+    if (opt) {
+      // 優先看推薦人數；沒有資料就用人數上下限
+      let counts: number[] = Array.isArray(game.recommendPlayers)
+        ? game.recommendPlayers.map(Number)
+        : []
+      if (counts.length === 0) {
+        const lo = Number(game.minPlayers)
+        const hi = Number(game.maxPlayers)
+        if (Number.isFinite(lo) && Number.isFinite(hi) && lo > 0 && hi >= lo) {
+          counts = Array.from({ length: Math.min(hi, 20) - lo + 1 }, (_, i) => lo + i)
+        }
+      }
+      if (!counts.some((count) => count >= opt.lo && count <= opt.hi)) return false
+    }
+  }
+
+  if (f.time !== 'all') {
+    const t = Number(game.bggTime)
+    if (!Number.isFinite(t) || t <= 0) return false
+    if (f.time === '30' && t > 30) return false
+    if (f.time === '60' && !(t > 30 && t <= 60)) return false
+    if (f.time === '120' && !(t > 60 && t <= 120)) return false
+    if (f.time === '120+' && t <= 120) return false
+  }
+
+  if (f.difficulty !== 'all') {
+    const d = Number(game.bggDifficulty)
+    if (!Number.isFinite(d) || d <= 0) return false
+    if (f.difficulty === 'easy' && d > EASY_MAX) return false
+    if (f.difficulty === 'mid' && !(d > EASY_MAX && d < MID_MAX)) return false
+    if (f.difficulty === 'hard' && d < MID_MAX) return false
+  }
+  return true
+}
 
 export default function Leaderboard({
   boardGames,
@@ -57,6 +134,25 @@ export default function Leaderboard({
   const [period, setPeriod] = useState<Period>('all')
   const [openNames, setOpenNames] = useState<string[]>([])
   const [isTableOpen, setIsTableOpen] = useState(false)
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
+  const [filterOpen, setFilterOpen] = useState(false)
+
+  const activeFilterCount =
+    (filters.category ? 1 : 0) +
+    (filters.players !== 'all' ? 1 : 0) +
+    (filters.time !== 'all' ? 1 : 0) +
+    (filters.difficulty !== 'all' ? 1 : 0)
+
+  // 類型選單：依遊戲數由多到少
+  const categoryOptions = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const game of boardGames) {
+      for (const name of game.category ?? []) counts.set(name, (counts.get(name) ?? 0) + 1)
+    }
+    return [...counts.entries()].sort(
+      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-Hant'),
+    )
+  }, [boardGames])
 
   const reloadPeople = people.reload
   const reloadAdminRatings = adminRatings.reload
@@ -72,7 +168,8 @@ export default function Leaderboard({
   const canExpand = isCountBoard ? canSeePeople : isAdmin
 
   const ranked = useMemo(() => {
-    const entries = boardGames.flatMap((game) => {
+    const pool = boardGames.filter((game) => matchesFilters(game, filters))
+    const entries = pool.flatMap((game) => {
       if (board === 'want' || board === 'played') {
         const s = communityStats.getStats(game.bggName)
         const total = board === 'want' ? s.wantCount : s.playedCount
@@ -98,7 +195,12 @@ export default function Leaderboard({
             name: game.name,
             value,
             display: `${value} 人`,
-            extra: period === 'all' ? '' : `目前共 ${total} 人`,
+            extra:
+              period === 'all'
+                ? byPeriod.month > 0
+                  ? `本月 +${byPeriod.month}`
+                  : ''
+                : `目前共 ${total} 人`,
           },
         ]
       }
@@ -120,7 +222,7 @@ export default function Leaderboard({
     })
 
     return rankGames(entries)
-  }, [boardGames, board, period, communityStats, ratings])
+  }, [boardGames, board, period, communityStats, ratings, filters])
 
   if (!isOpen) return null
 
@@ -184,6 +286,21 @@ export default function Leaderboard({
       : '依該期間「新增」的人數排名（下方小字是目前總人數），只統計 VIP 玩家。'
     : '每款遊戲需滿 5 位玩家評分才會上榜。'
   function renderEmpty(): ReactNode {
+    if (activeFilterCount > 0) {
+      return (
+        <div className="lb-empty">
+          <span className="lb-empty-icon" aria-hidden="true">🔍</span>
+          <b>沒有符合篩選的遊戲</b>
+          <button
+            type="button"
+            className="lb-empty-btn"
+            onClick={() => setFilters(NO_FILTERS)}
+          >
+            清除篩選
+          </button>
+        </div>
+      )
+    }
     if (isCountBoard) {
       const label = board === 'want' ? '想玩' : '已玩'
       if (period !== 'all') {
@@ -292,6 +409,92 @@ export default function Leaderboard({
                 ))}
               </div>
             )}
+
+            <div className="lbf">
+              <button
+                type="button"
+                className={`lbf-toggle ${activeFilterCount > 0 ? 'on' : ''}`}
+                aria-expanded={filterOpen}
+                onClick={() => setFilterOpen((value) => !value)}
+              >
+                篩選{activeFilterCount > 0 ? `（${activeFilterCount}）` : ''}
+                {filterOpen ? ' ▴' : ' ▾'}
+              </button>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  className="lbf-reset"
+                  onClick={() => setFilters(NO_FILTERS)}
+                >
+                  重設
+                </button>
+              )}
+              {filterOpen && (
+                <div className="lbf-panel">
+                  <label>
+                    <span>類型</span>
+                    <select
+                      value={filters.category}
+                      onChange={(event) =>
+                        setFilters((f) => ({ ...f, category: event.target.value }))
+                      }
+                    >
+                      <option value="">不限</option>
+                      {categoryOptions.map(([name, count]) => (
+                        <option key={name} value={name}>
+                          {name}（{count}）
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>推薦人數</span>
+                    <select
+                      value={filters.players}
+                      onChange={(event) =>
+                        setFilters((f) => ({ ...f, players: event.target.value }))
+                      }
+                    >
+                      {PLAYER_OPTIONS.map((item) => (
+                        <option key={item.key} value={item.key}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>遊戲時間</span>
+                    <select
+                      value={filters.time}
+                      onChange={(event) =>
+                        setFilters((f) => ({ ...f, time: event.target.value }))
+                      }
+                    >
+                      {TIME_OPTIONS.map((item) => (
+                        <option key={item.key} value={item.key}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>難度</span>
+                    <select
+                      value={filters.difficulty}
+                      onChange={(event) =>
+                        setFilters((f) => ({ ...f, difficulty: event.target.value }))
+                      }
+                    >
+                      {DIFFICULTY_OPTIONS.map((item) => (
+                        <option key={item.key} value={item.key}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
+            </div>
 
             <div className="mylist-body">
               <div className="lb-hintrow">
