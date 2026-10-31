@@ -10,6 +10,7 @@ import {
     type Redemption,
 } from './lib/useLoyalty'
 import PlannedGatheringsAdmin from './components/PlannedGatheringsAdmin'
+import './styles/lga-list.css'
 
 type Gathering = { id: string; gatheredOn: string; title: string; note: string }
 type Player = { id: string; nickname: string }
@@ -123,6 +124,8 @@ export default function LoyaltyAdmin() {
     // 管理者專用：每位 VIP／管理者想玩的遊戲（user_id -> 遊戲 bgg_name 集合）
     const [wantMap, setWantMap] = useState<Map<string, Set<string>> | null>(null)
     const [expandedWant, setExpandedWant] = useState<string | null>(null)
+    // 指定遊戲旁的想玩名單太長時，是否展開全部（bgg_name -> 是否展開）
+    const [wantersOpen, setWantersOpen] = useState<Record<string, boolean>>({})
 
     useEffect(() => {
         let cancelled = false
@@ -841,12 +844,67 @@ export default function LoyaltyAdmin() {
     }
     const wantCountOf = (userId: string) =>
         [...(wantMap?.get(userId) ?? [])].filter((name) => gameNameMap.has(name)).length
-    const expandedWantGames = expandedWant
-        ? [...(wantMap?.get(expandedWant) ?? [])]
-            .filter((name) => gameNameMap.has(name))
-            .map((name) => gameNameMap.get(name) ?? name)
-        : []
-    const expandedWantNick = players.find((p) => p.id === expandedWant)?.nickname ?? ''
+    // 某位玩家想玩的遊戲（本場指定的排最前面）
+    const wantGamesOf = (userId: string) => {
+        const names = [...(wantMap?.get(userId) ?? [])].filter((name) =>
+            gameNameMap.has(name),
+        )
+        const inGathering = (name: string) => selectedGames.includes(name)
+        return [
+            ...names.filter(inGathering),
+            ...names.filter((name) => !inGathering(name)),
+        ].map((name) => ({
+            bggName: name,
+            name: gameNameMap.get(name) ?? name,
+            inGathering: inGathering(name),
+        }))
+    }
+    // 想玩某款遊戲的人（已選參加者排前面）
+    const wantersOf = (bggName: string) => {
+        const list = players.filter((p) => wantMap?.get(p.id)?.has(bggName))
+        return [
+            ...list.filter((p) => selectedAttendees.includes(p.id)),
+            ...list.filter((p) => !selectedAttendees.includes(p.id)),
+        ]
+    }
+    const renderWanters = (bggName: string) => {
+        if (!wantMap) return null
+        const people = wantersOf(bggName)
+        // 想玩的人沒有暱稱（例如還沒設定暱稱的管理者）時，名單上找不到他
+        const unnamed = wantInCommunity(bggName) - people.length
+        if (people.length === 0 && unnamed <= 0) return null
+        const open = !!wantersOpen[bggName]
+        const shown = open ? people : people.slice(0, 5)
+        return (
+            <span className="lgp-wanters">
+                {shown.map((p) => (
+                    <span
+                        key={p.id}
+                        className={`lgp-tag ${selectedAttendees.includes(p.id) ? 'on' : ''}`}
+                    >
+                        {p.nickname}
+                    </span>
+                ))}
+                {people.length > 5 && (
+                    <button
+                        type="button"
+                        className="lgp-more"
+                        onClick={() =>
+                            setWantersOpen((current) => ({
+                                ...current,
+                                [bggName]: !open,
+                            }))
+                        }
+                    >
+                        {open ? '收合 ▴' : `還有 ${people.length - 5} 人 ▾`}
+                    </button>
+                )}
+                {unnamed > 0 && (
+                    <span className="lgp-unnamed">另有 {unnamed} 人（未設暱稱）</span>
+                )}
+            </span>
+        )
+    }
     const wantHintStyle = { marginLeft: 8, fontSize: '0.8em', color: '#8a6d46' }
 
     const searchText = gameSearch.trim().toLocaleLowerCase()
@@ -1081,6 +1139,7 @@ export default function LoyaltyAdmin() {
                                                                                             {wantHint(game.bggName) && (
                                                                                                 <small style={wantHintStyle}>{wantHint(game.bggName)}</small>
                                                                                             )}
+{renderWanters(game.bggName)}
                                                                                         </span>
                                                                                     <button
                                                                                         type="button"
@@ -1098,92 +1157,87 @@ export default function LoyaltyAdmin() {
                                                                         <p className="loy-admin-note">找不到符合的遊戲。</p>
                                                                     )}
                                                                     {selectedGames.length === 0 ? (
-                                                                        <p className="loy-admin-note">還沒有選遊戲。</p>
-                                                                    ) : (
-                                                                        <ul className="loy-picked">
-                                                                            {selectedGames.map((bggName) => (
-                                                                                <li key={bggName}>
-                                                                                    <span>
-                                                                                            {gameNameMap.get(bggName) ?? bggName}
-                                                                                            {wantHint(bggName) && (
-                                                                                                <small style={wantHintStyle}>{wantHint(bggName)}</small>
-                                                                                            )}
-                                                                                        </span>
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        className="loy-mini-btn"
-                                                                                        disabled={busy}
-                                                                                        onClick={() => removeGame(selected.id, bggName)}
-                                                                                    >
-                                                                                        移除
-                                                                                    </button>
-                                                                                </li>
-                                                                            ))}
-                                                                        </ul>
-                                                                    )}
-                                                                    {selectedGames.length > 0 && (
-                                                                        <>
-                                                                            <h4 className="lga-sub">開團紀錄確認</h4>
-                                                                            <p className="loy-admin-note">
-                                                                                聚會結束後標記每一款有沒有真的開。只有「實際開團」會出現在遊戲詳情的「紀錄」分頁並計入次數，不影響集點。
-                                                                            </p>
-                                                                            <ul className="loy-picked">
-                                                                                {selectedGames.map((bggName) => {
-                                                                                    const status =
-                                                                                        playStatus && playStatus.id === selected.id
-                                                                                            ? (playStatus.map[bggName] ?? null)
-                                                                                            : null
-                                                                                    const past = selected.gatheredOn <= todayLocal()
-                                                                                    return (
-                                                                                        <li key={`ps-${bggName}`}>
-                                                                                            <span>
-                                                                                                {gameNameMap.get(bggName) ?? bggName}
-                                                                                                {status === 'played'
-                                                                                                    ? '　✅ 實際開團'
-                                                                                                    : status === 'cancelled'
-                                                                                                        ? '　✖ 已取消'
-                                                                                                        : past
-                                                                                                            ? '　⚠ 待確認'
-                                                                                                            : '　未確認'}
-                                                                                            </span>
-                                                                                            <span style={{ display: 'flex', gap: 6 }}>
-                                                                                                {status !== 'played' && (
-                                                                                                    <button
-                                                                                                        type="button"
-                                                                                                        className="loy-mini-btn"
-                                                                                                        disabled={busy}
-                                                                                                        onClick={() => setGameStatus(selected.id, bggName, 'played')}
-                                                                                                    >
-                                                                                                        實際開團
-                                                                                                    </button>
-                                                                                                )}
-                                                                                                {status !== 'cancelled' && (
-                                                                                                    <button
-                                                                                                        type="button"
-                                                                                                        className="loy-mini-btn"
-                                                                                                        disabled={busy}
-                                                                                                        onClick={() => setGameStatus(selected.id, bggName, 'cancelled')}
-                                                                                                    >
-                                                                                                        取消
-                                                                                                    </button>
-                                                                                                )}
-                                                                                                {status !== null && (
-                                                                                                    <button
-                                                                                                        type="button"
-                                                                                                        className="loy-mini-btn"
-                                                                                                        disabled={busy}
-                                                                                                        onClick={() => setGameStatus(selected.id, bggName, null)}
-                                                                                                    >
-                                                                                                        改回未確認
-                                                                                                    </button>
-                                                                                                )}
-                                                                                            </span>
-                                                                                        </li>
-                                                                                    )
-                                                                                })}
-                                                                            </ul>
-                                                                        </>
-                                                                    )}
+    <p className="loy-admin-note">還沒有選遊戲。</p>
+) : (
+    <ul className="lgp-games">
+        {selectedGames.map((bggName) => {
+            const status =
+                playStatus && playStatus.id === selected.id
+                    ? (playStatus.map[bggName] ?? null)
+                    : null
+            const past = selected.gatheredOn <= todayLocal()
+            return (
+                <li key={bggName} className="lgp-game">
+                    <div className="lgp-game-head">
+                        <span className="lgp-game-name">
+                            {gameNameMap.get(bggName) ?? bggName}
+                        </span>
+                        <button
+                            type="button"
+                            className="loy-mini-btn"
+                            disabled={busy}
+                            onClick={() => removeGame(selected.id, bggName)}
+                        >
+                            移除
+                        </button>
+                    </div>
+                    {wantHint(bggName) && (
+                        <small className="lgp-hint">{wantHint(bggName)}</small>
+                    )}
+                    {renderWanters(bggName)}
+                    {(past || status !== null) && (
+                        <div className="lgp-status">
+                            <span
+                                className={`lgp-state ${status ?? 'warn'}`}
+                            >
+                                {status === 'played'
+                                    ? '✅ 實際開團'
+                                    : status === 'cancelled'
+                                        ? '✖ 已取消'
+                                        : '⚠ 待確認'}
+                            </span>
+                            {status !== 'played' && (
+                                <button
+                                    type="button"
+                                    className="loy-mini-btn"
+                                    disabled={busy}
+                                    onClick={() => setGameStatus(selected.id, bggName, 'played')}
+                                >
+                                    實際開團
+                                </button>
+                            )}
+                            {status !== 'cancelled' && (
+                                <button
+                                    type="button"
+                                    className="loy-mini-btn"
+                                    disabled={busy}
+                                    onClick={() => setGameStatus(selected.id, bggName, 'cancelled')}
+                                >
+                                    取消
+                                </button>
+                            )}
+                            {status !== null && (
+                                <button
+                                    type="button"
+                                    className="loy-mini-btn"
+                                    disabled={busy}
+                                    onClick={() => setGameStatus(selected.id, bggName, null)}
+                                >
+                                    改回未確認
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </li>
+            )
+        })}
+    </ul>
+)}
+{selectedGames.length > 0 && selected.gatheredOn <= todayLocal() && (
+    <p className="loy-admin-note">
+        標記每款有沒有真的開：只有「實際開團」會出現在遊戲詳情的「紀錄」並計入次數，不影響集點。
+    </p>
+)}
                                                                     <h4 className="lga-sub">② 人數上限</h4>
                                                                     <p className="loy-admin-note">
                                                                         上限包含你手動加入的人。連結可報到的名額 ＝ 上限 － 目前出席人數。
@@ -1234,82 +1288,88 @@ export default function LoyaltyAdmin() {
                                                                         <p className="loy-admin-note">找不到符合的玩家。</p>
                                                                     ) : (
                                                                         <>
-                                                                        <ul className="lga-chips">
-                                                                            {visiblePlayers.map((player) => {
-                                                                                const attending = selectedAttendees.includes(player.id)
-                                                                                const exempt = selectedExempts.includes(player.id)
-                                                                                return (
-                                                                                    <li
-                                                                                        key={player.id}
-                                                                                        className={`lga-chip ${attending ? 'on' : ''}`}
-                                                                                    >
-                                                                                        <button
-                                                                                            type="button"
-                                                                                            className="lga-chip-main"
-                                                                                            disabled={busy}
-                                                                                            aria-pressed={attending}
-                                                                                            onClick={() =>
-                                                                                                toggleAttendee(selected.id, player.id, !attending)
-                                                                                            }
-                                                                                        >
-                                                                                            <span className="lga-avatar">
-                                                                                                {initialOf(player.nickname)}
-                                                                                            </span>
-                                                                                            <span className="lga-chip-name">{player.nickname}</span>
-                                                                                            {attending && <span className="lga-check">✓</span>}
-                                                                                        </button>
-                                                                                        <span className="lga-contact">
-                                                                                            {contacts[player.id] ?? '未填聯絡方式'}
-                                                                                        </span>
-                                                                                        {wantMap?.has(player.id) && (
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                aria-expanded={expandedWant === player.id}
-                                                                                                onClick={() =>
-                                                                                                    setExpandedWant((current) =>
-                                                                                                        current === player.id ? null : player.id,
-                                                                                                    )
-                                                                                                }
-                                                                                                style={{
-                                                                                                    background: 'none',
-                                                                                                    border: 'none',
-                                                                                                    padding: '0 4px',
-                                                                                                    fontSize: 12,
-                                                                                                    color: '#8a6d46',
-                                                                                                    textDecoration: 'underline',
-                                                                                                    cursor: 'pointer',
-                                                                                                }}
-                                                                                            >
-                                                                                                想玩 {wantCountOf(player.id)} 款 {expandedWant === player.id ? '▴' : '▾'}
-                                                                                            </button>
-                                                                                        )}
-                                                                                        {selectedSelf.includes(player.id) && (
-                                                                                            <span className="lga-self">自己報到</span>
-                                                                                        )}
-                                                                                        {attending && (
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                className={`lga-exempt ${exempt ? 'on' : ''}`}
-                                                                                                disabled={busy}
-                                                                                                aria-pressed={exempt}
-                                                                                                onClick={() =>
-                                                                                                    toggleExempt(selected.id, player.id, !exempt)
-                                                                                                }
-                                                                                            >
-                                                                                                {exempt ? '✓ 免評分（已給點）' : '免評分'}
-                                                                                            </button>
-                                                                                        )}
-                                                                                    </li>
-                                                                                )
-                                                                            })}
-                                                                        </ul>
-                                                                        {expandedWant && wantMap?.has(expandedWant) && (
-                                                                            <p className="loy-admin-note">
-                                                                                {expandedWantNick} 想玩 {expandedWantGames.length} 款：
-                                                                                {expandedWantGames.length > 0 ? expandedWantGames.join('、') : '（沒有）'}
-                                                                                。僅供參考，想玩不等於會來。
-                                                                            </p>
-                                                                        )}
+                                                                        <ul className="lgp-list">
+    {visiblePlayers.map((player) => {
+        const attending = selectedAttendees.includes(player.id)
+        const exempt = selectedExempts.includes(player.id)
+        const wantOpen = expandedWant === player.id
+        const wants = wantOpen ? wantGamesOf(player.id) : []
+        return (
+            <li
+                key={player.id}
+                className={`lgp-row ${attending ? 'on' : ''}`}
+            >
+                <div className="lgp-line">
+                    <button
+                        type="button"
+                        className="lgp-pick"
+                        disabled={busy}
+                        aria-pressed={attending}
+                        onClick={() =>
+                            toggleAttendee(selected.id, player.id, !attending)
+                        }
+                    >
+                        <span className="lgp-check" aria-hidden="true">
+                            {attending ? '✓' : ''}
+                        </span>
+                        <span className="lgp-avatar">
+                            {initialOf(player.nickname)}
+                        </span>
+                        <span className="lgp-text">
+                            <span className="lgp-name">{player.nickname}</span>
+                            <span className="lgp-sub">
+                                {contacts[player.id] ?? '未填聯絡方式'}
+                                {selectedSelf.includes(player.id) ? '・自己報到' : ''}
+                            </span>
+                        </span>
+                    </button>
+                    {wantMap?.has(player.id) && (
+                        <button
+                            type="button"
+                            className="lgp-want"
+                            aria-expanded={wantOpen}
+                            onClick={() =>
+                                setExpandedWant((current) =>
+                                    current === player.id ? null : player.id,
+                                )
+                            }
+                        >
+                            想玩 {wantCountOf(player.id)} 款 {wantOpen ? '▴' : '▾'}
+                        </button>
+                    )}
+                </div>
+                {wantOpen && (
+                    <div className="lgp-wants">
+                        {wants.length === 0 ? (
+                            <span className="lgp-unnamed">沒有標想玩的遊戲</span>
+                        ) : (
+                            wants.map((game) => (
+                                <span
+                                    key={game.bggName}
+                                    className={`lgp-tag ${game.inGathering ? 'on' : ''}`}
+                                >
+                                    {game.name}
+                                    {game.inGathering ? '・本場指定' : ''}
+                                </span>
+                            ))
+                        )}
+                    </div>
+                )}
+                {attending && (
+                    <button
+                        type="button"
+                        className={`lga-exempt lgp-exempt ${exempt ? 'on' : ''}`}
+                        disabled={busy}
+                        aria-pressed={exempt}
+                        onClick={() => toggleExempt(selected.id, player.id, !exempt)}
+                    >
+                        {exempt ? '✓ 免評分（已給點）' : '免評分'}
+                    </button>
+                )}
+            </li>
+        )
+    })}
+</ul>
                                                                         </>
                                                                     )}
 

@@ -1,0 +1,198 @@
+/* 聚會設定：指定遊戲旁的想玩名單、開團確認併入遊戲列、玩家單行條列 */
+
+.lgp-games,
+.lgp-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+/* ---- 指定遊戲 ---- */
+.lgp-game {
+  padding: 10px 0;
+  border-top: 1px solid #e6dfcc;
+}
+.lgp-game:first-child {
+  border-top: 0;
+}
+.lgp-game-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.lgp-game-name {
+  font-weight: 700;
+  color: #34463c;
+}
+.lgp-hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #8a6d46;
+}
+
+/* 想玩這款的人（名字小標籤） */
+.lgp-wanters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin-top: 4px;
+}
+.lgp-tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #f0e9d8;
+  color: #5b4a30;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.lgp-tag.on {
+  background: #dfeadf;
+  color: #2f5a3c;
+  font-weight: 600;
+}
+.lgp-more {
+  border: 0;
+  background: none;
+  padding: 2px;
+  font-size: 12px;
+  color: #8a6d46;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.lgp-unnamed {
+  font-size: 12px;
+  color: #8a6d46;
+}
+
+/* 開團確認（併在每款遊戲底下） */
+.lgp-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.lgp-state {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5b4a30;
+}
+.lgp-state.played {
+  color: #2f5a3c;
+}
+.lgp-state.cancelled {
+  color: #8a5a4a;
+}
+.lgp-state.warn {
+  color: #9a6a1f;
+}
+
+/* ---- 手動加入參加者：單行條列 ---- */
+.lgp-list {
+  border: 1px solid #e6dfcc;
+  border-radius: 12px;
+  background: #fffdf6;
+  overflow: hidden;
+}
+.lgp-row {
+  padding: 2px 10px;
+  border-top: 1px solid #eee6d3;
+}
+.lgp-row:first-child {
+  border-top: 0;
+}
+.lgp-row.on {
+  background: #f1f6ef;
+}
+.lgp-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.lgp-pick {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.lgp-check {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #cdbf9f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #fff;
+}
+.lgp-row.on .lgp-check {
+  background: #456b50;
+  border-color: #456b50;
+}
+.lgp-avatar {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #b78a5a;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+.lgp-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.lgp-name {
+  font-weight: 600;
+  color: #34463c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lgp-sub {
+  font-size: 12px;
+  color: #8a7a60;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lgp-want {
+  flex: none;
+  padding: 10px 4px;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  color: #8a6d46;
+  text-decoration: underline;
+  cursor: pointer;
+}
+/* 點「想玩 N 款」後，就在那一列正下方展開 */
+.lgp-wants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  padding: 2px 0 8px 32px;
+}
+.lgp-row .lgp-exempt {
+  margin: 0 0 8px 32px;
+}
