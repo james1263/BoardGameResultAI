@@ -8,11 +8,12 @@ import {
   type PeopleApi,
 } from '../lib/useGamePeople'
 import { rankGames } from '../lib/leaderboards'
+import { usePlayTotals } from '../lib/usePlayTotals'
 import StatsTables from './StatsTables'
 import InfoHint from './InfoHint'
 import '../styles/leaderboard-filter.css'
 
-type BoardKey = 'want' | 'played' | 'overall' | 'keep'
+type BoardKey = 'want' | 'played' | 'overall' | 'keep' | 'plays'
 type Period = 'all' | 'month' | 'quarter' | 'year'
 
 const BOARDS: { key: BoardKey; label: string }[] = [
@@ -21,6 +22,8 @@ const BOARDS: { key: BoardKey; label: string }[] = [
   { key: 'overall', label: '整體評分' },
   { key: 'keep', label: '留下來' },
 ]
+
+const PLAYS_BOARD: { key: BoardKey; label: string } = { key: 'plays', label: '最常玩' }
 
 const PERIODS: { key: Period; label: string }[] = [
   { key: 'all', label: '全部' },
@@ -165,11 +168,43 @@ export default function Leaderboard({
   }, [isOpen, canSeePeople, isAdmin, reloadPeople, reloadAdminRatings])
 
   const isCountBoard = board === 'want' || board === 'played'
-  const canExpand = isCountBoard ? canSeePeople : isAdmin
+  const isPlaysBoard = board === 'plays'
+  const canExpand = isPlaysBoard ? false : isCountBoard ? canSeePeople : isAdmin
+  // 「最常玩」只有 VIP／管理者看得到（資料庫函式也會再驗證一次）
+  const canPlays = canSeePeople || isAdmin
+  const boards = canPlays ? [...BOARDS, PLAYS_BOARD] : BOARDS
+  const playTotals = usePlayTotals(isOpen && canPlays)
 
   const ranked = useMemo(() => {
     const pool = boardGames.filter((game) => matchesFilters(game, filters))
     const entries = pool.flatMap((game) => {
+      if (board === 'plays') {
+        const t = playTotals.get(game.bggName)
+        const value =
+          period === 'all'
+            ? t.total
+            : period === 'month'
+              ? t.month
+              : period === 'quarter'
+                ? t.quarter
+                : t.year
+        if (value <= 0) return []
+        return [
+          {
+            game,
+            name: game.name,
+            value,
+            display: `${value} 次`,
+            extra:
+              period === 'all'
+                ? t.month > 0
+                  ? `本月 +${t.month}`
+                  : ''
+                : `累計 ${t.total} 次`,
+          },
+        ]
+      }
+
       if (board === 'want' || board === 'played') {
         const s = communityStats.getStats(game.bggName)
         const total = board === 'want' ? s.wantCount : s.playedCount
@@ -222,7 +257,7 @@ export default function Leaderboard({
     })
 
     return rankGames(entries)
-  }, [boardGames, board, period, communityStats, ratings, filters])
+  }, [boardGames, board, period, communityStats, ratings, filters, playTotals])
 
   if (!isOpen) return null
 
@@ -280,7 +315,11 @@ export default function Leaderboard({
     )
   }
 
-  const note = isCountBoard
+  const note = isPlaysBoard
+    ? period === 'all'
+      ? '依累計遊玩次數排名（含沒有日期的歷史次數），只統計 VIP 玩家。'
+      : '本月／本季／本年只計算有日期的遊玩紀錄，不含沒有日期的歷史次數。只統計 VIP 玩家。'
+    : isCountBoard
     ? period === 'all'
       ? '依目前的總人數排名，只統計 VIP 玩家。'
       : '依該期間「新增」的人數排名（下方小字是目前總人數），只統計 VIP 玩家。'
@@ -301,6 +340,43 @@ export default function Leaderboard({
         </div>
       )
     }
+    if (isPlaysBoard) {
+      if (playTotals.status === 'loading' || playTotals.status === 'idle') {
+        return (
+          <div className="lb-empty">
+            <b>讀取中…</b>
+          </div>
+        )
+      }
+      if (playTotals.status === 'error') {
+        return (
+          <div className="lb-empty">
+            <b>讀取遊玩次數失敗</b>
+            <p>請稍後再試，或重新整理網頁。</p>
+          </div>
+        )
+      }
+      if (period !== 'all') {
+        const periodLabel = PERIODS.find((item) => item.key === period)?.label ?? ''
+        return (
+          <div className="lb-empty">
+            <span className="lb-empty-icon" aria-hidden="true">🗓</span>
+            <b>{periodLabel}還沒有有日期的遊玩紀錄</b>
+            <button type="button" className="lb-empty-btn" onClick={() => setPeriod('all')}>
+              看全部期間
+            </button>
+          </div>
+        )
+      }
+      return (
+        <div className="lb-empty">
+          <span className="lb-empty-icon" aria-hidden="true">🎲</span>
+          <b>還沒有遊玩紀錄</b>
+          <p>VIP 玩家在「我的統計」記錄遊玩次數後會出現在這裡。</p>
+        </div>
+      )
+    }
+
     if (isCountBoard) {
       const label = board === 'want' ? '想玩' : '已玩'
       if (period !== 'all') {
@@ -382,8 +458,8 @@ export default function Leaderboard({
               </button>
             </div>
 
-            <div className="lb-tabs">
-              {BOARDS.map((item) => (
+            <div className={`lb-tabs${boards.length > 4 ? ' lb-tabs-5' : ''}`}>
+              {boards.map((item) => (
                 <button
                   key={item.key}
                   type="button"
@@ -395,7 +471,7 @@ export default function Leaderboard({
               ))}
             </div>
 
-            {isCountBoard && (
+            {(isCountBoard || isPlaysBoard) && (
               <div className="lb-periods">
                 {PERIODS.map((item) => (
                   <button

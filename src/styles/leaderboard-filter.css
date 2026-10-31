@@ -57,3 +57,16 @@
   border: 1px solid #d9cfb8;
   border-radius: 8px;
 }
+
+/* 排行榜分頁變成 5 顆（多了「最常玩」）時，平均分配、字小一點 */
+.lb-tabs.lb-tabs-5 {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.lb-tabs.lb-tabs-5 .lb-tab {
+  padding-right: 2px;
+  padding-left: 2px;
+  font-size: 14px;
+  white-space: nowrap;
+}
