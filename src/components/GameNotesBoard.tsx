@@ -27,6 +27,8 @@ export default function GameNotesBoard({
   const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
+  // 頁面內確認（Google App 等內建瀏覽器不支援 window.confirm）
+  const [pending, setPending] = useState<{ id: string; kind: 'delete' | 'hide' } | null>(null)
 
   if (!enabled) return null
 
@@ -56,16 +58,30 @@ export default function GameNotesBoard({
   }
 
   async function removeMine(noteId: string) {
-    if (!window.confirm('確定要刪除這則留言嗎？刪除後無法復原。')) return
+    setPending(null)
     setMessage(await api.deleteMine(noteId))
     if (editingId === noteId) setEditingId(null)
   }
 
   async function hide(note: BoardNote) {
-    if (!window.confirm(`確定要隱藏「${note.nickname}」的這則留言嗎？之後可以恢復。`)) {
-      return
-    }
+    setPending(null)
     setMessage(await api.setHidden(note.id, true))
+  }
+
+  function renderConfirm(noteId: string, kind: 'delete' | 'hide', onYes: () => void) {
+    return (
+      <div className="gb-btn-row">
+        <span className="gb-count">
+          {kind === 'delete' ? '確定刪除？無法復原' : '確定隱藏？之後可恢復'}
+        </span>
+        <button type="button" className="gb-action" onClick={() => setPending(null)}>
+          取消
+        </button>
+        <button type="button" className="gb-action gb-danger" onClick={onYes}>
+          {kind === 'delete' ? '確定刪除' : '確定隱藏'}
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -118,16 +134,20 @@ export default function GameNotesBoard({
             {myHiddenNotes.map((note) => (
               <li className="gb-item" key={note.id}>
                 <p className="gb-content">{note.content}</p>
-                <div className="gb-meta">
-                  <button
-                    type="button"
-                    className="gb-action gb-danger"
-                    disabled={api.busyId === note.id}
-                    onClick={() => void removeMine(note.id)}
-                  >
-                    刪除
-                  </button>
-                </div>
+                {pending?.id === note.id && pending.kind === 'delete' ? (
+                  renderConfirm(note.id, 'delete', () => void removeMine(note.id))
+                ) : (
+                  <div className="gb-meta">
+                    <button
+                      type="button"
+                      className="gb-action gb-danger"
+                      disabled={api.busyId === note.id}
+                      onClick={() => setPending({ id: note.id, kind: 'delete' })}
+                    >
+                      刪除
+                    </button>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -189,7 +209,12 @@ export default function GameNotesBoard({
                   <p className="gb-content">{note.content}</p>
                 )}
 
-                {!editing && (note.isMine || isAdmin) && (
+                {!editing && (note.isMine || isAdmin) && pending?.id === note.id &&
+                  (note.isMine
+                    ? renderConfirm(note.id, 'delete', () => void removeMine(note.id))
+                    : renderConfirm(note.id, 'hide', () => void hide(note)))}
+
+                {!editing && (note.isMine || isAdmin) && pending?.id !== note.id && (
                   <div className="gb-btn-row">
                     {editable && (
                       <button
@@ -210,7 +235,7 @@ export default function GameNotesBoard({
                         type="button"
                         className="gb-action gb-danger"
                         disabled={busy}
-                        onClick={() => void removeMine(note.id)}
+                        onClick={() => setPending({ id: note.id, kind: 'delete' })}
                       >
                         {busy ? '處理中…' : '刪除'}
                       </button>
@@ -219,7 +244,7 @@ export default function GameNotesBoard({
                         type="button"
                         className="gb-action"
                         disabled={busy}
-                        onClick={() => void hide(note)}
+                        onClick={() => setPending({ id: note.id, kind: 'hide' })}
                       >
                         {busy ? '處理中…' : '隱藏'}
                       </button>
