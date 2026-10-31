@@ -2719,3 +2719,14 @@ body {
     line-height: 1.3;
     text-align: center;
 }
+
+/* 關掉 iPhone 的雙擊放大偵測，快點按鈕才不會被吃掉或送錯 */
+html,
+body,
+button,
+a,
+.game-card,
+.status-btn,
+.sb-item {
+  touch-action: manipulation;
+}
