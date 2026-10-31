@@ -13,6 +13,7 @@ import '../styles/planned.css'
 type GameOption = { bggName: string; name: string }
 type GatheringOption = { id: string; label: string; gatheredOn: string }
 type Voter = { user_id: string; nickname: string; contact_name: string | null }
+type WantPerson = { userId: string; nickname: string; contact: string }
 
 type Form = {
   id: string | null
@@ -78,11 +79,88 @@ export default function PlannedGatheringsAdmin({
       cancelled = true
     }
   }, [])
-  const wantHint = (bggName: string): string =>
+
+  // 管理者專用：每款遊戲有哪些人想玩（暱稱＋LINE／FB）。失敗時只是沒有「▾」，不影響其他功能
+  const [peopleMap, setPeopleMap] = useState<Map<string, WantPerson[]> | null>(null)
+  const [openWant, setOpenWant] = useState<string | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    void supabase.rpc('admin_get_want_to_play_people').then(({ data, error }) => {
+      if (cancelled || error || !data) return
+      const map = new Map<string, WantPerson[]>()
+      for (const row of data as {
+        bgg_name: string
+        user_id: string
+        nickname: string | null
+        contact_name: string | null
+      }[]) {
+        const list = map.get(row.bgg_name) ?? []
+        if (list.some((person) => person.userId === row.user_id)) continue
+        list.push({
+          userId: row.user_id,
+          nickname: (row.nickname ?? '').trim(),
+          contact: (row.contact_name ?? '').trim(),
+        })
+        map.set(row.bgg_name, list)
+      }
+      setPeopleMap(map)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const wantCount = (bggName: string): number =>
     wantMap
-      ? `社群有 ${[...wantMap.values()].filter((set) => set.has(bggName)).length} 人想玩`
-      : ''
+      ? [...wantMap.values()].filter((set) => set.has(bggName)).length
+      : (peopleMap?.get(bggName)?.length ?? 0)
+  const hasWantData = wantMap !== null || peopleMap !== null
   const wantHintStyle = { marginLeft: 8, fontSize: '0.8em', color: '#8a6d46' }
+
+  function renderWant(bggName: string) {
+    if (!hasWantData) return null
+    const count = wantCount(bggName)
+    const people = peopleMap?.get(bggName) ?? []
+    const canOpen = people.length > 0
+    const isOpen = openWant === bggName
+    return (
+      <>
+        <small style={wantHintStyle}>社群有 {count} 人想玩</small>
+        {canOpen && (
+          <button
+            type="button"
+            aria-expanded={isOpen}
+            onClick={() => setOpenWant(isOpen ? null : bggName)}
+            style={{
+              marginLeft: 4,
+              padding: '0 4px',
+              border: 'none',
+              background: 'none',
+              color: '#8a6d46',
+              fontSize: '0.8em',
+              cursor: 'pointer',
+            }}
+          >
+            {isOpen ? '▴' : '▾'}
+          </button>
+        )}
+        {canOpen && isOpen && (
+          <small
+            style={{ display: 'block', marginTop: 4, color: '#6b5a3c', lineHeight: 1.6 }}
+          >
+            {people
+              .map(
+                (person) =>
+                  `${person.nickname || '（未設暱稱）'}${
+                    person.contact ? `（${person.contact}）` : ''
+                  }`,
+              )
+              .join('、')}
+          </small>
+        )}
+      </>
+    )
+  }
 
   const gameNameMap = useMemo(
     () => new Map(allGames.map((game) => [game.bggName, game.name])),
@@ -262,9 +340,7 @@ export default function PlannedGatheringsAdmin({
               <li key={game.bggName}>
                 <span>
                   {game.name}
-                  {wantHint(game.bggName) && (
-                    <small style={wantHintStyle}>{wantHint(game.bggName)}</small>
-                  )}
+                  {renderWant(game.bggName)}
                 </span>
                 <button
                   type="button"
@@ -289,9 +365,7 @@ export default function PlannedGatheringsAdmin({
               <li key={bggName}>
                 <span>
                   {gameNameMap.get(bggName) ?? bggName}
-                  {wantHint(bggName) && (
-                    <small style={wantHintStyle}>{wantHint(bggName)}</small>
-                  )}
+                  {renderWant(bggName)}
                 </span>
                 <button
                   type="button"
