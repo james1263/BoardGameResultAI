@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
+import { askConfirm } from '../lib/askConfirm'
 import {
   defaultDocTitle,
   isSafeUrl,
@@ -507,7 +508,7 @@ export default function RulebookBatchUpload() {
       doc.source_type === 'upload'
         ? '確定要刪除這份文件嗎？PDF 原檔與搜尋索引都會一起刪除，無法復原。'
         : '確定要刪除這份文件連結嗎？'
-    if (!window.confirm(text)) return
+    if (!(await askConfirm(text))) return
     setLinkError('')
     setLinkDone('')
     const message = await docsApi.deleteDoc(doc)

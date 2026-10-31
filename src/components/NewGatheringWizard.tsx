@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
+import { askConfirm } from '../lib/askConfirm'
 import { todayLocal } from '../lib/useLoyalty'
 import { useBackClose } from '../lib/useBackClose'
 import '../styles/new-gathering.css'
@@ -129,9 +130,10 @@ export default function NewGatheringWizard({
     }
     if (
       picked.length > 0 &&
-      !window.confirm(
+      !(await askConfirm(
         `將有 ${picked.length} 位玩家加入出席名單，他們會自動成為 VIP 並計入集點。確定建立聚會嗎？`,
-      )
+        { confirmText: '建立聚會', danger: false },
+      ))
     )
       return
 

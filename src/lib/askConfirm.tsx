@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 
 // 取代 window.confirm / window.alert。
@@ -11,19 +12,22 @@ function Dialog({
   confirmText,
   cancelText,
   danger,
+  input,
   onDone,
 }: {
   message: string
   confirmText: string
   cancelText: string | null
   danger: boolean
-  onDone: (ok: boolean) => void
+  input?: { placeholder: string; defaultValue?: string }
+  onDone: (ok: boolean, text: string) => void
 }) {
+  const [text, setText] = useState(input?.defaultValue ?? '')
   return (
     <div
       role="alertdialog"
       aria-modal="true"
-      onClick={() => onDone(false)}
+      onClick={() => onDone(false, '')}
       style={{
         position: 'fixed',
         inset: 0,
@@ -47,14 +51,44 @@ function Dialog({
           boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
         }}
       >
-        <p style={{ margin: '0 0 16px', fontSize: 16, lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+        <p
+          style={{
+            margin: '0 0 16px',
+            fontSize: 16,
+            lineHeight: 1.6,
+            whiteSpace: 'pre-line',
+            overflowWrap: 'anywhere',
+            maxHeight: '55vh',
+            overflowY: 'auto',
+          }}
+        >
           {message}
         </p>
+        {input && (
+          <input
+            type="text"
+            value={text}
+            autoFocus
+            placeholder={input.placeholder}
+            onChange={(event) => setText(event.target.value)}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              margin: '0 0 16px',
+              padding: '9px 12px',
+              fontSize: 16,
+              borderRadius: 10,
+              border: '1px solid #b78a5a',
+              background: '#fff',
+              color: '#34463c',
+            }}
+          />
+        )}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           {cancelText !== null && (
             <button
               type="button"
-              onClick={() => onDone(false)}
+              onClick={() => onDone(false, '')}
               style={{
                 padding: '9px 16px',
                 fontSize: 15,
@@ -69,8 +103,8 @@ function Dialog({
           )}
           <button
             type="button"
-            autoFocus
-            onClick={() => onDone(true)}
+            autoFocus={!input}
+            onClick={() => onDone(true, text)}
             style={{
               padding: '9px 18px',
               fontSize: 15,
@@ -88,13 +122,19 @@ function Dialog({
   )
 }
 
-function open(message: string, confirmText: string, cancelText: string | null, danger: boolean) {
-  return new Promise<boolean>((resolve) => {
+function open(
+  message: string,
+  confirmText: string,
+  cancelText: string | null,
+  danger: boolean,
+  input?: { placeholder: string; defaultValue?: string },
+) {
+  return new Promise<{ ok: boolean; text: string }>((resolve) => {
     const host = document.createElement('div')
     document.body.appendChild(host)
     const root = createRoot(host)
-    const finish = (ok: boolean) => {
-      resolve(ok)
+    const finish = (ok: boolean, text: string) => {
+      resolve({ ok, text })
       window.setTimeout(() => {
         root.unmount()
         host.remove()
@@ -106,21 +146,43 @@ function open(message: string, confirmText: string, cancelText: string | null, d
         confirmText={confirmText}
         cancelText={cancelText}
         danger={danger}
+        input={input}
         onDone={finish}
       />,
     )
   })
 }
 
-export function askConfirm(message: string, options: Options = {}): Promise<boolean> {
-  return open(
+export async function askConfirm(message: string, options: Options = {}): Promise<boolean> {
+  const result = await open(
     message,
     options.confirmText ?? '確定',
     options.cancelText ?? '取消',
     options.danger ?? /刪除|隱藏|捨棄|移除|覆蓋/.test(message),
   )
+  return result.ok
 }
 
 export async function showNotice(message: string): Promise<void> {
   await open(message, '好', null, false)
+}
+
+// 取代 window.prompt：有輸入框，按取消回傳 null，按確定回傳輸入的文字。
+export async function askInput(
+  message: string,
+  options: {
+    placeholder?: string
+    defaultValue?: string
+    confirmText?: string
+    danger?: boolean
+  } = {},
+): Promise<string | null> {
+  const result = await open(
+    message,
+    options.confirmText ?? '確定',
+    '取消',
+    options.danger ?? false,
+    { placeholder: options.placeholder ?? '', defaultValue: options.defaultValue },
+  )
+  return result.ok ? result.text : null
 }

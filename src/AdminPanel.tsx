@@ -6,6 +6,7 @@ import {
 } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
+import { askConfirm, askInput } from './lib/askConfirm'
 import {
     parseBoardGamesCsv,
     makeCoverSlug,
@@ -215,11 +216,12 @@ export default function AdminPanel() {
                 removed.map((item) => `・${item.name}（${item.bggName}）`).join('\n')
         }
 
-        if (!window.confirm(confirmText)) return
+        if (!(await askConfirm(confirmText, { confirmText: '確認匯入', danger: false }))) return
 
         if (removed.length > 5) {
-            const typed = window.prompt(
+            const typed = await askInput(
                 `這次會把 ${removed.length} 款遊戲移到垃圾桶，請輸入「移除」兩個字確認：`,
+                { placeholder: '移除', confirmText: '確認移除', danger: true },
             )
             if (typed?.trim() !== '移除') return
         }

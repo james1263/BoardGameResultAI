@@ -11,6 +11,7 @@ import {
   indexSuffix,
   type DocKind3,
 } from './lib/docLabels'
+import { askConfirm } from './lib/askConfirm'
 import './styles/game-docs.css'
 
 // 組標題只是小標籤，不是按鈕；每份文件自己一列
@@ -40,7 +41,7 @@ export default function GameDocuments({
       doc.source_type === 'upload'
         ? '確定要刪除這份文件嗎？PDF 原檔與搜尋索引都會一起刪除，無法復原。'
         : '確定要刪除這份文件連結嗎？'
-    if (!window.confirm(text)) return
+    if (!(await askConfirm(text))) return
     setError('')
 
     const message = await deleteDoc(doc)

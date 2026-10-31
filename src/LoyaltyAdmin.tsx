@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './lib/supabase'
+import { askConfirm, askInput, showNotice } from './lib/askConfirm'
 import {
     toDay,
     toRedemption,
@@ -346,9 +347,9 @@ export default function LoyaltyAdmin() {
 
     async function deleteGathering(gathering: Gathering) {
         if (
-            !window.confirm(
+            !(await askConfirm(
                 `確定刪除 ${gatheringName(gathering)} 的聚會嗎？這場的參加名單、遊戲清單都會一起刪除，玩家的點數會跟著重新計算。`,
-            )
+            ))
         )
             return
 
@@ -379,9 +380,9 @@ export default function LoyaltyAdmin() {
             checked &&
             capacity !== null &&
             (attendees[gatheringId] ?? []).length >= capacity &&
-            !window.confirm(
+            !(await askConfirm(
                 `這場聚會的人數上限是 ${capacity} 人，目前已經滿了。要由你手動加入、超過上限嗎？`,
-            )
+            ))
         )
             return
 
@@ -547,9 +548,9 @@ export default function LoyaltyAdmin() {
         const current = (attendees[gatheringId] ?? []).length
         if (
             value < current &&
-            !window.confirm(
+            !(await askConfirm(
                 `目前已有 ${current} 人出席，比新的上限 ${value} 多。已在名單上的人不受影響，但新的人無法再報到。確定嗎？`,
-            )
+            ))
         ) {
             return
         }
@@ -562,9 +563,9 @@ export default function LoyaltyAdmin() {
 
     async function resetCheckinToken(gatheringId: string) {
         if (
-            !window.confirm(
+            !(await askConfirm(
                 '重設後，舊的報到連結會立刻失效（已經報到的人不受影響）。確定要重設嗎？',
-            )
+            ))
         )
             return
         await updateCheckin(
@@ -580,7 +581,7 @@ export default function LoyaltyAdmin() {
             await navigator.clipboard.writeText(link)
             setMessage(`已複製聚會連結，可以傳給今天來玩的人：${link}`)
         } catch {
-            window.prompt('請複製這個聚會連結：', link)
+            await showNotice('請長按下面的網址複製，傳給今天來玩的人：\n\n' + link)
         }
     }
 
@@ -611,9 +612,9 @@ export default function LoyaltyAdmin() {
         }
         const name = gameNameMap.get(bggName) ?? bggName
         if (
-            !window.confirm(
+            !(await askConfirm(
                 `確定從這一場移除「${name}」嗎？`,
-            )
+            ))
         )
             return
 
@@ -703,9 +704,9 @@ export default function LoyaltyAdmin() {
     }
 
     async function grantVoucher(row: OverviewRow) {
-        const input = window.prompt(
+        const input = await askInput(
             `要贈送幾張免費券給「${row.nickname}」？（1～5 張）`,
-            '1',
+            { defaultValue: '1', placeholder: '1～5' },
         )
         if (input === null) return
         const qty = Number(input)
@@ -729,9 +730,9 @@ export default function LoyaltyAdmin() {
     }
     async function redeem(row: OverviewRow) {
         if (
-            !window.confirm(
+            !(await askConfirm(
                 `確定為「${row.nickname}」補登 1 張免費券使用嗎？\n（有券又有來的人系統會自動用券，這個按鈕只用來補登現場已經給過的券。）\n目前累積可用 ${row.availableVouchers} 張，補登後無法復原。`,
-            )
+            ))
         )
             return
 

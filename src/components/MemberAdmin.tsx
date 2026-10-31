@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
+import { askConfirm, askInput } from '../lib/askConfirm'
 
 type Member = {
     user_id: string
@@ -73,7 +74,7 @@ export default function MemberAdmin() {
 
     async function toggleVip(member: Member) {
         const next = !member.is_vip
-        if (!next && !window.confirm(`確定要移除「${member.nickname}」的 VIP 資格嗎？`)) {
+        if (!next && !(await askConfirm(`確定要移除「${member.nickname}」的 VIP 資格嗎？`))) {
             return
         }
         setBusyId(member.user_id)
@@ -90,8 +91,9 @@ export default function MemberAdmin() {
     }
 
     async function deleteMember(member: Member) {
-        const typed = window.prompt(
+        const typed = await askInput(
             `這會永久刪除「${member.nickname}」的帳號、評分、遊玩紀錄與集點兌換紀錄，無法復原。\n\n請輸入暱稱 ${member.nickname} 確認：`,
+            { placeholder: member.nickname, confirmText: '刪除帳號', danger: true },
         )
         if (typed === null) return
         if (typed.trim() !== member.nickname) {
@@ -119,9 +121,9 @@ export default function MemberAdmin() {
             return
         }
         if (
-            !window.confirm(
+            !(await askConfirm(
                 '換密碼後，舊密碼立刻失效（已經是 VIP 的人不受影響）。確定嗎？',
-            )
+            ))
         ) {
             return
         }
@@ -135,7 +137,7 @@ export default function MemberAdmin() {
     }
 
     async function clearLock() {
-        if (!window.confirm('要清除所有人的輸入錯誤紀錄、解除鎖定嗎？')) return
+        if (!(await askConfirm('要清除所有人的輸入錯誤紀錄、解除鎖定嗎？'))) return
         const { error } = await supabase.rpc('admin_clear_vip_lock')
         if (error) {
             setMessage('解除失敗：' + error.message)

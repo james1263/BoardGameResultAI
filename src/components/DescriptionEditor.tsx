@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { askConfirm } from '../lib/askConfirm'
 
 export default function DescriptionEditor({
   value,
@@ -23,7 +24,7 @@ export default function DescriptionEditor({
   }
 
   async function handleDelete() {
-    if (!window.confirm('確定要刪除這款遊戲的簡介嗎？')) return
+    if (!(await askConfirm('確定要刪除這款遊戲的簡介嗎？'))) return
     setBusy(true)
     const ok = await onSave('')
     setBusy(false)

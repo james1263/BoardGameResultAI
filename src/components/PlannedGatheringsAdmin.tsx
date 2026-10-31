@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { askConfirm } from '../lib/askConfirm'
 import { todayLocal } from '../lib/useGamePlaySessions'
 import {
   formatPlannedWhen,
@@ -248,9 +249,9 @@ export default function PlannedGatheringsAdmin({
 
   async function remove(row: PlannedGathering) {
     if (
-      !window.confirm(
+      !(await askConfirm(
         `確定刪除「${formatPlannedWhen(row.plannedOn, row.startTime)} ${row.title}」嗎？這場的遊戲清單與大家的意願登記都會一起刪除。\n\n如果只是不開了，請改按「取消聚會」，會員才看得到「已取消」。`,
-      )
+      ))
     )
       return
     setBusy(true)

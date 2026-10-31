@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { IN_APP_EVENT, currentShareLink } from '../lib/googleLogin'
+import { showNotice } from '../lib/askConfirm'
 
 export default function InAppBrowserNotice() {
   const [isOpen, setIsOpen] = useState(false)
@@ -21,7 +22,7 @@ export default function InAppBrowserNotice() {
       await navigator.clipboard.writeText(link)
       setCopied(true)
     } catch {
-      window.prompt('請複製這個網址，貼到 Chrome 或 Safari：', link)
+      await showNotice('請長按下面的網址複製，貼到 Chrome 或 Safari：\n\n' + link)
     }
   }
 
