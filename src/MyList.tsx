@@ -439,12 +439,14 @@ export default function MyList({
     }, [tab, wantGames, playedGames, search, sortKey, personal.entries, playSessions])
 
     // 我的統計：次數＝沒日期的次數＋有日期的紀錄筆數；時數是用 BGG 標示時間估算
+    // 只統計「已玩」的遊戲（按過「移除」的遊戲，次數還在但不計入）
     const stats = useMemo(() => {
         const rows: { game: BoardGame; total: number }[] = []
         let totalPlays = 0
         let totalMinutes = 0
         for (const game of boardGames) {
             const entry = personal.entries[game.bggName]
+            if (!entry?.played) continue
             const total =
                 (entry?.playCount ?? 0) + playSessions.getSummary(game.bggName).count
             if (total <= 0) continue
