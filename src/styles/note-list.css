@@ -96,3 +96,12 @@ textarea.gb-textarea.nl-short {
   min-height: 0;
   height: auto;
 }
+
+/* 留言一律靠左（避免被抽屜或其他樣式置中） */
+.nl-item,
+.nl-item * {
+  text-align: left !important;
+}
+.nl-item .nl-btnrow {
+  justify-content: flex-end;
+}
