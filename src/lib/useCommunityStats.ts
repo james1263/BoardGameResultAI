@@ -73,7 +73,26 @@ export function useCommunityStats(enabled = true) {
 
   const reload = useCallback(() => setReloadKey((key) => key + 1), [])
 
-  return { getStats, reload }
+  // 打勾當下直接改畫面上的人數（不打網路）；只調整想玩／已玩總人數
+  const adjust = useCallback(
+    (bggName: string, wantDelta: number, playedDelta: number) => {
+      if (wantDelta === 0 && playedDelta === 0) return
+      setStats((current) => {
+        const base = current[bggName] ?? EMPTY
+        return {
+          ...current,
+          [bggName]: {
+            ...base,
+            wantCount: Math.max(0, base.wantCount + wantDelta),
+            playedCount: Math.max(0, base.playedCount + playedDelta),
+          },
+        }
+      })
+    },
+    [],
+  )
+
+  return { getStats, reload, adjust }
 }
 
 export type CommunityStatsApi = ReturnType<typeof useCommunityStats>

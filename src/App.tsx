@@ -140,14 +140,34 @@ function Library({
   const session = useSession()
   const canFilterByRating = !!session && ratings.status === 'ready'
   const communityStats = useCommunityStats()
-  // 打開遊戲視窗時重讀一次社群人數，打勾後再開視窗就是最新的（只在開啟那一刻讀，不影響主畫面）
-  // const reloadCommunityStats = communityStats.reload
-  // const isGameModalOpen = selectedGame !== null
-  // useEffect(() => {
-  //   if (isGameModalOpen) reloadCommunityStats()
-  // }, [isGameModalOpen, reloadCommunityStats])
   const todayTask = useTodayTask(ratings)
   const vip = useVip()
+  const countsMe = vip.isVip || isAdmin
+
+  // 卡片上打勾時，同步調整畫面上的想玩／已玩人數（只有 VIP／管理者的紀錄才計入）
+  const { adjust: adjustCommunity } = communityStats
+  const personalWithStats = useMemo(
+    () => ({
+      ...personal,
+      updateEntry: (
+        bggName: string,
+        changes: Parameters<typeof personal.updateEntry>[1],
+        options?: Parameters<typeof personal.updateEntry>[2],
+      ) => {
+        const before = personal.getEntry(bggName)
+        personal.updateEntry(bggName, changes, options)
+        if (!countsMe || !personal.isLoggedIn || personal.status !== 'ready') return
+        const wantAfter = changes.wantToPlay ?? before.wantToPlay
+        const playedAfter = changes.played ?? before.played
+        adjustCommunity(
+          bggName,
+          (wantAfter ? 1 : 0) - (before.wantToPlay ? 1 : 0),
+          (playedAfter ? 1 : 0) - (before.played ? 1 : 0),
+        )
+      },
+    }),
+    [personal, countsMe, adjustCommunity],
+  )
   const people = useGamePeople(vip.isVip)
   const adminRatings = useAdminRatings(isAdmin)
   // 還沒看過的新預計聚會數（只有 VIP／管理者；顯示在導覽列「俱樂部」與俱樂部首頁）
@@ -945,7 +965,7 @@ function Library({
                     game={item.game}
                     isNew={isNewGame(item.game)}
                     coverVersion={coverVersions[item.game.coverSlug] ?? 0}
-                    personal={personal}
+                    personal={personalWithStats}
                     onOpen={openGame}
                   />
                 )
