@@ -23,36 +23,6 @@
   color: #fff;
 }
 
-.lb-periods {
-  display: flex;
-  gap: 6px;
-  padding: 10px 20px 0;
-}
-
-.lb-period {
-  padding: 4px 12px;
-  border: 1px solid #d9e1d2;
-  border-radius: 999px;
-  background: #fff;
-  color: #52604d;
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.lb-period.active {
-  border-color: #c9d4c0;
-  background: #e6eadf;
-  color: #3e5a38;
-  font-weight: 700;
-}
-
-.lb-note {
-  margin: 0 0 10px;
-  font-size: 12px;
-  color: #7a7f75;
-}
-
 .lb-rank {
   flex: none;
   width: 1.8em;

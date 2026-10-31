@@ -1,12 +1,3 @@
-/* 排行榜篩選（類型／推薦人數／時間／難度） */
-.lbf {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px 4px;
-}
-
 /* 排行榜分頁變成 5 顆（多了「最常玩」）時，平均分配、字小一點 */
 .lb-tabs.lb-tabs-5 {
   display: grid;
