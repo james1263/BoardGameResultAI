@@ -6,6 +6,7 @@ import {
 } from '../lib/useGatheringNotes'
 import { useMyGatherings } from '../lib/useMyGatherings'
 import { supabase } from '../lib/supabase'
+import NoteListItem from './NoteListItem'
 import '../styles/my-notes.css'
 import { askConfirm } from '../lib/askConfirm'
 
@@ -108,6 +109,7 @@ export default function MyNotes({
   const [filter, setFilter] = useState<Filter>('all')
   const [busyKey, setBusyKey] = useState<string | null>(null)
   const [editKey, setEditKey] = useState<string | null>(null)
+  const [openKey, setOpenKey] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [message, setMessage] = useState('')
 
@@ -315,29 +317,31 @@ export default function MyNotes({
                   {items.length === 0 ? '還沒有心得。' : '這個分類還沒有內容。'}
                 </p>
               ) : (
-                <ul className="mh-list">
+                <ul className="nl-list">
                   {shown.map((item) => {
                     const game = gameByName.get(item.bggName) ?? null
                     const isPublic = item.kind !== 'gprivate'
                     const editing = editKey === item.key
                     const busy = busyKey === item.key
                     return (
-                      <li className="mh-item" key={item.key}>
-                        <div className="mh-head">
-                          <div className="mylist-thumb mh-thumb">
-                            {game ? renderCover(game) : <span aria-hidden="true">🎲</span>}
-                          </div>
-                          <div className="mh-headtext">
-                            <b className="mh-title">《{game?.name ?? item.bggName}》</b>
-                            <span className="mh-date">
-                              {item.date ? item.date.replace(/-/g, '/') : '日期不明'}
-                            </span>
-                          </div>
+                      <NoteListItem
+                        key={item.key}
+                        name={`《${game?.name ?? item.bggName}》`}
+                        date={item.date ? item.date.replace(/-/g, '/') : '日期不明'}
+                        badge={
                           <span className={`mh-badge ${isPublic ? 'pub' : 'pri'}`}>
                             {isPublic ? '公開留言' : '私人心得'}
                           </span>
-                        </div>
-
+                        }
+                        thumb={game ? renderCover(game) : <span aria-hidden="true">🎲</span>}
+                        content={item.content}
+                        hideText={editing}
+                        open={editing || openKey === item.key}
+                        onToggle={() => {
+                          if (editing) return
+                          setOpenKey(openKey === item.key ? null : item.key)
+                        }}
+                      >
                         {editing ? (
                           <>
                             <textarea
@@ -369,7 +373,6 @@ export default function MyNotes({
                           </>
                         ) : (
                           <>
-                            <p className="mh-content">{item.content}</p>
                             {item.hidden && (
                               <p className="mh-hidden">
                                 這則留言已被管理者隱藏，只有你和管理者看得到。
@@ -416,7 +419,7 @@ export default function MyNotes({
                             </div>
                           </>
                         )}
-                      </li>
+                      </NoteListItem>
                     )
                   })}
                 </ul>
