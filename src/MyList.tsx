@@ -295,6 +295,10 @@ export default function MyList({
     const [view, setView] = useState<View>(openGatheringId ? 'gatherings' : 'home')
     // 要直接打開的聚會詳情（從遊戲視窗或「我的心得」跳過來）
     const [gatheringTarget, setGatheringTarget] = useState<string | null>(openGatheringId ?? null)
+    // 從「我的心得」進來選聚會寫心得；離開我的場次就自動關閉
+    const [gatheringWrite, setGatheringWrite] = useState(false)
+    const gatheringWriteRef = useRef(false)
+    gatheringWriteRef.current = gatheringWrite
     const [statsTab, setStatsTab] = useState<StatsTab>('overview')
     const [search, setSearch] = useState('')
     // 想玩、已玩各自記住排序（也記在這個瀏覽器）；切換分頁只清空搜尋
@@ -306,9 +310,19 @@ export default function MyList({
     // 分頁切換不另建瀏覽歷史：返回鍵與 ✕ 一律回「我的俱樂部」首頁
     // 「新增遊玩紀錄」從「我的心得」進去，返回先回我的心得
     useBackClose(
-        () => setView((current) => (current === 'addplay' ? 'notes' : 'home')),
+        () =>
+            setView((current) =>
+                current === 'addplay' || (current === 'gatherings' && gatheringWriteRef.current)
+                    ? 'notes'
+                    : 'home',
+            ),
         isOpen && mode !== 'loyalty' && view !== 'home',
     )
+
+    // 離開「我的場次」就關掉「選聚會寫心得」模式
+    useEffect(() => {
+        if (view !== 'gatherings') setGatheringWrite(false)
+    }, [view])
 
     // 每次打開都回到首頁；統計預設「概況」、搜尋清空，排序沿用上次的選擇
     useEffect(() => {
@@ -527,6 +541,11 @@ export default function MyList({
                 onBack={() => setView('home')}
                 onClose={onClose}
                 onOpenAddPlay={() => setView('addplay')}
+                onOpenWriteGathering={() => {
+                    setGatheringTarget(null)
+                    setGatheringWrite(true)
+                    setView('gatherings')
+                }}
                 onOpenGathering={(id) => {
                     setGatheringTarget(id)
                     setView('gatherings')
@@ -544,7 +563,8 @@ export default function MyList({
                 playSessions={playSessions}
                 isAdmin={isAdmin}
                 initialGatheringId={gatheringTarget}
-                onBack={() => setView('home')}
+                writeMode={gatheringWrite}
+                onBack={() => setView(gatheringWrite ? 'notes' : 'home')}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
                 renderCover={renderCover}

@@ -91,6 +91,7 @@ export default function MyNotes({
   onClose,
   onOpenGathering,
   onOpenAddPlay,
+  onOpenWriteGathering,
 }: {
   boardGames: ListedGame[]
   renderCover: (game: BoardGame) => ReactNode
@@ -98,6 +99,7 @@ export default function MyNotes({
   onClose: () => void
   onOpenGathering: (gatheringId: string) => void
   onOpenAddPlay: () => void
+  onOpenWriteGathering: () => void
 }) {
   const gatheringNotes = useAllMyNotes()
   const gameNotes = useMyAllGameNotes()
@@ -266,6 +268,9 @@ export default function MyNotes({
 
         <div className="mylist-body">
           <div className="mh-top">
+            <button type="button" className="mh-add" onClick={onOpenWriteGathering}>
+              ＋ 寫聚會心得
+            </button>
             <button type="button" className="mh-add" onClick={onOpenAddPlay}>
               ＋ 新增遊玩紀錄
             </button>
@@ -318,7 +323,7 @@ export default function MyNotes({
                     return (
                       <li className="mh-item" key={item.key}>
                         <div className="mh-head">
-                          <div className="mh-thumb">
+                          <div className="mylist-thumb mh-thumb">
                             {game ? renderCover(game) : <span aria-hidden="true">🎲</span>}
                           </div>
                           <div className="mh-headtext">
