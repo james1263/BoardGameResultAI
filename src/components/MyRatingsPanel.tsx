@@ -4,6 +4,7 @@ import type { RatingsApi, RatingKey } from '../lib/useGameRatings'
 import { RATING_FIELDS } from '../lib/useGameRatings'
 import { isUnplayedGame } from '../lib/playedStatus'
 import type { AdminScores } from '../lib/libraryTypes'
+import ScatterChart, { type ScatterPoint } from './ScatterChart'
 import '../styles/stats-chart.css'
 
 type Metric = 'overall' | 'composite' | RatingKey
@@ -87,18 +88,6 @@ function buildRows(boardGames: BoardGame[], ratings: RatingsApi): Row[] {
 
 function normalizeText(text: string): string {
     return text.toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '')
-}
-
-function niceScale(max: number): { top: number; ticks: number[] } {
-    if (!(max > 0)) return { top: 1, ticks: [0, 1] }
-    const magnitude = Math.pow(10, Math.floor(Math.log10(max)))
-    const step =
-        [1, 2, 2.5, 5, 10].map((m) => m * magnitude).find((value) => max / value <= 5) ??
-        10 * magnitude
-    const top = Math.ceil(max / step) * step
-    const ticks: number[] = []
-    for (let v = 0; v <= top + step / 1000; v += step) ticks.push(Math.round(v * 100) / 100)
-    return { top, ticks }
 }
 
 export default function MyRatingsPanel({
@@ -241,13 +230,12 @@ function ScatterMine({
 }) {
     const [xKey, setXKey] = useState<Metric>('overall')
     const [yKey, setYKey] = useState<Metric>('composite')
-    const [picked, setPicked] = useState('')
 
     const xInfo = METRICS.find((m) => m.key === xKey)!
     const yInfo = METRICS.find((m) => m.key === yKey)!
 
-    const { groups, excluded, xScale, yScale } = useMemo(() => {
-        const byPos = new Map<string, { x: number; y: number; games: BoardGame[] }>()
+    const { points, excluded } = useMemo(() => {
+        const list: ScatterPoint[] = []
         let skipped = 0
         for (const row of rows) {
             const x = row.values[xKey]
@@ -256,29 +244,10 @@ function ScatterMine({
                 skipped += 1
                 continue
             }
-            const key = `${x}|${y}`
-            const found = byPos.get(key)
-            if (found) found.games.push(row.game)
-            else byPos.set(key, { x, y, games: [row.game] })
+            list.push({ x, y, game: row.game })
         }
-        const list = [...byPos.entries()].map(([key, value]) => ({ key, ...value }))
-        return {
-            groups: list,
-            excluded: skipped,
-            xScale: niceScale(Math.max(0, ...list.map((g) => g.x))),
-            yScale: niceScale(Math.max(0, ...list.map((g) => g.y))),
-        }
+        return { points: list, excluded: skipped }
     }, [rows, xKey, yKey])
-
-    const W = 360
-    const H = 300
-    const left = 44
-    const right = 14
-    const top = 12
-    const bottom = 42
-    const px = (v: number) => left + (v / xScale.top) * (W - left - right)
-    const py = (v: number) => H - bottom - (v / yScale.top) * (H - top - bottom)
-    const pickedGroup = groups.find((g) => g.key === picked) ?? null
 
     return (
         <>
@@ -288,13 +257,7 @@ function ScatterMine({
             <div className="sc-controls">
                 <label>
                     X 軸（橫軸）
-                    <select
-                        value={xKey}
-                        onChange={(event) => {
-                            setXKey(event.target.value as Metric)
-                            setPicked('')
-                        }}
-                    >
+                    <select value={xKey} onChange={(event) => setXKey(event.target.value as Metric)}>
                         {METRICS.map((m) => (
                             <option key={m.key} value={m.key}>
                                 {m.label}
@@ -304,13 +267,7 @@ function ScatterMine({
                 </label>
                 <label>
                     Y 軸（縱軸）
-                    <select
-                        value={yKey}
-                        onChange={(event) => {
-                            setYKey(event.target.value as Metric)
-                            setPicked('')
-                        }}
-                    >
+                    <select value={yKey} onChange={(event) => setYKey(event.target.value as Metric)}>
                         {METRICS.map((m) => (
                             <option key={m.key} value={m.key}>
                                 {m.label}
@@ -319,87 +276,14 @@ function ScatterMine({
                     </select>
                 </label>
             </div>
-
-            <div className="sc-box">
-                <svg
-                    className="sc-svg"
-                    viewBox={`0 0 ${W} ${H}`}
-                    role="img"
-                    aria-label={`${xInfo.label}與${yInfo.label}的分布圖`}
-                >
-                    {yScale.ticks.map((tick) => (
-                        <g key={`y${tick}`}>
-                            <line x1={left} x2={W - right} y1={py(tick)} y2={py(tick)} stroke="#e3d9c4" />
-                            <text x={left - 6} y={py(tick) + 3} textAnchor="end">
-                                {tick}
-                            </text>
-                        </g>
-                    ))}
-                    {xScale.ticks.map((tick) => (
-                        <g key={`x${tick}`}>
-                            <line x1={px(tick)} x2={px(tick)} y1={top} y2={H - bottom} stroke="#efe6d2" />
-                            <text x={px(tick)} y={H - bottom + 14} textAnchor="middle">
-                                {tick}
-                            </text>
-                        </g>
-                    ))}
-                    <line x1={left} x2={left} y1={top} y2={H - bottom} stroke="#8a998f" />
-                    <line x1={left} x2={W - right} y1={H - bottom} y2={H - bottom} stroke="#8a998f" />
-                    <text
-                        className="sc-axis-title"
-                        x={(left + W - right) / 2}
-                        y={H - 8}
-                        textAnchor="middle"
-                    >
-                        {xInfo.label} →
-                    </text>
-                    <text
-                        className="sc-axis-title"
-                        transform={`translate(12 ${(top + H - bottom) / 2}) rotate(-90)`}
-                        textAnchor="middle"
-                    >
-                        {yInfo.label} →
-                    </text>
-                    {groups.map((group) => (
-                        <g
-                            key={group.key}
-                            className={`sc-dot ${picked === group.key ? 'on' : ''}`}
-                            onClick={() => setPicked(picked === group.key ? '' : group.key)}
-                        >
-                            <circle className="sc-hit" cx={px(group.x)} cy={py(group.y)} r={14} />
-                            <circle
-                                className="sc-vis"
-                                cx={px(group.x)}
-                                cy={py(group.y)}
-                                r={group.games.length > 1 ? 8 : 6}
-                            />
-                        </g>
-                    ))}
-                </svg>
-                {groups.length === 0 && <p className="sc-note">沒有同時有這兩項資料的遊戲。</p>}
-                <p className="sc-note">
-                    畫出 {groups.reduce((sum, g) => sum + g.games.length, 0)} 款
-                    {excluded > 0 && `；${excluded} 款因資料不足未顯示`}。較大的點代表同一位置有多款遊戲。
-                </p>
-            </div>
-
-            {pickedGroup && (
-                <div className="sc-pick">
-                    <h4>
-                        {xInfo.label}：{pickedGroup.x}　{yInfo.label}：{pickedGroup.y}
-                    </h4>
-                    <ul>
-                        {pickedGroup.games.map((game) => (
-                            <li key={game.bggName}>
-                                <span>{game.name}</span>
-                                <button type="button" onClick={() => onOpenGame(game)}>
-                                    查看遊戲
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
+            <ScatterChart
+                key={`${xKey}|${yKey}`}
+                points={points}
+                excluded={excluded}
+                xLabel={xInfo.label}
+                yLabel={yInfo.label}
+                onOpenGame={onOpenGame}
+            />
         </>
     )
 }

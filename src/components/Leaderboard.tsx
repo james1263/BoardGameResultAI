@@ -703,18 +703,16 @@ export default function Leaderboard({
               </>
             )}
           </aside>
-          {statsOpen && (canSeePeople || isAdmin) && (
+          {(canSeePeople || isAdmin) && (
             <StatsTables
+              open={statsOpen}
               boardGames={boardGames}
               communityStats={communityStats}
               ratings={ratings}
               people={people}
               adminRatings={adminRatings}
               isAdmin={isAdmin}
-              onOpenGame={(game) => {
-                setStatsOpen(false)
-                onOpenGame(game)
-              }}
+              onOpenGame={onOpenGame}
               onClose={() => setStatsOpen(false)}
             />
           )}

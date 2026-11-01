@@ -18,6 +18,7 @@ import MyRatingsPanel from './components/MyRatingsPanel'
 import UpcomingGatherings from './components/UpcomingGatherings'
 import { useBackClose } from './lib/useBackClose'
 import DrawerToTop from './components/DrawerToTop'
+import FullScreenPage from './components/FullScreenPage'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
@@ -314,6 +315,8 @@ export default function MyList({
     const statsBodyRef = useRef<HTMLDivElement>(null)
     const [topN, setTopN] = useState<TopN>(loadTopN)
     const [showHoursNote, setShowHoursNote] = useState(false)
+    // 分布圖用全螢幕頁面開啟
+    const [chartOpen, setChartOpen] = useState(false)
     // 分頁切換不另建瀏覽歷史：返回鍵與 ✕ 一律回「我的俱樂部」首頁
     // 「新增遊玩紀錄」從「我的心得」進去，返回先回我的心得
     useBackClose(
@@ -339,6 +342,7 @@ export default function MyList({
             setLoyaltyTab('card')
             setSearch('')
             setShowHoursNote(false)
+            setChartOpen(false)
         }
     }, [isOpen, mode])
 
@@ -677,8 +681,8 @@ export default function MyList({
                         </button>
                         <button
                             type="button"
-                            className={`lb-tab ${statsTab === 'chart' ? 'active' : ''}`}
-                            onClick={() => switchStatsTab('chart')}
+                            className={`lb-tab ${chartOpen ? 'active' : ''}`}
+                            onClick={() => setChartOpen(true)}
                         >
                             分布圖
                         </button>
@@ -759,9 +763,9 @@ export default function MyList({
                                 )}
 
                             </>
-                        ) : statsTab === 'score' || statsTab === 'chart' ? (
+                        ) : statsTab === 'score' ? (
                             <MyRatingsPanel
-                                mode={statsTab}
+                                mode="score"
                                 boardGames={boardGames}
                                 ratings={ratings}
                                 isAdmin={isAdmin}
@@ -945,6 +949,21 @@ export default function MyList({
                     </div>
                     <DrawerToTop targetRef={statsBodyRef} />
                 </aside>
+                <FullScreenPage
+                    open={chartOpen}
+                    title="分布圖"
+                    onClose={() => setChartOpen(false)}
+                >
+                    <MyRatingsPanel
+                        mode="chart"
+                        boardGames={boardGames}
+                        ratings={ratings}
+                        isAdmin={isAdmin}
+                        adminScores={adminScores}
+                        onOpenGame={(game) => onOpenGame(game)}
+                        renderCover={renderCover}
+                    />
+                </FullScreenPage>
             </>
         )
     }

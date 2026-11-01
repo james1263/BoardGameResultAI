@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
+import ScatterChart, { type ScatterPoint } from './ScatterChart'
+import FullScreenPage from './FullScreenPage'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { CommunityStatsApi } from '../lib/useCommunityStats'
 import type { RatingsApi } from '../lib/useGameRatings'
@@ -78,23 +79,6 @@ type ChartRow = {
     count: number
 }
 
-// 軸的刻度：從 0 開始，挑一個好讀的間距
-function niceScale(max: number): { top: number; ticks: number[] } {
-    if (!(max > 0)) return { top: 1, ticks: [0, 1] }
-    const magnitude = Math.pow(10, Math.floor(Math.log10(max)))
-    const step =
-        [1, 2, 2.5, 5, 10].map((m) => m * magnitude).find((value) => max / value <= 5) ??
-        10 * magnitude
-    const top = Math.ceil(max / step) * step
-    const ticks: number[] = []
-    for (let v = 0; v <= top + step / 1000; v += step) ticks.push(Math.round(v * 100) / 100)
-    return { top, ticks }
-}
-
-function formatValue(value: number, decimals: number): string {
-    return decimals === 0 ? String(Math.round(value)) : value.toFixed(decimals)
-}
-
 function ScatterPanel({
     rows,
     onOpenGame,
@@ -104,13 +88,12 @@ function ScatterPanel({
 }) {
     const [xKey, setXKey] = useState<Metric>('overall')
     const [yKey, setYKey] = useState<Metric>('keep')
-    const [picked, setPicked] = useState('')
 
     const xInfo = METRICS.find((m) => m.key === xKey)!
     const yInfo = METRICS.find((m) => m.key === yKey)!
 
-    const { groups, excluded, xScale, yScale } = useMemo(() => {
-        const byPos = new Map<string, { x: number; y: number; games: BoardGame[] }>()
+    const { points, excluded } = useMemo(() => {
+        const list: ScatterPoint[] = []
         let skipped = 0
         for (const row of rows) {
             const x = row[xKey]
@@ -119,30 +102,10 @@ function ScatterPanel({
                 skipped += 1
                 continue
             }
-            const key = `${x}|${y}`
-            const found = byPos.get(key)
-            if (found) found.games.push(row.game)
-            else byPos.set(key, { x, y, games: [row.game] })
+            list.push({ x, y, game: row.game })
         }
-        const list = [...byPos.entries()].map(([key, value]) => ({ key, ...value }))
-        return {
-            groups: list,
-            excluded: skipped,
-            xScale: niceScale(Math.max(0, ...list.map((g) => g.x))),
-            yScale: niceScale(Math.max(0, ...list.map((g) => g.y))),
-        }
+        return { points: list, excluded: skipped }
     }, [rows, xKey, yKey])
-
-    const W = 360
-    const H = 300
-    const left = 44
-    const right = 14
-    const top = 12
-    const bottom = 42
-    const px = (v: number) => left + (v / xScale.top) * (W - left - right)
-    const py = (v: number) => H - bottom - (v / yScale.top) * (H - top - bottom)
-
-    const pickedGroup = groups.find((g) => g.key === picked) ?? null
 
     return (
         <>
@@ -150,13 +113,7 @@ function ScatterPanel({
             <div className="sc-controls">
                 <label>
                     X 軸（橫軸）
-                    <select
-                        value={xKey}
-                        onChange={(event) => {
-                            setXKey(event.target.value as Metric)
-                            setPicked('')
-                        }}
-                    >
+                    <select value={xKey} onChange={(event) => setXKey(event.target.value as Metric)}>
                         {METRICS.map((m) => (
                             <option key={m.key} value={m.key}>
                                 {m.label}
@@ -166,13 +123,7 @@ function ScatterPanel({
                 </label>
                 <label>
                     Y 軸（縱軸）
-                    <select
-                        value={yKey}
-                        onChange={(event) => {
-                            setYKey(event.target.value as Metric)
-                            setPicked('')
-                        }}
-                    >
+                    <select value={yKey} onChange={(event) => setYKey(event.target.value as Metric)}>
                         {METRICS.map((m) => (
                             <option key={m.key} value={m.key}>
                                 {m.label}
@@ -181,112 +132,16 @@ function ScatterPanel({
                     </select>
                 </label>
             </div>
-
-            <div className="sc-box">
-                <svg
-                    className="sc-svg"
-                    viewBox={`0 0 ${W} ${H}`}
-                    role="img"
-                    aria-label={`${xInfo.label}與${yInfo.label}的分布圖`}
-                >
-                    {yScale.ticks.map((tick) => (
-                        <g key={`y${tick}`}>
-                            <line
-                                x1={left}
-                                x2={W - right}
-                                y1={py(tick)}
-                                y2={py(tick)}
-                                stroke="#e3d9c4"
-                            />
-                            <text x={left - 6} y={py(tick) + 3} textAnchor="end">
-                                {formatValue(tick, yInfo.decimals === 0 ? 0 : 1)}
-                            </text>
-                        </g>
-                    ))}
-                    {xScale.ticks.map((tick) => (
-                        <g key={`x${tick}`}>
-                            <line
-                                x1={px(tick)}
-                                x2={px(tick)}
-                                y1={top}
-                                y2={H - bottom}
-                                stroke="#efe6d2"
-                            />
-                            <text x={px(tick)} y={H - bottom + 14} textAnchor="middle">
-                                {formatValue(tick, xInfo.decimals === 0 ? 0 : 1)}
-                            </text>
-                        </g>
-                    ))}
-                    <line x1={left} x2={left} y1={top} y2={H - bottom} stroke="#8a998f" />
-                    <line
-                        x1={left}
-                        x2={W - right}
-                        y1={H - bottom}
-                        y2={H - bottom}
-                        stroke="#8a998f"
-                    />
-                    <text
-                        className="sc-axis-title"
-                        x={(left + W - right) / 2}
-                        y={H - 8}
-                        textAnchor="middle"
-                    >
-                        {xInfo.label} →
-                    </text>
-                    <text
-                        className="sc-axis-title"
-                        transform={`translate(12 ${(top + H - bottom) / 2}) rotate(-90)`}
-                        textAnchor="middle"
-                    >
-                        {yInfo.label} →
-                    </text>
-                    {groups.map((group) => (
-                        <g
-                            key={group.key}
-                            className={`sc-dot ${picked === group.key ? 'on' : ''}`}
-                            onClick={() => setPicked(picked === group.key ? '' : group.key)}
-                        >
-                            <circle className="sc-hit" cx={px(group.x)} cy={py(group.y)} r={14} />
-                            <circle
-                                className="sc-vis"
-                                cx={px(group.x)}
-                                cy={py(group.y)}
-                                r={group.games.length > 1 ? 8 : 6}
-                            />
-                        </g>
-                    ))}
-                </svg>
-                {groups.length === 0 && (
-                    <p className="sc-note">沒有同時有這兩項資料的遊戲。</p>
-                )}
-                <p className="sc-note">
-                    畫出 {groups.reduce((sum, g) => sum + g.games.length, 0)} 款
-                    {excluded > 0 && `；${excluded} 款因資料不足未顯示`}。
-                    {xKey === yKey && '兩軸選同一項時，點會排成一條斜線。'}
-                    較大的點代表同一位置有多款遊戲。
-                </p>
-            </div>
-
-            {pickedGroup && (
-                <div className="sc-pick">
-                    <h4>
-                        {xInfo.label}：{formatValue(pickedGroup.x, xInfo.decimals)}　
-                        {yInfo.label}：{formatValue(pickedGroup.y, yInfo.decimals)}
-                    </h4>
-                    <ul>
-                        {pickedGroup.games.map((game) => (
-                            <li key={game.bggName}>
-                                <span>{game.name}</span>
-                                {onOpenGame && (
-                                    <button type="button" onClick={() => onOpenGame(game)}>
-                                        查看遊戲
-                                    </button>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
+            <ScatterChart
+                key={`${xKey}|${yKey}`}
+                points={points}
+                excluded={excluded}
+                xLabel={xInfo.label}
+                yLabel={yInfo.label}
+                xDecimals={xInfo.decimals}
+                yDecimals={yInfo.decimals}
+                onOpenGame={onOpenGame}
+            />
         </>
     )
 }
@@ -299,6 +154,7 @@ export default function StatsTables({
     adminRatings,
     isAdmin,
     embedded = false,
+    open = true,
     onOpenGame,
     onClose,
 }: {
@@ -310,6 +166,8 @@ export default function StatsTables({
     isAdmin: boolean
     // 嵌在排行榜頁面裡：不開視窗、不畫標題列
     embedded?: boolean
+    // 全螢幕頁面是否顯示（父層一直掛著，用它開關）
+    open?: boolean
     onOpenGame?: (game: BoardGame) => void
     onClose?: () => void
 }) {
@@ -718,19 +576,14 @@ export default function StatsTables({
 
     if (embedded) return <div className="st-modal st-embedded">{inner}</div>
 
-    return createPortal(
-        <div className="ma-backdrop" onClick={onClose}>
-            <div className="st-modal" onClick={(event) => event.stopPropagation()}>
-                <div className="ac-head">
-                    <h2>統計表</h2>
-                    <span className="vip-tag">{isAdmin ? '管理者' : 'VIP'}</span>
-                    <button type="button" className="ma-close" onClick={onClose}>
-                        ✕
-                    </button>
-                </div>
-                {inner}
-            </div>
-        </div>,
-        document.body,
+    return (
+        <FullScreenPage
+            open={open}
+            title="統計表"
+            tag={isAdmin ? '管理者' : 'VIP'}
+            onClose={onClose ?? (() => {})}
+        >
+            <div className="st-modal st-embedded">{inner}</div>
+        </FullScreenPage>
     )
 }
