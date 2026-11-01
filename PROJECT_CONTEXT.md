@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-11-01 深夜（已併入 `生成後.md` 全部內容；**請同時讀 `QUICKSTART.md` 第 2.0（最新）節與本檔第 11～17 節，與其他段落衝突時以它們為準**）。
+> 最後更新：2026-11-02（已併入上一輪全部內容；**請同時讀第 18 節，與其他段落衝突時以第 18 節與 `生成後.md` 為準**）。
 
 ## 1. 專案簡介與技術架構
 
@@ -21,7 +21,7 @@
 
 | 資料表 | 重點 |
 |---|---|
-| `board_games`（主鍵 `bgg_name`，`cover_slug` 唯一） | `name, cover_slug, link_*`（保留不用）、`category(text[])`、`bgg_score/difficulty/time`、`min/max_players`、`best_players/recommend_players(int[])`、`ranking_engine, classic_game_ranking, score_rank` 與四個其他排名、七個 `*_degree`、七個 `*_emoji`、`created_at`、`removed_at`、`removed_reason`(≤200)、`description`(≤300)。SELECT 所有人，寫入只有管理者。前端 `id` 只是流水號，不可用來對應圖片或使用者資料。 |
+| `board_games`（主鍵 `bgg_name`，`cover_slug` 唯一） | `reference_only boolean not null default false`（僅供參考，第 18 節）、`name, cover_slug, link_*`（保留不用）、`category(text[])`、`bgg_score/difficulty/time`、`min/max_players`、`best_players/recommend_players(int[])`、`ranking_engine, classic_game_ranking, score_rank` 與四個其他排名、七個 `*_degree`、七個 `*_emoji`、`created_at`、`removed_at`、`removed_reason`(≤200)、`description`(≤300)。SELECT 所有人，寫入只有管理者。前端 `id` 只是流水號，不可用來對應圖片或使用者資料。 |
 | `game_documents` | 規則書／FAQ，一款可多份；**任何人可讀**，所以規則書文字絕不能放這裡。欄位：`id`、`bgg_name`（外鍵 cascade；刪遊戲不刪 Storage 檔）、`doc_type`（rulebook/faq/errata/intro/video/other）、`language`（zh/en/other）、`title`、`source_type`（external/upload）、`external_url`、`storage_path`、`ai_indexed`、`created_at`、`index_status`、`index_error_code`、`page_count`、`edition`、`file_hash`、`source_note`、`indexed_version`。新增的連結 `doc_type` 只會是 video 或 other；畫面分區看 `source_type` 與是否 video。 |
 | `user_game_status` | 主鍵 `(user_id, bgg_name)`：`want_to_play`、`played`、`note`(≤500，「我的整體心得」)、`play_count`（無日期次數 0～999）、`updated_at`、`want_first_at`／`played_first_at`。RLS 只有本人。 |
 | `game_play_sessions` | 有日期的遊玩紀錄：`played_on`、`player_count`(1～99)、`note`(≤200)。**總次數＝`play_count`＋紀錄筆數**；新增紀錄不動 `play_count`；單次查詢最多 1000 筆；`addSession` 沒防重複（場次內按鈕在前端自己擋同日同款，補記允許重複但會確認）。 |
@@ -30,7 +30,7 @@
 | `player_contacts` | **LINE／FB 名字（敏感，欄位 `contact_name`）**，不可顯示在公開畫面，永不給 VIP；SELECT 本人或管理者。 |
 | `gatherings` | `id`(uuid)、`gathered_on`、`title`、`note`(≤200)；唯一 `(gathered_on, title)`。 |
 | `gathering_attendees` | `(gathering_id, user_id)`、`exempt`、`source`（admin/self）。寫入只有管理者（玩家走 `join_gathering`）。觸發器 `attendee_makes_vip`。 |
-| `gathering_games` | 當天指定遊戲。欄位 `gathering_id uuid`、`bgg_name text`、`created_at timestamptz`。**`play_status` 欄位已於 2026-11-01 深夜刪除（拿掉確定開團）**，所有聚會日 ≤ 今天（台北）的指定遊戲視為已開團。 |
+| `gathering_games` | 當天指定遊戲。欄位 `gathering_id uuid`、`bgg_name text`、`created_at timestamptz`、`removed_at timestamptz null`（軟移除，見第 18 節）。**`play_status` 欄位已於 2026-11-01 深夜刪除（拿掉確定開團）**，所有聚會日 ≤ 今天（台北）的指定遊戲視為已開團。 |
 | `gathering_checkins` | `gathering_id` pk、`token`、`is_open`、`capacity`（1～500 NOT NULL）。只有管理者。 |
 | `gathering_notes` | `id, user_id → auth.users cascade, gathering_id → gatherings cascade, bgg_name, private_note, public_note（各 ≤200）, public_status ('visible'\|'hidden'), hidden_by（set null）, hidden_at, created_at, updated_at`；唯一 `(user_id, gathering_id, bgg_name)`。RLS 開，anon／authenticated 全 revoke，**只走函式**（直接權限檢查結果使用者尚未回報）。 |
 | `game_notes`（2026-10-30） | 遊戲公開留言：`id, user_id → auth.users cascade, bgg_name, public_note（1～200）, public_status ('visible'\|'hidden'), hidden_by, hidden_at, created_at, updated_at`；**唯一限制 `game_notes_user_id_bgg_name_key` 已刪除，一人一款可多則（上限 10，由 `add_game_note` 檢查）**。RLS 開、anon／authenticated 全 revoke，**只走函式**（已確認）。備份表 `game_notes_backup_20261030`（RLS 開、無權限）。 |
@@ -236,7 +236,7 @@
 - **資料庫 `game_play_sessions`**：`id, user_id, bgg_name, played_on date, player_count int null, note text not null, created_at, source text not null default 'manual'（manual／rating／admin_gathering／admin_backfill）, gathering_id uuid null`（`gatherings(id)` on delete set null）。已玩次數＝`user_game_status.playCount`（手動）＋此表筆數。
 - **觸發器**：`aa_ratings_add_session`→`add_session_from_rating()`（只新增、從不刪除；`game_ratings` 第一次七項完整時，找聚會日 ≤ 今天（台北）、我有出席、指定這款的最近一場，同人同款同日沒紀錄才插入）；`trg_ratings_mark_played`、`sessions_mark_played`（`mark_played_from_activity()`，upsert `user_game_status.played=true`）；`settle_vouchers_on_rating`／`settle_vouchers_on_attendee`→`trg_settle_vouchers()`；`gathering_games` INSERT 管理者自動記一筆（聚會日 ≤ 今天）、DELETE 刪該筆；`gatherings` BEFORE DELETE 刪管理者自動紀錄、AFTER UPDATE OF `gathered_on` 連動日期；`attendee_makes_vip`；`game_ratings_set_updated_at`。**所有新觸發器都不得因評分或紀錄變動而減少已玩次數。**
 - **`gathering_games`**：`gathering_id uuid, bgg_name text, created_at timestamptz, play_status text null`（實際開團狀態，要拿掉的功能，介面在 `LoyaltyAdmin.tsx`、`GamePlayHistory.tsx`、`lga-list.css`）。
-- **管理者**：`admin_users` 的 id 欄位名稱未確認（用 `coalesce(to_jsonb(au)->>'user_id', to_jsonb(au)->>'id')::uuid` 取），`is_admin()` 存在；管理者帳號 james 的 id `fe8a6ab8-970a-4866-bd82-e242ed3b9bf9`；管理者不加進出席名單。
+- **管理者**：`admin_users` 的 id 欄位名稱未確認（用 `coalesce(to_jsonb(au)->>'user_id', to_jsonb(au)->>'id')::uuid` 取），`is_admin()` 存在；管理者帳號 james 的 id `fe8a6ab8-970a-4866-bd82-e242ed3b9bf9`；~~管理者不加進出席名單~~（2026-11-02 作廢：新增聚會時管理者預設在名單上，見第 18 節）。
 - **規則**：ranking engine 非整數＝未玩，不列整體評分／留下來／玩家榜評分與綜合分數／分布圖；「俱樂部」徽章＝想玩＋已玩；排行榜顯示名「統計中心」、「影響度」顯示名「玩家影響性」。
 
 ## 17. 2026-11-01 深夜增補（覆蓋前面衝突的敘述）
@@ -254,3 +254,20 @@
   - `LoyaltyAdmin.tsx`：「集點狀況」為清單式（搜尋、VIP 補列、明細在該列下展開、補登／贈送／撤銷）；明細新增「自動記錄的遊玩」（`admin_get_auto_sessions`，`Detail.autoSessions: AutoSession[] | null`，讀取失敗只顯示「讀取失敗」）；聚會管理的「尚未結束」＝聚會日 ≥ 今天，其餘進歷史，**沒有「待確認」徽章與開團狀態 UI**。
   - 已刪除：`src/lib/usePlayTotals.ts`、`src/lib/useRatingCounts.ts`、`lga-list.css` 的 `.lgp-status`／`.lgp-state`。
 - **隱私權政策**（`public/privacy.html`，2026-11-01 版，`30fcc6e`）：已補遊玩紀錄手動／自動、留言喜歡／不喜歡的點、自動記錄只有本人與管理者（後台）看得到。
+
+## 18. 2026-11-02 增補（覆蓋前面衝突的敘述）
+
+- 現況與使用者決定見 `QUICKSTART.md` 第 2 節；這裡只留架構與資料庫重點。**本節覆蓋第 4～5 節的「近期聚會」「集點卡」「管理者不加進出席名單」「近期聚會顯示名稱」等說法。**
+- **顯示名稱**：導覽列「集點卡」→「聚會集點」（`NavPage` 的 key 仍是 `'loyalty'`）；集點頁分頁「集點卡｜未來聚會」（玩家端；管理者那邊的「預計聚會」沒改）；`privacy.html` 2026-11-02 版。
+- **資料庫（皆 `security definer`、`search_path=''`；新函式 `revoke ... from public, anon`，需要的 `grant execute ... to authenticated`）**
+  - `gathering_games`：欄位 `gathering_id, bgg_name, created_at, removed_at timestamptz null`；主鍵 `(gathering_id, bgg_name)`，`gathering_id` → `gatherings` on delete cascade。**移除＝設 `removed_at`，重新加回＝清成 null（不能再 insert 同一列）。**
+  - 觸發器（`gathering_games`）：`admin_gathering_game_session`（AFTER INSERT → `add_admin_session_from_gathering_game()`）、`admin_gathering_game_session_removed`（AFTER DELETE → `remove_admin_session_from_gathering_game()`，現在只有刪整場聚會才會觸發）、**`admin_gathering_game_session_soft`（AFTER UPDATE OF `removed_at` → `sync_admin_session_on_game_removal()`：從 null 變非 null 刪管理者那筆 `admin_gathering`；變回 null 且聚會日 ≤ 今天補一筆）**。所有觸發器仍不得刪玩家資料。
+  - **已移除的遊戲在這些函式被排除（顯示用）**：`get_gathering_detail`（games）、`get_gathering_note_status`、`get_game_play_history`、`save_gathering_note`（`game not in gathering` 檢查）、`add_session_from_rating`（不替已移除的遊戲自動建遊玩紀錄）。**`loyalty_day_status` 刻意仍把已移除的遊戲算進去（點數保留）。**
+  - **新函式 `is_admin_user(p_uid uuid)`**（回 boolean，只給資料庫函式內部用，`revoke` 全部角色）；**`loyalty_day_status(p_user)` 對管理者帳號回傳空**（`where not public.is_admin_user(p_user)`）、**`admin_get_loyalty_overview()` 排除管理者**（所以管理者不累積點數、不出現在集點狀況、`settle_vouchers` 不會為他建紀錄）。
+  - **新函式 `get_my_game_changes()`** → `gathering_id, gathered_on, title, bgg_name, removed_at`（我出席的聚會裡被移除的指定遊戲，最近 30 天；`sql stable`；權限 `authenticated`／`postgres`／`service_role`，已驗證 anon 無權限）。
+  - **僅供參考**：`board_games.reference_only boolean not null default false`；目前為 true 的四款：`Tichu`（地主）、`Werewords`（狼人真言）、`Top Ten`（腦洞量表）、`A Fake Artist Goes to New York`。新函式 `is_reference_game(p_name text)`（內部用）；函式 `block_reference_only_write()` 掛成觸發器：`aa_block_reference_status`（`user_game_status` BEFORE INSERT OR UPDATE：只擋「變成想玩／已玩」，取消可以）、`aa_block_reference_ratings`（`game_ratings` BEFORE INSERT）、`aa_block_reference_notes`（`game_notes` BEFORE INSERT）、`aa_block_reference_sessions`（`game_play_sessions` BEFORE INSERT）；錯誤字串 `reference only game`。**不擋 `gathering_games`、`gathering_notes`。** 這四款原有 8 筆想玩／已玩、2 筆評分仍在資料庫（不刪）。
+  - **排除這四款的函式**：`get_community_stats`、`get_game_people`、`admin_get_all_ratings`、`admin_get_want_to_play`、`admin_get_want_to_play_people`、`get_rating_summaries`（玩家評分與管理者 CSV 換算都排除；**但管理者「適合留下來」的 `keep_rank` 仍用完整的玩過清單排名，所以其他遊戲分數不變**）、`get_player_stats`（已玩款數、評過款數、評分明細都排除）。
+- **前端（本輪新增檔）**：`src/components/FullScreenPage.tsx`（`open`／`title`／`tag`／`onClose`，portal 到 body，`useBackClose`，層級 1210）、`src/components/ScatterChart.tsx`（共用分布圖：自動框住資料點、滾輪／兩指縮放、拖曳、＋－重設；`ScatterPoint = {x,y,game}`）、`src/styles/fullscreen-page.css`、`src/lib/useLoyaltyAlerts.ts`（回傳 `{count, changes, markAllSeen}`；已讀鍵 `boardgame-seen-attended:<帳號id>`、`boardgame-seen-changes:<帳號id>`；資料來源 `get_my_gatherings` ＋ `get_my_game_changes`；第一次使用把現有全標已讀；只顯示最近 7 天）、`src/styles/lc-months.css`（`lcm-*`）。
+- **前端（本輪改動）**：`StatsTables.tsx`／`MyRatingsPanel.tsx`／`Leaderboard.tsx`／`MyList.tsx`（統計表與分布圖走 `FullScreenPage`）；`stats-chart.css`（`.fsp .sc-box` 560px、`.fsp .sc-svg` 最高 62vh）；`NewGatheringWizard.tsx`（見 QUICKSTART 2.2；`useEffect` 用 `supabase.auth.getSession()` 取管理者 id，`allPlayers` 把管理者放最上面，`stepErrors`／`attempted`／`requestClose`／`playersOpen`）；`LoyaltyAdmin.tsx`（`removedGames`、`replacing`、`gameMessage` 狀態，`softRemoveGame`、`addGame` 對已移除的改用 update）；`useLoyalty.ts`、`CheckInDialog.tsx`（讀 `gathering_games` 時加 `.is('removed_at', null)`）；`LoyaltyCard.tsx`（`gameChanges` prop、月份摺疊 `monthToggles`）；`MyList.tsx`（props `alertCount`、`gameChanges`、`onAlertsSeen`；集點卡分頁在有通知時顯示紅色數字；標題「聚會集點」）；`TopBar.tsx`、`UpcomingGatherings.tsx`、`App.tsx`（`loyaltyAlerts = useLoyaltyAlerts(...)`、`loyaltyBadge = planned.unseenCount + loyaltyAlerts.count`、**`statGames = boardGames.filter(g => !g.referenceOnly)` 傳給 `MyList`、`Leaderboard` 與 `clubCount`**；`adminScores` 仍用完整清單算）；`fetchBoardGames.ts`／`libraryTypes.ts`（`LibraryGame.referenceOnly`）；`GameCard.tsx`（僅供參考標籤、沒有想玩／已玩按鈕）；`GameModal.tsx`（`referenceOnly` 只有概覽，`activeTab`）。
+- **規則補充**：報到連結名額在前端是「上限 − 出席名單人數（含管理者）」，**`join_gathering` 的資料庫算法尚未核對**；管理者在新增聚會流程裡可以取消自己的勾選；聚會集點的點數仍是 `loyalty_day_status` 即時計算，不是存起來的。
+- **下一個 AI 要避開的陷阱**：①`gathering_games` 的 insert 對已移除的列會撞主鍵，要用 update；②改 `loyalty_day_status` 時不要把 `removed_at is null` 加進去（會讓被移除遊戲的得點被收回）；③新增「顯示給人看」的指定遊戲清單一律排除 `removed_at is not null`；④新增統計或榜單函式要記得排除 `reference_only`，前端傳 `statGames` 而不是 `boardGames`；⑤`FullScreenPage` 要讓父層一直掛著、用 `open` 控制（`useBackClose` 才會正確收回歷史）。
