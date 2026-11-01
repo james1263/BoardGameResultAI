@@ -131,6 +131,11 @@ function Library({
   )
   const trash = useTrashActions(allGames, onGamesChange)
   const adminScores = useMemo(() => computeAdminScores(boardGames), [boardGames])
+  // 「僅供參考」的遊戲只留在桌遊收藏：想玩、已玩、評分與所有統計都不含它們（管理者分數的排名仍用完整清單）
+  const statGames = useMemo(
+    () => boardGames.filter((game) => !game.referenceOnly),
+    [boardGames],
+  )
   const [searchText, setSearchText] = useState('')
   const [selectedGame, setSelectedGame] = useState<LibraryGame | null>(null)
   const [selectedTab, setSelectedTab] = useState<'overview' | 'ratings' | 'discussion' | 'history' | 'mine' | 'rules'>('overview')
@@ -178,13 +183,13 @@ function Library({
   // 導覽列「俱樂部」的數字：想玩＋已玩的款數（跟「我的統計」那一列同一個算法）
   const clubCount = useMemo(() => {
     let total = 0
-    for (const game of boardGames) {
+    for (const game of statGames) {
       const entry = personal.entries[game.bggName]
       if (entry?.wantToPlay) total += 1
       if (entry?.played) total += 1
     }
     return total
-  }, [boardGames, personal.entries])
+  }, [statGames, personal.entries])
   // 導覽列的頁面一次只開一個：點另一顆直接取代，再點同一顆就關閉
   const [activePage, setActivePage] = useState<NavPage | null>(null)
   const [myListMode, setMyListMode] = useState<MyListMode>('list')
@@ -1105,7 +1110,7 @@ function Library({
         }}
         focusDate={inviteFocus}
         openGatheringId={jumpGatheringId}
-        boardGames={boardGames}
+        boardGames={statGames}
         trashedGames={trashedGames}
         personal={personal}
         playSessions={playSessions}
@@ -1134,7 +1139,7 @@ function Library({
         isAdmin={isAdmin}
         people={people}
         adminRatings={adminRatings}
-        boardGames={boardGames}
+        boardGames={statGames}
         communityStats={communityStats}
         ratings={ratings}
         isOpen={isLeaderboardOpen}

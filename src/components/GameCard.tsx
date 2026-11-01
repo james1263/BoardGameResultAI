@@ -35,8 +35,16 @@ export default function GameCard({
             </span>
           }
         />
-        <StatusButtons bggName={game.bggName} personal={personal} />
-        {isNew && <span className="new-badge">NEW</span>}
+        {!game.referenceOnly && (
+          <StatusButtons bggName={game.bggName} personal={personal} />
+        )}
+        {game.referenceOnly ? (
+          <span className="new-badge" style={{ background: '#7a7f75' }}>
+            僅供參考
+          </span>
+        ) : (
+          isNew && <span className="new-badge">NEW</span>
+        )}
         <span className="game-category">
           {game.category.length > 0 ? game.category.join('、') : '尚未分類'}
         </span>

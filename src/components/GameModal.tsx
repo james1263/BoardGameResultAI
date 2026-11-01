@@ -78,6 +78,8 @@ export default function GameModal({
       ? 'overview'
       : initialTab,
   )
+  // 僅供參考的遊戲只有概覽，沒有評分、討論、紀錄
+  const activeTab: TabKey = game.referenceOnly ? 'overview' : tab
   const [rulesOpen, setRulesOpen] = useState(initialTab === 'rules')
   const [openType, setOpenType] = useState<string | null>(null)
   const [showAllWall, setShowAllWall] = useState(false)
@@ -133,9 +135,13 @@ export default function GameModal({
       >
         <div className="modal-fixed">
           <div className="modal-topbar">
-            <span className="ov-counts">
-              想玩 {community.wantCount}・已玩 {community.playedCount}
-            </span>
+            {game.referenceOnly ? (
+              <span className="ov-counts">僅供參考</span>
+            ) : (
+              <span className="ov-counts">
+                想玩 {community.wantCount}・已玩 {community.playedCount}
+              </span>
+            )}
             <button
               className="modal-close"
               type="button"
@@ -187,6 +193,7 @@ export default function GameModal({
             </div>
           </div>
 
+          {!game.referenceOnly && (
           <div className="modal-tabs" role="tablist">
             {TABS.map((item) => (
               <button
@@ -201,10 +208,11 @@ export default function GameModal({
               </button>
             ))}
           </div>
+          )}
         </div>
 
         <div className="modal-body" role="tabpanel" ref={bodyRef}>
-          {tab === 'overview' && (
+          {activeTab === 'overview' && (
             <>
               <DescriptionEditor
                 key={game.bggName}
@@ -341,7 +349,7 @@ export default function GameModal({
             </>
           )}
 
-          {tab === 'ratings' && (
+          {activeTab === 'ratings' && (
             isAdmin ? (
               <div className="modal-section">
                 <h3 className="modal-section-title">管理者評分（來自 CSV）</h3>
@@ -410,7 +418,7 @@ export default function GameModal({
             )
           )}
 
-          {tab === 'discussion' && (
+          {activeTab === 'discussion' && (
             <div className="modal-section">
               {vip.isVip || isAdmin ? (
                 <GameNotesBoard
@@ -430,7 +438,7 @@ export default function GameModal({
             </div>
           )}
 
-          {tab === 'history' && (
+          {activeTab === 'history' && (
             <div className="modal-section">
               <GamePlayHistory
                 key={game.bggName}
