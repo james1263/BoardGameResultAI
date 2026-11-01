@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useVip } from '../lib/useVip'
 import VipLock from './VipLock'
 import InfoHint from './InfoHint'
@@ -11,6 +12,9 @@ import {
 } from '../lib/useGameRatings'
 import { askConfirm } from '../lib/askConfirm'
 import { useMyLoyalty, todayLocal } from '../lib/useLoyalty'
+import { useSession } from '../lib/useSession'
+import { supabase } from '../lib/supabase'
+import { announcePlayed } from '../lib/useGamePlaySessions'
 
 type Draft = {
     overall: number | null
@@ -45,6 +49,56 @@ function sameAsSaved(draft: Draft, mine: MyRating | null): boolean {
 function filledCount(draft: Draft): number {
     const detail = RATING_FIELDS.filter((f) => draft.scores[f.key] != null).length
     return detail + (draft.overall != null ? 1 : 0)
+}
+
+type LoyaltySnapshot = { monthPoints: number; earned: number; redeemed: number }
+
+async function readLoyalty(): Promise<LoyaltySnapshot | null> {
+    const { data, error } = await supabase.rpc('get_my_loyalty_summary')
+    const row = (
+        data as { month_points: number; earned_vouchers: number; redeemed: number }[] | null
+    )?.[0]
+    if (error || !row) return null
+    return { monthPoints: row.month_points, earned: row.earned_vouchers, redeemed: row.redeemed }
+}
+
+async function countSessions(userId: string, bggName: string): Promise<number | null> {
+    const { count, error } = await supabase
+        .from('game_play_sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('bgg_name', bggName)
+    return error ? null : (count ?? 0)
+}
+
+async function latestPlayedOn(userId: string, bggName: string): Promise<string | null> {
+    const { data } = await supabase
+        .from('game_play_sessions')
+        .select('played_on')
+        .eq('user_id', userId)
+        .eq('bgg_name', bggName)
+        .order('created_at', { ascending: false })
+        .limit(1)
+    const row = (data as { played_on?: string }[] | null)?.[0]
+    return row?.played_on ?? null
+}
+
+// 評分前後比較：得到 1 點、換成免費券、或自動用券
+function describePoints(
+    before: LoyaltySnapshot | null,
+    after: LoyaltySnapshot | null,
+): string | null {
+    if (!before || !after) return null
+    if (after.redeemed > before.redeemed) {
+        return '你有可用的免費券，已自動使用 1 張（今天不集點）。'
+    }
+    if (after.earned > before.earned) {
+        return '獲得 1 點！本月集滿 2 點，已轉換成免費券 1 張（明天起可以使用）。'
+    }
+    if (after.monthPoints > before.monthPoints) {
+        return `獲得 1 點！本月累積 ${after.monthPoints} 點，集滿 2 點就換免費券 1 張。`
+    }
+    return null
 }
 
 // 評分說明：第一次評分的人直接展開，之後收成「!」
@@ -132,6 +186,8 @@ export default function RatingSection({
     const mine = api.getMine(bggName)
     const [draft, setDraft] = useState<Draft>(() => toDraft(mine))
     const loyalty = useMyLoyalty()
+    const session = useSession()
+    const [reward, setReward] = useState<string[] | null>(null)
 
     const isGuest = api.status === 'guest'
     const canEdit = api.status === 'ready' && !api.busy
@@ -190,7 +246,43 @@ export default function RatingSection({
     async function handleSave() {
         if (draft.overall == null || draft.scores.keep == null) return
         if (needFull && !complete) return
-        await api.saveRating(bggName, { overall: draft.overall, ...draft.scores })
+        const overall = draft.overall
+        const userId = session?.user?.id ?? null
+
+        // 這次儲存會讓這款第一次「七項完整」：之後要告訴使用者得點與自動記已玩
+        const becomesComplete = complete && !isFull(bggName)
+        let beforeLoyalty: LoyaltySnapshot | null = null
+        let beforeCount: number | null = null
+        if (becomesComplete && userId) {
+            const [loyaltyBefore, countBefore] = await Promise.all([
+                readLoyalty(),
+                countSessions(userId, bggName),
+            ])
+            beforeLoyalty = loyaltyBefore
+            beforeCount = countBefore
+        }
+
+        const ok = await api.saveRating(bggName, { overall, ...draft.scores })
+        if (!ok || !becomesComplete || !userId) return
+
+        const [afterLoyalty, afterCount] = await Promise.all([
+            readLoyalty(),
+            countSessions(userId, bggName),
+        ])
+        const lines: string[] = []
+        const pointLine = describePoints(beforeLoyalty, afterLoyalty)
+        if (pointLine) lines.push(pointLine)
+        if (beforeCount != null && afterCount != null && afterCount > beforeCount) {
+            const date = await latestPlayedOn(userId, bggName)
+            lines.push(
+                `這款遊戲的已玩次數已自動 +1${
+                    date ? `，記錄日期：${date.replaceAll('-', '/')}（聚會當天）` : ''
+                }。`,
+            )
+            announcePlayed([bggName])
+        }
+        loyalty.reload()
+        if (lines.length > 0) setReward(lines)
     }
 
     async function handleDelete() {
@@ -327,6 +419,63 @@ export default function RatingSection({
                     </>
                 )}
             </div>
+            {reward &&
+                createPortal(
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="評分完成"
+                        onClick={() => setReward(null)}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            zIndex: 100000,
+                            background: 'rgba(0,0,0,0.45)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 16,
+                        }}
+                    >
+                        <div
+                            onClick={(event) => event.stopPropagation()}
+                            style={{
+                                background: '#fffdf7',
+                                borderRadius: 16,
+                                padding: '20px 18px',
+                                maxWidth: 360,
+                                width: '100%',
+                                boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+                            }}
+                        >
+                            <h3 style={{ margin: '0 0 10px', fontSize: '1.1rem' }}>評分完成 🎉</h3>
+                            {reward.map((line) => (
+                                <p key={line} style={{ margin: '6px 0', lineHeight: 1.6 }}>
+                                    {line}
+                                </p>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => setReward(null)}
+                                style={{
+                                    marginTop: 12,
+                                    width: '100%',
+                                    padding: '10px',
+                                    border: 'none',
+                                    borderRadius: 10,
+                                    background: '#4a7c59',
+                                    color: '#fff',
+                                    fontWeight: 700,
+                                    fontSize: '1rem',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                知道了
+                            </button>
+                        </div>
+                    </div>,
+                    document.body,
+                )}
         </div>
     )
 }

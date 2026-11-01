@@ -8,6 +8,8 @@ export type PlaySession = {
   playedOn: string // YYYY-MM-DD
   playerCount: number | null
   note: string
+  // 來源：'manual'＝自己記的；其他（'rating'、'admin_gathering'、'admin_backfill'）都是系統自動記的
+  source: string
 }
 
 export type PlaySummary = {
@@ -21,12 +23,24 @@ type SessionRow = {
   played_on: string
   player_count: number | null
   note: string
+  source?: string | null
 }
 
 export type SessionsStatus = 'guest' | 'loading' | 'ready' | 'error'
 
+// 別的地方（例如評分後自動記了一次已玩）通知這裡重新讀取
+export const SESSIONS_CHANGED_EVENT = 'boardgame-sessions-changed'
+export const PLAYED_SYNC_EVENT = 'boardgame-played-sync'
+
+// 系統自動記了已玩（評分得點、管理者建立聚會）：通知遊玩紀錄重讀，也讓畫面上的「已玩」打勾同步
+export function announcePlayed(games: string[]) {
+  window.dispatchEvent(new Event(SESSIONS_CHANGED_EVENT))
+  window.dispatchEvent(new CustomEvent(PLAYED_SYNC_EVENT, { detail: { games } }))
+}
+
 const TABLE = 'game_play_sessions'
-const COLUMNS = 'id, bgg_name, played_on, player_count, note'
+// 用 * 讀：資料庫有 source 欄位就帶出來，沒有也不會壞
+const COLUMNS = '*'
 const EMPTY_LIST: PlaySession[] = []
 const EMPTY_SUMMARY: PlaySummary = { count: 0, lastPlayedOn: null }
 
@@ -45,6 +59,7 @@ function rowToSession(row: SessionRow): PlaySession {
     playedOn: row.played_on,
     playerCount: row.player_count,
     note: row.note,
+    source: row.source ?? 'manual',
   }
 }
 
@@ -87,6 +102,12 @@ export function useGamePlaySessions() {
       cancelled = true
     }
   }, [userId, reloadKey])
+
+  useEffect(() => {
+    const handler = () => setReloadKey((current) => current + 1)
+    window.addEventListener(SESSIONS_CHANGED_EVENT, handler)
+    return () => window.removeEventListener(SESSIONS_CHANGED_EVENT, handler)
+  }, [])
 
   // 依遊戲分組（每組已是「最新在前」）
   const byGame = useMemo(() => {

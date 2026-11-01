@@ -19,7 +19,7 @@ import Leaderboard from './components/Leaderboard'
 import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
 import { usePersonalCollection } from './lib/usePersonalCollection'
-import { useGamePlaySessions } from './lib/useGamePlaySessions'
+import { useGamePlaySessions, PLAYED_SYNC_EVENT } from './lib/useGamePlaySessions'
 import { useGameRatings } from './lib/useGameRatings'
 import { useCommunityStats } from './lib/useCommunityStats'
 import { useInviteLink } from './lib/useInviteLink'
@@ -265,6 +265,21 @@ function Library({
     personal.getEntry,
     personal.updateEntry,
   ])
+
+  // 系統自動替我記了已玩（評分得點、管理者建立聚會）：畫面上的「已玩」打勾同步
+  useEffect(() => {
+    function handlePlayedSync(event: Event) {
+      const games = (event as CustomEvent<{ games?: string[] }>).detail?.games ?? []
+      if (personal.status !== 'ready') return
+      for (const name of games) {
+        if (!personal.getEntry(name).played) {
+          personal.updateEntry(name, { played: true }, { skipPlayedRule: true })
+        }
+      }
+    }
+    window.addEventListener(PLAYED_SYNC_EVENT, handlePlayedSync)
+    return () => window.removeEventListener(PLAYED_SYNC_EVENT, handlePlayedSync)
+  }, [personal.status, personal.getEntry, personal.updateEntry])
 
   // 頂端導覽「集點卡」：直接打開我的桌遊的集點卡分頁
   function openMyLoyalty() {

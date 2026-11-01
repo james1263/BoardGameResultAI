@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { askConfirm } from '../lib/askConfirm'
 import { todayLocal } from '../lib/useLoyalty'
+import { announcePlayed } from '../lib/useGamePlaySessions'
 import { useBackClose } from '../lib/useBackClose'
 import '../styles/new-gathering.css'
 
@@ -155,12 +156,14 @@ export default function NewGatheringWizard({
 
     const id = data.id as string
     const warnings: string[] = []
+    let gamesSaved = false
 
     if (games.length > 0) {
       const result = await supabase
         .from('gathering_games')
         .insert(games.map((bggName) => ({ gathering_id: id, bgg_name: bggName })))
       if (result.error) warnings.push('指定遊戲沒有存成功：' + result.error.message)
+      else gamesSaved = true
     }
 
     if (picked.length > 0) {
@@ -186,6 +189,8 @@ export default function NewGatheringWizard({
     }
 
     setBusy(false)
+    // 資料庫已自動替管理者記一次已玩（聚會日到了才記）：讓畫面上的「已玩」打勾同步
+    if (gamesSaved && date <= todayLocal()) announcePlayed(games)
     if (warnings.length === 0) onCreated(id)
     else setDone({ id, warnings })
   }

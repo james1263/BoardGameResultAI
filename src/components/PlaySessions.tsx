@@ -17,6 +17,8 @@ export default function PlaySessions({
   const [players, setPlayers] = useState('')
   const [note, setNote] = useState('')
   const list = api.getSessions(bggName)
+  const autoCount = list.filter((item) => item.source !== 'manual').length
+  const manualCount = list.length - autoCount
 
   if (!personal.isLoggedIn) {
     return (
@@ -137,11 +139,28 @@ export default function PlaySessions({
       )}
 
       {list.length > 0 && (
+        <details className="play-sessions-fold">
+          <summary style={{ cursor: 'pointer', margin: '8px 0 4px' }}>
+            遊玩日期紀錄 {list.length} 筆（手動 {manualCount}・自動 {autoCount}）
+          </summary>
         <ul className="play-sessions-list">
           {list.map((item) => (
             <li key={item.id}>
               <div className="play-sessions-main">
                 <strong>{item.playedOn.replaceAll('-', '/')}</strong>
+                {item.source !== 'manual' && (
+                  <span
+                    style={{
+                      fontSize: '0.75em',
+                      background: '#e6efe8',
+                      color: '#3d6b4c',
+                      borderRadius: 999,
+                      padding: '1px 8px',
+                    }}
+                  >
+                    自動
+                  </span>
+                )}
                 {item.playerCount != null && <span>{item.playerCount} 人</span>}
                 <button
                   type="button"
@@ -156,6 +175,7 @@ export default function PlaySessions({
             </li>
           ))}
         </ul>
+        </details>
       )}
     </div>
   )

@@ -16,6 +16,17 @@ type Tab = 'games' | 'chart' | 'matrix'
 type SortKey = 'name' | 'want' | 'played' | 'overall' | 'keep' | 'count'
 type Cell = { want: boolean; played: boolean; rating: number | null }
 
+// 名單欄：固定欄寬並自動換行，避免文字疊在一起
+const NAME_COL_STYLE = {
+    width: 220,
+    minWidth: 220,
+    maxWidth: 220,
+    whiteSpace: 'normal',
+    wordBreak: 'break-word',
+    overflow: 'visible',
+    verticalAlign: 'top',
+} as const
+
 function downloadCsv(filename: string, rows: string[][]) {
     const quote = (value: string) => `"${value.replaceAll('"', '""')}"`
     const text =
@@ -578,9 +589,11 @@ export default function StatsTables({
                                                 評分人數{arrow('count')}
                                             </button>
                                         </th>
-                                        {showNames && <th>想玩的人</th>}
-                                        {showNames && <th>已玩的人</th>}
-                                        {showNames && isAdmin && <th>評分者（整體／留下來）</th>}
+                                        {showNames && <th style={NAME_COL_STYLE}>想玩的人</th>}
+                                        {showNames && <th style={NAME_COL_STYLE}>已玩的人</th>}
+                                        {showNames && isAdmin && (
+                                            <th style={NAME_COL_STYLE}>評分者（整體／留下來）</th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -592,10 +605,20 @@ export default function StatsTables({
                                             <td>{row.overall == null ? '—' : row.overall.toFixed(1)}</td>
                                             <td>{row.keep == null ? '—' : row.keep.toFixed(1)}</td>
                                             <td>{row.count}</td>
-                                            {showNames && <td className="st-names">{row.wantNames}</td>}
-                                            {showNames && <td className="st-names">{row.playedNames}</td>}
+                                            {showNames && (
+                                                <td className="st-names" style={NAME_COL_STYLE}>
+                                                    {row.wantNames}
+                                                </td>
+                                            )}
+                                            {showNames && (
+                                                <td className="st-names" style={NAME_COL_STYLE}>
+                                                    {row.playedNames}
+                                                </td>
+                                            )}
                                             {showNames && isAdmin && (
-                                                <td className="st-names">{row.raters}</td>
+                                                <td className="st-names" style={NAME_COL_STYLE}>
+                                                    {row.raters}
+                                                </td>
                                             )}
                                         </tr>
                                     ))}

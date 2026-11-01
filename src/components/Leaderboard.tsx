@@ -142,7 +142,9 @@ export default function Leaderboard({
   const [board, setBoard] = useState<BoardKey>('want')
   const [period, setPeriod] = useState<Period>('all')
   const [openNames, setOpenNames] = useState<string[]>([])
-  const [page, setPage] = useState<'games' | 'players' | 'stats'>('games')
+  const [page, setPage] = useState<'games' | 'players'>('games')
+  // 統計表用彈出視窗打開（嵌在抽屜裡太小，手機更看不清楚）
+  const [statsOpen, setStatsOpen] = useState(false)
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -156,6 +158,7 @@ export default function Leaderboard({
     if (!isOpen) {
       setQuery('')
       setPage('games')
+      setStatsOpen(false)
     }
   }, [isOpen])
 
@@ -455,10 +458,10 @@ export default function Leaderboard({
                 </button>
                 <button
                   type="button"
-                  className={page === 'stats' ? 'active' : ''}
-                  onClick={() => setPage('stats')}
+                  className={statsOpen ? 'active' : ''}
+                  onClick={() => setStatsOpen(true)}
                 >
-                  統計表
+                  統計表 ↗
                 </button>
               </div>
             )}
@@ -471,19 +474,6 @@ export default function Leaderboard({
                   isAdmin={isAdmin}
                   boardGames={boardGames}
                   renderCover={renderCover}
-                  onOpenGame={onOpenGame}
-                />
-              </div>
-            ) : page === 'stats' && (canSeePeople || isAdmin) ? (
-              <div className="mylist-body">
-                <StatsTables
-                  embedded
-                  boardGames={boardGames}
-                  communityStats={communityStats}
-                  ratings={ratings}
-                  people={people}
-                  adminRatings={adminRatings}
-                  isAdmin={isAdmin}
                   onOpenGame={onOpenGame}
                 />
               </div>
@@ -713,6 +703,21 @@ export default function Leaderboard({
               </>
             )}
           </aside>
+          {statsOpen && (canSeePeople || isAdmin) && (
+            <StatsTables
+              boardGames={boardGames}
+              communityStats={communityStats}
+              ratings={ratings}
+              people={people}
+              adminRatings={adminRatings}
+              isAdmin={isAdmin}
+              onOpenGame={(game) => {
+                setStatsOpen(false)
+                onOpenGame(game)
+              }}
+              onClose={() => setStatsOpen(false)}
+            />
+          )}
         </>
       )}
     </>
