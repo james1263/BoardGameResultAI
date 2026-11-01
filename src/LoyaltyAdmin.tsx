@@ -109,6 +109,11 @@ export default function LoyaltyAdmin() {
     const [selectedId, setSelectedId] = useState<string | null>(null)
     const [wizardOpen, setWizardOpen] = useState(false)
     const [gameSearch, setGameSearch] = useState('')
+    // 已被「軟移除」的指定遊戲（資料還在，只是標記）；重新加回時用更新
+    const [removedGames, setRemovedGames] = useState<Record<string, string[]>>({})
+    // 更換：記下要被取代的舊遊戲，下一次加入新遊戲時自動移除它
+    const [replacing, setReplacing] = useState<{ gatheringId: string; bggName: string } | null>(null)
+    const [gameMessage, setGameMessage] = useState('')
     const [playerSearch, setPlayerSearch] = useState('')
     const [checkins, setCheckins] = useState<Record<string, Checkin>>({})
     const [selfAttendees, setSelfAttendees] = useState<Record<string, string[]>>({})
@@ -212,7 +217,7 @@ export default function LoyaltyAdmin() {
                 .select('gathering_id, user_id, exempt, source'),
             supabase.from('player_profiles').select('id, nickname').order('nickname'),
             supabase.rpc('admin_get_loyalty_overview'),
-            supabase.from('gathering_games').select('gathering_id, bgg_name'),
+            supabase.from('gathering_games').select('gathering_id, bgg_name, removed_at'),
             supabase
                 .from('board_games')
                 .select('bgg_name, name')
@@ -285,13 +290,17 @@ export default function LoyaltyAdmin() {
         )
 
         const gameMap: Record<string, string[]> = {}
+        const removedMap: Record<string, string[]> = {}
         for (const row of (gg.data ?? []) as {
             gathering_id: string
             bgg_name: string
+            removed_at: string | null
         }[]) {
-            ; (gameMap[row.gathering_id] ??= []).push(row.bgg_name)
+            if (row.removed_at) (removedMap[row.gathering_id] ??= []).push(row.bgg_name)
+            else (gameMap[row.gathering_id] ??= []).push(row.bgg_name)
         }
         setGatheringGames(gameMap)
+        setRemovedGames(removedMap)
 
         setAllGames(
             ((bg.data ?? []) as { bgg_name: string; name: string }[]).map((row) => ({
@@ -574,55 +583,91 @@ export default function LoyaltyAdmin() {
     async function addGame(gatheringId: string, bggName: string) {
         setBusy(true)
         setMessage('')
-        const { error } = await supabase
-            .from('gathering_games')
-            .insert({ gathering_id: gatheringId, bgg_name: bggName })
+        setGameMessage('')
+        const wasRemoved = (removedGames[gatheringId] ?? []).includes(bggName)
+        // 已被移除過的遊戲：清掉移除標記就等於加回來（主鍵是 場次＋遊戲，不能再新增一列）
+        const { error } = wasRemoved
+            ? await supabase
+                  .from('gathering_games')
+                  .update({ removed_at: null })
+                  .eq('gathering_id', gatheringId)
+                  .eq('bgg_name', bggName)
+            : await supabase
+                  .from('gathering_games')
+                  .insert({ gathering_id: gatheringId, bgg_name: bggName })
 
         if (error) {
-            setMessage('新增遊戲失敗：' + error.message)
+            setGameMessage('新增遊戲失敗：' + error.message)
         } else {
             setGatheringGames((current) => ({
                 ...current,
                 [gatheringId]: [...(current[gatheringId] ?? []), bggName],
             }))
+            if (wasRemoved) {
+                setRemovedGames((current) => ({
+                    ...current,
+                    [gatheringId]: (current[gatheringId] ?? []).filter((name) => name !== bggName),
+                }))
+            }
             setGameSearch('')
+            const old = replacing && replacing.gatheringId === gatheringId ? replacing.bggName : null
+            setReplacing(null)
+            if (old && old !== bggName) {
+                await softRemoveGame(gatheringId, old, true)
+            }
             await refreshOverview()
         }
         setBusy(false)
     }
 
+    // 標記為已移除（不刪資料）：已經因這款得到點數的人，點數保留
+    async function softRemoveGame(gatheringId: string, bggName: string, fromReplace = false) {
+        const { error } = await supabase
+            .from('gathering_games')
+            .update({ removed_at: new Date().toISOString() })
+            .eq('gathering_id', gatheringId)
+            .eq('bgg_name', bggName)
+
+        if (error) {
+            setGameMessage('移除遊戲失敗：' + error.message)
+            return false
+        }
+        setGatheringGames((current) => ({
+            ...current,
+            [gatheringId]: (current[gatheringId] ?? []).filter((item) => item !== bggName),
+        }))
+        setRemovedGames((current) => ({
+            ...current,
+            [gatheringId]: [...(current[gatheringId] ?? []), bggName],
+        }))
+        setGameMessage(
+            fromReplace
+                ? '已更換指定遊戲。已經得到點數的人點數不受影響，出席的玩家會在集點卡看到通知。'
+                : '已移除。已經得到點數的人點數不受影響，出席的玩家會在集點卡看到通知。',
+        )
+        return true
+    }
+
     async function removeGame(gatheringId: string, bggName: string) {
+        setGameMessage('')
         if ((gatheringGames[gatheringId] ?? []).length <= 1 && checkins[gatheringId]) {
-            setMessage('已經有聚會連結的場次，至少要保留一款遊戲。請先加入新的遊戲再移除這一款。')
+            setGameMessage(
+                '這一場已經有聚會連結，至少要保留一款遊戲。想換遊戲請按該款旁邊的「更換」，再搜尋選新的。',
+            )
             return
         }
         const name = gameNameMap.get(bggName) ?? bggName
         if (
             !(await askConfirm(
-                `確定從這一場移除「${name}」嗎？`,
+                `確定從這一場移除「${name}」嗎？已經因為評分得到點數的人，點數會保留。`,
             ))
         )
             return
 
         setBusy(true)
         setMessage('')
-        const { error } = await supabase
-            .from('gathering_games')
-            .delete()
-            .eq('gathering_id', gatheringId)
-            .eq('bgg_name', bggName)
-
-        if (error) {
-            setMessage('移除遊戲失敗：' + error.message)
-        } else {
-            setGatheringGames((current) => ({
-                ...current,
-                [gatheringId]: (current[gatheringId] ?? []).filter(
-                    (item) => item !== bggName,
-                ),
-            }))
-            await refreshOverview()
-        }
+        const ok = await softRemoveGame(gatheringId, bggName)
+        if (ok) await refreshOverview()
         setBusy(false)
     }
 
@@ -1069,6 +1114,21 @@ export default function LoyaltyAdmin() {
                             type="button"
                             className="loy-mini-btn"
                             disabled={busy}
+                            onClick={() => {
+                                setGameMessage('')
+                                setReplacing(
+                                    replacing?.bggName === bggName
+                                        ? null
+                                        : { gatheringId: selected.id, bggName },
+                                )
+                            }}
+                        >
+                            {replacing?.bggName === bggName ? '取消更換' : '更換'}
+                        </button>
+                        <button
+                            type="button"
+                            className="loy-mini-btn"
+                            disabled={busy}
                             onClick={() => removeGame(selected.id, bggName)}
                         >
                             移除
@@ -1083,6 +1143,13 @@ export default function LoyaltyAdmin() {
         })}
     </ul>
 )}
+                            {replacing && replacing.gatheringId === selected.id && (
+                                <p className="loy-admin-note">
+                                    更換中：請在上方搜尋並加入新遊戲，加入後會自動移除「
+                                    {gameNameMap.get(replacing.bggName) ?? replacing.bggName}」。
+                                </p>
+                            )}
+                            {gameMessage && <p className="loy-admin-message">{gameMessage}</p>}
                             <h4 className="lga-sub">② 人數上限</h4>
                             <p className="loy-admin-note">
                                 上限包含你手動加入的人。連結可報到的名額 ＝ 上限 － 目前出席人數。
