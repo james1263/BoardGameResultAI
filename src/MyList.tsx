@@ -13,6 +13,7 @@ import MyNotes from './components/MyNotes'
 import AddPlayLog from './components/AddPlayLog'
 import PlayedGameRecord from './components/PlayedGameRecord'
 import ClubBoard from './components/ClubBoard'
+import MyRatingsPanel from './components/MyRatingsPanel'
 import UpcomingGatherings from './components/UpcomingGatherings'
 import { useBackClose } from './lib/useBackClose'
 import DrawerToTop from './components/DrawerToTop'
@@ -22,7 +23,7 @@ type ListedGame = BoardGame & { removedAt?: string | null }
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
 type View = 'home' | 'stats' | 'gatherings' | 'addplay' | 'notes' | 'board'
-type StatsTab = 'overview' | 'want' | 'played'
+type StatsTab = 'overview' | 'want' | 'played' | 'score' | 'chart'
 type SortKey =
     | 'added'
     | 'added-rev'
@@ -641,7 +642,7 @@ export default function MyList({
                         </button>
                     </div>
 
-                    <div className="lb-tabs">
+                    <div className="lb-tabs lb-tabs-5">
                         <button
                             type="button"
                             className={`lb-tab ${statsTab === 'overview' ? 'active' : ''}`}
@@ -662,6 +663,20 @@ export default function MyList({
                             onClick={() => switchStatsTab('played')}
                         >
                             已玩 {playedGames.length}
+                        </button>
+                        <button
+                            type="button"
+                            className={`lb-tab ${statsTab === 'score' ? 'active' : ''}`}
+                            onClick={() => switchStatsTab('score')}
+                        >
+                            綜合評分
+                        </button>
+                        <button
+                            type="button"
+                            className={`lb-tab ${statsTab === 'chart' ? 'active' : ''}`}
+                            onClick={() => switchStatsTab('chart')}
+                        >
+                            分布圖
                         </button>
                     </div>
 
@@ -740,6 +755,14 @@ export default function MyList({
                                 )}
 
                             </>
+                        ) : statsTab === 'score' || statsTab === 'chart' ? (
+                            <MyRatingsPanel
+                                mode={statsTab}
+                                boardGames={boardGames}
+                                ratings={ratings}
+                                onOpenGame={(game) => onOpenGame(game)}
+                                renderCover={renderCover}
+                            />
                         ) : (
                             <>
                                 {isLoading ? (

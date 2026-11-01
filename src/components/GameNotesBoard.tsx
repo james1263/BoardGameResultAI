@@ -5,6 +5,7 @@ import {
   type BoardNote,
 } from '../lib/useGameNotesBoard'
 import NoteListItem from './NoteListItem'
+import NotePointsFields from './NotePointsFields'
 import '../styles/game-tabs.css'
 
 function formatDate(day: string): string {
@@ -26,6 +27,10 @@ export default function GameNotesBoard({
   const [showHidden, setShowHidden] = useState(false)
   const [message, setMessage] = useState('')
   const [draft, setDraft] = useState('')
+  const [draftLike, setDraftLike] = useState('')
+  const [draftDislike, setDraftDislike] = useState('')
+  const [editLike, setEditLike] = useState('')
+  const [editDislike, setEditDislike] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
@@ -41,17 +46,19 @@ export default function GameNotesBoard({
 
   async function publish() {
     setMessage('')
-    const result = await api.addNote(draft)
+    const result = await api.addNote(draft, draftLike, draftDislike)
     if (result) {
       setMessage(result)
       return
     }
     setDraft('')
+    setDraftLike('')
+    setDraftDislike('')
   }
 
   async function saveEdit(noteId: string) {
     setMessage('')
-    const result = await api.updateNote(noteId, editText)
+    const result = await api.updateNote(noteId, editText, editLike, editDislike)
     if (result) {
       setMessage(result)
       return
@@ -103,6 +110,12 @@ export default function GameNotesBoard({
               value={draft}
               placeholder="這款遊戲你想跟大家說什麼？（公開給 VIP，最多 200 字）"
               onChange={(event) => setDraft(event.target.value)}
+            />
+            <NotePointsFields
+              like={draftLike}
+              dislike={draftDislike}
+              onLike={setDraftLike}
+              onDislike={setDraftDislike}
             />
             <div className="gb-mine-actions">
               <span className="gb-count">
@@ -181,6 +194,12 @@ export default function GameNotesBoard({
                       value={editText}
                       onChange={(event) => setEditText(event.target.value)}
                     />
+                    <NotePointsFields
+                      like={editLike}
+                      dislike={editDislike}
+                      onLike={setEditLike}
+                      onDislike={setEditDislike}
+                    />
                     <div className="gb-mine-actions">
                       <span className="gb-count">{editText.length} / 200</span>
                       <span className="gb-btn-row">
@@ -215,6 +234,8 @@ export default function GameNotesBoard({
                 mine={note.isMine}
                 date={note.postedOn ? formatDate(note.postedOn) : ''}
                 content={note.content}
+                like={note.like}
+                dislike={note.dislike}
                 open={open}
                 onToggle={() => setOpenId(open ? null : note.id)}
               >
@@ -234,6 +255,8 @@ export default function GameNotesBoard({
                         onClick={() => {
                           setEditingId(note.id)
                           setEditText(note.content)
+                          setEditLike(note.like)
+                          setEditDislike(note.dislike)
                           setMessage('')
                         }}
                       >

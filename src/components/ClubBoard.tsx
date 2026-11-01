@@ -5,6 +5,7 @@ import type { RatingsApi } from '../lib/useGameRatings'
 import { supabase } from '../lib/supabase'
 import { MAX_NOTES_PER_GAME } from '../lib/useGameNotesBoard'
 import NoteListItem from './NoteListItem'
+import NotePointsFields from './NotePointsFields'
 import '../styles/club-board.css'
 import { askConfirm } from '../lib/askConfirm'
 
@@ -19,6 +20,8 @@ type NoteRow = {
   content: string
   is_mine: boolean
   posted_on: string | null
+  like_point?: string | null
+  dislike_point?: string | null
 }
 
 // 搜尋時忽略大小寫、空白與標點
@@ -28,7 +31,8 @@ function normalizeText(text: string): string {
 
 function explain(message: string): string {
   if (message.includes('not played')) return '請先標記已玩或評分這款，才能留言。'
-  if (message.includes('too long')) return '留言最多 200 字。'
+  if (message.includes('too long'))
+    return '留言最多 200 字，喜歡／不喜歡的點各最多 100 字。'
   if (message.includes('too many'))
     return `這款你最多只能留 ${MAX_NOTES_PER_GAME} 則，請先刪除舊的。`
   if (message.includes('empty')) return '請先輸入留言內容。'
@@ -64,6 +68,8 @@ export default function ClubBoard({
   const [pickSearch, setPickSearch] = useState('')
   const [picked, setPicked] = useState<ListedGame | null>(null)
   const [draft, setDraft] = useState('')
+  const [draftLike, setDraftLike] = useState('')
+  const [draftDislike, setDraftDislike] = useState('')
   const [saving, setSaving] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
@@ -128,6 +134,8 @@ export default function ClubBoard({
     const { error: rpcError } = await supabase.rpc('add_game_note', {
       p_bgg_name: picked.bggName,
       p_content: draft,
+      p_like: draftLike,
+      p_dislike: draftDislike,
     })
     setSaving(false)
     if (rpcError) {
@@ -135,6 +143,8 @@ export default function ClubBoard({
       return
     }
     setDraft('')
+    setDraftLike('')
+    setDraftDislike('')
     setPicked(null)
     setPickSearch('')
     setComposeOpen(false)
@@ -233,6 +243,12 @@ export default function ClubBoard({
                 placeholder="想跟大家說什麼？（公開給 VIP，最多 200 字）"
                 onChange={(event) => setDraft(event.target.value)}
               />
+              <NotePointsFields
+                like={draftLike}
+                dislike={draftDislike}
+                onLike={setDraftLike}
+                onDislike={setDraftDislike}
+              />
               <div className="gb-mine-actions">
                 <span className="gb-count">{draft.length} / 200</span>
                 <button
@@ -291,6 +307,8 @@ export default function ClubBoard({
                         gameName={gameName}
                         onOpenGame={game ? () => onOpenGame(game, 'discussion') : undefined}
                         content={row.content}
+                        like={row.like_point ?? ''}
+                        dislike={row.dislike_point ?? ''}
                         open={openId === row.id}
                         onToggle={() => setOpenId(openId === row.id ? null : row.id)}
                       >

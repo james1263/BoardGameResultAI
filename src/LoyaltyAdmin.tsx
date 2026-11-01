@@ -1495,9 +1495,13 @@ export default function LoyaltyAdmin() {
                                                         type="button"
                                                         className="admin-link"
                                                         disabled={busy}
-                                                        onClick={() => showDetail(row)}
+                                                        onClick={() =>
+                                                            detail?.userId === row.userId
+                                                                ? setDetail(null)
+                                                                : showDetail(row)
+                                                        }
                                                     >
-                                                        明細
+                                                        {detail?.userId === row.userId ? '收起' : '明細'}
                                                     </button>
                                                     <button
                                                         type="button"
@@ -1516,28 +1520,9 @@ export default function LoyaltyAdmin() {
                                                         贈送
                                                     </button>
                                                 </div>
-                                            </li>
-                                        )
-                                    })}
-                                </ul>
-                            )}
-                        </>
-                    )}
-                    <p className="loy-admin-note">
-                        ⚠ 代表「已使用的張數 &gt; 目前累積」，通常是玩家用券後改了評分或取消了標記。有券又有來的人，評分完成後系統會自動用券（當天不集點），不用另外處理。
-                    </p>
-                    <button
-                        className="loy-refresh"
-                        type="button"
-                        disabled={busy}
-                        onClick={refreshOverview}
-                    >
-                        重新整理
-                    </button>
+                                                {detail?.userId === row.userId && (
+                                                    <div className="lgs-detail">
 
-                    {detail && (
-                        <div className="loy-admin-detail">
-                            <h3>{detail.nickname} 的明細</h3>
                             {detail.days.length === 0 ? (
                                 <p>沒有被列入任何聚會日。</p>
                             ) : (
@@ -1570,8 +1555,27 @@ export default function LoyaltyAdmin() {
                                         )
                                         .join('、')}
                             </p>
-                        </div>
+                                                    </div>
+                                                )}
+                                            </li>
+                                        )
+                                    })}
+                                </ul>
+                            )}
+                        </>
                     )}
+                    <p className="loy-admin-note">
+                        ⚠ 代表「已使用的張數 &gt; 目前累積」，通常是玩家用券後改了評分或取消了標記。有券又有來的人，評分完成後系統會自動用券（當天不集點），不用另外處理。
+                    </p>
+                    <button
+                        className="loy-refresh"
+                        type="button"
+                        disabled={busy}
+                        onClick={refreshOverview}
+                    >
+                        重新整理
+                    </button>
+
                 </>
             )}
 

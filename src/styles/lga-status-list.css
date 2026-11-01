@@ -17,3 +17,6 @@
 .lgs-stats .ticket { color: #8a5a1f; font-weight: 700; }
 .lgs-act { display: flex; gap: 12px; margin-left: auto; font-size: 13px; }
 .lgs-act .admin-link { padding: 2px 0; }
+.lgs-detail { flex: 1 1 100%; margin: 2px 0 4px; padding: 6px 10px; background: #f5efdf; border-radius: 8px; font-size: 13px; text-align: left; }
+.lgs-detail ul { margin: 4px 0; padding-left: 18px; }
+.lgs-detail p { margin: 4px 0; }

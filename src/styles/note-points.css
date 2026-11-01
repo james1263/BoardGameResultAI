@@ -1,0 +1,14 @@
+/* 留言的「喜歡的點／不喜歡的點」 */
+.np-fields { margin-top: 6px; }
+.np-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.np-btn {
+  padding: 3px 10px; font-size: 13px; border-radius: 999px;
+  border: 1px dashed #b78a5a; background: transparent; color: #8a5a1f; cursor: pointer;
+}
+.np-btn.on { border-style: solid; background: #f3e7d3; }
+.np-box { margin-top: 6px; display: flex; flex-direction: column; gap: 2px; }
+.np-count { align-self: flex-end; font-size: 12px; color: #7c8a80; }
+.np-view { margin-top: 4px; }
+.np-line { margin: 2px 0; font-size: 14px; line-height: 1.5; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
+.np-like { color: #365b40; }
+.np-dislike { color: #8a4a3a; }

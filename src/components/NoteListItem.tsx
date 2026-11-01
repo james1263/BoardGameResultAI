@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import '../styles/note-list.css'
+import '../styles/note-points.css'
 
 // 清單式留言列：收合時只顯示 名字・日期・遊戲・前兩行內容（太長以 … 結尾），
 // 點一下展開看全文與操作按鈕。
@@ -15,6 +16,8 @@ export default function NoteListItem({
   badge,
   thumb,
   hideText = false,
+  like = '',
+  dislike = '',
   children,
 }: {
   name: string
@@ -28,6 +31,8 @@ export default function NoteListItem({
   badge?: ReactNode // 日期後面的小徽章（例如公開／私人）
   thumb?: ReactNode // 左側小縮圖（例如遊戲封面）
   hideText?: boolean // 編輯中不顯示內文，改由 children 放輸入框
+  like?: string // 喜歡的點（展開後才顯示）
+  dislike?: string // 不喜歡的點（展開後才顯示）
   children?: ReactNode
 }) {
   return (
@@ -72,6 +77,12 @@ export default function NoteListItem({
             <span className="nl-game nl-game-off">{gameName}</span>
           ))}
         {hideText ? null : <p className={`nl-text${open ? ' full' : ''}`}>{content}</p>}
+        {open && !hideText && (like || dislike) ? (
+          <div className="np-view">
+            {like ? <p className="np-line np-like">👍 喜歡：{like}</p> : null}
+            {dislike ? <p className="np-line np-dislike">👎 不喜歡：{dislike}</p> : null}
+          </div>
+        ) : null}
         </div>
       </div>
       {open && children ? <div className="nl-actions">{children}</div> : null}

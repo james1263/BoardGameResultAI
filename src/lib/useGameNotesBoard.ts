@@ -7,6 +7,8 @@ export type BoardNote = {
   content: string
   isMine: boolean
   postedOn: string // YYYY-MM-DD，沒有時為空字串
+  like: string // 喜歡的點（選填）
+  dislike: string // 不喜歡的點（選填）
 }
 
 // 自己在這款遊戲「別處玩過」類型的留言（可編輯；含被隱藏的）
@@ -16,6 +18,8 @@ export type MyNote = {
   hidden: boolean
 }
 
+export const MAX_POINT_LENGTH = 100
+
 export const MAX_NOTES_PER_GAME = 10
 
 type PublicRow = {
@@ -24,13 +28,16 @@ type PublicRow = {
   content: string
   is_mine: boolean
   posted_on: string | null
+  like_point?: string | null
+  dislike_point?: string | null
 }
 type HiddenRow = { id: string; nickname: string; content: string }
 type MineRow = { id: string; content: string; status: string }
 
 function explain(message: string): string {
   if (message.includes('not played')) return '請先標記已玩或評分這款，才能留言。'
-  if (message.includes('too long')) return '留言最多 200 字。'
+  if (message.includes('too long'))
+    return `留言最多 200 字，喜歡／不喜歡的點各最多 ${MAX_POINT_LENGTH} 字。`
   if (message.includes('too many'))
     return `這款你最多只能留 ${MAX_NOTES_PER_GAME} 則，請先刪除舊的。`
   if (message.includes('empty')) return '請先輸入留言內容。'
@@ -72,6 +79,8 @@ export function useGameNotesBoard(
         content: row.content,
         isMine: row.is_mine,
         postedOn: row.posted_on ?? '',
+        like: row.like_point ?? '',
+        dislike: row.dislike_point ?? '',
       })),
     )
 
@@ -100,6 +109,8 @@ export function useGameNotesBoard(
             content: row.content,
             isMine: false,
             postedOn: '',
+            like: '',
+            dislike: '',
           })),
         )
       }
@@ -136,11 +147,13 @@ export function useGameNotesBoard(
   }
 
   // 新增一則留言。回傳錯誤訊息，成功回傳空字串
-  async function addNote(content: string): Promise<string> {
+  async function addNote(content: string, like = '', dislike = ''): Promise<string> {
     setSaving(true)
     const { error: rpcError } = await supabase.rpc('add_game_note', {
       p_bgg_name: bggName,
       p_content: content,
+      p_like: like,
+      p_dislike: dislike,
     })
     setSaving(false)
     if (rpcError) return explain(rpcError.message)
@@ -149,11 +162,18 @@ export function useGameNotesBoard(
   }
 
   // 修改自己的一則留言
-  async function updateNote(noteId: string, content: string): Promise<string> {
+  async function updateNote(
+    noteId: string,
+    content: string,
+    like = '',
+    dislike = '',
+  ): Promise<string> {
     setBusyId(noteId)
     const { error: rpcError } = await supabase.rpc('update_my_game_note', {
       p_note: noteId,
       p_content: content,
+      p_like: like,
+      p_dislike: dislike,
     })
     setBusyId(null)
     if (rpcError) return explain(rpcError.message)
