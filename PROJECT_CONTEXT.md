@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-11-01（已併入 `生成後.md` 全部內容；**請同時讀 `QUICKSTART.md` 第 2.0（最新）節與本檔第 11、12、13、14、15 節，與其他段落衝突時以它們為準**）。
+> 最後更新：2026-11-01 晚（已併入 `生成後.md` 全部內容；**請同時讀 `QUICKSTART.md` 第 2.0（最新）節與本檔第 11～16 節，與其他段落衝突時以它們為準**）。
 
 ## 1. 專案簡介與技術架構
 
@@ -228,3 +228,13 @@
 - **`privacy.html`（2026-11-01 版，已 push）**：新增評分條目、資料用途（玩家榜）、VIP 看得到的內容（暱稱、已玩／評過款數、整體與六項加總分數；五項細項、備註、LINE／FB、Email 仍看不到）、玩家榜只列 VIP 與管理者並可選擇不列入名單。第 4 節 `privacy.html` 的「最後更新 2026-10-30」已過時。
 - **使用者決定（2026-11-01）**：以人為主體的表 VIP 也看得到（推翻「個別評分只有本人看得到」，第 2 節 `game_ratings` 列的該句只剩原始資料表權限仍成立，公開管道多了 `get_player_stats()`）；管理者 CSV 評分與一般 VIP 評分一樣處理；james 的玩過最多用他帳號的已玩資料；玩過最多與評過最多要有「隱藏管理者」勾；玩家榜綜合分數＝六項加總、不含整體、最高 30 分。
 - **待決**：⑥我的統計多兩個分頁（綜合評分、自訂 XY）尚未動工，先確認綜合分數公式；批次 C（分布圖玩家模式）、⑨規則助手 RAG；`usePlayTotals.ts`／`get_play_totals()`／`useRatingCounts.ts`／`get_rating_counts()` 是否刪除；導覽列改版（最後做）；站上拖曳調整排名＋匯出 CSV。
+
+## 16. 2026-11-01 晚增補（覆蓋前面衝突的敘述）
+
+- 完整描述見 `QUICKSTART.md` 第 2.0（最新）節；這裡只留架構與資料庫重點。
+- **前端**：`src/lib/playedStatus.ts`（`isUnplayedGame`）；`useGamePlaySessions.ts` 匯出 `SESSIONS_CHANGED_EVENT`、`PLAYED_SYNC_EVENT`、`announcePlayed(games)`；`App.tsx` 聽 `PLAYED_SYNC_EVENT` 把已玩打勾同步；`RatingSection.tsx` 有 `needFull`（集點流程七項必填）、`createPortal` 集點／自動 +1 彈窗；`Leaderboard.tsx` 統計表為彈出視窗；`PlaySessions.tsx` 折疊、手動／自動標示；`StatsTables.tsx` 名單欄 `NAME_COL_STYLE`。
+- **資料庫 `game_play_sessions`**：`id, user_id, bgg_name, played_on date, player_count int null, note text not null, created_at, source text not null default 'manual'（manual／rating／admin_gathering／admin_backfill）, gathering_id uuid null`（`gatherings(id)` on delete set null）。已玩次數＝`user_game_status.playCount`（手動）＋此表筆數。
+- **觸發器**：`aa_ratings_add_session`→`add_session_from_rating()`（只新增、從不刪除；`game_ratings` 第一次七項完整時，找聚會日 ≤ 今天（台北）、我有出席、指定這款的最近一場，同人同款同日沒紀錄才插入）；`trg_ratings_mark_played`、`sessions_mark_played`（`mark_played_from_activity()`，upsert `user_game_status.played=true`）；`settle_vouchers_on_rating`／`settle_vouchers_on_attendee`→`trg_settle_vouchers()`；`gathering_games` INSERT 管理者自動記一筆（聚會日 ≤ 今天）、DELETE 刪該筆；`gatherings` BEFORE DELETE 刪管理者自動紀錄、AFTER UPDATE OF `gathered_on` 連動日期；`attendee_makes_vip`；`game_ratings_set_updated_at`。**所有新觸發器都不得因評分或紀錄變動而減少已玩次數。**
+- **`gathering_games`**：`gathering_id uuid, bgg_name text, created_at timestamptz, play_status text null`（實際開團狀態，要拿掉的功能，介面在 `LoyaltyAdmin.tsx`、`GamePlayHistory.tsx`、`lga-list.css`）。
+- **管理者**：`admin_users` 的 id 欄位名稱未確認（用 `coalesce(to_jsonb(au)->>'user_id', to_jsonb(au)->>'id')::uuid` 取），`is_admin()` 存在；管理者帳號 james 的 id `fe8a6ab8-970a-4866-bd82-e242ed3b9bf9`；管理者不加進出席名單。
+- **規則**：ranking engine 非整數＝未玩，不列整體評分／留下來／玩家榜評分與綜合分數／分布圖；「俱樂部」徽章＝想玩＋已玩；排行榜顯示名「統計中心」、「影響度」顯示名「玩家影響性」。

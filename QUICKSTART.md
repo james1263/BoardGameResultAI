@@ -1,6 +1,6 @@
 # 桌遊規則助手 — 懶人包（給下一個 AI）
 
-> 最後更新：2026-11-01（已併入 `生成後.md` 全部內容：排行榜三頁與玩家榜、統計表分布圖、近期聚會併進集點卡頁、規則書文件列表、排序選單與難度五級；`生成後.md` 已重置）。**第 2 節最上面的「2.0（最新）」是最新增補，與其他段落衝突時以它為準。**
+> 最後更新：2026-11-01 晚（已併入 `生成後.md` 全部內容：統計中心改名、未玩遊戲不列榜單、評分表單改版、自動 +1 已玩設計、批次 3／4、補記 SQL；`生成後.md` 已重置）。**第 2 節最上面的「2.0（最新）」是最新增補，與其他段落衝突時以它為準。**
 > **分工**：本檔＝現況、待辦、合作規則；`PROJECT_CONTEXT.md`＝架構、資料庫、功能規則、規則助手設計；`生成後.md`＝這兩份之後的修改紀錄與文件維護計數（**開工前三份都要讀，衝突時以 `生成後.md` 為準**）。
 > **文件維護規則**見第 9 節。
 
@@ -12,7 +12,23 @@
 
 ## 2. 目前狀態（2026-11-01）
 
-### 2.0（最新）【2026-11-01；本檔其他段落與此衝突時以此為準】
+### 2.0（最新）【2026-11-01 晚；本檔其他段落與此衝突時以此為準】
+
+- **git**：origin/master 最新 `59859b5`（統計中心改名、玩家影響性、未玩遊戲不列榜單、俱樂部數字、評分表單改版）；之前 `69474a3`（三份 .md）、`0c2deb4`。**批次 3＋4 已交付但使用者尚未 commit／push**（他只做了 `git add .`）；本次重新產生的三份 .md 也在其中。開工先 `git pull`、`git log --oneline -5`。
+- **改名與規則（已 push，`59859b5`）**：「排行榜」→「統計中心」（只改顯示文字；導覽 key `'leaderboard'`、檔名 `Leaderboard.tsx`、css `lb-*` 沒改）；「影響度」→「玩家影響性」（`useGameRatings.ts` 的 `RATING_FIELDS`、`PlayersBoard.tsx`、`privacy.html`）；**ranking engine 非整數（以 .5 結尾）＝還沒玩過**，用 `src/lib/playedStatus.ts` 的 `isUnplayedGame(game)` 排除在遊戲榜「整體評分」「留下來」（`Leaderboard.tsx` 的 `rankedAll`）、玩家榜「評分」「綜合分數」、統計表分布圖（`StatsTables.tsx` 的 `chartRows`）之外，其他榜單、遊戲總表不受影響；導覽列「俱樂部」徽章＝想玩＋已玩款數（`TopBar.tsx` 的 `clubCount`、`App.tsx` 的 `useMemo`，同時想玩與已玩算兩次）。
+- **評分表單（`RatingSection.tsx`，已 push）**：五項細評不再折疊；平常只有「整體」「適合留下來」必填；這款是「我出席、聚會日已到、當天還沒集到點、沒用免費券」的聚會指定遊戲時（`needFull`），七項都必填、缺項紅字列出、「送出評分」不能按；第一次評分的人（`hasAny` 為假）說明直接展開，之後收成「!」。
+- **已玩次數的設計（使用者 2026-11-01 定案）**：已玩次數＝`user_game_status.playCount`（手動、無日期）＋`game_play_sessions` 筆數（有日期）。①手動 +1 不要日期；②玩家評分集到點時（聚會指定遊戲七項完整、第一次完整）資料庫觸發器 `add_session_from_rating()` 自動記一筆有日期的紀錄（`source='rating'`）並彈窗告知；③**自己從遊戲頁評分、不是聚會流程的，不自動 +1**；④**刪除或修改評分絕不改已玩次數**（觸發器只新增、不刪除）；⑤管理者建立聚會並選遊戲，資料庫替**管理者**記一筆（`source='admin_gathering'`，聚會日 ≤ 今天才記），**管理者不加進出席名單**、不需評分或集點（他的資料由 CSV 提供）；⑥「我的紀錄」日期紀錄折疊、標「手動 a・自動 b」、自動的有「自動」標籤、玩家可自刪；管理者要確認可用 SQL（`source <> 'manual'`），管理中心「集點狀況」畫面尚未做。**以前就評過分、之後才出席的人（例如 Andy），觸發器不會處理（不是「第一次完整」），要手動補。**
+- **批次 3（已交付待 push）**：`Leaderboard.tsx` 統計表改回彈出視窗（第三顆切換「統計表 ↗」，`statsOpen`；從統計表開遊戲會先關統計表）；`RatingSection.tsx` 集點彈窗（得 1 點／轉換免費券／自動使用免費券／已玩次數自動 +1 並顯示日期，`createPortal`）；`useGamePlaySessions.ts`（`source` 欄、`select('*')`、`SESSIONS_CHANGED_EVENT`）；`PlaySessions.tsx`（折疊＋手動／自動筆數＋「自動」標籤）。
+- **批次 4（已交付待 push）**：`useGamePlaySessions.ts` 匯出 `PLAYED_SYNC_EVENT` 與 `announcePlayed(games)`（發兩個事件）；`App.tsx` 聽 `PLAYED_SYNC_EVENT`，對還沒標已玩的遊戲呼叫 `personal.updateEntry(name, { played: true }, { skipPlayedRule: true })`，**主畫面的已玩打勾因此同步**；`RatingSection.tsx` 自動 +1 後呼叫 `announcePlayed([bggName])`；`NewGatheringWizard.tsx` 建立聚會、`gathering_games` 存成功且聚會日 ≤ 今天時呼叫 `announcePlayed(games)`；`StatsTables.tsx` 名單欄（想玩的人／已玩的人／評分者）用 `NAME_COL_STYLE`（寬 220、自動換行）修「文字混在一起」——**這項只改了內聯樣式，尚未看畫面，若仍疊在一起要看 `.st-names`／`.st-table` 的 CSS 並請使用者截圖**。
+- **資料庫（SQL 第 1 段，使用者已執行成功）**：`game_play_sessions` 加 `source text not null default 'manual'`（check：`manual`／`rating`／`admin_gathering`／`admin_backfill`）與 `gathering_id uuid references gatherings(id) on delete set null`；重寫 `add_session_from_rating()`（多記 `source='rating'`、`gathering_id`）；觸發器 `sessions_mark_played`（任何來源新增遊玩紀錄都標已玩）、`gathering_games` AFTER INSERT 的 `add_admin_session_from_gathering_game()`（管理者、聚會日 ≤ 今天才記）、`gathering_games` AFTER DELETE（拿掉指定遊戲就刪管理者那筆 `admin_gathering`）、`gatherings` BEFORE DELETE（先刪管理者的自動紀錄）、`gatherings` AFTER UPDATE OF `gathered_on`（改日期連動）。**`gathering_games` 的實際欄位：`gathering_id uuid`、`bgg_name text`、`created_at timestamptz`、`play_status text null`**（`play_status` 就是「實際開團」狀態，值未確認）。
+- **SQL 第 2 段（補記 2026-11-01，AI 已給使用者、待他執行）**：今天只有一場聚會「早場」`5b9c5a9f-0f57-4e32-83ce-46619f268507`，指定《It's a Wonderful World》《Terrorscape》；管理者 james 的帳號 id `fe8a6ab8-970a-4866-bd82-e242ed3b9bf9`（`admin_users` 裡有）。內容：①今天已存在、由觸發器產生的玩家紀錄補標 `source='rating'`、`gathering_id`；②今天每位出席者、對這場指定遊戲中**自己有評分（`game_ratings` 有資料）**的，補一筆 `admin_backfill`（含凱薩、祥的《Terrorscape》、Andy 的《It's a Wonderful World》）；③替管理者補今天兩款（`admin_gathering`）。使用者說**管理者今天也有出席但還沒加進聚會**（維持不加）。
+- **待查：管理者的 Scout 顯示「最近：2026/10/27」但他沒玩過**：「最近」只看有日期的 `game_play_sessions`，管理者帳號裡很可能有一筆 10/26～10/27 測試留下的紀錄（舊觸發器或手動）。要用唯讀 SQL 確認（`player_profiles`／`admin_users` id、`bgg_name ilike 'scout%'`、`created_at`、`note`、`source`、當天有沒有指定這款的聚會），確認後請使用者在「紀錄與心得」刪掉那筆再按 −。
+- **要拿掉「確定開團」（實際開團）功能**：位置在 `src/LoyaltyAdmin.tsx`（「每場聚會還有幾款遊戲沒確認開團」、`setMessage('設定開團狀態失敗：')`）與 `src/components/GamePlayHistory.tsx`（顯示已開團／預計開團），樣式在 `src/styles/lga-list.css`；資料在 `gathering_games.play_status`。**這三個檔案我都沒看過**，下一步請使用者上傳 `LoyaltyAdmin.tsx`、`GamePlayHistory.tsx`，並問 `GamePlayHistory` 用哪個 RPC 讀資料；拿掉後所有聚會指定遊戲視為「已開團」（聚會日 ≤ 今天）。
+- **還沒開始**：①評論加選填「喜歡的點」「不喜歡的點」（各一顆按鈕加入；需要評論表欄位與元件 `GameNotesBoard.tsx`／`GatheringNotePanel.tsx`／`ClubBoard.tsx`／`NoteListItem.tsx`，做完補隱私權政策）；②「我的統計」多兩個分頁「綜合評分」「分布圖」（待使用者確認綜合分數＝六項加總、不含整體、最高 30 分；排除 .5 遊戲）；③管理者看自動紀錄的畫面；④隱私權政策補「自動記已玩次數」「手動／自動」；⑤規則助手 RAG。
+- **還沒實測**：玩家榜、統計表彈出視窗（電腦與手機）、集點卡兩分頁、`87b3517`、`ca49514`、`3335085`、批次 1～4。
+- **使用者的要求（2026-11-01 晚）**：統計表要彈出視窗（嵌在抽屜太小）；三個 .md 他在 push 時順便一起；SQL 一次貼一段；檔案給整份、保留 CRLF、講清楚放哪裡。
+
+### 2.0（前一輪，2026-11-01 稍早；與上面衝突時以上面為準）
 
 - git：origin/master 最新 `0c2deb4`（更新生成後.md並補上隱私權政策玩家榜說明）；之前 `332753a`（隱私權政策補玩家榜說明）、`75618ba`（排行榜拆三頁＋玩家榜）、`65716b8`、`9f2f1e1`、`7ac0210`、`50ae63f`、`7b90385`、`0a80f76`、`3ce2d32`、`3335085`、`12132c5`（上一輪三份 .md）。**`privacy.html`（2026-11-01 版）與舊 `生成後.md` 已 push。本次重新產生的三份 .md 在 `0c2deb4` 之後，要等使用者 commit／push（該次不計入次數）。** 開工先 `git pull`、`git log --oneline -5`。
 - **玩家榜（`75618ba`）使用者回報「還沒測」**：畫面是否正常、james 有沒有出現在榜上、VIP 看不看得到 LINE／FB（不該看到）、有沒有「讀取玩家榜失敗」都未驗證；失敗請他按 F12 貼 Console 紅字（函式 `return query` 型別不符要到執行時才報錯）。
@@ -241,3 +257,4 @@ N1～N6、我的桌遊整合、贈送免費券、新遊戲置頂、我的場次�
 
 - 2026-10-31（下午）：使用者 push `98615bd`、`a3100d6`、`ca49514`（上一輪更新 `生成後.md` 後共 3 次，更新次數已為 2，滿 3），依規則重新產生兩份主文件（併入管理者確認視窗、樣式清理、聚會管理）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。`87b3517`（程式碼加更新本檔，視為更新、不計入）、`09f11ba` 與上述三次 push 都已併入，不再計數。
 - 2026-11-01：使用者先後 push `3335085`、`3ce2d32`、`0a80f76`、`7b90385`、`50ae63f`、`7ac0210`、`65716b8`、`9f2f1e1`、`75618ba`、`332753a`（`0c2deb4` 是只更新 `生成後.md`＋隱私權政策，不計入），`生成後.md` 更新次數已滿 3，依規則重新產生兩份主文件（併入排行榜三頁、玩家榜、統計表分布圖、近期聚會併進集點卡頁、規則書文件列表等）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。上述 push 都已併入，不再計數。
+- 2026-11-01（晚）：使用者要求「生成後.md」，更新次數滿 3，已重新產生三份 .md（併入統計中心改名、.5 未玩遊戲排除、評分表單改版、自動 +1 已玩設計與批次 3／4、SQL 第 1／2 段、待辦），`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md（該次不計入）。
