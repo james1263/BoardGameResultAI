@@ -34,7 +34,10 @@ type Detail = {
     nickname: string
     days: LoyaltyDay[]
     redemptions: Redemption[]
+    // 自動／補記的遊玩紀錄；null＝讀取失敗
+    autoSessions: AutoSession[] | null
 }
+type AutoSession = { playedOn: string; bggName: string; source: string }
 type Checkin = { token: string; isOpen: boolean; capacity: number | null }
 type VoucherUse = {
     id: string
@@ -626,13 +629,14 @@ export default function LoyaltyAdmin() {
     async function showDetail(row: OverviewRow) {
         setBusy(true)
         setMessage('')
-        const [d, r] = await Promise.all([
+        const [d, r, a] = await Promise.all([
             supabase.rpc('admin_get_loyalty_days', { p_user: row.userId }),
             supabase
                 .from('loyalty_redemptions')
                 .select('id, redeemed_at, used_on')
                 .eq('user_id', row.userId)
                 .order('redeemed_at', { ascending: false }),
+            supabase.rpc('admin_get_auto_sessions', { p_user: row.userId }),
         ])
 
         const failed = d.error ?? r.error
@@ -658,6 +662,19 @@ export default function LoyaltyAdmin() {
                         used_on: string | null
                     }[]
                 ).map(toRedemption),
+                autoSessions: a.error
+                    ? null
+                    : (
+                        (a.data ?? []) as {
+                            played_on: string
+                            bgg_name: string
+                            source: string
+                        }[]
+                    ).map((item) => ({
+                        playedOn: item.played_on,
+                        bggName: item.bgg_name,
+                        source: item.source,
+                    })),
             })
         }
         setBusy(false)
@@ -1555,6 +1572,32 @@ export default function LoyaltyAdmin() {
                                         )
                                         .join('、')}
                             </p>
+                            <p>
+                                自動記錄的遊玩：
+                                {detail.autoSessions === null
+                                    ? '讀取失敗'
+                                    : detail.autoSessions.length === 0
+                                        ? '無'
+                                        : `${detail.autoSessions.length} 筆`}
+                            </p>
+                            {detail.autoSessions && detail.autoSessions.length > 0 && (
+                                <ul>
+                                    {detail.autoSessions.map((item) => (
+                                        <li key={`${item.playedOn}|${item.bggName}|${item.source}`}>
+                                            {formatDay(item.playedOn)}　
+                                            {gameNameMap.get(item.bggName) ?? item.bggName}（
+                                            {item.source === 'rating'
+                                                ? '評分得點'
+                                                : item.source === 'admin_gathering'
+                                                    ? '管理者聚會'
+                                                    : item.source === 'admin_backfill'
+                                                        ? '補記'
+                                                        : item.source}
+                                            ）
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                                                     </div>
                                                 )}
                                             </li>

@@ -4,6 +4,7 @@ import type { PersonalApi } from '../lib/personalApi'
 import { supabase } from '../lib/supabase'
 import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
 import { askConfirm, showNotice } from '../lib/askConfirm'
+import NotePointsFields from './NotePointsFields'
 
 type PlayableGame = BoardGame & { removedAt?: string | null }
 
@@ -36,6 +37,8 @@ export default function AddPlayLog({
   const [message, setMessage] = useState('')
   const [warning, setWarning] = useState('')
   const [share, setShare] = useState(false)
+  const [like, setLike] = useState('')
+  const [dislike, setDislike] = useState('')
   const [sharing, setSharing] = useState(false)
 
   // 勾了分享、而且心得有字，才會真的發表
@@ -108,7 +111,12 @@ export default function AddPlayLog({
     let shareResult = ''
     if (shareNow) {
       setSharing(true)
-      shareResult = await postToDiscussion(selected.bggName, note.trim())
+      shareResult = await postToDiscussion(
+        selected.bggName,
+        note.trim(),
+        like.trim(),
+        dislike.trim(),
+      )
       setSharing(false)
     }
 
@@ -122,14 +130,23 @@ export default function AddPlayLog({
     setPlayers('')
     setNote('')
     setShare(false)
+    setLike('')
+    setDislike('')
   }
 
   // 發表到這款遊戲的討論；成功回傳空字串，失敗回傳要顯示的說明
-  async function postToDiscussion(bggName: string, content: string): Promise<string> {
+  async function postToDiscussion(
+    bggName: string,
+    content: string,
+    likePoint: string,
+    dislikePoint: string,
+  ): Promise<string> {
     async function attempt() {
       return supabase.rpc('add_game_note', {
         p_bgg_name: bggName,
         p_content: content,
+        p_like: likePoint,
+        p_dislike: dislikePoint,
       })
     }
     let { error } = await attempt()
@@ -280,6 +297,14 @@ export default function AddPlayLog({
                     同時發表到這款遊戲的討論（VIP 都看得到，心得要有字才能勾）
                   </label>
                 </div>
+              )}
+              {canShare && shareNow && (
+                <NotePointsFields
+                  like={like}
+                  dislike={dislike}
+                  onLike={setLike}
+                  onDislike={setDislike}
+                />
               )}
               <div className="play-sessions-actions">
                 <button type="submit" disabled={!canSave || !selected}>

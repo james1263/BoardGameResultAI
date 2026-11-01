@@ -7,6 +7,7 @@ import {
 import { useMyGatherings } from '../lib/useMyGatherings'
 import { supabase } from '../lib/supabase'
 import NoteListItem from './NoteListItem'
+import NotePointsFields from './NotePointsFields'
 import '../styles/my-notes.css'
 import { askConfirm } from '../lib/askConfirm'
 
@@ -18,6 +19,8 @@ type GameNoteRow = {
   content: string | null
   status: string | null
   created_at: string
+  like_point: string | null
+  dislike_point: string | null
 }
 
 type Filter = 'all' | 'public' | 'private' | 'gathering'
@@ -31,6 +34,8 @@ type Item = {
   content: string
   hidden: boolean
   noteId?: string
+  like?: string
+  dislike?: string
   gatheringId?: string
   gatheringTitle?: string
 }
@@ -79,7 +84,7 @@ function useMyAllGameNotes() {
 }
 
 function explain(message: string): string {
-  if (message.includes('too long')) return '留言最多 200 字。'
+  if (message.includes('too long')) return '留言最多 200 字，喜歡／不喜歡的點各最多 100 字。'
   if (message.includes('empty')) return '請先輸入留言內容。'
   if (message.includes('not found')) return '找不到這則留言，可能已被刪除。'
   return '操作失敗：' + message
@@ -111,6 +116,8 @@ export default function MyNotes({
   const [editKey, setEditKey] = useState<string | null>(null)
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
+  const [draftLike, setDraftLike] = useState('')
+  const [draftDislike, setDraftDislike] = useState('')
   const [message, setMessage] = useState('')
 
   const gameByName = useMemo(() => {
@@ -134,6 +141,8 @@ export default function MyNotes({
         content: row.content ?? '',
         hidden: row.status === 'hidden',
         noteId: row.id,
+        like: row.like_point ?? '',
+        dislike: row.dislike_point ?? '',
       })
     }
 
@@ -243,6 +252,8 @@ export default function MyNotes({
     const { error } = await supabase.rpc('update_my_game_note', {
       p_note: item.noteId,
       p_content: text,
+      p_like: draftLike.trim(),
+      p_dislike: draftDislike.trim(),
     })
     setBusyKey(null)
     if (error) {
@@ -336,6 +347,8 @@ export default function MyNotes({
                         thumb={game ? renderCover(game) : <span aria-hidden="true">🎲</span>}
                         content={item.content}
                         hideText={editing}
+                        like={item.like}
+                        dislike={item.dislike}
                         open={editing || openKey === item.key}
                         onToggle={() => {
                           if (editing) return
@@ -350,6 +363,12 @@ export default function MyNotes({
                               maxLength={200}
                               value={draft}
                               onChange={(event) => setDraft(event.target.value)}
+                            />
+                            <NotePointsFields
+                              like={draftLike}
+                              dislike={draftDislike}
+                              onLike={setDraftLike}
+                              onDislike={setDraftDislike}
                             />
                             <div className="mh-actions">
                               <span className="mh-count">{draft.length} / 200</span>
@@ -394,6 +413,8 @@ export default function MyNotes({
                                   onClick={() => {
                                     setMessage('')
                                     setDraft(item.content)
+                                    setDraftLike(item.like ?? '')
+                                    setDraftDislike(item.dislike ?? '')
                                     setEditKey(item.key)
                                   }}
                                 >
