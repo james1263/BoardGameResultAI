@@ -10,13 +10,14 @@ import {
     type RatingsApi,
 } from '../lib/useGameRatings'
 import { askConfirm } from '../lib/askConfirm'
+import { useMyLoyalty, todayLocal } from '../lib/useLoyalty'
 
 type Draft = {
     overall: number | null
     scores: Record<RatingKey, number | null>
 }
 
-// 細評收合區：除了「適合留下來程度」以外的五項（選填）
+// 細評五項：除了「整體」與「適合留下來程度」以外（平常選填；要集點時必填）
 const OPTIONAL_FIELDS = RATING_FIELDS.filter((field) => field.key !== 'keep')
 const KEEP_LABEL =
     RATING_FIELDS.find((field) => field.key === 'keep')?.label ?? '適合留下來程度'
@@ -41,13 +42,30 @@ function sameAsSaved(draft: Draft, mine: MyRating | null): boolean {
     return RATING_FIELDS.every((f) => draft.scores[f.key] === mine[f.key])
 }
 
-function hasOptionalDetail(draft: Draft): boolean {
-    return OPTIONAL_FIELDS.some((f) => draft.scores[f.key] != null)
-}
-
 function filledCount(draft: Draft): number {
     const detail = RATING_FIELDS.filter((f) => draft.scores[f.key] != null).length
     return detail + (draft.overall != null ? 1 : 0)
+}
+
+// 評分說明：第一次評分的人直接展開，之後收成「!」
+function HintFor({ hintKey, expanded }: { hintKey: RatingKey; expanded: boolean }) {
+    const text = RATING_HINTS_BY_KEY[hintKey]
+    if (!text) return null
+    if (!expanded) return <InfoHint text={text} />
+    return (
+        <span
+            style={{
+                display: 'block',
+                fontSize: '0.85em',
+                color: '#6b5a3c',
+                lineHeight: 1.6,
+                margin: '2px 0 6px',
+                fontWeight: 400,
+            }}
+        >
+            {text}
+        </span>
+    )
 }
 
 export function CommunitySummary({
@@ -113,15 +131,46 @@ export default function RatingSection({
 }) {
     const mine = api.getMine(bggName)
     const [draft, setDraft] = useState<Draft>(() => toDraft(mine))
-    const [showDetail, setShowDetail] = useState(() =>
-        hasOptionalDetail(toDraft(mine)),
-    )
+    const loyalty = useMyLoyalty()
 
     const isGuest = api.status === 'guest'
     const canEdit = api.status === 'ready' && !api.busy
     const dirty = !sameAsSaved(draft, mine)
     const requiredDone = draft.overall != null && draft.scores.keep != null
     const vip = useVip()
+
+    const firstTime = api.status === 'ready' && !api.hasAny
+    const missingLabels = [
+        ...(draft.overall == null ? ['整體評分'] : []),
+        ...RATING_FIELDS.filter((f) => draft.scores[f.key] == null).map((f) => f.label),
+    ]
+    const complete = missingLabels.length === 0
+
+    // 這款遊戲是不是「我出席、還沒集到點」的聚會指定遊戲：是的話，七項填完整才能送出
+    const isFull = (name: string) => {
+        const m = api.getMine(name)
+        return !!m && m.overall > 0 && RATING_FIELDS.every((f) => m[f.key] != null)
+    }
+    const today = todayLocal()
+    const attended = new Set(loyalty.days.map((day) => day.date))
+    const stamped = new Set(loyalty.days.filter((day) => day.qualified).map((day) => day.date))
+    const voucherDays = new Set(
+        loyalty.redemptions.flatMap((item) => (item.usedOn ? [item.usedOn] : [])),
+    )
+    const needFull = loyalty.gatherings.some(
+        (item) =>
+            item.date <= today &&
+            item.games.includes(bggName) &&
+            attended.has(item.date) &&
+            !stamped.has(item.date) &&
+            !voucherDays.has(item.date) &&
+            !loyalty.gatherings
+                .filter((other) => other.date === item.date)
+                .some((other) => other.games.some(isFull)),
+    )
+    const savingBlocked = loyalty.loading || (needFull && !complete)
+    const labelStyle = (empty: boolean) =>
+        needFull && empty ? { color: '#b5483a', fontWeight: 700 } : undefined
 
     function setOverall(value: number) {
         setDraft((d) => ({ ...d, overall: value }))
@@ -140,6 +189,7 @@ export default function RatingSection({
 
     async function handleSave() {
         if (draft.overall == null || draft.scores.keep == null) return
+        if (needFull && !complete) return
         await api.saveRating(bggName, { overall: draft.overall, ...draft.scores })
     }
 
@@ -147,7 +197,6 @@ export default function RatingSection({
         if (!(await askConfirm('確定要刪除你對這款遊戲的評分嗎？'))) return
         if (await api.deleteRating(bggName)) {
             setDraft(toDraft(null))
-            setShowDetail(false)
         }
     }
 
@@ -193,9 +242,9 @@ export default function RatingSection({
                             ))}
                         </div>
 
-                        <p className="rate-label">
+                        <p className="rate-label" style={labelStyle(draft.scores.keep == null)}>
                             {KEEP_LABEL}（1～5，必填）
-                            <InfoHint text={RATING_HINTS_BY_KEY.keep} />
+                            <HintFor hintKey="keep" expanded={firstTime} />
                         </p>
                         <div className="rate-scale rate-scale-5">
                             {[1, 2, 3, 4, 5].map((n) => (
@@ -212,22 +261,15 @@ export default function RatingSection({
                             ))}
                         </div>
 
-                        <button
-                            type="button"
-                            className="rate-toggle"
-                            onClick={() => setShowDetail((open) => !open)}
-                        >
-                            {showDetail ? '收合其他五項細評 ▴' : '填寫其他五項細評（選填）▾'}
-                        </button>
-
-                        {showDetail &&
-                            OPTIONAL_FIELDS.map((field) => (
+                        {OPTIONAL_FIELDS.map((field) => (
                                 <div className="rate-row" key={field.key}>
-                                    <p className="rate-label">
+                                    <p
+                                        className="rate-label"
+                                        style={labelStyle(draft.scores[field.key] == null)}
+                                    >
                                         {field.label}
-                                        {RATING_HINTS_BY_KEY[field.key] && (
-                                            <InfoHint text={RATING_HINTS_BY_KEY[field.key]} />
-                                        )}
+                                        {needFull ? '（集點必填，1～5）' : '（選填，1～5）'}
+                                        <HintFor hintKey={field.key} expanded={firstTime} />
                                     </p>
                                     <div className="rate-scale rate-scale-5">
                                         {[1, 2, 3, 4, 5].map((n) => (
@@ -252,12 +294,18 @@ export default function RatingSection({
                             已填 {filledCount(draft)} / 7 項
                             {filledCount(draft) === 7 ? '（完整評分）' : ''}
                         </p>
+                        {needFull && !complete && (
+                            <p className="rate-note" style={{ color: '#b5483a', fontWeight: 700 }}>
+                                這款是你出席聚會的遊戲，七項都填完才能送出並得到點數。還沒填：
+                                {missingLabels.join('、')}
+                            </p>
+                        )}
 
                         <div className="rate-actions">
                             <button
                                 type="button"
                                 className="rate-save"
-                                disabled={!canEdit || !requiredDone || !dirty}
+                                disabled={!canEdit || !requiredDone || !dirty || savingBlocked}
                                 onClick={handleSave}
                             >
                                 {api.busy ? '處理中…' : mine ? '更新評分' : '送出評分'}

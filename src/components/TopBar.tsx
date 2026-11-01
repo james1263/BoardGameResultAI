@@ -11,6 +11,7 @@ export type NavPage = 'leaderboard' | 'rules' | 'admin' | 'loyalty' | 'mylist'
 
 export default function TopBar({
   loyaltyBadge,
+  clubCount = 0,
   activePage,
   onGoPage,
   onGoHome,
@@ -20,6 +21,8 @@ export default function TopBar({
 }: {
   // 集點卡圖示上的小數字：還沒看過的新預計聚會數（0 就不顯示）
   loyaltyBadge: number
+  // 俱樂部圖示上的小數字：想玩＋已玩的款數（0 就不顯示）
+  clubCount?: number
   activePage: NavPage | null
   onGoPage: (page: NavPage) => void
   onGoHome: () => void
@@ -78,7 +81,7 @@ export default function TopBar({
             <span className="sb-ico" aria-hidden="true">
               🏆
             </span>
-            <span>排行榜</span>
+            <span>統計中心</span>
           </button>
           {canUseRules && (
             <button
@@ -127,6 +130,11 @@ export default function TopBar({
               ♥
             </span>
             <span>俱樂部</span>
+            {clubCount > 0 && (
+              <span className="sb-count" aria-label={`想玩與已玩共 ${clubCount} 款`}>
+                {clubCount}
+              </span>
+            )}
           </button>
           {showJoinVip && (
             <button

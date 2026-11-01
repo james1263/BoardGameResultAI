@@ -8,6 +8,7 @@ import {
   type PeopleApi,
 } from '../lib/useGamePeople'
 import { rankGames } from '../lib/leaderboards'
+import { isUnplayedGame } from '../lib/playedStatus'
 import {
   DIFFICULTY_LEVELS,
   DIFFICULTY_LEVEL_INFO,
@@ -245,6 +246,9 @@ export default function Leaderboard({
         ]
       }
 
+      // Ranking engine 以 .5 結尾＝還沒玩過，不列入評分榜
+      if (isUnplayedGame(game)) return []
+
       const summary = ratings.getSummary(game.bggName)
       const average =
         board === 'overall' ? summary.overallAvg : summary.avgs.keep
@@ -337,7 +341,7 @@ export default function Leaderboard({
     ? period === 'all'
       ? '依目前的總人數排名，只統計 VIP 玩家。'
       : '依該期間「新增」的人數排名（下方小字是目前總人數），只統計 VIP 玩家。'
-    : '每款遊戲需滿 5 位玩家評分才會上榜。'
+    : '每款遊戲需滿 5 位玩家評分才會上榜；還沒玩過的遊戲不列入。'
   function renderEmpty(): ReactNode {
     if (query.trim() && rankedAll.length > 0) {
       return (
@@ -420,9 +424,9 @@ export default function Leaderboard({
       {(
         <>
           <div className="mylist-backdrop" onClick={onClose} />
-          <aside className="mylist-drawer" role="dialog" aria-label="排行榜">
+          <aside className="mylist-drawer" role="dialog" aria-label="統計中心">
             <div className="mylist-header">
-              <h2>排行榜</h2>
+              <h2>統計中心</h2>
               <button
                 className="mylist-close"
                 type="button"

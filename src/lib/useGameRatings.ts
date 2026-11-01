@@ -13,7 +13,7 @@ export type RatingKey =
 
 export const RATING_FIELDS: { key: RatingKey; label: string }[] = [
     { key: 'like', label: '喜歡度' },
-    { key: 'playerImpact', label: '影響度' },
+    { key: 'playerImpact', label: '玩家影響性' },
     { key: 'communication', label: '溝通度' },
     { key: 'change', label: '變化度' },
     { key: 'unique', label: '獨特性' },
@@ -244,7 +244,10 @@ export function useGameRatings() {
         [userId],
     )
 
-    return { status, busy, getSummary, getMine, saveRating, deleteRating }
+    // 這個人有沒有評過任何一款遊戲（第一次評分的人，評分說明會直接展開）
+    const hasAny = Object.keys(mine).length > 0
+
+    return { status, busy, hasAny, getSummary, getMine, saveRating, deleteRating }
 }
 
 export type RatingsApi = ReturnType<typeof useGameRatings>

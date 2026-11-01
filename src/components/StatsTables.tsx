@@ -4,6 +4,7 @@ import type { BoardGame } from '../data/boardGames.generated'
 import type { CommunityStatsApi } from '../lib/useCommunityStats'
 import type { RatingsApi } from '../lib/useGameRatings'
 import '../styles/stats-chart.css'
+import { isUnplayedGame } from '../lib/playedStatus'
 import {
     personLabel,
     type AdminRatingsApi,
@@ -134,7 +135,7 @@ function ScatterPanel({
 
     return (
         <>
-            <p className="ma-note">每個點是一款遊戲；點一下看遊戲名稱與數值。評分需滿 5 人才有平均，不足的遊戲不會畫出。</p>
+            <p className="ma-note">每個點是一款遊戲；點一下看遊戲名稱與數值。評分需滿 5 人才有平均，不足的遊戲不會畫出；還沒玩過的遊戲也不會畫出。</p>
             <div className="sc-controls">
                 <label>
                     X 軸（橫軸）
@@ -334,6 +335,12 @@ export default function StatsTables({
                 }
             }),
         [boardGames, communityStats, ratings, people, adminRatings, isAdmin],
+    )
+
+    // 分布圖：Ranking engine 以 .5 結尾（還沒玩過）的遊戲不畫
+    const chartRows = useMemo(
+        () => rows.filter((row) => !isUnplayedGame(row.game)),
+        [rows],
     )
 
     const shownRows = useMemo(() => {
@@ -599,7 +606,7 @@ export default function StatsTables({
                 )}
 
                 {tab === 'chart' && (
-                    <ScatterPanel rows={rows} onOpenGame={onOpenGame} />
+                    <ScatterPanel rows={chartRows} onOpenGame={onOpenGame} />
                 )}
 
                 {tab === 'matrix' && isAdmin && (

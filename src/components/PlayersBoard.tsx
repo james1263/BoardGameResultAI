@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { PlayerStat } from '../lib/usePlayerStats'
 import { rankGames } from '../lib/leaderboards'
+import { isUnplayedGame } from '../lib/playedStatus'
 import InfoHint from './InfoHint'
 
 type Tab = 'played' | 'rated' | 'score' | 'combo'
@@ -78,7 +79,7 @@ export default function PlayersBoard({
       for (const rating of player.ratings) {
         const value = tab === 'score' ? rating.o : rating.s
         const game = gameByName.get(rating.g)
-        if (value == null || !game) continue
+        if (value == null || !game || isUnplayedGame(game)) continue
         all.push({ label: labelOf(player), game, value })
       }
     }
@@ -114,8 +115,8 @@ export default function PlayersBoard({
       : tab === 'rated'
         ? '依評過分的遊戲款數排名。管理者的分數是從 CSV 換算，算法和一般玩家的評分一樣。'
         : tab === 'score'
-          ? '每一筆是一位玩家給某款遊戲的整體分數（1～10）。同分並列，同分時依遊戲名稱排序。'
-          : '綜合分數＝喜歡度、影響度、溝通度、變化度、獨特性、適合留下來這六項（各 1～5）加起來，最高 30 分，不含整體分數。六項沒有填完整的評分不列入。'
+          ? '每一筆是一位玩家給某款遊戲的整體分數（1～10）。同分並列，同分時依遊戲名稱排序。還沒玩過的遊戲不列入。'
+          : '綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來這六項（各 1～5）加起來，最高 30 分，不含整體分數。六項沒有填完整的評分、還沒玩過的遊戲都不列入。'
 
   if (status === 'loading' || status === 'idle') return <p className="mylist-empty">讀取中…</p>
   if (status === 'error') {

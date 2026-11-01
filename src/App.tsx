@@ -172,6 +172,16 @@ function Library({
   const adminRatings = useAdminRatings(isAdmin)
   // 還沒看過的新預計聚會數（只有 VIP；顯示在導覽列「集點卡」與集點卡頁的「近期聚會」分頁）
   const planned = usePlannedUnseen(session?.user?.id ?? null, vip.isVip && !isAdmin)
+  // 導覽列「俱樂部」的數字：想玩＋已玩的款數（跟「我的統計」那一列同一個算法）
+  const clubCount = useMemo(() => {
+    let total = 0
+    for (const game of boardGames) {
+      const entry = personal.entries[game.bggName]
+      if (entry?.wantToPlay) total += 1
+      if (entry?.played) total += 1
+    }
+    return total
+  }, [boardGames, personal.entries])
   // 導覽列的頁面一次只開一個：點另一顆直接取代，再點同一顆就關閉
   const [activePage, setActivePage] = useState<NavPage | null>(null)
   const [myListMode, setMyListMode] = useState<MyListMode>('list')
@@ -828,6 +838,7 @@ function Library({
       <InAppBrowserNotice />
       <TopBar
         loyaltyBadge={planned.unseenCount}
+        clubCount={clubCount}
         activePage={activePage}
         onGoPage={goPage}
         onGoHome={goHome}
