@@ -3,6 +3,7 @@ import type { BoardGame } from './data/boardGames.generated'
 import { usePersonalCollection } from './lib/usePersonalCollection'
 import type { PlaySessionsApi } from './lib/useGamePlaySessions'
 import type { RatingsApi } from './lib/useGameRatings'
+import type { AdminScores } from './lib/libraryTypes'
 import LoyaltyCard from './components/LoyaltyCard'
 import { supabase } from './lib/supabase'
 import { useSession } from './lib/useSession'
@@ -257,6 +258,7 @@ export default function MyList({
     personal,
     playSessions,
     ratings,
+    adminScores,
     isOpen,
     mode,
     focusDate,
@@ -278,6 +280,8 @@ export default function MyList({
     personal: PersonalApi
     playSessions: PlaySessionsApi
     ratings: RatingsApi
+    // 管理者的 CSV 換算分數（整體、適合留下來；其餘五項由遊戲本身的 emoji 欄位算）
+    adminScores?: Map<string, AdminScores>
     isOpen: boolean
     mode: MyListMode
     focusDate?: string | null
@@ -760,6 +764,8 @@ export default function MyList({
                                 mode={statsTab}
                                 boardGames={boardGames}
                                 ratings={ratings}
+                                isAdmin={isAdmin}
+                                adminScores={adminScores}
                                 onOpenGame={(game) => onOpenGame(game)}
                                 renderCover={renderCover}
                             />

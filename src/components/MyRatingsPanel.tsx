@@ -3,6 +3,7 @@ import type { BoardGame } from '../data/boardGames.generated'
 import type { RatingsApi, RatingKey } from '../lib/useGameRatings'
 import { RATING_FIELDS } from '../lib/useGameRatings'
 import { isUnplayedGame } from '../lib/playedStatus'
+import type { AdminScores } from '../lib/libraryTypes'
 import '../styles/stats-chart.css'
 
 type Metric = 'overall' | 'composite' | RatingKey
@@ -21,6 +22,42 @@ type Row = { game: BoardGame; values: Record<Metric, number | null> }
 
 // 綜合分數：喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來，六項加總（不含整體分數，最高 30）
 // 六項有任何一項沒填就沒有綜合分數；還沒玩過的遊戲（ranking engine 以 .5 結尾）不列入
+// 管理者的五個「度」：取 CSV 的 emoji 字元數（去掉 U+FE0F 與空白，上限 5；0 視為沒有）
+function emojiDegree(text: string | null | undefined): number | null {
+    if (!text) return null
+    const count = Array.from(text.replace(/[\uFE0F\s]/g, '')).length
+    return count > 0 ? Math.min(count, 5) : null
+}
+
+// 管理者：完全用 CSV 換算，不看手動評分
+function buildAdminRows(
+    boardGames: BoardGame[],
+    adminScores: Map<string, AdminScores>,
+): Row[] {
+    const rows: Row[] = []
+    for (const game of boardGames) {
+        if (isUnplayedGame(game)) continue
+        const scores = adminScores.get(game.bggName)
+        if (!scores) continue
+        const values: Record<Metric, number | null> = {
+            composite: null,
+            overall: scores.overall,
+            like: emojiDegree(game.likeEmoji),
+            playerImpact: emojiDegree(game.playerImpactEmoji),
+            communication: emojiDegree(game.communicationEmoji),
+            change: emojiDegree(game.changeEmoji),
+            unique: emojiDegree(game.uniqueEmoji),
+            keep: scores.keep,
+        }
+        const parts = RATING_FIELDS.map((field) => values[field.key])
+        values.composite = parts.every((value) => value != null)
+            ? (parts as number[]).reduce((sum, value) => sum + value, 0)
+            : null
+        rows.push({ game, values })
+    }
+    return rows
+}
+
 function buildRows(boardGames: BoardGame[], ratings: RatingsApi): Row[] {
     const rows: Row[] = []
     for (const game of boardGames) {
@@ -68,19 +105,30 @@ export default function MyRatingsPanel({
     mode,
     boardGames,
     ratings,
+    isAdmin = false,
+    adminScores,
     onOpenGame,
     renderCover,
 }: {
     mode: 'score' | 'chart'
     boardGames: BoardGame[]
     ratings: RatingsApi
+    isAdmin?: boolean
+    adminScores?: Map<string, AdminScores>
     onOpenGame: (game: BoardGame) => void
     renderCover: (game: BoardGame) => ReactNode
 }) {
-    const rows = useMemo(() => buildRows(boardGames, ratings), [boardGames, ratings])
+    const useCsv = isAdmin && !!adminScores
+    const rows = useMemo(
+        () =>
+            useCsv
+                ? buildAdminRows(boardGames, adminScores!)
+                : buildRows(boardGames, ratings),
+        [useCsv, boardGames, adminScores, ratings],
+    )
 
-    if (ratings.status === 'loading') return <p className="mylist-empty">讀取中…</p>
-    if (ratings.status !== 'ready' || rows.length === 0) {
+    if (!useCsv && ratings.status === 'loading') return <p className="mylist-empty">讀取中…</p>
+    if ((!useCsv && ratings.status !== 'ready') || rows.length === 0) {
         return (
             <p className="mylist-empty">
                 還沒有可統計的評分。在遊戲視窗的「評分」分頁評分後，這裡就會出現（還沒玩過的遊戲不列入）。
@@ -88,18 +136,20 @@ export default function MyRatingsPanel({
         )
     }
     return mode === 'score' ? (
-        <ScoreList rows={rows} onOpenGame={onOpenGame} renderCover={renderCover} />
+        <ScoreList rows={rows} csv={useCsv} onOpenGame={onOpenGame} renderCover={renderCover} />
     ) : (
-        <ScatterMine rows={rows} onOpenGame={onOpenGame} />
+        <ScatterMine rows={rows} csv={useCsv} onOpenGame={onOpenGame} />
     )
 }
 
 function ScoreList({
     rows,
+    csv,
     onOpenGame,
     renderCover,
 }: {
     rows: Row[]
+    csv: boolean
     onOpenGame: (game: BoardGame) => void
     renderCover: (game: BoardGame) => ReactNode
 }) {
@@ -126,7 +176,7 @@ function ScoreList({
     return (
         <>
             <p className="mystat-foot">
-                綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來，六項加總（最高 30 分，不含整體分數）。只算你自己的評分。
+                綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來，六項加總（最高 30 分，不含整體分數）。{csv ? '管理者以 CSV 換算分數為準，不看手動評分。' : '只算你自己的評分。'}
             </p>
             <div className="cls-searchbox cls-sticky">
                 <input
@@ -182,9 +232,11 @@ function ScoreList({
 
 function ScatterMine({
     rows,
+    csv,
     onOpenGame,
 }: {
     rows: Row[]
+    csv: boolean
     onOpenGame: (game: BoardGame) => void
 }) {
     const [xKey, setXKey] = useState<Metric>('overall')
@@ -231,7 +283,7 @@ function ScatterMine({
     return (
         <>
             <p className="ma-note">
-                每個點是一款你評過分的遊戲；點一下看遊戲名稱與分數。只算你自己的評分，還沒玩過的遊戲不會畫出。
+                {csv ? '每個點是一款玩過的遊戲（CSV 換算分數）' : '每個點是一款你評過分的遊戲'}；點一下看遊戲名稱與分數。{csv ? '' : '只算你自己的評分，'}還沒玩過的遊戲不會畫出。
             </p>
             <div className="sc-controls">
                 <label>

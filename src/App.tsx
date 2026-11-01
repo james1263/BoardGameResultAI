@@ -1104,6 +1104,7 @@ function Library({
         personal={personal}
         playSessions={playSessions}
         ratings={ratings}
+        adminScores={adminScores}
         isOpen={isMyListOpen}
         onClose={() => setActivePage(null)}
         onOpenGame={(game, tab) => {
