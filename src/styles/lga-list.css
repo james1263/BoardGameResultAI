@@ -68,29 +68,6 @@
   color: #8a6d46;
 }
 
-/* 開團確認（併在每款遊戲底下） */
-.lgp-status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-}
-.lgp-state {
-  font-size: 12px;
-  font-weight: 600;
-  color: #5b4a30;
-}
-.lgp-state.played {
-  color: #2f5a3c;
-}
-.lgp-state.cancelled {
-  color: #8a5a4a;
-}
-.lgp-state.warn {
-  color: #9a6a1f;
-}
-
 /* ---- 手動加入參加者：單行條列 ---- */
 .lgp-list {
   border: 1px solid #e6dfcc;
