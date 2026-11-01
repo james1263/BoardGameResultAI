@@ -19,7 +19,7 @@ export default function TopBar({
   canUseRules,
   onCloseAdmin,
 }: {
-  // 集點卡圖示上的小數字：還沒看過的新預計聚會數（0 就不顯示）
+  // 聚會集點圖示上的小數字：還沒看過的新預計聚會、新加入的聚會、被移除的指定遊戲（0 就不顯示）
   loyaltyBadge: number
   // 俱樂部圖示上的小數字：想玩＋已玩的款數（0 就不顯示）
   clubCount?: number
@@ -110,12 +110,12 @@ export default function TopBar({
               <span className="sb-ico" aria-hidden="true">
                 🎟
               </span>
-              <span>集點卡</span>
+              <span>聚會集點</span>
               {loyaltyAlert && (
                 <span className="sb-dot" aria-label="今天有遊戲要評分" />
               )}
               {loyaltyBadge > 0 && (
-                <span className="sb-count" aria-label={`${loyaltyBadge} 場新的預計聚會`}>
+                <span className="sb-count" aria-label={`${loyaltyBadge} 則新通知`}>
                   {loyaltyBadge}
                 </span>
               )}

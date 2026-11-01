@@ -50,7 +50,7 @@ export default function UpcomingGatherings({
   const content = (
     <>
     {!allowed ? (
-      <p className="mylist-empty">只有 VIP 可以看到近期聚會。</p>
+      <p className="mylist-empty">只有 VIP 可以看到未來聚會。</p>
     ) : planned.loading ? (
       <p className="mylist-empty">讀取中…</p>
     ) : planned.error ? (
@@ -157,9 +157,9 @@ export default function UpcomingGatherings({
   return (
     <>
       <div className="mylist-backdrop" onClick={onClose} />
-      <aside className="mylist-drawer" role="dialog" aria-label="近期聚會">
+      <aside className="mylist-drawer" role="dialog" aria-label="未來聚會">
         <div className="mylist-header">
-          <h2>近期聚會</h2>
+          <h2>未來聚會</h2>
           <button
             className="mylist-close"
             type="button"

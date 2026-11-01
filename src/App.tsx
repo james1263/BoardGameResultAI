@@ -69,6 +69,7 @@ import { useTrashActions } from './lib/useTrashActions'
 import { updateDescription } from './lib/saveDescription'
 import NotePrompt from './components/NotePrompt'
 import { usePlannedUnseen } from './lib/usePlannedUnseen'
+import { useLoyaltyAlerts } from './lib/useLoyaltyAlerts'
 
 // 新遊戲置頂：上架 15 天內，而且還沒有排名（Ranking engine 空白或不是整數，例如 .5 結尾）
 // 兩個條件任一個先結束，就不再置頂
@@ -172,6 +173,8 @@ function Library({
   const adminRatings = useAdminRatings(isAdmin)
   // 還沒看過的新預計聚會數（只有 VIP；顯示在導覽列「集點卡」與集點卡頁的「近期聚會」分頁）
   const planned = usePlannedUnseen(session?.user?.id ?? null, vip.isVip && !isAdmin)
+  // 新加入的聚會、被移除的指定遊戲（也算在導覽列「聚會集點」的數字裡）
+  const loyaltyAlerts = useLoyaltyAlerts(session?.user?.id ?? null, vip.isVip && !isAdmin)
   // 導覽列「俱樂部」的數字：想玩＋已玩的款數（跟「我的統計」那一列同一個算法）
   const clubCount = useMemo(() => {
     let total = 0
@@ -852,7 +855,7 @@ function Library({
       )}
       <InAppBrowserNotice />
       <TopBar
-        loyaltyBadge={planned.unseenCount}
+        loyaltyBadge={planned.unseenCount + loyaltyAlerts.count}
         clubCount={clubCount}
         activePage={activePage}
         onGoPage={goPage}
@@ -1086,6 +1089,9 @@ function Library({
         todayPending={todayTask.pending}
         plannedUnseen={planned.unseenCount}
         onPlannedSeen={planned.markAllSeen}
+        alertCount={loyaltyAlerts.count}
+        gameChanges={loyaltyAlerts.changes}
+        onAlertsSeen={loyaltyAlerts.markAllSeen}
         onOpenLoyalty={openMyLoyalty}
         isAdmin={isAdmin}
         isVip={vip.isVip}

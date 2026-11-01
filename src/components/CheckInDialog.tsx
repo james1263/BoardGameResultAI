@@ -141,6 +141,7 @@ export default function CheckInDialog({
             .from('gathering_games')
             .select('gathering_id, bgg_name')
             .in('gathering_id', myIds)
+            .is('removed_at', null)
           : { data: [], error: null }
 
       if (cancelled) return

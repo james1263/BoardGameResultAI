@@ -147,7 +147,10 @@ export function useMyLoyalty() {
                         .eq('user_id', id)
                         .order('redeemed_at', { ascending: false }),
                     supabase.from('gatherings').select('id, gathered_on, title'),
-                    supabase.from('gathering_games').select('gathering_id, bgg_name'),
+                    supabase
+                        .from('gathering_games')
+                        .select('gathering_id, bgg_name')
+                        .is('removed_at', null),
                 ])
                 if (cancelled) return
 

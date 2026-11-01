@@ -5,6 +5,7 @@ import type { PlaySessionsApi } from './lib/useGamePlaySessions'
 import type { RatingsApi } from './lib/useGameRatings'
 import type { AdminScores } from './lib/libraryTypes'
 import LoyaltyCard from './components/LoyaltyCard'
+import type { GameChange } from './lib/useLoyaltyAlerts'
 import { supabase } from './lib/supabase'
 import { useSession } from './lib/useSession'
 import { useMyLoyalty } from './lib/useLoyalty'
@@ -269,6 +270,9 @@ export default function MyList({
     todayPending,
     plannedUnseen = 0,
     onPlannedSeen,
+    alertCount = 0,
+    gameChanges = [],
+    onAlertsSeen,
     onClose,
     onBrowse,
     onOpenGame,
@@ -292,6 +296,10 @@ export default function MyList({
     todayPending: boolean
     plannedUnseen?: number
     onPlannedSeen?: () => void
+    // 新加入的聚會、被移除的指定遊戲（還沒看過的數量、最近的移除清單、看過了通知）
+    alertCount?: number
+    gameChanges?: GameChange[]
+    onAlertsSeen?: () => void
     onClose: () => void
     onBrowse: () => void
     onOpenGame: (game: BoardGame, tab?: 'ratings' | 'discussion') => void
@@ -306,7 +314,7 @@ export default function MyList({
     const gatheringWriteRef = useRef(false)
     gatheringWriteRef.current = gatheringWrite
     const [statsTab, setStatsTab] = useState<StatsTab>('overview')
-    // 集點卡頁（VIP）的兩個分頁：集點卡｜近期聚會
+    // 集點卡頁（VIP）的兩個分頁：集點卡｜未來聚會
     const [loyaltyTab, setLoyaltyTab] = useState<'card' | 'upcoming'>('card')
     const [search, setSearch] = useState('')
     // 想玩、已玩各自記住排序（也記在這個瀏覽器）；切換分頁只清空搜尋
@@ -346,13 +354,20 @@ export default function MyList({
         }
     }, [isOpen, mode])
 
-    // 看到「近期聚會」分頁就把目前的預計聚會記成已看過
+    // 看到「未來聚會」分頁就把目前的預計聚會記成已看過
     const showUpcomingTab = isVip && !isAdmin
     useEffect(() => {
         if (isOpen && mode === 'loyalty' && showUpcomingTab && loyaltyTab === 'upcoming') {
             onPlannedSeen?.()
         }
     }, [isOpen, mode, showUpcomingTab, loyaltyTab, onPlannedSeen])
+
+    // 看到集點卡分頁就把新加入的聚會、被移除的指定遊戲通知記成已看過
+    useEffect(() => {
+        if (isOpen && mode === 'loyalty' && showUpcomingTab && loyaltyTab === 'card' && alertCount > 0) {
+            onAlertsSeen?.()
+        }
+    }, [isOpen, mode, showUpcomingTab, loyaltyTab, alertCount, onAlertsSeen])
 
     // 只記住排序
     useEffect(() => {
@@ -491,9 +506,9 @@ export default function MyList({
         return (
             <>
                 <div className="mylist-backdrop" onClick={onClose} />
-                <aside className="mylist-drawer" role="dialog" aria-label="集點卡">
+                <aside className="mylist-drawer" role="dialog" aria-label="聚會集點">
                     <div className="mylist-header">
-                        <h2>集點卡</h2>
+                        <h2>聚會集點</h2>
                         <button
                             className="mylist-close"
                             type="button"
@@ -511,13 +526,28 @@ export default function MyList({
                                 onClick={() => setLoyaltyTab('card')}
                             >
                                 集點卡
+                                {alertCount > 0 && loyaltyTab !== 'card' && (
+                                    <span
+                                        style={{
+                                            marginLeft: 6,
+                                            background: '#b5483a',
+                                            color: '#fff',
+                                            borderRadius: 999,
+                                            padding: '1px 7px',
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                        }}
+                                    >
+                                        {alertCount}
+                                    </span>
+                                )}
                             </button>
                             <button
                                 type="button"
                                 className={`lb-tab ${loyaltyTab === 'upcoming' ? 'active' : ''}`}
                                 onClick={() => setLoyaltyTab('upcoming')}
                             >
-                                近期聚會
+                                未來聚會
                                 {plannedUnseen > 0 && (
                                     <span
                                         style={{
@@ -553,6 +583,7 @@ export default function MyList({
                                 personal={personal}
                                 playSessions={playSessions}
                                 focusDate={focusDate}
+                                gameChanges={gameChanges}
                                 onOpenGame={onOpenGame}
                             />
                         )}

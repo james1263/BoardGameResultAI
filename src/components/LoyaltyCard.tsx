@@ -13,6 +13,8 @@ import { RATING_FIELDS, type RatingsApi } from '../lib/useGameRatings'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import { useVip } from '../lib/useVip'
 import VipLock from './VipLock'
+import type { GameChange } from '../lib/useLoyaltyAlerts'
+import '../styles/lc-months.css'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 
@@ -25,6 +27,7 @@ export default function LoyaltyCard({
   boardGames,
   ratings,
   focusDate,
+  gameChanges = [],
   onOpenGame,
 }: {
   boardGames: BoardGame[]
@@ -32,13 +35,15 @@ export default function LoyaltyCard({
   personal?: PersonalApi
   playSessions?: PlaySessionsApi
   focusDate?: string | null
+  // 管理者最近移除的指定遊戲（只顯示通知，點數不受影響）
+  gameChanges?: GameChange[]
   onOpenGame: (game: BoardGame, tab?: 'ratings') => void
 }) {
   const loyalty = useMyLoyalty()
   const vip = useVip()
   const scrolledRef = useRef(false)
-  const [showAllDays, setShowAllDays] = useState(false)
-  const RECENT_DAYS = 5
+  // 近期紀錄依月份摺疊：記下使用者手動展開／收合的月份
+  const [monthToggles, setMonthToggles] = useState<Record<string, boolean>>({})
 
   const gameMap = useMemo(
     () => new Map(boardGames.map((game) => [game.bggName, game])),
@@ -224,14 +229,23 @@ export default function LoyaltyCard({
   )
   const usedToday = usedDates.has(todayDate)
 
-  // 近期紀錄預設只顯示最近幾筆；從連結指定的那一天若在被收起的部分，就自動全部展開
-  const focusHidden = focusDate
-    ? loyalty.days.findIndex((day) => day.date === focusDate) >= RECENT_DAYS
-    : false
-  const daysExpanded = showAllDays || focusHidden
-  const visibleDays = daysExpanded
-    ? loyalty.days
-    : loyalty.days.slice(0, RECENT_DAYS)
+  // 近期紀錄依月份摺疊：預設展開最新的一個月，以及連結指定的那一天所在的月
+  const monthGroups: { key: string; label: string; days: LoyaltyDay[] }[] = []
+  for (const day of loyalty.days) {
+    const key = day.date.slice(0, 7)
+    let group = monthGroups.find((item) => item.key === key)
+    if (!group) {
+      const [year = '', month = ''] = key.split('-')
+      group = { key, label: `${year} 年 ${Number(month)} 月`, days: [] }
+      monthGroups.push(group)
+    }
+    group.days.push(day)
+  }
+  const latestMonthKey = monthGroups[0]?.key
+  const focusMonthKey = focusDate ? focusDate.slice(0, 7) : null
+  function isMonthOpen(key: string): boolean {
+    return monthToggles[key] ?? (key === latestMonthKey || key === focusMonthKey)
+  }
 
   // 有可用的券、今天有來、還沒評分：提醒評完分會自動用券
   const voucherWaiting =
@@ -250,6 +264,23 @@ export default function LoyaltyCard({
           ♟
         </span>
       </header>
+
+      {gameChanges.map((change) => {
+        const game = gameMap.get(change.bggName)
+        return (
+          <section
+            className="lcm-notice"
+            key={`${change.gatheringId}|${change.bggName}|${change.removedAt}`}
+          >
+            <p className="lcm-notice-title">
+              管理者調整了「{formatDay(change.gatheredOn)} {change.title || '聚會'}」的指定遊戲
+            </p>
+            <p className="lcm-notice-text">
+              《{game?.name ?? change.bggName}》已從指定遊戲移除。你已經得到的點數不受影響；想改評的話，可以到下面該場聚會選新的指定遊戲。
+            </p>
+          </section>
+        )
+      })}
 
       {usedToday && (
         <section className="lc-today lc-today-ticket">
@@ -392,27 +423,40 @@ export default function LoyaltyCard({
           <p className="lc-empty">還沒有被列入任何一天的聚會名單。</p>
         ) : (
           <>
-            <ul className="lc-days">
-              {visibleDays.map((day) => {
-                const sessions = loyalty.gatherings
-                  .filter((item) => item.date === day.date)
-                  .sort((a, b) => a.title.localeCompare(b.title, 'zh-Hant'))
-                return sessions.some((item) => item.games.length > 0)
-                  ? renderGatheringDay(day, sessions)
-                  : renderLegacyDay(day)
+            <div className="lcm-list">
+              {monthGroups.map((group) => {
+                const open = isMonthOpen(group.key)
+                return (
+                  <div className="lcm-group" key={group.key}>
+                    <button
+                      type="button"
+                      className="lcm-head"
+                      aria-expanded={open}
+                      onClick={() =>
+                        setMonthToggles((current) => ({ ...current, [group.key]: !open }))
+                      }
+                    >
+                      <span>{group.label}</span>
+                      <span className="lcm-count">
+                        {group.days.length} 天 {open ? '▴' : '▾'}
+                      </span>
+                    </button>
+                    {open && (
+                      <ul className="lc-days">
+                        {group.days.map((day) => {
+                          const sessions = loyalty.gatherings
+                            .filter((item) => item.date === day.date)
+                            .sort((x, y) => x.title.localeCompare(y.title, 'zh-Hant'))
+                          return sessions.some((item) => item.games.length > 0)
+                            ? renderGatheringDay(day, sessions)
+                            : renderLegacyDay(day)
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                )
               })}
-            </ul>
-            {loyalty.days.length > RECENT_DAYS && !focusHidden && (
-              <button
-                type="button"
-                className="lc-more"
-                onClick={() => setShowAllDays((value) => !value)}
-              >
-                {showAllDays
-                  ? '收起較早的紀錄 ▴'
-                  : `顯示全部 ${loyalty.days.length} 筆 ▾`}
-              </button>
-            )}
+            </div>
           </>
         )}
       </section>

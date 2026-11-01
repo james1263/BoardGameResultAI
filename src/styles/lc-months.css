@@ -1,0 +1,48 @@
+/* 集點卡：近期紀錄依月份摺疊、指定遊戲被移除的通知 */
+.lcm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lcm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e3d9c4;
+  border-radius: 12px;
+  background: #fbf7ec;
+  color: #34463c;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.lcm-count {
+  color: #7a8a80;
+  font-size: 12px;
+  font-weight: 400;
+}
+.lcm-group .lc-days {
+  margin-top: 8px;
+}
+.lcm-notice {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid #b78a5a;
+  border-radius: 12px;
+  background: #fbf3e4;
+  color: #34463c;
+  text-align: left;
+}
+.lcm-notice-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.lcm-notice-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
