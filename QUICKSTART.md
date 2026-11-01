@@ -1,6 +1,6 @@
 # 桌遊規則助手 — 懶人包（給下一個 AI）
 
-> 最後更新：2026-11-01 晚（已併入 `生成後.md` 全部內容：統計中心改名、未玩遊戲不列榜單、評分表單改版、自動 +1 已玩設計、批次 3／4、補記 SQL；`生成後.md` 已重置）。**第 2 節最上面的「2.0（最新）」是最新增補，與其他段落衝突時以它為準。**
+> 最後更新：2026-11-01 深夜（已併入 `生成後.md` 全部內容：管理者綜合評分改 CSV、拿掉確定開團並刪除相關資料庫物件、集點狀況改清單、免費券撤銷、綜合評分／分布圖、留言喜歡不喜歡的點、自動遊玩紀錄管理者檢視、隱私權政策、舊榜單 hook 清理；`生成後.md` 已重置）。**第 2 節最上面的「2.0（最新）【2026-11-01 深夜】」是最新增補，與其他段落衝突時以它為準。**
 > **分工**：本檔＝現況、待辦、合作規則；`PROJECT_CONTEXT.md`＝架構、資料庫、功能規則、規則助手設計；`生成後.md`＝這兩份之後的修改紀錄與文件維護計數（**開工前三份都要讀，衝突時以 `生成後.md` 為準**）。
 > **文件維護規則**見第 9 節。
 
@@ -12,7 +12,73 @@
 
 ## 2. 目前狀態（2026-11-01）
 
-### 2.0（最新）【2026-11-01 晚；本檔其他段落與此衝突時以此為準】
+### 2.0（最新）【2026-11-01 深夜；本檔其他段落與此衝突時以此為準】
+
+- **git**：origin/master 最新 **`cfda7db`**（刪掉沒人用的最常玩與評分人數 hook）；之前依序 `f51da74`（清掉開團狀態沒人用的樣式）、`2516343`（我的心得與新增遊玩紀錄的喜歡／不喜歡的點、管理者看自動紀錄）、`30fcc6e`（隱私權政策）、`5f279b6`（管理者綜合評分改 CSV）、`6527f06`、`0d8d60b`、`ff105b8`（上一輪三份 .md＋批次 3／4，已 push）。**本次重新產生的三份 .md（`QUICKSTART.md`、`PROJECT_CONTEXT.md`、`生成後.md`）要等使用者 commit／push，該次不計入次數。** 開工先 `git pull`、`git log --oneline -5`。
+- **下面第 2.0（前一輪，2026-11-01 晚）節裡這些已過時**：「批次 3＋4 尚未 push」（已 push，`ff105b8`）；「補記 SQL 第 2 段待執行」（已執行並驗證）；「Scout 最近 2026/10/27 待查」（已刪除並測過）；「要拿掉確定開團」（已完成並刪除資料庫物件）；「還沒開始」的①留言喜歡／不喜歡的點、②我的統計「綜合評分」「分布圖」、③管理者看自動紀錄、④隱私權政策（四項都已完成，見下）；「`gathering_games` 的實際欄位含 `play_status`」（欄位已刪）。
+- **使用者的決定（2026-11-01 深夜新增，不要推翻）**：①管理者的「我的統計→綜合評分／分布圖」**只用 CSV 換算，不看手動評分**；②贈送的免費券**當天就可用**，`settle_vouchers` 只自動用「贈送日早於出席日」的贈送券；③拿掉「確定開團」，聚會日 ≤ 今天（台北）的指定遊戲一律視為已開團。
+- **實測狀態**：使用者回報 `0d8d60b`「沒有問題」、Scout 測試紀錄已刪並測過沒問題、`npm.cmd run build` 都通過、管理中心展開聚會與遊戲「紀錄」分頁沒有紅字報錯。**仍未回報**：`2516343` 的三項（我的心得兩欄顯示與編輯、新增遊玩紀錄發表帶兩欄、管理者明細的「自動記錄的遊玩」）、`5f279b6` 管理者綜合評分畫面（約 93 款、最高 30 分、分布圖有點、沒玩過的不出現）、批次 3＋4（統計表名單欄是否仍疊字、主畫面已玩打勾同步、評分集點彈窗、「我的紀錄」手動／自動標示）、`6527f06`（明細列下展開、「綜合評分」「分布圖」分頁、留言喜歡／不喜歡的點發表）、免費券撤銷按鈕、集點狀況搜尋與 VIP 補列。**要主動問。**
+- **待辦（尚未動工）**：①規則助手進化成真正的 RAG（先問使用者不滿意哪裡；零生成式 AI API 費用是既有決定）；②導覽列改版（最後做）；③站上拖曳調整排名＋匯出 CSV（PROJECT_CONTEXT 第 8 節；開工前要看 `AdminPanel.tsx`、`fetchBoardGames.ts`）；④`admin_get_hidden_gathering_notes` 不回兩欄、聚會心得公開欄沒有喜歡／不喜歡的點（目前只有遊戲留言有）；⑤長期最終目標（現階段先跳過，不要主動動工）：網站即時更新 BGG 分數／時間、直接出成 app、擴展給別人用自己的資源庫（BGG 條件見下方 4.6）。
+- **使用者要求（2026-11-01 深夜）**：集點狀況「明細」不要拉到最底下才看到（已做）；三份 .md 在他 push 時順便一起 commit；SQL 一次一段；問他做了什麼之前先看清楚他貼的結果（例如他問「剛剛刪掉的是什麼」，要把刪掉與沒刪掉的東西講清楚）。
+
+#### 這一輪（`生成後.md` 第 4 節，原文併入）
+
+#### 1 拿掉「確定開團」（`0d8d60b`，使用者回報測試「沒有問題」）
+- SQL：`get_game_play_history(p_bgg_name)` 重寫——**所有指定這款的聚會，聚會日 ≤ 今天（台北）＝`played`，之後＝`planned`**，完全不看 `play_status`（驗證 `is_new = true`）。
+- 前端：`src/LoyaltyAdmin.tsx` 移除開團狀態 UI、`unconfirmed` 狀態、`loadUnconfirmed`、`playStatus` 與讀取 `admin_get_gathering_game_status` 的 effect、`setGameStatus`；聚會管理「尚未結束」＝聚會日 ≥ 今天，其餘進歷史，不再有「待確認」徽章。`GamePlayHistory.tsx` 只改底下兩句說明。
+- 資料庫的 `gathering_games.play_status`、`admin_set_game_play_status`、`admin_get_gathering_game_status` **現在沒人用，留著**，穩定幾天後問使用者是否刪除。`lga-list.css` 的 `.lgp-status`／`.lgp-state` 樣式沒人用，未清。
+
+#### 2 集點狀況改清單（`0d8d60b`、`6527f06`）
+- `LoyaltyAdmin.tsx` 的 `tab === 'status'`：每人一行（暱稱＋LINE／FB 小字｜本月 x/2・總 x 點・🎟 n・已用 n｜明細 補登 贈送）；搜尋欄（暱稱、LINE／FB 名字）；勾選「只顯示有點數或有券的人」保留；排序（有券→本月點→總點→名字）不變。
+- **VIP 補進清單**：`loadAll` 另外 `select user_id from vip_members`（`vipIds`），`players` 裡是 VIP 但不在 `admin_get_loyalty_overview` 的人，補成全 0 的列（可搜尋、可贈送）。
+- **明細（`6527f06`）**：改成在該列正下方展開（`.lgs-detail`），「明細」變「收起」；底部舊的明細區塊已刪。
+- 樣式：新檔 `src/styles/lga-status-list.css`（`lgs-*`，`LoyaltyAdmin.tsx` 自己 import）；舊 `lga-pcard`／`lga-players` 樣式在這個畫面已沒人用，未清。
+
+#### 3 免費券：贈送、自動使用、撤銷
+- **原因（已查明）**：`settle_vouchers` 把「贈送日期 ≤ 出席那天」的券都算進可用，所以管理者當天贈送、玩家當天又有來，系統當天就自動用掉。
+- **修法（使用者決定：贈送的券當天就可用，其餘照建議）**：`settle_vouchers` 的條件改成 `(g.granted_at at time zone 'Asia/Taipei')::date < s.day_date`（只有「贈送日早於出席日」的贈送券才會被自動用）；`loyalty_totals` **沒動**（贈送當天就算「可用」，管理者可用「補登」當天使用）。
+- **新函式**（`security definer`、`search_path=''`、`revoke ... from public, anon`、`grant execute ... to authenticated`）：`admin_revoke_grant(p_grant uuid)`（管理者；刪贈送；若刪後「可用 − 已使用 < 0」丟 `already used` 回滾）、`admin_revoke_redemption(p_redemption uuid)`（管理者；只能刪 `used_on is null` 的手動補登，自動用券不能撤銷）。**使用者沒有明確回報這兩個函式是否已執行（SQL B）；撤銷按鈕實測若報錯，先確認它們存在。**
+- 前端：`LoyaltyAdmin.tsx` 的「免費券紀錄」分頁，「管理者贈送紀錄」每列有「撤銷」，「使用紀錄」只有「管理者補登」那種有「撤銷」，都有 `askConfirm`；成功後 `loadVoucherUses()`＋`refreshOverview()`。
+- **Walter（暱稱 `Walter`）已結案**：使用者選 A（今天集點、剩 1 張），已在「免費券紀錄」撤銷其中一筆贈送（`f250fb77…`）。
+- **凱薩（`凱薩`）**：使用者忘了給他今天的免費券，已用 SQL 補一筆贈送 1 張（`granted_by` 用管理者 id）＋一筆 11/01 用券（`used_on = 2026-11-01`、`redeemed_by` null）；驗證結果 total 0、month 0、earned 1、usable 1、已用 1（今天不集點）。
+
+#### 4 我的統計新增「綜合評分」「分布圖」（`6527f06`）
+- 新檔 `src/components/MyRatingsPanel.tsx`（`mode: 'score' | 'chart'`）；`MyList.tsx` 的 `StatsTab` 加 `'score' | 'chart'`，分頁列用 `lb-tabs lb-tabs-5`（概況｜想玩 N｜已玩 N｜綜合評分｜分布圖），`score`／`chart` 時 body 放 `MyRatingsPanel`（其他兩個分頁邏輯沒動）。
+- **綜合分數＝喜歡度＋玩家影響性＋溝通度＋變化度＋獨特性＋適合留下來，六項加總，不含整體分數，最高 30 分**；六項有缺就不列（底下註明款數）；`isUnplayedGame`（ranking engine 非整數）的遊戲不列；**只算自己的評分**（`ratings.getMine`）。清單可搜尋、高→低／低→高；每列右邊「N / 30」、小字「整體 x」。
+- 分布圖：原生 SVG（沿用 `stats-chart.css` 的 `sc-*`），X／Y 各一個下拉，可選綜合、整體、六個細項，預設 X＝整體、Y＝綜合；點選合併同位置、「查看遊戲」。「綜合評分」「分布圖」分頁切換時搜尋會被 `switchStatsTab` 清掉（沿用既有）。
+
+#### 5 留言「喜歡的點／不喜歡的點」（`6527f06`）
+- **資料庫（SQL A、B、C 使用者都已執行，驗證每個函式只剩一列）**：`game_notes` 加 `like_point text not null default ''`、`dislike_point text not null default ''`，各有 `char_length <= 100` 的 check。`add_game_note(p_bgg_name, p_content, p_like default '', p_dislike default '')`（舊兩參數版已 drop）、`update_my_game_note(p_note, p_content, p_like default null, p_dislike default null)`（**null＝不改、空字串＝清空**，所以沿用舊兩參數呼叫的「我的心得」頁不會洗掉資料；已 drop 舊版）、`get_public_gathering_notes(p_bgg_name, p_limit)` 回傳多 `like_point`、`dislike_point`（來自 `gathering_notes` 的列補 `''`）、`get_my_game_notes(p_bgg_name)` 多回兩欄；都 `revoke ... from public, anon`＋`grant execute ... to authenticated`。**`get_my_all_game_notes()` 與 `admin_get_hidden_gathering_notes()` 沒改（沒有新欄位）。**
+- 前端：新檔 `src/components/NotePointsFields.tsx`（兩顆「＋ 喜歡的點」「＋ 不喜歡的點」按鈕，點了才展開 1 列輸入框、各 100 字；再按「－」清空收起）、`src/styles/note-points.css`（`np-*`）；`NoteListItem.tsx` 新增選填 `like`、`dislike`（展開後才顯示「👍 喜歡：…」「👎 不喜歡：…」）；`GameNotesBoard.tsx`（發表＋編輯）、`ClubBoard.tsx`（發表框＋列表顯示）、`useGameNotesBoard.ts`（`BoardNote.like/dislike`、`MAX_POINT_LENGTH = 100`、`addNote(content, like, dislike)`、`updateNote(id, content, like, dislike)`、`explain` 字樣）。
+- **沒做**：`MyNotes.tsx`（「我的心得」頁）顯示與編輯兩個欄位；`AddPlayLog` 勾選「同時發表到討論」不帶兩欄；`admin_get_hidden_gathering_notes` 不回兩欄；**隱私權政策還沒補**（要補一句：留言可含選填的喜歡／不喜歡的點，與留言同樣公開給 VIP）。
+
+#### 6 其他確認
+- **補記 SQL 第 2 段（2026-11-01）已驗證**：Andy《It's a Wonderful World》＝`admin_backfill`；James 兩款＝`admin_gathering`；其他人＝`rating`；無重複、無缺漏。
+- **管理者 Scout「最近：2026/10/27」已結案**：是使用者 10/27 手動新增的測試紀錄，已刪除並測過沒問題。
+- **使用者提到的長期最終目標（現階段先跳過，不要主動動工）**：①網站能即時更新網路上的 BGG 分數／時間（含擴充）；②直接出成 app；③把網站擴展成讓別人用自己的資源庫、編輯自己的桌遊庫。**BGG 更新的已知條件（AI 查證）**：BGG 自 2025 年起 XML API2 所有請求都要註冊應用程式的 Bearer token（`boardgamegeek.com/applications`，非商業免費，核准可能一週以上，沒 token 回 401）；token 只能放後端（例如 Supabase Edge Function 的環境變數）；公開網站要顯示連回 BGG 的「Powered by BGG」標誌；不能每次造訪都抓（有頻率限制），應由管理者按鈕或排程更新並存回 `board_games`；BGG 本體與擴充是各自獨立的條目，沒有合併分數；CSV 匯入目前會覆蓋這三欄（bgg_score/difficulty/time），要先決定衝突處理（建議 CSV 有值才覆蓋）；**BGG 條款對「存進自己資料庫」的限制沒查證**。AI 提議的下一步（使用者尚未回覆）：先去申請 token，等核准期間先設計欄位與按鈕。使用者已說「當成最終目標，現階段跳過」。
+- 使用者本輪要求：集點狀況「明細」不要拉到最底下才看到（已做）；大量訊息額度快用完時請 AI 更新本檔。
+
+#### 7 管理者的綜合評分與分布圖改用 CSV（`5f279b6`）
+- 原因：`MyRatingsPanel` 原本只讀 `ratings.getMine`（`game_ratings` 的自己評分），管理者的分數是 CSV 換算、沒寫進 `game_ratings`，所以只有手動評過的一款有分數。
+- **使用者決定：管理者「只用 CSV」，不看手動評分。** `MyRatingsPanel.tsx` 新增 props `isAdmin`、`adminScores`；管理者走 `buildAdminRows`：整體、適合留下來取 `computeAdminScores`（`libraryTypes.ts`，只回 `{overall, keep}`），其餘五項取 `likeEmoji`、`playerImpactEmoji`、`communicationEmoji`、`changeEmoji`、`uniqueEmoji` 的字元數（去 U+FE0F 與空白，上限 5，0 當沒有）；六項皆有才有綜合分數；`isUnplayedGame` 照舊排除。`MyList.tsx` 新增 `adminScores?: Map<string, AdminScores>` prop 並轉傳，`App.tsx` 傳 `adminScores={adminScores}`。一般 VIP 路徑不變。
+- 注意：這套換算與資料庫 `get_player_stats()`、`get_rating_summaries()` 同一規則，若有第二位管理者也會看到同一份 CSV 分數。
+
+#### 8 隱私權政策（`30fcc6e`）
+- `public/privacy.html`（2026-11-01 版）補：遊玩紀錄分「手動／自動」（評分得點時自動記當天一筆並標已玩、可自行刪除、改刪評分不減次數）；遊戲留言可附選填「喜歡的點／不喜歡的點」各 100 字、公開範圍同留言；用途與「誰看得到什麼」同步；其他重點新增一條說明自動記錄只有本人看得到、管理者為核對可在後台看來源。同時修掉舊錯字：「概覽下方的大家的留言」→「討論」分頁、「一則」→「每款最多 10 則」。
+
+#### 9 我的心得／新增遊玩紀錄的兩欄、管理者看自動紀錄（`2516343`）
+- **資料庫（SQL A、B 使用者都已執行並驗證：anon 無權限、authenticated 有）**：`get_my_all_game_notes()` 先 drop 再重建，回傳多 `like_point`、`dislike_point`（`id, bgg_name, content, status, created_at, like_point, dislike_point`）；新函式 `admin_get_auto_sessions(p_user uuid)` → `played_on, bgg_name, source, created_at`（只有 `is_admin()`，否則丟 `not admin`；只回 `source <> 'manual'`，依日期新到舊）。兩者都 `security definer`、`search_path=''`、`revoke ... from public, anon`、`grant execute ... to authenticated`。
+- 前端：`MyNotes.tsx`（`GameNoteRow`／`Item` 加 `like`、`dislike`；`NoteListItem` 傳 `like`／`dislike`；編輯時用 `NotePointsFields`，`update_my_game_note` 帶 `p_like`、`p_dislike`，空字串＝清空；`explain` 的 too long 訊息改為含 100 字說明）；`AddPlayLog.tsx`（`shareNow` 才顯示 `NotePointsFields`；`postToDiscussion` 帶 `p_like`、`p_dislike`；送出後清空）；`LoyaltyAdmin.tsx`（`Detail` 新增 `autoSessions: AutoSession[] | null`，`showDetail` 多呼叫 `admin_get_auto_sessions`；明細最下面「自動記錄的遊玩：N 筆」＋清單：日期、遊戲名、來源〔`rating`→評分得點、`admin_gathering`→管理者聚會、`admin_backfill`→補記〕；讀取失敗只顯示「讀取失敗」，不影響其他明細；**唯讀，沒有刪除**）。
+- **還沒做**：`admin_get_hidden_gathering_notes` 不回兩欄；聚會心得的公開欄沒有兩欄（只有遊戲留言有）。
+
+#### 清理線收尾（`f51da74`、`cfda7db`＋資料庫）
+- **資料庫已刪（使用者已執行並驗證，無備份表）**：函式 `admin_set_game_play_status`、`admin_get_gathering_game_status`；欄位 `gathering_games.play_status`（刪前 3 筆，值全是 `played`）；函式 `get_play_totals()`、`get_rating_counts()`。**`gathering_games` 現在只剩 `gathering_id uuid, bgg_name text, created_at timestamptz`。** 刪前確認：前端搜尋 `play_status|admin_set_game_play_status|admin_get_gathering_game_status` 與 `usePlayTotals|useRatingCounts|get_play_totals|get_rating_counts` 都沒有別處引用；資料庫查 `pg_proc.prosrc` 只有該兩個函式引用 `play_status`、沒有其他函式引用兩個榜單函式。
+- **前端已刪**：`src/lib/usePlayTotals.ts`、`src/lib/useRatingCounts.ts`（`cfda7db`）；`lga-list.css` 的 `.lgp-status`、`.lgp-state`（含 `.played`／`.cancelled`／`.warn`）與 `lga-manage.css` 裡 `.lga-manage .lga-detail .lgp-state,` 那一行選擇器（`f51da74`）。`lga-list.css` 其餘 `lgp-*` 規則仍在用。兩個 CSS 檔案在終端機會顯示亂碼，只是顯示問題。
+- **教訓**：改含中文註解的 CSS 時，不要整份重寫貼回，用 PowerShell 腳本比對正規表示式、數量剛好 1 才寫入，並先備份 `.bak`（確認後刪掉，不 add）。`pg_get_functiondef` 不能用在聚合函式（查函式本體關鍵字用 `pg_proc.prosrc`）。
+- **「生成後 (1).md」重複檔**：使用者目錄裡最後列出只有一份 `生成後.md`，沒有重複檔了。
+
+
+### 2.0（前一輪，2026-11-01 晚；與上面衝突時以上面為準）【原標題：最新】
 
 - **git**：origin/master 最新 `59859b5`（統計中心改名、玩家影響性、未玩遊戲不列榜單、俱樂部數字、評分表單改版）；之前 `69474a3`（三份 .md）、`0c2deb4`。**批次 3＋4 已交付但使用者尚未 commit／push**（他只做了 `git add .`）；本次重新產生的三份 .md 也在其中。開工先 `git pull`、`git log --oneline -5`。
 - **改名與規則（已 push，`59859b5`）**：「排行榜」→「統計中心」（只改顯示文字；導覽 key `'leaderboard'`、檔名 `Leaderboard.tsx`、css `lb-*` 沒改）；「影響度」→「玩家影響性」（`useGameRatings.ts` 的 `RATING_FIELDS`、`PlayersBoard.tsx`、`privacy.html`）；**ranking engine 非整數（以 .5 結尾）＝還沒玩過**，用 `src/lib/playedStatus.ts` 的 `isUnplayedGame(game)` 排除在遊戲榜「整體評分」「留下來」（`Leaderboard.tsx` 的 `rankedAll`）、玩家榜「評分」「綜合分數」、統計表分布圖（`StatsTables.tsx` 的 `chartRows`）之外，其他榜單、遊戲總表不受影響；導覽列「俱樂部」徽章＝想玩＋已玩款數（`TopBar.tsx` 的 `clubCount`、`App.tsx` 的 `useMemo`，同時想玩與已玩算兩次）。
@@ -145,7 +211,9 @@ N1～N6、我的桌遊整合、贈送免費券、新遊戲置頂、我的場次�
 
 ## 4. 待辦順序（一次一批，上一批實測完才進下一批）
 
-> **最新最新最新最新（2026-11-01，以此為準）**：①先問玩家榜（`75618ba`）實測（畫面、james、VIP 看不到 LINE／FB、有無「讀取玩家榜失敗」），再問統計表、集點卡兩分頁、`87b3517`、`ca49514` 等（2.0（最新）有清單）；②待辦候選：⑥我的統計多兩個分頁（**先確認綜合分數公式**）、批次 C、⑨規則助手 RAG（先討論）、無人使用的 `usePlayTotals`／`useRatingCounts` 及其 SQL 是否刪除、導覽列改版（最後做）、站上拖曳調整排名＋匯出 CSV；③已結案不要再做：排行榜拆頁與玩家榜、統計表搬進排行榜、近期聚會併進集點卡、排序選單精簡、規則書文件列表、管理者 `confirm`／`prompt` 換 `askConfirm`、備份表刪除、樣式清理、聚會管理。
+> **最新最新最新最新最新（2026-11-01 深夜，以此為準）**：①先問第 2.0（最新）裡「仍未回報」的實測（`2516343` 三項、`5f279b6` 管理者綜合評分、批次 3＋4、`6527f06`、免費券撤銷）；②待辦候選只剩規則助手 RAG（先討論）、導覽列改版（最後）、站上拖曳調整排名＋匯出 CSV、`admin_get_hidden_gathering_notes` 與聚會心得公開欄的喜歡／不喜歡的點；③**已結案不要再做**：隱私權政策補新功能、我的心得兩欄、新增遊玩紀錄發表帶兩欄、管理者看自動紀錄、管理者綜合評分改 CSV、拿掉確定開團（含資料庫刪除）、舊榜單 hook 與函式清理、Walter 免費券、Scout 測試紀錄。下面「⑥我的統計多兩個分頁」「無人使用的 `usePlayTotals`／`useRatingCounts`」等舊待辦都**已完成或已刪**。
+
+> **更早一版（2026-11-01，已被上面取代）**：①先問玩家榜（`75618ba`）實測（畫面、james、VIP 看不到 LINE／FB、有無「讀取玩家榜失敗」），再問統計表、集點卡兩分頁、`87b3517`、`ca49514` 等（2.0（最新）有清單）；②待辦候選：⑥我的統計多兩個分頁（**先確認綜合分數公式**）、批次 C、⑨規則助手 RAG（先討論）、無人使用的 `usePlayTotals`／`useRatingCounts` 及其 SQL 是否刪除、導覽列改版（最後做）、站上拖曳調整排名＋匯出 CSV；③已結案不要再做：排行榜拆頁與玩家榜、統計表搬進排行榜、近期聚會併進集點卡、排序選單精簡、規則書文件列表、管理者 `confirm`／`prompt` 換 `askConfirm`、備份表刪除、樣式清理、聚會管理。
 
 > **前一版最新（2026-10-31 下午，已被上面取代）**：①先問 `87b3517`、`ca49514`、樣式清理（`98615bd`、`a3100d6`）的實測結果（2.0（最新）有清單）；②待辦候選：預計聚會區塊縮小字級與內距（`PlannedGatheringsAdmin.tsx`）、站上拖曳調整排名＋匯出 CSV（PROJECT_CONTEXT 第 8 節；開工前要看 `AdminPanel.tsx`、`fetchBoardGames.ts`）、中英檢索測試集、規則資源管理／玩錯勘誤（需新資料表，先討論）、導覽列改版（最後做）；③已結案不要再做：管理者 `confirm`／`prompt` 換 `askConfirm`、開團紀錄預設值、備份表刪除、`mn-*`／`mh-*`／`lbf-*` 樣式清理、聚會設定版面合併。
 
@@ -198,6 +266,7 @@ N1～N6、我的桌遊整合、贈送免費券、新遊戲置頂、我的場次�
 
 ## 6. 使用者的決定（不要推翻）
 
+- **2026-11-01 深夜新增**：管理者綜合評分與分布圖只用 CSV；贈送的免費券當天就可用；拿掉「確定開團」（聚會日 ≤ 今天＝已開團）；管理者可看玩家的自動遊玩紀錄（唯讀）；留言可附選填的「喜歡的點／不喜歡的點」（各 100 字、公開範圍同留言）。
 - **2026-10-31 深夜後新增**：①排行榜期間放進篩選、搜尋保留原名次、篩選後重排、要有排序方向；②合併視窗「不加入」＝刪除這個瀏覽器的訪客紀錄、之後不再跳（使用者回「照建議」）。
 - **2026-10-31 深夜新增**：①**不要在網站加「請改用 Safari」之類的提示**（很多朋友用 Android，要真的修好內建瀏覽器的操作）；②留言一律用**清單式**（名字、日期、遊戲、內容 2 行省略，點開看全文，輸入框不要太高）；③確認視窗一律用頁面內的 `askConfirm`；④評分完整會自動建當天遊玩紀錄（規則見 2.0）；⑤開團紀錄預設值不改；⑥統計只算已玩、「移除」不清 `play_count`。
 
@@ -258,3 +327,4 @@ N1～N6、我的桌遊整合、贈送免費券、新遊戲置頂、我的場次�
 - 2026-10-31（下午）：使用者 push `98615bd`、`a3100d6`、`ca49514`（上一輪更新 `生成後.md` 後共 3 次，更新次數已為 2，滿 3），依規則重新產生兩份主文件（併入管理者確認視窗、樣式清理、聚會管理）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。`87b3517`（程式碼加更新本檔，視為更新、不計入）、`09f11ba` 與上述三次 push 都已併入，不再計數。
 - 2026-11-01：使用者先後 push `3335085`、`3ce2d32`、`0a80f76`、`7b90385`、`50ae63f`、`7ac0210`、`65716b8`、`9f2f1e1`、`75618ba`、`332753a`（`0c2deb4` 是只更新 `生成後.md`＋隱私權政策，不計入），`生成後.md` 更新次數已滿 3，依規則重新產生兩份主文件（併入排行榜三頁、玩家榜、統計表分布圖、近期聚會併進集點卡頁、規則書文件列表等）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。上述 push 都已併入，不再計數。
 - 2026-11-01（晚）：使用者要求「生成後.md」，更新次數滿 3，已重新產生三份 .md（併入統計中心改名、.5 未玩遊戲排除、評分表單改版、自動 +1 已玩設計與批次 3／4、SQL 第 1／2 段、待辦），`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md（該次不計入）。
+- 2026-11-01（深夜）：使用者 push `5f279b6`、`30fcc6e`、`2516343`（上一輪更新 `生成後.md` 後共 3 次）時我更新了 `生成後.md`（更新次數 2）；之後 push `f51da74`、`cfda7db`（第 1、2 次）再次更新，更新次數滿 3，依規則重新產生三份 .md（併入管理者綜合評分改 CSV、隱私權政策、兩欄與自動紀錄、開團功能與舊榜單 hook 清理）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。
