@@ -14,6 +14,7 @@ import PlannedGatheringsAdmin from './components/PlannedGatheringsAdmin'
 import NewGatheringWizard from './components/NewGatheringWizard'
 import './styles/lga-manage.css'
 import './styles/lga-list.css'
+import './styles/lga-status-list.css'
 
 type Gathering = { id: string; gatheredOn: string; title: string; note: string }
 type Player = { id: string; nickname: string }
@@ -111,11 +112,12 @@ export default function LoyaltyAdmin() {
     const [capacityDraft, setCapacityDraft] = useState('')
     const [detail, setDetail] = useState<Detail | null>(null)
     const [onlyWithPoints, setOnlyWithPoints] = useState(false)
+    const [statusSearch, setStatusSearch] = useState('')
+    // 所有 VIP 的帳號 id（沒有點數、沒有券的 VIP 也要能搜尋到）
+    const [vipIds, setVipIds] = useState<Set<string>>(new Set())
     const [voucherUses, setVoucherUses] = useState<VoucherUse[]>([])
     const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
     const [historyOpen, setHistoryOpen] = useState(false)
-    // 每場聚會還有幾款遊戲沒確認開團（gathering_id -> 款數）
-    const [unconfirmed, setUnconfirmed] = useState<Record<string, number>>({})
     const [grants, setGrants] = useState<GrantRow[]>([])
     // 管理者專用：每位 VIP／管理者想玩的遊戲（user_id -> 遊戲 bgg_name 集合）
     const [wantMap, setWantMap] = useState<Map<string, Set<string>> | null>(null)
@@ -140,33 +142,6 @@ export default function LoyaltyAdmin() {
             cancelled = true
         }
     }, [])
-
-    const [playStatus, setPlayStatus] = useState<{
-        id: string
-        map: Record<string, string | null>
-    } | null>(null)
-
-    // 讀取目前選中聚會各款遊戲的「開團確認狀態」
-    useEffect(() => {
-        if (!selectedId) return
-        let cancelled = false
-        void supabase
-            .rpc('admin_get_gathering_game_status', { p_gathering: selectedId })
-            .then(({ data }) => {
-                if (cancelled || !data) return
-                const map: Record<string, string | null> = {}
-                for (const row of data as {
-                    bgg_name: string
-                    play_status: string | null
-                }[]) {
-                    map[row.bgg_name] = row.play_status
-                }
-                setPlayStatus({ id: selectedId, map })
-            })
-        return () => {
-            cancelled = true
-        }
-    }, [selectedId, gatheringGames])
 
     const gameNameMap = useMemo(
         () => new Map(allGames.map((game) => [game.bggName, game.name])),
@@ -219,20 +194,6 @@ export default function LoyaltyAdmin() {
             })),
         )
         return ''
-    }
-
-    async function loadUnconfirmed() {
-        const { data, error } = await supabase
-            .from('gathering_games')
-            .select('gathering_id, play_status')
-        if (error || !data) return
-        const counts: Record<string, number> = {}
-        for (const row of data as { gathering_id: string; play_status: string | null }[]) {
-            if (row.play_status === null) {
-                counts[row.gathering_id] = (counts[row.gathering_id] ?? 0) + 1
-            }
-        }
-        setUnconfirmed(counts)
     }
 
     async function loadAll() {
@@ -328,7 +289,6 @@ export default function LoyaltyAdmin() {
             ; (gameMap[row.gathering_id] ??= []).push(row.bgg_name)
         }
         setGatheringGames(gameMap)
-        void loadUnconfirmed()
 
         setAllGames(
             ((bg.data ?? []) as { bgg_name: string; name: string }[]).map((row) => ({
@@ -345,6 +305,10 @@ export default function LoyaltyAdmin() {
             ),
         )
         setOverview(((o.data ?? []) as OverviewRaw[]).map(toOverview))
+        const vp = await supabase.from('vip_members').select('user_id')
+        if (!vp.error) {
+            setVipIds(new Set(((vp.data ?? []) as { user_id: string }[]).map((row) => row.user_id)))
+        }
         setLoading(false)
     }
 
@@ -659,30 +623,6 @@ export default function LoyaltyAdmin() {
         setBusy(false)
     }
 
-    async function setGameStatus(
-        gatheringId: string,
-        bggName: string,
-        status: 'played' | 'cancelled' | null,
-    ) {
-        setBusy(true)
-        setMessage('')
-        const { error } = await supabase.rpc('admin_set_game_play_status', {
-            p_gathering: gatheringId,
-            p_bgg_name: bggName,
-            p_status: status,
-        })
-        if (error) {
-            setMessage('設定開團狀態失敗：' + error.message)
-        } else {
-            setPlayStatus((current) =>
-                current && current.id === gatheringId
-                    ? { id: gatheringId, map: { ...current.map, [bggName]: status } }
-                    : current,
-            )
-            void loadUnconfirmed()
-        }
-        setBusy(false)
-    }
     async function showDetail(row: OverviewRow) {
         setBusy(true)
         setMessage('')
@@ -748,6 +688,54 @@ export default function LoyaltyAdmin() {
         }
         setBusy(false)
     }
+    async function revokeGrant(item: GrantRow, nickname: string) {
+        if (
+            !(await askConfirm(
+                `確定撤銷這筆贈送嗎？\n玩家：${nickname}\n張數：${item.quantity} 張\n時間：${formatDateTime(item.grantedAt)}\n（如果這張券已經被使用，系統會拒絕撤銷。）`,
+                { confirmText: '撤銷', danger: true },
+            ))
+        )
+            return
+        setBusy(true)
+        setMessage('')
+        const { error } = await supabase.rpc('admin_revoke_grant', { p_grant: item.id })
+        if (error) {
+            setMessage(
+                error.message.includes('already used')
+                    ? '撤銷失敗：這張券已經被使用了。'
+                    : '撤銷失敗：' + error.message,
+            )
+        } else {
+            setMessage(`已撤銷「${nickname}」的 ${item.quantity} 張贈送。`)
+            await loadVoucherUses()
+            await refreshOverview()
+        }
+        setBusy(false)
+    }
+
+    async function revokeRedemption(item: VoucherUse, nickname: string) {
+        if (
+            !(await askConfirm(
+                `確定撤銷這筆補登嗎？\n玩家：${nickname}\n時間：${formatDateTime(item.redeemedAt)}\n撤銷後這張券會回到「可用」。`,
+                { confirmText: '撤銷', danger: true },
+            ))
+        )
+            return
+        setBusy(true)
+        setMessage('')
+        const { error } = await supabase.rpc('admin_revoke_redemption', {
+            p_redemption: item.id,
+        })
+        if (error) {
+            setMessage('撤銷失敗：' + error.message)
+        } else {
+            setMessage(`已撤銷「${nickname}」的補登。`)
+            await loadVoucherUses()
+            await refreshOverview()
+        }
+        setBusy(false)
+    }
+
     async function redeem(row: OverviewRow) {
         if (
             !(await askConfirm(
@@ -773,9 +761,8 @@ export default function LoyaltyAdmin() {
     }
 
     const selected = gatherings.find((g) => g.id === selectedId) ?? null
-    // 尚未結束：今天或未來的聚會，或已過但還有遊戲沒確認開團的聚會；其餘是歷史
-    const isOpenGathering = (g: Gathering) =>
-        g.gatheredOn >= todayLocal() || (unconfirmed[g.id] ?? 0) > 0
+    // 尚未結束：今天或未來的聚會；其餘是歷史
+    const isOpenGathering = (g: Gathering) => g.gatheredOn >= todayLocal()
     const openList = gatherings
         .filter(isOpenGathering)
         .sort(
@@ -790,7 +777,6 @@ export default function LoyaltyAdmin() {
     function statusOf(g: Gathering): string {
         const base = dayStatus(g.gatheredOn)
         if (base === '進行中') return '今天'
-        if (base === '已結束' && (unconfirmed[g.id] ?? 0) > 0) return '待確認'
         return base
     }
     const selectedAttendees = selected ? (attendees[selected.id] ?? []) : []
@@ -924,11 +910,29 @@ export default function LoyaltyAdmin() {
             .slice(0, 8)
         : []
 
+    // 集點狀況：聚會名單裡的人，加上還沒被列入任何聚會的 VIP（點數與券都是 0）
+    const overviewIds = new Set(overview.map((row) => row.userId))
+    const extraRows: OverviewRow[] = players
+        .filter((p) => vipIds.has(p.id) && !overviewIds.has(p.id))
+        .map((p) => ({
+            userId: p.id,
+            nickname: p.nickname,
+            totalPoints: 0,
+            monthPoints: 0,
+            earnedVouchers: 0,
+            redeemed: 0,
+            availableVouchers: 0,
+            overRedeemed: false,
+        }))
+    const statusQuery = statusSearch.trim().toLowerCase()
     // 有券、有點數的人排最上面
-    const rankedOverview = [...overview]
+    const rankedOverview = [...overview, ...extraRows]
         .filter(
             (row) =>
-                !onlyWithPoints || row.totalPoints > 0 || row.availableVouchers > 0,
+                (!onlyWithPoints || row.totalPoints > 0 || row.availableVouchers > 0) &&
+                (!statusQuery ||
+                    row.nickname.toLowerCase().includes(statusQuery) ||
+                    (contacts[row.userId] ?? '').toLowerCase().includes(statusQuery)),
         )
         .sort(
             (x, y) =>
@@ -968,7 +972,7 @@ export default function LoyaltyAdmin() {
                             </small>
                         </span>
                         <span
-                            className={`lga-status ${status === '已結束' ? 'done' : status === '待確認' ? 'warn' : ''}`}
+                            className={`lga-status ${status === '已結束' ? 'done' : ''}`}
                         >
                             {status}
                         </span>
@@ -1038,11 +1042,6 @@ export default function LoyaltyAdmin() {
 ) : (
     <ul className="lgp-games">
         {selectedGames.map((bggName) => {
-            const status =
-                playStatus && playStatus.id === selected.id
-                    ? (playStatus.map[bggName] ?? null)
-                    : null
-            const past = selected.gatheredOn <= todayLocal()
             return (
                 <li key={bggName} className="lgp-game">
                     <div className="lgp-game-head">
@@ -1062,58 +1061,10 @@ export default function LoyaltyAdmin() {
                         <small className="lgp-hint">{wantHint(bggName)}</small>
                     )}
                     {renderWanters(bggName, 'picked')}
-                    {(past || status !== null) && (
-                        <div className="lgp-status">
-                            <span
-                                className={`lgp-state ${status ?? 'warn'}`}
-                            >
-                                {status === 'played'
-                                    ? '✅ 實際開團'
-                                    : status === 'cancelled'
-? '✖ 已取消'
-: '⚠ 待確認'}
-                            </span>
-                            {status !== 'played' && (
-                                <button
-                                    type="button"
-                                    className="loy-mini-btn"
-                                    disabled={busy}
-                                    onClick={() => setGameStatus(selected.id, bggName, 'played')}
-                                >
-                                    實際開團
-                                </button>
-                            )}
-                            {status !== 'cancelled' && (
-                                <button
-                                    type="button"
-                                    className="loy-mini-btn"
-                                    disabled={busy}
-                                    onClick={() => setGameStatus(selected.id, bggName, 'cancelled')}
-                                >
-                                    取消
-                                </button>
-                            )}
-                            {status !== null && (
-                                <button
-                                    type="button"
-                                    className="loy-mini-btn"
-                                    disabled={busy}
-                                    onClick={() => setGameStatus(selected.id, bggName, null)}
-                                >
-                                    改回未確認
-                                </button>
-                            )}
-                        </div>
-                    )}
                 </li>
             )
         })}
     </ul>
-)}
-{selectedGames.length > 0 && selected.gatheredOn <= todayLocal() && (
-    <p className="loy-admin-note">
-        標記每款有沒有真的開：只有「實際開團」會出現在遊戲詳情的「紀錄」並計入次數，不影響集點。
-    </p>
 )}
                             <h4 className="lga-sub">② 人數上限</h4>
                             <p className="loy-admin-note">
@@ -1476,94 +1427,100 @@ export default function LoyaltyAdmin() {
                     <h3 className="lga-step">
                         <span>★</span>大家的集點狀況（對帳用）
                     </h3>
-                    {overview.length === 0 ? (
+                    {overview.length + extraRows.length === 0 ? (
                         <p>還沒有任何人被列入聚會名單。</p>
                     ) : (
                         <>
-                            <label className="lga-filter">
+                            <div className="lgs-tools">
                                 <input
-                                    type="checkbox"
-                                    checked={onlyWithPoints}
-                                    onChange={(event) =>
-                                        setOnlyWithPoints(event.target.checked)
-                                    }
+                                    className="lgs-search"
+                                    type="search"
+                                    placeholder="搜尋暱稱或 LINE／FB 名字"
+                                    value={statusSearch}
+                                    onChange={(event) => setStatusSearch(event.target.value)}
                                 />
-                                只顯示有點數或有券的人
-                            </label>
-                            <ul className="lga-players">
-                                {rankedOverview.map((row) => {
-                                    const empty =
-                                        row.totalPoints === 0 && row.availableVouchers === 0
-                                    return (
-                                        <li
-                                            key={row.userId}
-                                            className={`lga-pcard ${empty ? 'dim' : ''} ${row.availableVouchers > 0 ? 'has-ticket' : ''}`}
-                                        >
-                                            <span className="lga-avatar">
-                                                {initialOf(row.nickname)}
-                                            </span>
-                                            <div className="lga-pinfo">
-                                                <strong>
-                                                    {row.nickname}
-                                                    {row.overRedeemed && (
-                                                        <span
-                                                            className="loy-flag"
-                                                            title="已使用超過目前累積"
-                                                        >
-                                                            ⚠
-                                                        </span>
-                                                    )}
-                                                </strong>
-                                                <small className="lga-contact">
-                                                    {contacts[row.userId] ?? '未填聯絡方式'}
-                                                </small>
-                                            </div>
-                                            <div className="lga-pstats">
-                                                <span className="lga-pill">
-                                                    本月 {row.monthPoints} / 2 點
-                                                </span>
-                                                <span className="lga-pill">
-                                                    總 {row.totalPoints} 點
-                                                </span>
-                                                <span
-                                                    className={`lga-pill ${row.availableVouchers > 0 ? 'ticket' : ''}`}
-                                                >
-                                                    🎟 可用 {row.availableVouchers}
-                                                </span>
-                                                <span className="lga-pill">
-                                                    已使用 {row.redeemed}
-                                                </span>
-                                            </div>
-                                            <div className="loy-admin-actions">
-                                                <button
-                                                    type="button"
-                                                    className="admin-link"
-                                                    disabled={busy}
-                                                    onClick={() => showDetail(row)}
-                                                >
-                                                    明細
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="admin-link"
-                                                    disabled={busy || row.availableVouchers < 1}
-                                                    onClick={() => redeem(row)}
-                                                >
-                                                    補登
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="admin-link"
-                                                    disabled={busy}
-                                                    onClick={() => grantVoucher(row)}
-                                                >
-                                                    贈送
-                                                </button>
-                                            </div>
-                                        </li>
-                                    )
-                                })}
-                            </ul>
+                                <label className="lga-filter">
+                                    <input
+                                        type="checkbox"
+                                        checked={onlyWithPoints}
+                                        onChange={(event) =>
+                                            setOnlyWithPoints(event.target.checked)
+                                        }
+                                    />
+                                    只顯示有點數或有券的人
+                                </label>
+                            </div>
+                            {rankedOverview.length === 0 ? (
+                                <p className="loy-admin-note">找不到符合的玩家。</p>
+                            ) : (
+                                <ul className="lgs-list">
+                                    {rankedOverview.map((row) => {
+                                        const empty =
+                                            row.totalPoints === 0 && row.availableVouchers === 0
+                                        return (
+                                            <li
+                                                key={row.userId}
+                                                className={`lgs-row ${empty ? 'dim' : ''}`}
+                                            >
+                                                <div className="lgs-main">
+                                                    <strong>
+                                                        {row.nickname}
+                                                        {row.overRedeemed && (
+                                                            <span
+                                                                className="loy-flag"
+                                                                title="已使用超過目前累積"
+                                                            >
+                                                                ⚠
+                                                            </span>
+                                                        )}
+                                                    </strong>
+                                                    <small>
+                                                        {contacts[row.userId] ?? '未填聯絡方式'}
+                                                    </small>
+                                                </div>
+                                                <div className="lgs-stats">
+                                                    <span>本月 {row.monthPoints}/2</span>
+                                                    <span>總 {row.totalPoints} 點</span>
+                                                    <span
+                                                        className={
+                                                            row.availableVouchers > 0 ? 'ticket' : ''
+                                                        }
+                                                    >
+                                                        🎟 {row.availableVouchers}
+                                                    </span>
+                                                    <span>已用 {row.redeemed}</span>
+                                                </div>
+                                                <div className="lgs-act">
+                                                    <button
+                                                        type="button"
+                                                        className="admin-link"
+                                                        disabled={busy}
+                                                        onClick={() => showDetail(row)}
+                                                    >
+                                                        明細
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="admin-link"
+                                                        disabled={busy || row.availableVouchers < 1}
+                                                        onClick={() => redeem(row)}
+                                                    >
+                                                        補登
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="admin-link"
+                                                        disabled={busy}
+                                                        onClick={() => grantVoucher(row)}
+                                                    >
+                                                        贈送
+                                                    </button>
+                                                </div>
+                                            </li>
+                                        )
+                                    })}
+                                </ul>
+                            )}
                         </>
                     )}
                     <p className="loy-admin-note">
@@ -1634,6 +1591,7 @@ export default function LoyaltyAdmin() {
                                         <th>用在哪一天</th>
                                         <th>使用時間</th>
                                         <th>來源</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1652,6 +1610,24 @@ export default function LoyaltyAdmin() {
                                             <td>{formatDateTime(item.redeemedAt)}</td>
                                             <td>
                                                 {item.usedOn ? '系統自動使用' : '管理者補登'}
+                                            </td>
+                                            <td>
+                                                {!item.usedOn && (
+                                                    <button
+                                                        type="button"
+                                                        className="admin-link"
+                                                        disabled={busy}
+                                                        onClick={() =>
+                                                            revokeRedemption(
+                                                                item,
+                                                                players.find((p) => p.id === item.userId)
+                                                                    ?.nickname ?? '（未知）',
+                                                            )
+                                                        }
+                                                    >
+                                                        撤銷
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
@@ -1673,6 +1649,7 @@ export default function LoyaltyAdmin() {
                                         <th>玩家</th>
                                         <th>張數</th>
                                         <th>贈送時間</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1684,6 +1661,22 @@ export default function LoyaltyAdmin() {
                                             </td>
                                             <td>{item.quantity}</td>
                                             <td>{formatDateTime(item.grantedAt)}</td>
+                                            <td>
+                                                <button
+                                                    type="button"
+                                                    className="admin-link"
+                                                    disabled={busy}
+                                                    onClick={() =>
+                                                        revokeGrant(
+                                                            item,
+                                                            players.find((p) => p.id === item.userId)
+                                                                ?.nickname ?? '（未知）',
+                                                        )
+                                                    }
+                                                >
+                                                    撤銷
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
