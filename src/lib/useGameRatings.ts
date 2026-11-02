@@ -20,7 +20,10 @@ export const RATING_FIELDS: { key: RatingKey; label: string }[] = [
     { key: 'keep', label: '適合留下來程度' },
 ]
 
-export type MyRating = { overall: number } & Record<RatingKey, number | null>
+export type MyRating = { overall: number; updatedAt?: string | null } & Record<
+    RatingKey,
+    number | null
+>
 
 export type RatingSummary = {
     count: number
@@ -51,7 +54,7 @@ const AVG_COLUMNS: Record<RatingKey, string> = {
 }
 
 const MY_COLUMNS =
-    'bgg_name, overall, like_score, player_impact_score, communication_score, change_score, unique_score, keep_score'
+    'bgg_name, overall, like_score, player_impact_score, communication_score, change_score, unique_score, keep_score, updated_at'
 
 const EMPTY_SUMMARY: RatingSummary = {
     count: 0,
@@ -79,6 +82,7 @@ function rowToMine(row: Row): MyRating {
     for (const field of RATING_FIELDS) {
         result[field.key] = num(row[SCORE_COLUMNS[field.key]])
     }
+    result.updatedAt = typeof row.updated_at === 'string' ? row.updated_at : null
     return result
 }
 

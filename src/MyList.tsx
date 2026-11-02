@@ -16,6 +16,7 @@ import AddPlayLog from './components/AddPlayLog'
 import PlayedGameRecord from './components/PlayedGameRecord'
 import ClubBoard from './components/ClubBoard'
 import MyRatingsPanel from './components/MyRatingsPanel'
+import MyRatingsHub from './components/MyRatingsHub'
 import UpcomingGatherings from './components/UpcomingGatherings'
 import { useBackClose } from './lib/useBackClose'
 import DrawerToTop from './components/DrawerToTop'
@@ -25,7 +26,7 @@ type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
-type View = 'home' | 'stats' | 'gatherings' | 'addplay' | 'notes' | 'board'
+type View = 'home' | 'stats' | 'ratings' | 'gatherings' | 'addplay' | 'notes' | 'board'
 type StatsTab = 'overview' | 'want' | 'played' | 'score' | 'chart'
 type SortKey =
     | 'added'
@@ -663,6 +664,21 @@ export default function MyList({
         )
     }
 
+    // ---------- 我的評分 ----------
+    if (view === 'ratings') {
+        return (
+            <MyRatingsHub
+                boardGames={boardGames}
+                ratings={ratings}
+                isPlayed={(bggName) => !!personal.entries[bggName]?.played}
+                onBack={() => setView('home')}
+                onClose={onClose}
+                onOpenGame={onOpenGame}
+                renderCover={renderCover}
+            />
+        )
+    }
+
     // ---------- 我的統計（概況｜想玩｜已玩） ----------
     if (view === 'stats') {
         return (
@@ -1034,6 +1050,27 @@ export default function MyList({
                             <span className="club-menu-arrow" aria-hidden="true">›</span>
                         </button>
                     </div>
+                    {personal.isLoggedIn && !isAdmin && (
+                        <div className="club-list club-more">
+                            <button
+                                type="button"
+                                className="club-menu-item club-menu-single"
+                                onClick={() => setView('ratings')}
+                            >
+                                <span className="club-menu-icon" aria-hidden="true">⭐</span>
+                                <span className="club-menu-text">
+                                    <b>我的評分</b>
+                                    <span className="club-menu-sub">把玩過的遊戲逐款評完</span>
+                                </span>
+                                {ratings.status === 'ready' && (
+                                    <span className="club-menu-count">
+                                        已評分 {playedGames.filter((game) => ratings.getMine(game.bggName)).length}・已玩 {playedGames.length}
+                                    </span>
+                                )}
+                                <span className="club-menu-arrow" aria-hidden="true">›</span>
+                            </button>
+                        </div>
+                    )}
                     {personal.isLoggedIn && (
                         <>
                             <div className="club-list club-more">

@@ -1,0 +1,64 @@
+/* 我的評分頁（MyRatingsHub） */
+.mrh-progress {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  color: #34463c;
+}
+.mrh-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.mrh-filter {
+  border: 1px solid #d8cdb5;
+  background: #fbf7ec;
+  color: #34463c;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.mrh-filter.active {
+  background: #456b50;
+  border-color: #456b50;
+  color: #fbf7ec;
+}
+.mrh-sort {
+  font-size: 16px;
+  border: 1px solid #d8cdb5;
+  background: #fbf7ec;
+  color: #34463c;
+  border-radius: 8px;
+  padding: 4px 6px;
+}
+.mrh-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.mrh-none {
+  background: #f1e3d3;
+  color: #8a4b2a;
+}
+.mrh-partial {
+  background: #f5e9c8;
+  color: #7a5a12;
+}
+.mrh-full {
+  background: #dcebdc;
+  color: #2f5a3a;
+}
+.mrh-go {
+  flex: none;
+  border: 1px solid #456b50;
+  background: #fbf7ec;
+  color: #365b40;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
