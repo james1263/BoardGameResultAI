@@ -178,7 +178,7 @@ function Library({
   const adminRatings = useAdminRatings(isAdmin)
   // 還沒看過的新預計聚會數（只有 VIP；顯示在導覽列「集點卡」與集點卡頁的「近期聚會」分頁）
   const planned = usePlannedUnseen(session?.user?.id ?? null, vip.isVip && !isAdmin)
-  // 新加入的聚會、被移除的指定遊戲（也算在導覽列「聚會集點」的數字裡）
+  // 新加入的聚會、被移除的指定遊戲（也算在導覽列「集點聚會」的數字裡）
   const loyaltyAlerts = useLoyaltyAlerts(session?.user?.id ?? null, vip.isVip && !isAdmin)
   // 導覽列「俱樂部」的數字：想玩＋已玩的款數（跟「我的統計」那一列同一個算法）
   const clubCount = useMemo(() => {

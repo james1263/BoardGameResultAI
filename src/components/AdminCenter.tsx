@@ -9,7 +9,7 @@ type Tab = 'members' | 'gatherings' | 'rulebooks' | 'data'
 
 const TABS: { key: Tab; icon: string; label: string }[] = [
   { key: 'members', icon: '👥', label: '成員' },
-  { key: 'gatherings', icon: '🎴', label: '聚會集點' },
+  { key: 'gatherings', icon: '🎴', label: '集點聚會' },
   { key: 'rulebooks', icon: '📚', label: '規則書' },
   { key: 'data', icon: '📦', label: '資料匯入' },
 ]

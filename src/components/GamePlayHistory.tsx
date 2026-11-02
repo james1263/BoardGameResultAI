@@ -81,7 +81,7 @@ export default function GamePlayHistory({
 
       {isAdmin ? (
         <p className="gb-empty">
-          成員名單請到「管理」→「聚會集點」該場聚會查看。
+          成員名單請到「管理」→「集點聚會」該場聚會查看。
         </p>
       ) : (
         <p className="gb-empty">只顯示日期，不顯示參加的成員。預計開團不計入次數。</p>

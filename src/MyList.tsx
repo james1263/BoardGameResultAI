@@ -506,9 +506,9 @@ export default function MyList({
         return (
             <>
                 <div className="mylist-backdrop" onClick={onClose} />
-                <aside className="mylist-drawer" role="dialog" aria-label="聚會集點">
+                <aside className="mylist-drawer" role="dialog" aria-label="集點聚會">
                     <div className="mylist-header">
-                        <h2>聚會集點</h2>
+                        <h2>集點聚會</h2>
                         <button
                             className="mylist-close"
                             type="button"

@@ -258,7 +258,7 @@ export default function LoyaltyCard({
 
       <header className="lc-banner">
         <span className="lc-banner-kicker">BOARD GAME NIGHT</span>
-        <h3 className="lc-banner-title">桌遊聚會集點卡</h3>
+        <h3 className="lc-banner-title">桌遊集點聚會卡</h3>
         <p className="lc-banner-sub">一起玩，一起蓋印章！</p>
         <span className="lc-banner-mark" aria-hidden="true">
           ♟
