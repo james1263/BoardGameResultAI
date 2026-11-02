@@ -5,6 +5,8 @@ export type MyNote = {
   privateNote: string
   publicNote: string
   publicStatus: 'visible' | 'hidden'
+  likePoint: string // 公開留言的「喜歡的點」
+  dislikePoint: string // 公開留言的「不喜歡的點」
 }
 
 type NoteRow = {
@@ -13,6 +15,8 @@ type NoteRow = {
   private_note: string | null
   public_note: string | null
   public_status: string | null
+  like_point?: string | null
+  dislike_point?: string | null
 }
 
 // 某一場聚會中，我自己寫的心得（含私人留言），以遊戲 bgg_name 對應
@@ -42,6 +46,8 @@ export function useMyGatheringNotes(gatheringId: string | null) {
             privateNote: row.private_note ?? '',
             publicNote: row.public_note ?? '',
             publicStatus: row.public_status === 'hidden' ? 'hidden' : 'visible',
+            likePoint: row.like_point ?? '',
+            dislikePoint: row.dislike_point ?? '',
           }
         }
         setState({ id: gatheringId, map, error: false })
@@ -111,18 +117,22 @@ export function useNoteStatus() {
   return { get, reload }
 }
 
-// 儲存；兩欄都空＝刪除自己的這一則
+// 儲存；兩欄都空＝刪除自己的這一則；公開欄是空的，喜歡／不喜歡的點也會被清空
 export async function saveGatheringNote(
   gatheringId: string,
   bggName: string,
   privateNote: string,
   publicNote: string,
+  likePoint = '',
+  dislikePoint = '',
 ): Promise<{ ok: boolean; message: string }> {
   const { error } = await supabase.rpc('save_gathering_note', {
     p_gathering: gatheringId,
     p_bgg_name: bggName,
     p_private: privateNote,
     p_public: publicNote,
+    p_like: likePoint,
+    p_dislike: dislikePoint,
   })
   if (!error) return { ok: true, message: '' }
 
@@ -140,7 +150,7 @@ export async function saveGatheringNote(
     }
   }
   if (text.includes('too long')) {
-    return { ok: false, message: '每一欄最多 200 字。' }
+    return { ok: false, message: '私人、公開各最多 200 字，喜歡／不喜歡的點各最多 100 字。' }
   }
   if (text.includes('not logged in')) {
     return { ok: false, message: '請先登入。' }
@@ -212,6 +222,8 @@ export function useAllMyNotes() {
         publicStatus: (row.public_status === 'hidden' ? 'hidden' : 'visible') as
           | 'visible'
           | 'hidden',
+        likePoint: row.like_point ?? '',
+        dislikePoint: row.dislike_point ?? '',
       }))
       setState({ rows, error: false })
     })

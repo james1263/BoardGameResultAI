@@ -170,6 +170,8 @@ export default function MyNotes({
           kind: 'gpublic',
           content: row.publicNote,
           hidden: row.publicStatus === 'hidden',
+          like: row.likePoint,
+          dislike: row.dislikePoint,
         })
       }
     }
@@ -218,6 +220,7 @@ export default function MyNotes({
     }
 
     // 場次心得：只清掉這一欄，另一欄原樣傳回；兩欄都空會整則刪除
+    // 刪公開欄時，喜歡／不喜歡的點一起清；刪私人欄時，公開欄與兩個點原樣傳回
     const row = gatheringNotes.rows.find(
       (r) => r.gatheringId === item.gatheringId && r.bggName === item.bggName,
     )
@@ -231,6 +234,8 @@ export default function MyNotes({
       item.bggName,
       item.kind === 'gprivate' ? '' : row.privateNote,
       item.kind === 'gpublic' ? '' : row.publicNote,
+      item.kind === 'gpublic' ? '' : row.likePoint,
+      item.kind === 'gpublic' ? '' : row.dislikePoint,
     )
     setBusyKey(null)
     if (!result.ok) {

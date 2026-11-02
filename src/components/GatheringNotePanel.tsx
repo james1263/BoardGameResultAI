@@ -10,6 +10,7 @@ import type { PersonalApi } from '../lib/personalApi'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import { saveGatheringNote, type MyNote } from '../lib/useGatheringNotes'
 import { askConfirm } from '../lib/askConfirm'
+import NotePointsFields from './NotePointsFields'
 
 const MAX = 200
 
@@ -19,9 +20,16 @@ export type NoteGame = {
     game: BoardGame | null
 }
 
-type Draft = { priv: string; pub: string; play: boolean }
-type Base = { priv: string; pub: string; hidden: boolean }
+type Draft = { priv: string; pub: string; like: string; dislike: string; play: boolean }
+type Base = { priv: string; pub: string; like: string; dislike: string; hidden: boolean }
 type Pane = 'private' | 'public'
+
+// 公開欄是空的，喜歡／不喜歡的點就不會存（資料庫也會清掉）
+function effectivePoints(d: { pub: string; like: string; dislike: string }) {
+    return d.pub.trim() === ''
+        ? { like: '', dislike: '' }
+        : { like: d.like, dislike: d.dislike }
+}
 
 export default function GatheringNotePanel({
     gatheringId,
@@ -62,6 +70,8 @@ export default function GatheringNotePanel({
     const [info, setInfo] = useState('')
     const [leaving, setLeaving] = useState(false)
     const [deleting, setDeleting] = useState(false)
+    // 刪除後讓「喜歡／不喜歡的點」輸入區重新掛載
+    const [pointsTick, setPointsTick] = useState(0)
 
     const baseOf = useCallback(
         (bggName: string): Base => {
@@ -72,6 +82,8 @@ export default function GatheringNotePanel({
             return {
                 priv: note?.privateNote ?? '',
                 pub,
+                like: note?.likePoint ?? '',
+                dislike: note?.dislikePoint ?? '',
                 hidden: note?.publicStatus === 'hidden' && pub !== '',
             }
         },
@@ -82,7 +94,13 @@ export default function GatheringNotePanel({
         const existing = drafts[bggName]
         if (existing) return existing
         const base = baseOf(bggName)
-        return { priv: base.priv, pub: base.pub, play: false }
+        return {
+            priv: base.priv,
+            pub: base.pub,
+            like: base.like,
+            dislike: base.dislike,
+            play: false,
+        }
     }
 
     function hasSession(bggName: string): boolean {
@@ -94,9 +112,12 @@ export default function GatheringNotePanel({
     function isDirty(bggName: string): boolean {
         const draft = draftOf(bggName)
         const base = baseOf(bggName)
+        const points = effectivePoints(draft)
         return (
             draft.priv !== base.priv ||
             draft.pub !== base.pub ||
+            points.like !== base.like ||
+            points.dislike !== base.dislike ||
             (draft.play && !hasSession(bggName))
         )
     }
@@ -117,6 +138,8 @@ export default function GatheringNotePanel({
         personal.canEdit && playSessions.status === 'ready' && !playSessions.busy
     const hasSaved = base.priv !== '' || base.pub !== ''
     const text = pane === 'private' ? draft.priv : draft.pub
+    const pointsWithoutPublic =
+        draft.pub.trim() === '' && (draft.like !== '' || draft.dislike !== '')
 
     // 讓上層的 ✕／返回鍵知道有沒有未存的變更
     useEffect(() => {
@@ -137,7 +160,12 @@ export default function GatheringNotePanel({
     async function saveOne(bggName: string): Promise<boolean> {
         const d = draftOf(bggName)
         const b = baseOf(bggName)
-        const noteChanged = d.priv !== b.priv || d.pub !== b.pub
+        const points = effectivePoints(d)
+        const noteChanged =
+            d.priv !== b.priv ||
+            d.pub !== b.pub ||
+            points.like !== b.like ||
+            points.dislike !== b.dislike
 
         if (noteChanged) {
             const bothEmpty = d.priv.trim() === '' && d.pub.trim() === ''
@@ -148,7 +176,14 @@ export default function GatheringNotePanel({
             ) {
                 return false
             }
-            const result = await saveGatheringNote(gatheringId, bggName, d.priv, d.pub)
+            const result = await saveGatheringNote(
+                gatheringId,
+                bggName,
+                d.priv,
+                d.pub,
+                points.like,
+                points.dislike,
+            )
             if (!result.ok) {
                 setError(result.message)
                 return false
@@ -158,6 +193,8 @@ export default function GatheringNotePanel({
                 [bggName]: {
                     priv: d.priv,
                     pub: d.pub,
+                    like: points.like,
+                    dislike: points.dislike,
                     hidden: b.hidden && d.pub.trim() !== '',
                 },
             }))
@@ -179,7 +216,13 @@ export default function GatheringNotePanel({
                 )
                 setDrafts((c) => ({
                     ...c,
-                    [bggName]: { priv: d.priv, pub: d.pub, play: true },
+                    [bggName]: {
+                        priv: d.priv,
+                        pub: d.pub,
+                        like: points.like,
+                        dislike: points.dislike,
+                        play: true,
+                    },
                 }))
                 return false
             }
@@ -191,7 +234,13 @@ export default function GatheringNotePanel({
 
         setDrafts((c) => ({
             ...c,
-            [bggName]: { priv: d.priv, pub: d.pub, play: false },
+            [bggName]: {
+                priv: d.priv,
+                pub: d.pub,
+                like: points.like,
+                dislike: points.dislike,
+                play: false,
+            },
         }))
         return true
     }
@@ -226,12 +275,14 @@ export default function GatheringNotePanel({
             kind === 'priv'
                 ? '私人留言'
                 : kind === 'pub'
-                    ? '公開留言'
+                    ? '公開留言（含喜歡／不喜歡的點）'
                     : '這款在這場的心得（私人與公開）'
         if (!(await askConfirm(`確定要刪除${label}嗎？刪除後無法復原。`))) return
 
         const nextPriv = kind === 'pub' ? base.priv : ''
         const nextPub = kind === 'priv' ? base.pub : ''
+        const nextLike = kind === 'priv' ? base.like : ''
+        const nextDislike = kind === 'priv' ? base.dislike : ''
         setSaving(true)
         setError('')
         setInfo('')
@@ -240,6 +291,8 @@ export default function GatheringNotePanel({
             cur.bggName,
             nextPriv,
             nextPub,
+            nextLike,
+            nextDislike,
         )
         setSaving(false)
         if (!result.ok) {
@@ -251,6 +304,8 @@ export default function GatheringNotePanel({
             [cur.bggName]: {
                 priv: nextPriv,
                 pub: nextPub,
+                like: nextLike,
+                dislike: nextDislike,
                 hidden: base.hidden && nextPub !== '',
             },
         }))
@@ -259,9 +314,12 @@ export default function GatheringNotePanel({
             [cur.bggName]: {
                 priv: kind === 'pub' ? draft.priv : '',
                 pub: kind === 'priv' ? draft.pub : '',
+                like: kind === 'priv' ? draft.like : '',
+                dislike: kind === 'priv' ? draft.dislike : '',
                 play: draft.play,
             },
         }))
+        setPointsTick((n) => n + 1)
         setDeleting(false)
         setInfo('已刪除。')
         onChanged()
@@ -274,7 +332,7 @@ export default function GatheringNotePanel({
         setDeleting(false)
     }
 
-    // 複製前一定先問；對方欄有內容會說明會被覆蓋
+    // 複製前一定先問；對方欄有內容會說明會被覆蓋。只複製心得文字，不複製喜歡／不喜歡的點
     async function handleCopy() {
         const fromPrivate = pane === 'private'
         const source = fromPrivate ? draft.priv : draft.pub
@@ -282,7 +340,7 @@ export default function GatheringNotePanel({
         const targetHas = (fromPrivate ? draft.pub : draft.priv).trim() !== ''
         const message = fromPrivate
             ? '要把私人留言複製到公開欄嗎？公開留言 VIP 都看得到。'
-            : '要把公開留言複製到私人欄嗎？'
+            : '要把公開留言複製到私人欄嗎？（喜歡／不喜歡的點不會複製）'
         const warn = targetHas
             ? `\n${fromPrivate ? '公開' : '私人'}欄目前有內容，會被覆蓋。`
             : ''
@@ -387,10 +445,30 @@ export default function GatheringNotePanel({
                     <p className="gn2-count">
                         {text.length} / {MAX} 字
                     </p>
+
+                    {pane === 'public' && (
+                        <>
+                            <NotePointsFields
+                                key={`${cur.bggName}:${pointsTick}`}
+                                like={draft.like}
+                                dislike={draft.dislike}
+                                onLike={(value) => patchDraft(cur.bggName, { like: value })}
+                                onDislike={(value) =>
+                                    patchDraft(cur.bggName, { dislike: value })
+                                }
+                            />
+                            {pointsWithoutPublic && (
+                                <p className="gn2-hint">
+                                    要先寫公開留言，喜歡／不喜歡的點才會一起公開。
+                                </p>
+                            )}
+                        </>
+                    )}
+
                     <p className="gn2-hint">
                         {pane === 'private'
                             ? '只有你看得到，管理者在網站上也看不到。'
-                            : 'VIP 可以閱讀；依你的暱稱設定顯示名稱。清空公開欄再儲存，就會撤回公開留言（私人留言會保留）。'}
+                            : 'VIP 可以閱讀；依你的暱稱設定顯示名稱。清空公開欄再儲存，就會撤回公開留言與喜歡／不喜歡的點（私人留言會保留）。'}
                     </p>
 
                     <button

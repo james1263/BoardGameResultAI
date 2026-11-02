@@ -31,7 +31,13 @@ type PublicRow = {
   like_point?: string | null
   dislike_point?: string | null
 }
-type HiddenRow = { id: string; nickname: string; content: string }
+type HiddenRow = {
+  id: string
+  nickname: string
+  content: string
+  like_point?: string | null
+  dislike_point?: string | null
+}
 type MineRow = { id: string; content: string; status: string }
 
 function explain(message: string): string {
@@ -109,8 +115,8 @@ export function useGameNotesBoard(
             content: row.content,
             isMine: false,
             postedOn: '',
-            like: '',
-            dislike: '',
+            like: row.like_point ?? '',
+            dislike: row.dislike_point ?? '',
           })),
         )
       }

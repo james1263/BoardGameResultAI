@@ -307,6 +307,16 @@ export default function GameNotesBoard({
                     <b className="gb-name">{note.nickname}</b>
                   </div>
                   <p className="gb-content">{note.content}</p>
+                  {(note.like || note.dislike) && (
+                    <div className="np-view">
+                      {note.like ? (
+                        <p className="np-line np-like">👍 喜歡：{note.like}</p>
+                      ) : null}
+                      {note.dislike ? (
+                        <p className="np-line np-dislike">👎 不喜歡：{note.dislike}</p>
+                      ) : null}
+                    </div>
+                  )}
                   <div className="gb-btn-row">
                     <button
                       type="button"
