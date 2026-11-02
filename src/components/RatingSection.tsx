@@ -179,9 +179,12 @@ export function CommunitySummary({
 export default function RatingSection({
     bggName,
     api,
+    beforeSave,
 }: {
     bggName: string
     api: RatingsApi
+    // 選填：儲存前的確認（回傳 false 就不儲存），「我的評分」頁對還沒玩過的遊戲用
+    beforeSave?: () => Promise<boolean>
 }) {
     const mine = api.getMine(bggName)
     const [draft, setDraft] = useState<Draft>(() => toDraft(mine))
@@ -246,6 +249,7 @@ export default function RatingSection({
     async function handleSave() {
         if (draft.overall == null || draft.scores.keep == null) return
         if (needFull && !complete) return
+        if (beforeSave && !(await beforeSave())) return
         const overall = draft.overall
         const userId = session?.user?.id ?? null
 

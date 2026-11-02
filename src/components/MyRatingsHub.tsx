@@ -2,10 +2,13 @@ import { useMemo, useState, type ReactNode } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { RatingsApi, MyRating } from '../lib/useGameRatings'
 import { RATING_FIELDS } from '../lib/useGameRatings'
+import { askConfirm } from '../lib/askConfirm'
+import RatingSection from './RatingSection'
 import '../styles/my-ratings-hub.css'
 
 type Status = 'none' | 'partial' | 'full'
 type Filter = 'all' | Status
+type Scope = 'played' | 'all'
 type SortField = 'updated' | 'name'
 
 const FILTERS: { key: Filter; label: string }[] = [
@@ -39,7 +42,12 @@ function normalizeText(text: string): string {
     return text.toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '')
 }
 
-type Row = { game: BoardGame; mine: MyRating | null; status: Status }
+type Row = {
+    game: BoardGame
+    mine: MyRating | null
+    status: Status
+    played: boolean
+}
 
 export default function MyRatingsHub({
     boardGames,
@@ -58,30 +66,48 @@ export default function MyRatingsHub({
     onOpenGame: (game: BoardGame, tab?: 'ratings' | 'discussion') => void
     renderCover: (game: BoardGame) => ReactNode
 }) {
+    const [scope, setScope] = useState<Scope>('played')
     const [filter, setFilter] = useState<Filter>('all')
     const [search, setSearch] = useState('')
     const [field, setField] = useState<SortField>('updated')
     const [reverse, setReverse] = useState(false)
+    // 一次只展開一款
+    const [openName, setOpenName] = useState<string | null>(null)
 
     const ready = ratings.status === 'ready'
 
-    // 清單＝我玩過的遊戲，加上評過分的遊戲
-    const rows = useMemo<Row[]>(() => {
+    // 所有桌遊（不含僅供參考）＋每款的評分狀態與是否玩過
+    const allRows = useMemo<Row[]>(() => {
         if (!ready) return []
-        const list: Row[] = []
-        for (const game of boardGames) {
+        return boardGames.map((game) => {
             const mine = ratings.getMine(game.bggName)
-            if (!mine && !isPlayed(game.bggName)) continue
-            list.push({ game, mine, status: statusOf(mine) })
-        }
-        return list
+            return {
+                game,
+                mine,
+                status: statusOf(mine),
+                played: isPlayed(game.bggName),
+            }
+        })
     }, [ready, boardGames, ratings, isPlayed])
+
+    // 「已玩」範圍＝標過已玩的，加上評過分的
+    const playedRows = useMemo(
+        () => allRows.filter((row) => row.played || row.mine),
+        [allRows],
+    )
+    const rows = scope === 'played' ? playedRows : allRows
 
     const counts = useMemo(() => {
         const result = { all: rows.length, none: 0, partial: 0, full: 0 }
         for (const row of rows) result[row.status] += 1
         return result
     }, [rows])
+
+    const ratedTotal = useMemo(() => allRows.filter((row) => row.mine).length, [allRows])
+    const fullTotal = useMemo(
+        () => allRows.filter((row) => row.status === 'full').length,
+        [allRows],
+    )
 
     const shown = useMemo(() => {
         const query = normalizeText(search)
@@ -93,23 +119,29 @@ export default function MyRatingsHub({
                     normalizeText(row.game.bggName).includes(query)),
         )
         const dir = reverse ? -1 : 1
+        const byName = (a: Row, b: Row) => a.game.name.localeCompare(b.game.name, 'zh-Hant')
         return [...list].sort((a, b) => {
             if (field === 'updated') {
                 // 新→舊；沒有修改日期（還沒評分）永遠排最後
                 const ta = a.mine?.updatedAt ? Date.parse(a.mine.updatedAt) : null
                 const tb = b.mine?.updatedAt ? Date.parse(b.mine.updatedAt) : null
-                if (ta == null && tb == null) {
-                    return a.game.name.localeCompare(b.game.name, 'zh-Hant')
-                }
+                if (ta == null && tb == null) return byName(a, b)
                 if (ta == null) return 1
                 if (tb == null) return -1
-                return (tb - ta) * dir || a.game.name.localeCompare(b.game.name, 'zh-Hant')
+                return (tb - ta) * dir || byName(a, b)
             }
-            return a.game.name.localeCompare(b.game.name, 'zh-Hant') * dir
+            return byName(a, b) * dir
         })
     }, [rows, filter, search, field, reverse])
 
     const dirLabel = field === 'updated' ? (reverse ? '舊→新' : '新→舊') : reverse ? 'Z→A' : 'A→Z'
+
+    // 沒玩過的遊戲存檔前確認：評分會同時把它標成已玩
+    function makeBeforeSave(row: Row) {
+        if (row.played || row.mine) return undefined
+        return () =>
+            askConfirm('這款你還沒標為「已玩」。儲存評分會同時把它標為已玩，確定要儲存嗎？')
+    }
 
     return (
         <>
@@ -127,7 +159,7 @@ export default function MyRatingsHub({
                     </button>
                 </div>
 
-                <div className="mylist-body">
+                <div className="mylist-body mrh-body">
                     {ratings.status === 'loading' && <p className="mylist-empty">讀取中…</p>}
                     {ratings.status === 'error' && (
                         <p className="mylist-empty">評分讀取失敗，請稍後再試。</p>
@@ -138,15 +170,46 @@ export default function MyRatingsHub({
 
                     {ready && (
                         <>
-                            <p className="mrh-progress">
-                                已評分 <b>{counts.partial + counts.full}</b> / 清單{' '}
-                                <b>{counts.all}</b> 款・已完整 <b>{counts.full}</b> 款
-                            </p>
-                            <p className="mystat-foot">
-                                完整評分＝整體與六項（喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來）都填。點「評分」會打開那款遊戲的評分分頁。
+                            <div className="mrh-summary">
+                                <div>
+                                    <strong>{ratedTotal}</strong>
+                                    <span>已評分</span>
+                                </div>
+                                <div>
+                                    <strong>{fullTotal}</strong>
+                                    <span>已完整</span>
+                                </div>
+                                <div>
+                                    <strong>{playedRows.filter((row) => row.played).length}</strong>
+                                    <span>已玩</span>
+                                </div>
+                            </div>
+                            <p className="mrh-help">
+                                完整評分＝整體與六項（喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來）都填。點一款遊戲就能直接評分。
                             </p>
 
-                            <div className="mrh-filters" role="tablist">
+                            <div className="mrh-seg" role="tablist" aria-label="清單範圍">
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={scope === 'played'}
+                                    className={scope === 'played' ? 'active' : ''}
+                                    onClick={() => setScope('played')}
+                                >
+                                    已玩的遊戲 {playedRows.length}
+                                </button>
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={scope === 'all'}
+                                    className={scope === 'all' ? 'active' : ''}
+                                    onClick={() => setScope('all')}
+                                >
+                                    全部桌遊 {allRows.length}
+                                </button>
+                            </div>
+
+                            <div className="mrh-filters" role="tablist" aria-label="評分狀態">
                                 {FILTERS.map((item) => (
                                     <button
                                         key={item.key}
@@ -161,86 +224,116 @@ export default function MyRatingsHub({
                                 ))}
                             </div>
 
-                            <div className="cls-searchbox cls-sticky">
+                            <div className="mrh-tools">
                                 <input
                                     type="search"
-                                    className="cls-search-input"
+                                    className="mrh-search"
                                     placeholder="搜尋遊戲名稱"
                                     value={search}
                                     onChange={(event) => setSearch(event.target.value)}
                                 />
-                                <select
-                                    className="mrh-sort"
-                                    aria-label="排序欄位"
-                                    value={field}
-                                    onChange={(event) => {
-                                        setField(event.target.value as SortField)
-                                        setReverse(false)
-                                    }}
-                                >
-                                    <option value="updated">修改日期</option>
-                                    <option value="name">名稱</option>
-                                </select>
-                                <button
-                                    type="button"
-                                    className="cls-sort-dir"
-                                    onClick={() => setReverse((value) => !value)}
-                                >
-                                    {dirLabel}
-                                </button>
+                                <div className="mrh-sortrow">
+                                    <select
+                                        className="mrh-sort"
+                                        aria-label="排序欄位"
+                                        value={field}
+                                        onChange={(event) => {
+                                            setField(event.target.value as SortField)
+                                            setReverse(false)
+                                        }}
+                                    >
+                                        <option value="updated">依修改日期</option>
+                                        <option value="name">依名稱</option>
+                                    </select>
+                                    <button
+                                        type="button"
+                                        className="mrh-dir"
+                                        onClick={() => setReverse((value) => !value)}
+                                    >
+                                        {dirLabel}
+                                    </button>
+                                </div>
                             </div>
+
                             {(search.trim() || filter !== 'all') && (
-                                <p className="cls-count">
+                                <p className="mrh-count">
                                     顯示 {shown.length} / {rows.length} 款
                                 </p>
                             )}
 
                             {rows.length === 0 ? (
                                 <p className="mylist-empty">
-                                    還沒有玩過的遊戲。標記「已玩」或記錄遊玩後，這裡就會出現。
+                                    還沒有標為已玩的遊戲。切到「全部桌遊」就能直接評分。
                                 </p>
                             ) : shown.length === 0 ? (
                                 <p className="mylist-empty">這個分類沒有符合的遊戲。</p>
                             ) : (
-                                <ul className="mylist-list">
+                                <ul className="mrh-list">
                                     {shown.map((row) => {
+                                        const open = openName === row.game.bggName
                                         const date = formatDate(row.mine?.updatedAt)
                                         return (
-                                            <li className="mylist-item" key={row.game.bggName}>
-                                                <div className="mylist-thumb">
-                                                    {renderCover(row.game)}
-                                                </div>
-                                                <div className="mylist-info">
-                                                    <button
-                                                        type="button"
-                                                        className="mylist-name"
-                                                        onClick={() => onOpenGame(row.game)}
-                                                    >
-                                                        {row.game.name}
-                                                    </button>
-                                                    <small>
-                                                        <span className={`mrh-badge mrh-${row.status}`}>
-                                                            {STATUS_LABEL[row.status]}
-                                                        </span>
-                                                        {row.mine && (
-                                                            <>
-                                                                {' '}整體 {row.mine.overall}
-                                                                {date ? `・上次修改 ${date}` : ''}
-                                                            </>
-                                                        )}
-                                                    </small>
-                                                </div>
+                                            <li
+                                                className={`mrh-item ${open ? 'open' : ''}`}
+                                                key={row.game.bggName}
+                                            >
                                                 <button
                                                     type="button"
-                                                    className="mrh-go"
-                                                    onClick={() => onOpenGame(row.game, 'ratings')}
+                                                    className="mrh-head"
+                                                    aria-expanded={open}
+                                                    onClick={() =>
+                                                        setOpenName(open ? null : row.game.bggName)
+                                                    }
                                                 >
-                                                    {row.status === 'none'
-                                                        ? '評分'
-                                                        : row.status === 'partial'
-                                                            ? '補細項'
-                                                            : '修改'}
+                                                    <span className="mylist-thumb mrh-thumb">
+                                                        {renderCover(row.game)}
+                                                    </span>
+                                                    <span className="mrh-main">
+                                                        <span className="mrh-name">{row.game.name}</span>
+                                                        <span className="mrh-meta">
+                                                            <span className={`mrh-badge mrh-${row.status}`}>
+                                                                {STATUS_LABEL[row.status]}
+                                                            </span>
+                                                            {row.mine && (
+                                                                <span className="mrh-score">
+                                                                    整體 {row.mine.overall}
+                                                                </span>
+                                                            )}
+                                                            {!row.played && !row.mine && (
+                                                                <span className="mrh-unplayed">還沒玩過</span>
+                                                            )}
+                                                        </span>
+                                                        {date && (
+                                                            <span className="mrh-date">上次修改 {date}</span>
+                                                        )}
+                                                    </span>
+                                                    <span className="mrh-chev" aria-hidden="true">
+                                                        {open ? '▲' : '▼'}
+                                                    </span>
                                                 </button>
+
+                                                {open && (
+                                                    <div className="mrh-detail">
+                                                        {!row.played && !row.mine && (
+                                                            <p className="mrh-note">
+                                                                這款你還沒標為「已玩」。儲存評分時會一併標為已玩。
+                                                            </p>
+                                                        )}
+                                                        <RatingSection
+                                                            key={row.game.bggName}
+                                                            bggName={row.game.bggName}
+                                                            api={ratings}
+                                                            beforeSave={makeBeforeSave(row)}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="mrh-link"
+                                                            onClick={() => onOpenGame(row.game)}
+                                                        >
+                                                            查看這款遊戲的詳細資料 ›
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </li>
                                         )
                                     })}
