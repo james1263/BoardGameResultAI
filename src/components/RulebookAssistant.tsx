@@ -36,6 +36,7 @@ export default function RulebookAssistant({
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState('')
     const [notice, setNotice] = useState('')
+    const [lastQuestion, setLastQuestion] = useState('')
     const [remaining, setRemaining] = useState<number | null | undefined>(
         undefined,
     )
@@ -163,6 +164,16 @@ ${parts}`
                     rows={2}
                     value={question}
                     onChange={(event) => setQuestion(event.target.value)}
+                    onBlur={() => {
+                        const now = question.trim()
+                        if (now !== lastQuestion) {
+                            setLastQuestion(now)
+                            setKeywords('')
+                            setChunks(null)
+                            setNotice('')
+                            setError('')
+                        }
+                    }}
                     placeholder="例如：玩家可以在自己的回合交易幾次？"
                 />
             </label>
