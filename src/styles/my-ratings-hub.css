@@ -1,5 +1,5 @@
 /* 我的評分頁（MyRatingsHub） */
-.mrh-body { padding-bottom: 28px; }
+.mrh-body { padding-bottom: 28px; scrollbar-gutter: stable; }
 
 .mrh-summary {
   display: grid;
@@ -57,18 +57,29 @@
 }
 
 .mrh-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
   margin-bottom: 12px;
 }
 .mrh-filter {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
   border: 1px solid #d8cdb5;
   background: #fbf7ec;
   color: #34463c;
   border-radius: 999px;
-  padding: 7px 14px;
-  font-size: 0.9rem;
+  padding: 0 2px;
+  font-size: 13px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 0;
   cursor: pointer;
 }
 .mrh-filter.active {
@@ -232,4 +243,34 @@
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* 評分說明：只有三角形，靠左，可收合 */
+.mrh-helpfold {
+  margin: 0 0 10px;
+  text-align: left;
+}
+.mrh-helpfold summary {
+  display: block;
+  width: fit-content;
+  padding: 4px 8px 4px 0;
+  color: #6b6455;
+  font-size: 0.85rem;
+  line-height: 1;
+  list-style: none;
+  cursor: pointer;
+  text-align: left;
+}
+.mrh-helpfold summary::-webkit-details-marker {
+  display: none;
+}
+.mrh-helpfold summary::before {
+  content: "\25B8";
+}
+.mrh-helpfold[open] summary::before {
+  content: "\25BE";
+}
+.mrh-helpfold .mrh-help {
+  margin: 6px 0 0;
+  text-align: left;
 }

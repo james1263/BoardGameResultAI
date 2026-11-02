@@ -2603,5 +2603,34 @@ a,
 .game-card,
 .status-btn,
 .sb-item {
-  touch-action: manipulation;
+    touch-action: manipulation;
+}
+
+/* club home: tighter spacing (light) v3 */
+.mylist-drawer .club-card {
+  padding: 14px 20px 14px;
+}
+.mylist-drawer .club-who {
+  margin: 10px 0 8px;
+  gap: 12px;
+}
+.mylist-drawer .club-avatar {
+  width: 44px;
+  height: 44px;
+}
+.mylist-drawer .club-body .club-more {
+  margin-top: 8px;
+}
+.mylist-drawer .club-body .club-more:first-of-type {
+  margin-top: 12px;
+}
+.mylist-drawer .club-body .club-menu-item.club-menu-single {
+  padding: 10px 14px;
+  margin: 0;
+}
+.mylist-drawer .club-body .club-menu-text {
+  gap: 1px;
+}
+.mylist-drawer .club-body .club-today {
+  margin-top: 12px;
 }
