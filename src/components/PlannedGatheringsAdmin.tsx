@@ -12,7 +12,7 @@ import {
 import '../styles/planned.css'
 import '../styles/planned-compact.css'
 
-type GameOption = { bggName: string; name: string }
+type GameOption = { bggName: string; name: string; referenceOnly?: boolean }
 type GatheringOption = { id: string; label: string; gatheredOn: string }
 type Voter = { user_id: string; nickname: string; contact_name: string | null }
 type WantPerson = { userId: string; nickname: string; contact: string }
@@ -174,6 +174,7 @@ export default function PlannedGatheringsAdmin({
     ? allGames
         .filter(
           (game) =>
+            !game.referenceOnly &&
             !form.games.includes(game.bggName) &&
             (game.name.toLocaleLowerCase().includes(query) ||
               game.bggName.toLocaleLowerCase().includes(query)),

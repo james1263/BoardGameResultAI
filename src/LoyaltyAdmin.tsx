@@ -18,7 +18,7 @@ import './styles/lga-status-list.css'
 
 type Gathering = { id: string; gatheredOn: string; title: string; note: string }
 type Player = { id: string; nickname: string }
-type GameOption = { bggName: string; name: string }
+type GameOption = { bggName: string; name: string; referenceOnly?: boolean }
 type OverviewRow = {
     userId: string
     nickname: string
@@ -220,7 +220,7 @@ export default function LoyaltyAdmin() {
             supabase.from('gathering_games').select('gathering_id, bgg_name, removed_at'),
             supabase
                 .from('board_games')
-                .select('bgg_name, name')
+                .select('bgg_name, name, reference_only')
                 .is('removed_at', null)
                 .order('name'),
             supabase.from('player_contacts').select('user_id, contact_name'),
@@ -303,9 +303,14 @@ export default function LoyaltyAdmin() {
         setRemovedGames(removedMap)
 
         setAllGames(
-            ((bg.data ?? []) as { bgg_name: string; name: string }[]).map((row) => ({
+            ((bg.data ?? []) as {
+                bgg_name: string
+                name: string
+                reference_only: boolean | null
+            }[]).map((row) => ({
                 bggName: row.bgg_name,
                 name: row.name,
+                referenceOnly: row.reference_only === true,
             })),
         )
         setPlayers((p.data ?? []) as Player[])
@@ -960,6 +965,7 @@ export default function LoyaltyAdmin() {
         ? allGames
             .filter(
                 (game) =>
+                    !game.referenceOnly &&
                     !selectedGames.includes(game.bggName) &&
                     (game.name.toLocaleLowerCase().includes(searchText) ||
                         game.bggName.toLocaleLowerCase().includes(searchText)),

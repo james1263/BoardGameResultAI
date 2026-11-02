@@ -7,7 +7,7 @@ import { announcePlayed } from '../lib/useGamePlaySessions'
 import { useBackClose } from '../lib/useBackClose'
 import '../styles/new-gathering.css'
 
-type GameOption = { bggName: string; name: string }
+type GameOption = { bggName: string; name: string; referenceOnly?: boolean }
 type Player = { id: string; nickname: string }
 
 function normalize(text: string): string {
@@ -96,6 +96,7 @@ export default function NewGatheringWizard({
     return allGames
       .filter(
         (game) =>
+          !game.referenceOnly &&
           !games.includes(game.bggName) &&
           (normalize(game.name).includes(query) || normalize(game.bggName).includes(query)),
       )
