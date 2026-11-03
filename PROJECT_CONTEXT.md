@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-11-03 晚（已重新產生並併入上一版 `生成後.md` 全部內容；**規則助手 RAG 的最新狀態與設計看第 20 節（最新是 20.13，與 20.11／20.12 衝突時以 20.13 為準），與第 7 節衝突時以第 20 節為準**；其餘請同時讀第 19、18 節；`生成後.md` 已重置）。
+> 最後更新：2026-11-03 夜（已重新產生並併入上一版 `生成後.md` 全部內容；**最新增補在第 21 節（玩錯紀錄、英文搜尋、卡片與排序、版面 4.3、家裡 OCR），與前面衝突時以第 21 節為準**；規則助手 RAG 看第 20 節（最新是 20.13）；其餘請同時讀第 19、18 節；`生成後.md` 已重置）。
 
 ## 1. 專案簡介與技術架構
 
@@ -533,16 +533,50 @@
 2. 建立 `D:\tessdata`（磁碟或路徑不同就用記事本改 `.bat` 裡 `TESSDATA_PREFIX=D:\tessdata` 那行）。
 3. 放入語言包：`chi_tra.traineddata` 從 `https://github.com/tesseract-ocr/tessdata_best/raw/main/chi_tra.traineddata` 下載；`eng.traineddata` 從 `C:\Program Files\Tesseract-OCR\tessdata\` 複製。
 4. 複製設定資料夾（少了會 `Can't open hocr`）：`Copy-Item "C:\Program Files\Tesseract-OCR\tessdata\configs" "D:\tessdata\configs" -Recurse -Force` 與 `tessconfigs` 同樣做一次。
-5. 對 `.bat` 裡寫的那個 `python.exe` 執行 `"<完整路徑>" -m pip install ocrmypdf`（pip 的 Scripts 不在 PATH 警告可忽略）。
+5. 對命令列的 `python` 執行 `python -m pip install ocrmypdf`（目前 `.bat` 用 `python -m ocrmypdf`、不寫死路徑；舊版曾寫死 3.12，已過時，見 21.5）（pip 的 Scripts 不在 PATH 警告可忽略）。
 6. 驗證：`Get-ChildItem D:\tessdata` 要有 `configs`、`tessconfigs`、`chi_tra.traineddata`、`eng.traineddata`；`git pull` 後把小 PDF 拖到 `tools\ocr\ocr_zh.bat`，最後要 `[DONE]`。
 7. 日常：規則書 PDF 放專案外 `D:\rulebooks\`、絕不 `git add`；辨識完先用瀏覽器 `Ctrl + F` 確認有文字層再上傳；OCR 文字只幫忙找頁，一律回原頁核對。
 
 **使用者新提出的目標（2026-11-03 晚，全部尚未動工；完整與 AI 建議在 QUICKSTART 第 4 節第 2 項）**
-1. **玩過的勘誤**：手動上傳勘誤檔或文字，規則助手可搜尋，遊戲詳細資料可查看。**現有 `game_documents.doc_type` 已有 `errata`，PDF 勘誤可走現有上傳；文字勘誤要新表（［AI 建議］`game_errata`，欄位含出處與狀態 `official`／`confirmed`／`unverified`），搜尋結果與規則書分開標示，不可與官方規則同等。** 和 20.3 的「玩錯紀錄」是同一件事；旭日第 6 題是種子。寫入只有管理者、RLS、`revoke`、更新 `privacy.html`。
+1. **玩過的勘誤（已做成「玩錯紀錄」，見第 21 節）**：手動上傳勘誤檔或文字，規則助手可搜尋，遊戲詳細資料可查看。**現有 `game_documents.doc_type` 已有 `errata`，PDF 勘誤可走現有上傳；文字勘誤要新表（［AI 建議］`game_errata`，欄位含出處與狀態 `official`／`confirmed`／`unverified`），搜尋結果與規則書分開標示，不可與官方規則同等。** 和 20.3 的「玩錯紀錄」是同一件事；旭日第 6 題是種子。寫入只有管理者、RLS、`revoke`、更新 `privacy.html`。
 2. **科普知識**：內容位置、作者、綁定對象、是否公開都未說明，要先問。
-3. **主畫面搜尋可用英文**：先請使用者貼 `App.tsx` 的搜尋過濾，確認是否比對 `bggName`；不動資料庫。
+3. **主畫面搜尋可用英文（已做，見 21.3）**：先請使用者貼 `App.tsx` 的搜尋過濾，確認是否比對 `bggName`；不動資料庫。
 4. **遊戲擴充**：詳細資料新增擴充區塊（名稱＋圖片）、封面「含擴充」提示、名稱拿掉「(含擴)」；**不可動 `bggName`**；新表＋Storage；名稱最好與規則助手文件範圍的 `expansion_name` 共用同一份擴充清單。
 5. **最後請 ChatGPT 美化畫面**：功能凍結後再做；給 ChatGPT 的限制見 QUICKSTART 第 4 節（不改 CSV 欄名與 key、不調換 `@import` 順序、遵守視窗層級與手機導覽列規則、只改樣式不改結構、一次一頁）。
 
 **下一個 AI 要避開的陷阱（補）**
 ㉑換電腦或新增 OCR 工具時，先確認 `.bat` 用的 Python 與 `ocrmypdf` 安裝位置一致；㉒勘誤、擴充、按讚都會動資料庫，動工前先匯出現有定義與 RLS；㉓勘誤與玩家整理資料必須標來源類型，不能和官方規則混在同一層回答；㉔使用者的口語（福壽祿、生兵、下凡、城堡）與規則書用詞不同，詞庫要收同義詞；㉕美化階段不要讓 ChatGPT 一次改多個檔案或改類別名稱（JS 依賴的 class、動態拼接的 `rb-${status}` 等會壞）。
+
+## 21. 2026-11-03 夜增補（覆蓋前面衝突的敘述）
+
+- 現況見 `QUICKSTART.md` 2.5。這裡只留架構與規則重點。**凡是我沒看到的細節都標［未驗證］，下一個 AI 要請使用者貼檔案或匯出定義。**
+
+### 21.1 玩錯紀錄（`b0b0704`；＝20.13 目標 1「玩過的勘誤」，使用者實際稱「玩錯紀錄」）
+
+- 資料庫：新表＋4 個函式，**名稱與欄位我沒看到**；使用者驗證 4 個函式 `anon_exec = false`、`auth_exec = true`，表格無多餘權限（已通過）。**下一個 AI 要請使用者匯出表定義與函式定義（`pg_get_functiondef`），再補進第 2 節。**
+- 前端新增：`src/lib/useGameErrata.ts`、`src/components/ErrataAdmin.tsx`、`src/components/GameErrata.tsx`、`src/styles/errata.css`。
+- 前端修改：`FilterDrawer.tsx`（進階篩選加四個符號）、`GameModal.tsx`（詳細資料「玩錯紀錄（N）」）、`RulebookAssistant.tsx`（搜尋結果的虛線框玩錯紀錄，以及「複製提示詞」裡的獨立區塊）、`RulebookBatchUpload.tsx`（管理中心）、`public/privacy.html`。
+- 規則：管理中心新增、編輯、刪除、可讀入 `.txt`、超過 1200 字有提示；管理者與 VIP 看得到「玩錯紀錄（N）」，非 VIP 看不到；規則助手把玩錯紀錄與官方規則分開標示（符合 20.2／20.3：玩家整理不可與官方規則同等）。
+- 待實測項目在 QUICKSTART 第 3 節。
+
+### 21.2 主畫面卡片與排序（`dabbab9`）
+
+- 動到 `GameCard`、`SortControl`、`App.tsx` 等：卡片整張可點、資訊符號化、使用者排序（我的整體分數／綜合評分）；三種檢視 list／grid-4／grid-9，管理者與玩家的排序選單不同，含手機版。**細節我沒看到（［未驗證］）。** 第 4 節「`SortControl` 沒有最佳人數／推薦人數」與第 15 節排序描述以本機檔案為準，改前先請使用者貼目前版本。
+
+### 21.3 主畫面搜尋可用英文（`2053a5d`）
+
+- 比對 `bggName`，忽略大小寫與標點。只動前端搜尋過濾，不動資料庫。留言板、我的統計、排行榜、規則助手的遊戲搜尋是各自獨立的，是否也支援英文未驗證。
+
+### 21.4 版面 4.3（`5e4cb86`）
+
+- 內容：卡片圖示（推薦人數＝一個人、難度＝大腦，圖示上方說明文字拿掉）、卡片下方文字可在篩選裡設定是否顯示、「檢視模式」與顯示設定移到篩選抽屜最下面、想玩／已玩圖例平常只顯示符號、點擊才秀出文字、篩選按鈕套用時顯示「篩選後款數 / 全部款數」（例如 `35 / 106`，不顯示「篩選」兩字，取消才變回）。使用者說 build 與本機實測通過。
+- 新增篩選或顯示設定項目要同步：`activeFilterCount`、`clearFilters`、`filteredGames` 依賴、`filterStorage.ts` 的 `SavedFilters`／`DEFAULT_FILTERS`／`loadFilters`／`saveFilters`、`App.tsx` 的寫入 `useEffect`（第 4 節已有同樣提醒）。**實際新增了哪些設定鍵我沒看到（［未驗證］）。**
+
+### 21.5 家裡電腦 OCR 環境（已完成並驗證）
+
+- 家裡電腦：Python 3.11.9（Microsoft Store 版）、Tesseract（`winget`）、Ghostscript `gs10.08.0`（手動）、`D:\tessdata` 有 `configs`、`tessconfigs`、`chi_tra.traineddata`（12,985,735 位元組）、`eng.traineddata`（4,113,088 位元組，與公司電腦一致）、`python -m ocrmypdf --version` 回 17.13.0；小 PDF 拖到 `ocr_zh.bat` 出現 `[DONE]`。
+- **訂正 20.13**：repo 裡的 `tools\ocr\ocr_zh.bat`、`ocr_en.bat` 用 `python -m ocrmypdf`，沒有寫死 `python.exe` 路徑，換電腦不用改 `.bat`；「`.bat` 寫死 3.12 路徑」已過時。仍要記得命令列的 `python` 是哪個，`ocrmypdf` 就要裝在哪個。`chi_tra_vert` 紅字只是警告。規則書 PDF 放專案外、絕不 `git add`。
+
+### 21.6 下一個 AI 要避開的陷阱（補）
+
+㉖玩錯紀錄的表與函式名稱沒有記錄，動它之前先請使用者匯出；㉗玩錯紀錄與官方規則必須分開標示，不可併成同一層回答；㉘新增篩選或顯示設定，記得同步 `filterStorage.ts` 與 `App.tsx` 的寫入 `useEffect`；㉙工作根目錄若還留著 `patch_sort.py`、`patch_errata.py`（用完的腳本），不要 `git add`，可 `Remove-Item .\patch_sort.py, .\patch_errata.py`。
