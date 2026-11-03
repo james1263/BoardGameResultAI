@@ -1,4 +1,4 @@
-import CategoryChips from './components/CategoryChips'
+﻿import CategoryChips from './components/CategoryChips'
 import SortControl from './components/SortControl'
 import RulebookPage from './components/RulebookPage'
 import {
@@ -32,6 +32,7 @@ import InAppBrowserNotice from './components/InAppBrowserNotice'
 import CheckInDialog from './components/CheckInDialog'
 import { fetchBoardGames } from './lib/fetchBoardGames'
 import { matchesGameSearch } from './lib/gameSearch'
+import { getMyOverall, getMyComposite } from './lib/myScores'
 import {
   type LibraryGame,
   type SortKey,
@@ -428,6 +429,24 @@ function Library({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
     saved.sortDirection,
   )
+  // 實際生效的排序：不屬於這個身分的選項（管理者專用／使用者專用）一律退回預設
+  const adminOnlySort = sortBy === 'classicGameRanking' || sortBy === 'scoreRank'
+  const myOnlySort = sortBy === 'myOverall' || sortBy === 'myComposite'
+  const effectiveSortBy: SortKey = isAdmin
+    ? myOnlySort
+      ? 'rankingEngine'
+      : sortBy
+    : adminOnlySort || (myOnlySort && !session)
+      ? 'rankingEngine'
+      : sortBy
+  // 選到「我的整體分數／我的綜合評分」時自動換成這個方向（想改成高分在前就把 'asc' 改成 'desc'）
+  const MY_SCORE_DIRECTION: 'asc' | 'desc' = 'asc'
+  const handleSetSortBy = (value: SortKey) => {
+    setSortBy(value)
+    if (value === 'myOverall' || value === 'myComposite') {
+      setSortDirection(MY_SCORE_DIRECTION)
+    }
+  }
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   // 手機返回鍵／iPhone 右滑：導覽頁面或進階篩選開著時，先關視窗，不要退回上一個網頁（例如登入頁）
   useBackClose(() => {
@@ -576,6 +595,7 @@ function Library({
     })
 
     const direction = sortDirection === 'asc' ? 1 : -1
+    const sortBy = effectiveSortBy
 
     const sorted = filtered.sort((a, b) => {
       if (sortBy === 'name') {
@@ -615,6 +635,14 @@ function Library({
           aValue = a.scoreRank
           bValue = b.scoreRank
           break
+        case 'myOverall':
+          aValue = getMyOverall(ratings.getMine(a.bggName))
+          bValue = getMyOverall(ratings.getMine(b.bggName))
+          break
+        case 'myComposite':
+          aValue = getMyComposite(ratings.getMine(a.bggName))
+          bValue = getMyComposite(ratings.getMine(b.bggName))
+          break
         case 'rankingEngine':
         default:
           aValue = a.rankingEngine
@@ -643,7 +671,7 @@ function Library({
     ratingFilter,
     ratingFilterActive,
     ratings.getMine,
-    sortBy,
+    effectiveSortBy,
     sortDirection,
     boardGames,
   ])
@@ -814,11 +842,6 @@ function Library({
     setHiddenGroups([])
   }
 
-  function resetSort() {
-    setSortBy('rankingEngine')
-    setSortDirection('asc')
-  }
-
   return (
     <div className="app">
       {invitePending && !inviteLoggedIn && (
@@ -915,15 +938,16 @@ function Library({
           <div className="section-heading">
             <div className="heading-actions">
               <SortControl
-                sortBy={sortBy}
-                setSortBy={setSortBy}
+                sortBy={effectiveSortBy}
+                isAdmin={isAdmin}
+                showMyScores={!!session}
+                setSortBy={handleSetSortBy}
                 sortDirection={sortDirection}
                 onToggleDirection={() =>
                   setSortDirection((current) =>
                     current === 'asc' ? 'desc' : 'asc',
                   )
                 }
-                onReset={resetSort}
               />
               {(searchText !== '' ||
                 activeFilterCount > 0 ||
@@ -975,6 +999,10 @@ function Library({
             <span>
               <CheckIcon /> 已玩
             </span>
+            <span>🎯 最佳人數</span>
+            <span>👥 推薦人數</span>
+            <span>◷ 分鐘</span>
+            <span>📊 難度</span>
           </p>
           {missingDataCount > 0 && (
             <p className="missing-data-note">
@@ -1001,6 +1029,7 @@ function Library({
                     isNew={isNewGame(item.game)}
                     coverVersion={coverVersions[item.game.coverSlug] ?? 0}
                     personal={personalWithStats}
+                    isAdmin={isAdmin}
                     onOpen={openGame}
                   />
                 )
@@ -1227,3 +1256,4 @@ function App() {
 }
 
 export default App
+

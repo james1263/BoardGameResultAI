@@ -1,0 +1,158 @@
+/* 主畫面卡片：整張可點、符號化資訊、減少留白（由 GameCard.tsx 自己 import，載入順序在 App.css 之後） */
+
+.game-grid {
+  gap: 14px;
+}
+
+.game-grid.view-grid-9 {
+  gap: 8px;
+}
+
+.game-grid.view-list {
+  gap: 8px;
+}
+
+.game-card {
+  cursor: pointer;
+}
+
+.game-card:focus-visible {
+  outline: 2px solid #456b50;
+  outline-offset: 2px;
+}
+
+/* 滑過只加淡陰影，不再抬高 */
+.game-card:hover {
+  transform: none;
+  box-shadow: 0 3px 12px rgba(52, 70, 60, 0.14);
+}
+
+.game-grid .game-card .game-info {
+  flex: 0 0 auto;
+  padding: 8px 8px 9px;
+  gap: 3px;
+}
+
+/* 名稱最多兩行，固定兩行高度讓卡片等高 */
+.game-grid .game-card .game-info h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: 2.6em;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+/* ★ 最佳人數　👥 推薦人數　◷ 分鐘　📊 難度 */
+.game-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  color: #5d6a60;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.game-facts > span {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.game-admin-line {
+  margin: 1px 0 0;
+  color: #8a6a43;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* 一頁九個 */
+.game-grid.view-grid-9 .game-card .game-info {
+  padding: 5px 4px 6px;
+  gap: 2px;
+}
+
+.game-grid.view-grid-9 .game-card .game-info h3 {
+  font-size: 12px;
+}
+
+.view-grid-9 .game-facts {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.view-grid-9 .game-facts > span {
+  gap: 6px;
+}
+
+.view-grid-9 .game-admin-line {
+  font-size: 10px;
+}
+
+/* 清單檢視：橫向一列，四個符號排成一行 */
+.view-list .game-card {
+  gap: 12px;
+  padding-right: 12px;
+}
+
+.view-list .game-art {
+  width: 84px;
+  height: 84px;
+}
+
+.view-list .game-card .game-info {
+  flex: 1;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 16px;
+  padding: 6px 0;
+}
+
+.view-list .game-card .game-info h3 {
+  flex: 1 1 180px;
+  min-height: 0;
+  text-align: left;
+}
+
+.view-list .game-facts {
+  flex-direction: row;
+  gap: 14px;
+}
+
+.view-list .game-facts > span {
+  gap: 14px;
+}
+
+.view-list .game-admin-line {
+  margin: 0;
+  text-align: left;
+}
+
+@media (max-width: 520px) {
+  .view-list .game-art {
+    width: 72px;
+    height: 72px;
+  }
+
+  .view-list .game-card .game-info {
+    gap: 1px 0;
+  }
+
+  .view-list .game-card .game-info h3,
+  .view-list .game-facts,
+  .view-list .game-admin-line {
+    flex: 1 1 100%;
+  }
+
+  .view-list .game-facts {
+    flex-direction: row;
+    gap: 12px;
+  }
+}

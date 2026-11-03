@@ -20,6 +20,8 @@ export type SortKey =
   | 'scoreRank'
   | 'bestPlayers'
   | 'recommendPlayers'
+  | 'myOverall'
+  | 'myComposite'
 
 export type NumericFilter = number | ''
 

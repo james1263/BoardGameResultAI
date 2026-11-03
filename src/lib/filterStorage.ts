@@ -52,6 +52,8 @@ const SORT_KEYS: SortKey[] = [
   'scoreRank',
   'bestPlayers',
   'recommendPlayers',
+  'myOverall',
+  'myComposite',
 ]
 const MINE_GROUP_VALUES: MineGroup[] = ['want', 'untouched', 'played']
 const RATING_VALUES: RatingFilter[] = ['all', 'rated', 'unrated']
