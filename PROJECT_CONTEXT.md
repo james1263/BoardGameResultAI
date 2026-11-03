@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-11-03（已重新產生並併入上一版 `生成後.md` 全部內容；**規則助手 RAG 的最新狀態與設計看第 20 節，與第 7 節衝突時以第 20 節為準**；其餘請同時讀第 19、18 節；`生成後.md` 已重置）。
+> 最後更新：2026-11-03 晚（已重新產生並併入上一版 `生成後.md` 全部內容；**規則助手 RAG 的最新狀態與設計看第 20 節（最新是 20.13，與 20.11／20.12 衝突時以 20.13 為準），與第 7 節衝突時以第 20 節為準**；其餘請同時讀第 19、18 節；`生成後.md` 已重置）。
 
 ## 1. 專案簡介與技術架構
 
@@ -300,7 +300,7 @@
 
 ## 20. 2026-11-03 規則助手 RAG 2.0（覆蓋第 7 節與第 19 節 RAG 討論中的衝突敘述）
 
-- **一句話現況**：切段改版已上線（`f66b776`）；「搜尋結果合併重疊段」本機 build 通過、未實測未 push；**尚未動資料庫、尚未啟用任何生成式 AI**；下一批是中文檢索第一版，要先匯出 `search_rulebook_chunks` 定義。待確認事項清單在 QUICKSTART 第 4 節。
+- **一句話現況（2026-11-03 晚更新）**：切段改版、合併重疊段、SQL 截 1300 字、Q/A 綁定、詞庫、拖曳 OCR 工具都已完成並 push／驗證（`44a411e`）；**尚未啟用任何生成式 AI**；中文詞子字串比對已在資料庫；下一批是文件範圍與中英詞庫（動資料庫前先匯出定義），使用者另提出玩過的勘誤、科普、英文搜尋、擴充等新目標（見 20.13、QUICKSTART 第 4 節）。待確認事項清單在 QUICKSTART 第 4 節。
 - 下面各小節編號是原本 `生成後.md` 的 4.x 搬過來；原文裡的「本輪」「上一輪」指 2026-11-03 當天的聊天室。
 
 ### 20.1 程式：`4920804`（已 push）
@@ -511,3 +511,38 @@
 ⑱新切法只對**新上傳**的文件生效；每次改 `extractPdfText.ts` 後，舊文件都要刪掉重傳，測試前先看結果段落是不是從句子開頭開始、沒有硬換行。
 ⑲使用者貼來的另一個 AI 的 OCR 建議（「我會建議你選方案 1…等你提供電腦規格」）是別人的措辭，不是使用者的決定；使用者自己的決定在上面。
 ⑳**聊天室額度會在工作中途用完**：寫到 `/mnt/user-data/outputs` 的檔案換聊天室後可能不見（這次就是），更新文件時要同時寫進 Projects 的 `生成後.md`，並用 `SendUserFile` 交給使用者。
+
+### 20.13 2026-11-03 晚（換聊天室前）：驗證結果、OCR 實測、換電腦清單、新目標（覆蓋 20.11／20.12 的衝突敘述）
+
+**程式與資料庫現況**
+- git：`44a411e`（Q/A 綁定、詞庫補充、無文字提示、OCR 拖曳工具）已 push，build 通過（`✓ built in 3.41s`）。合併重疊段（`mergeChunks.ts`、`useRulebookSearch.ts`）早在 `6b02585` push（20.12 寫「已 build 未 push」已過時）。
+- **`search_rulebook_chunks`**：回傳改 `left(s.content, 1300)`（使用者執行 SQL，驗證 `position('1300' in pg_get_functiondef(...)) > 0` 為 true）；其餘不變（`limit 8`、中文子字串比對、英文 OR）。旭日 FAQ_2.0 第 3 頁福祿壽那段現在完整，含 `A: Yes. ... Note that, as a Stronghold, Fukurokuju can be "built" during a Marshal Mandate, if you have him in your reserve.`（結尾後的 `m onste R Pa CK` 是 PDF 字型雜訊）。**下次改這個函式前仍要請使用者重新匯出現有定義。**
+- `extractPdfText.ts`（使用者本輪上傳最新版）的 `NO_TEXT` 門檻：總字數 < 200 或「有 ≥ 20 字的頁數 / 總頁數」< 0.3 才擋；**部分頁面是圖片、文字層亂碼、OCR 品質差都抓不到**。［AI 建議，未動工］上傳時逐頁統計字數接近 0 的頁碼，顯示「第 N、M 頁沒有文字，這幾頁搜不到，要不要先 OCR」，只提醒不阻擋、網站內不做 OCR；要改 `extractPdfText.ts` 與 `RulebookBatchUpload.tsx`（使用者也上傳過），動工前請他重新貼。
+- 規則書項目符號被讀成私有區字元（方框）：要在 `itemsToLines` 把 `[\uE000-\uF8FF]` 換成 `- `，需重傳才生效，**還沒做**。
+
+**拖曳 OCR 工具（`tools/ocr/ocr_zh.bat`、`ocr_en.bat`）實測**
+- `ocr_zh.bat`＝`chi_tra+eng`（中文或中英混合）；`ocr_en.bat`＝`eng`（純英文掃描版）。設定 `TESSDATA_PREFIX=D:\tessdata`，執行 `python.exe -m ocrmypdf -l <語言> --skip-text --output-type pdf --jobs 2`，可一次拖多個 PDF，輸出 `原檔名_OCR.pdf` 在原檔旁、不覆蓋原檔。
+- 第一次失敗：`.bat` 用 `C:\Users\User\AppData\Local\Programs\Python\Python312\python.exe`（3.12），`ocrmypdf` 卻裝在 3.14 → `No module named ocrmypdf`；已對 3.12 補裝（17.13.0）。**教訓：`.bat` 用哪個 Python，`ocrmypdf` 就要裝在哪個。**
+- 成功：`D:\rulebooks\skymines\天際礦脈_水印.pdf`（38 頁）→ `[DONE]`；`chi_tra_vert` 找不到的紅字只是警告；第 3、5、6、7 頁有 `lots of diacritics - possibly poor OCR`。使用者回報後續驗證與上傳「沒有問題」。
+- `D:\tessdata` 已確認有 `configs`、`tessconfigs`、`chi_tra.traineddata`（12,985,735 位元組）、`eng.traineddata`（4,113,088 位元組）。**這些語言包在專案外，不 push；push 的只有兩個 `.bat`。**
+- **使用者問答（AI 回答，供參考）**：OCR 只加隱形文字層，檔案只會一樣大或稍大（繁中規則書 13.9 → 14.3 MB），不會變小；文字版 PDF 直接上傳、不要 OCR；單檔上限 50 MB、15 MB 以上只提醒，目前不需壓縮；要縮小先找出版商 Lo-res／Compact 版，其次本機 Ghostscript，**不建議線上壓縮站**（版權外流風險；有些會把每頁轉圖，文字層消失→上傳變 `NO_TEXT`）；順序**先壓縮再 OCR**，OCR 完不要再壓縮。邊玩邊傳、一份一份來，不必一次收集。我的容器沒有繁中語言包、沒網路，不能代跑 OCR。
+
+**換電腦（家裡）重做 OCR 環境清單（使用者要求寫進文件）**
+原則：不要搬檔案，各電腦自己準備；Git 只同步兩個 `.bat`。
+1. 安裝（第一次）：Python（`winget install -e --id Python.Python.3.12`，已有新版可略，**但要記得 `.bat` 用哪個**）、Tesseract（`winget install -e --id UB-Mannheim.TesseractOCR`，內建只有 `eng`、`osd`）、Ghostscript 64 位元（ghostscript.com 手動安裝，不在 PATH 也行）。
+2. 建立 `D:\tessdata`（磁碟或路徑不同就用記事本改 `.bat` 裡 `TESSDATA_PREFIX=D:\tessdata` 那行）。
+3. 放入語言包：`chi_tra.traineddata` 從 `https://github.com/tesseract-ocr/tessdata_best/raw/main/chi_tra.traineddata` 下載；`eng.traineddata` 從 `C:\Program Files\Tesseract-OCR\tessdata\` 複製。
+4. 複製設定資料夾（少了會 `Can't open hocr`）：`Copy-Item "C:\Program Files\Tesseract-OCR\tessdata\configs" "D:\tessdata\configs" -Recurse -Force` 與 `tessconfigs` 同樣做一次。
+5. 對 `.bat` 裡寫的那個 `python.exe` 執行 `"<完整路徑>" -m pip install ocrmypdf`（pip 的 Scripts 不在 PATH 警告可忽略）。
+6. 驗證：`Get-ChildItem D:\tessdata` 要有 `configs`、`tessconfigs`、`chi_tra.traineddata`、`eng.traineddata`；`git pull` 後把小 PDF 拖到 `tools\ocr\ocr_zh.bat`，最後要 `[DONE]`。
+7. 日常：規則書 PDF 放專案外 `D:\rulebooks\`、絕不 `git add`；辨識完先用瀏覽器 `Ctrl + F` 確認有文字層再上傳；OCR 文字只幫忙找頁，一律回原頁核對。
+
+**使用者新提出的目標（2026-11-03 晚，全部尚未動工；完整與 AI 建議在 QUICKSTART 第 4 節第 2 項）**
+1. **玩過的勘誤**：手動上傳勘誤檔或文字，規則助手可搜尋，遊戲詳細資料可查看。**現有 `game_documents.doc_type` 已有 `errata`，PDF 勘誤可走現有上傳；文字勘誤要新表（［AI 建議］`game_errata`，欄位含出處與狀態 `official`／`confirmed`／`unverified`），搜尋結果與規則書分開標示，不可與官方規則同等。** 和 20.3 的「玩錯紀錄」是同一件事；旭日第 6 題是種子。寫入只有管理者、RLS、`revoke`、更新 `privacy.html`。
+2. **科普知識**：內容位置、作者、綁定對象、是否公開都未說明，要先問。
+3. **主畫面搜尋可用英文**：先請使用者貼 `App.tsx` 的搜尋過濾，確認是否比對 `bggName`；不動資料庫。
+4. **遊戲擴充**：詳細資料新增擴充區塊（名稱＋圖片）、封面「含擴充」提示、名稱拿掉「(含擴)」；**不可動 `bggName`**；新表＋Storage；名稱最好與規則助手文件範圍的 `expansion_name` 共用同一份擴充清單。
+5. **最後請 ChatGPT 美化畫面**：功能凍結後再做；給 ChatGPT 的限制見 QUICKSTART 第 4 節（不改 CSV 欄名與 key、不調換 `@import` 順序、遵守視窗層級與手機導覽列規則、只改樣式不改結構、一次一頁）。
+
+**下一個 AI 要避開的陷阱（補）**
+㉑換電腦或新增 OCR 工具時，先確認 `.bat` 用的 Python 與 `ocrmypdf` 安裝位置一致；㉒勘誤、擴充、按讚都會動資料庫，動工前先匯出現有定義與 RLS；㉓勘誤與玩家整理資料必須標來源類型，不能和官方規則混在同一層回答；㉔使用者的口語（福壽祿、生兵、下凡、城堡）與規則書用詞不同，詞庫要收同義詞；㉕美化階段不要讓 ChatGPT 一次改多個檔案或改類別名稱（JS 依賴的 class、動態拼接的 `rb-${status}` 等會壞）。
