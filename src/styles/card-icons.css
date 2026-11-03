@@ -1,0 +1,7 @@
+﻿/* 卡片資訊列的小圖示（一個人、大腦） */
+.game-facts .fact-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.13em;
+}

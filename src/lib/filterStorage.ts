@@ -24,6 +24,8 @@ export type SavedFilters = {
   hiddenGroups: MineGroup[]
   sortBy: SortKey
   sortDirection: 'asc' | 'desc'
+  // 顯示設定（不算篩選條件，清除篩選不會重設）
+  showCardInfo: boolean
 }
 
 export const DEFAULT_FILTERS: SavedFilters = {
@@ -40,6 +42,7 @@ export const DEFAULT_FILTERS: SavedFilters = {
   hiddenGroups: [],
   sortBy: 'rankingEngine',
   sortDirection: 'asc',
+  showCardInfo: true,
 }
 
 const SORT_KEYS: SortKey[] = [
@@ -111,6 +114,7 @@ export function loadFilters(): SavedFilters {
           ? (f.sortBy as SortKey)
           : 'rankingEngine',
       sortDirection: f.sortDirection === 'desc' ? 'desc' : 'asc',
+      showCardInfo: f.showCardInfo !== false,
     }
   } catch {
     return DEFAULT_FILTERS

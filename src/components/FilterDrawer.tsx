@@ -57,6 +57,8 @@ export type FilterDrawerProps = {
   onClear: () => void
   viewMode: ViewMode
   onViewModeChange: (mode: ViewMode) => void
+  showCardInfo: boolean
+  onShowCardInfoChange: (value: boolean) => void
 
   playerCounts: number[]
   groupSizes: number[]
@@ -143,13 +145,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
               清除篩選
             </button>
           </div>
-          <div className="filter-group">
-            <div className="filter-group-title">
-              <span>檢視方式</span>
-            </div>
-            <ViewToggle viewMode={props.viewMode} onChange={props.onViewModeChange} />
-          </div>
-
           <div className="filter-group">
             <div className="filter-group-title">
               <span>
@@ -313,6 +308,35 @@ export default function FilterDrawer(props: FilterDrawerProps) {
                   )
                 })}
               </div>
+            </div>
+          </div>
+
+          <div className="filter-group">
+            <div className="filter-group-title">
+              <span>顯示設定</span>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: '10px 16px',
+              }}
+            >
+              <label className="category-option">
+                <input
+                  type="checkbox"
+                  checked={props.showCardInfo}
+                  onChange={(event) =>
+                    props.onShowCardInfoChange(event.target.checked)
+                  }
+                />
+                <span>顯示卡片下方文字</span>
+              </label>
+              <ViewToggle
+                viewMode={props.viewMode}
+                onChange={props.onViewModeChange}
+              />
             </div>
           </div>
         </section>

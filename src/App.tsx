@@ -55,7 +55,7 @@ import {
   computeAdminScores,
 } from './lib/libraryTypes'
 import { getPlayerSortValue, compareNullableNumbers } from './lib/gameFormat'
-import { HeartIcon, CheckIcon } from './components/Icons'
+import StatusLegend from './components/StatusLegend'
 import CoverImage from './components/CoverImage'
 import TopBar, { type NavPage } from './components/TopBar'
 import { useBackClose } from './lib/useBackClose'
@@ -398,6 +398,7 @@ function Library({
 
   // 上次的篩選設定（存在這支瀏覽器，開網站時還原；搜尋文字不存）
   const [saved] = useState(loadFilters)
+  const [showCardInfo, setShowCardInfo] = useState<boolean>(saved.showCardInfo)
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() =>
     // 類型若已不存在（例如 CSV 改過），就略過，避免一開啟就一片空白
@@ -474,6 +475,7 @@ function Library({
       hiddenGroups,
       sortBy,
       sortDirection,
+      showCardInfo,
     })
   }, [
     selectedCategories,
@@ -489,6 +491,7 @@ function Library({
     hiddenGroups,
     sortBy,
     sortDirection,
+    showCardInfo,
   ])
 
   const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode)
@@ -803,6 +806,9 @@ function Library({
     Number(groupByMine) +
     hiddenGroups.length
 
+  // 進階篩選條件數（不含類型膠囊；搜尋文字也不算）
+  const advancedFilterCount = activeFilterCount - selectedCategories.length
+
   function toggleCategory(category: string) {
     setSelectedCategories((current) =>
       current.includes(category)
@@ -914,13 +920,20 @@ function Library({
               <button
                 type="button"
                 className="search-filter-btn"
-                aria-label="更多篩選"
+                aria-label={
+                  advancedFilterCount > 0
+                    ? `更多篩選（已套用 ${advancedFilterCount} 項，顯示 ${displayedGameCount} / ${boardGames.length} 款）`
+                    : '更多篩選'
+                }
                 onClick={() => setIsFilterOpen(true)}
               >
                 <span aria-hidden="true">☰</span>
-                <span>篩選</span>
-                {activeFilterCount > 0 && (
-                  <span className="filter-badge">{activeFilterCount}</span>
+                {advancedFilterCount > 0 ? (
+                  <span>
+                    {displayedGameCount} / {boardGames.length}
+                  </span>
+                ) : (
+                  <span>篩選</span>
                 )}
               </button>
             </label>
@@ -956,6 +969,7 @@ function Library({
                     顯示 {displayedGameCount} / {boardGames.length} 款
                   </span>
                 )}
+              <StatusLegend />
             </div>
           </div>
 
@@ -967,6 +981,8 @@ function Library({
             onClear={clearFilters}
             viewMode={viewMode}
             onViewModeChange={changeViewMode}
+            showCardInfo={showCardInfo}
+            onShowCardInfoChange={setShowCardInfo}
             playerCounts={playerCounts}
             groupSizes={groupSizes}
             groupSize={groupSize}
@@ -992,18 +1008,6 @@ function Library({
             setGroupByMine={setGroupByMine}
           />
 
-          <p className="status-legend">
-            <span>
-              <HeartIcon filled={false} /> 想玩
-            </span>
-            <span>
-              <CheckIcon /> 已玩
-            </span>
-            <span>🎯 最佳人數</span>
-            <span>👥 推薦人數</span>
-            <span>◷ 分鐘</span>
-            <span>📊 難度</span>
-          </p>
           {missingDataCount > 0 && (
             <p className="missing-data-note">
               有 {missingDataCount} 款因缺少難度或時間資料，未納入篩選結果。
@@ -1030,6 +1034,7 @@ function Library({
                     coverVersion={coverVersions[item.game.coverSlug] ?? 0}
                     personal={personalWithStats}
                     isAdmin={isAdmin}
+                    showInfo={showCardInfo}
                     onOpen={openGame}
                   />
                 )

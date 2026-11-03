@@ -46,3 +46,42 @@ export function EyeIcon({ off }: { off: boolean }) {
     </svg>
   )
 }
+
+// 一個人（推薦人數）
+export function PersonIcon() {
+  return (
+    <svg
+      className="fact-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4.5 21c0-4.2 3.4-7 7.5-7s7.5 2.8 7.5 7" />
+    </svg>
+  )
+}
+
+// 大腦（BGG 難度）
+export function BrainIcon() {
+  return (
+    <svg
+      className="fact-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 5.5A3 3 0 0 0 6.6 4.3 3.2 3.2 0 0 0 4 8.2a3.2 3.2 0 0 0 .6 5.2A3.3 3.3 0 0 0 8 18.6a3 3 0 0 0 4 .9z" />
+      <path d="M12 5.5a3 3 0 0 1 5.4-1.2A3.2 3.2 0 0 1 20 8.2a3.2 3.2 0 0 1-.6 5.2 3.3 3.3 0 0 1-3.4 5.2 3 3 0 0 1-4 .9z" />
+      <path d="M12 5.5v14M8.5 10c1 0 2 .6 2.5 1.5M15.5 10c-1 0-2 .6-2.5 1.5M8.5 14.5c1 0 2-.4 2.5-1M15.5 14.5c-1 0-2-.4-2.5-1" />
+    </svg>
+  )
+}

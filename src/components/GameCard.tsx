@@ -3,8 +3,10 @@ import type { PersonalApi } from '../lib/personalApi'
 import { getDisplayScore, type LibraryGame } from '../lib/libraryTypes'
 import { formatNumber, formatPlayers } from '../lib/gameFormat'
 import CoverImage from './CoverImage'
+import { BrainIcon, PersonIcon } from './Icons'
 import StatusButtons from './StatusButtons'
 import '../styles/card-compact.css'
+import '../styles/card-icons.css'
 
 function stop(event: MouseEvent | KeyboardEvent) {
   event.stopPropagation()
@@ -22,6 +24,7 @@ export default function GameCard({
   coverVersion,
   personal,
   isAdmin = false,
+  showInfo = true,
   onOpen,
 }: {
   game: LibraryGame
@@ -29,6 +32,7 @@ export default function GameCard({
   coverVersion: number
   personal: PersonalApi
   isAdmin?: boolean
+  showInfo?: boolean
   onOpen: (game: LibraryGame) => void
 }) {
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
@@ -87,17 +91,22 @@ export default function GameCard({
         </span>
       </div>
 
+      {showInfo && (
       <div className="game-info">
         <h3>{game.name}</h3>
 
         <div className="game-facts">
           <span>
             <span title="最佳人數">🎯 {shortPlayers(game.bestPlayers)}</span>
-            <span title="推薦人數">👥 {shortPlayers(game.recommendPlayers)}</span>
+            <span title="推薦人數" aria-label="推薦人數">
+              <PersonIcon /> {shortPlayers(game.recommendPlayers)}
+            </span>
           </span>
           <span>
             <span title="遊戲時間（分鐘）">◷ {timeText}</span>
-            <span title="BGG 難度">📊 {difficultyText}</span>
+            <span title="BGG 難度" aria-label="BGG 難度">
+              <BrainIcon /> {difficultyText}
+            </span>
           </span>
         </div>
 
@@ -108,6 +117,7 @@ export default function GameCard({
           </p>
         )}
       </div>
+      )}
     </article>
   )
 }

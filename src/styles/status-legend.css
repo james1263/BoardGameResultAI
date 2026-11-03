@@ -1,0 +1,26 @@
+﻿/* 想玩／已玩圖例（排序列右側） */
+.sl-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 8px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #6f7a6f;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.sl-legend.is-open {
+  background: #efe7d3;
+}
+.sl-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.sl-item svg {
+  width: 15px;
+  height: 15px;
+}
