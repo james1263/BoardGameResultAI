@@ -31,6 +31,7 @@ import { useGamePeople, useAdminRatings } from './lib/useGamePeople'
 import InAppBrowserNotice from './components/InAppBrowserNotice'
 import CheckInDialog from './components/CheckInDialog'
 import { fetchBoardGames } from './lib/fetchBoardGames'
+import { matchesGameSearch } from './lib/gameSearch'
 import {
   type LibraryGame,
   type SortKey,
@@ -518,7 +519,7 @@ function Library({
     const search = searchText.trim().toLocaleLowerCase()
 
     const filtered = boardGames.filter((game) => {
-      if (search && !game.name.toLocaleLowerCase().includes(search)) {
+      if (search && !matchesGameSearch(game, search)) {
         return false
       }
 
@@ -704,7 +705,7 @@ function Library({
 
       if (!isMissing) return false
 
-      if (search && !game.name.toLocaleLowerCase().includes(search)) {
+      if (search && !matchesGameSearch(game, search)) {
         return false
       }
 

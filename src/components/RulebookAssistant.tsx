@@ -172,7 +172,7 @@ ${parts}`
                     onKeyDown={(event) => {
                         if (event.key === 'Enter') handleSearch()
                     }}
-                    placeholder="例如：福祿壽 生兵、tie honor、結盟"
+                    placeholder="例如：行動、結算、計分"
                 />
             </label>
 
