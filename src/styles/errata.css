@@ -1,0 +1,97 @@
+/* 玩錯紀錄（ErrataAdmin／GameErrata／規則助手共用） */
+
+.er-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.er-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #ddd3bd;
+  border-radius: 8px;
+  background: #fff;
+  color: #34463c;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.er-count {
+  font-size: 12px;
+  color: #7a8a80;
+}
+
+.er-count.over {
+  color: #b3402f;
+  font-weight: 700;
+}
+
+.er-list-title {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: #34463c;
+}
+
+.er-list {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.er-list li {
+  padding: 10px 12px;
+  border: 1px solid rgba(183, 138, 90, 0.35);
+  border-radius: 12px;
+  background: #fffdf7;
+}
+
+.er-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #34463c;
+}
+
+.er-body {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #34463c;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.er-src {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #8a6a43;
+}
+
+.er-note {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6b7a70;
+}
+
+/* 規則助手：和規則書結果分開的區塊 */
+.er-box {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px dashed #b78a5a;
+  border-radius: 12px;
+  background: #fbf3e4;
+}
+
+.er-box-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #8a6a43;
+}

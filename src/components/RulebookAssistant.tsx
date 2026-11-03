@@ -6,6 +6,8 @@ import {
 } from '../lib/useRulebookSearch'
 import { suggestKeywords } from '../lib/zhEnGlossary'
 import InfoHint from './InfoHint'
+import { searchErrata, type Errata } from '../lib/useGameErrata'
+import '../styles/errata.css'
 
 async function copyText(text: string): Promise<boolean> {
     try {
@@ -50,6 +52,7 @@ export default function RulebookAssistant({
     const [error, setError] = useState('')
     const [notice, setNotice] = useState('')
     const [lastQuery, setLastQuery] = useState('')
+    const [errata, setErrata] = useState<Errata[]>([])
     const [remaining, setRemaining] = useState<number | null | undefined>(undefined)
     const cache = useRef<Map<string, RulebookChunk[]>>(new Map())
 
@@ -66,6 +69,11 @@ export default function RulebookAssistant({
     // 輸入內容的英文關鍵字建議（來自內建對照表）
     const suggestions = useMemo(() => suggestKeywords(query), [query])
 
+    async function loadErrata(q: string) {
+        const result = await searchErrata(bggName, q)
+        setErrata(result.items)
+    }
+
     async function run(rawQuery: string, label: string) {
         setError('')
         setNotice('')
@@ -79,6 +87,7 @@ export default function RulebookAssistant({
         const cached = cache.current.get(key)
         if (cached) {
             setChunks(cached)
+            void loadErrata(q)
             if (cached.length === 0) setNotice('沒有找到相關段落。')
             return
         }
@@ -90,6 +99,7 @@ export default function RulebookAssistant({
             return
         }
         cache.current.set(key, result.chunks)
+        void loadErrata(q)
         setChunks(result.chunks)
         if (result.chunks.length === 0) {
             setNotice(
@@ -128,6 +138,12 @@ export default function RulebookAssistant({
                     `[${i + 1}] ${c.doc_title || '規則書'}（${langTag(c.doc_lang)}）${c.page_number ? ` 第 ${c.page_number} 頁` : ''}\n${c.content}`,
             )
             .join('\n\n')
+        const errataText =
+            errata.length > 0
+                ? `\n\n玩錯紀錄（管理者記錄，非官方規則，只能當參考；與規則書衝突時以規則書為準）：\n${errata
+                      .map((e, i) => `(${i + 1}) ${e.title}\n${e.content}`)
+                      .join('\n\n')}`
+                : ''
         const text = `你是桌遊規則助手。請只根據下面提供的《${gameName}》規則書片段回答問題。
 - 先用繁體中文直接回答，再說明依據，並標明頁碼與文件名稱。
 - 區分「規則明寫」與「你的推論」。
@@ -138,7 +154,7 @@ export default function RulebookAssistant({
 問題：${q}
 
 片段：
-${parts}`
+${parts}${errataText}`
         setError('')
         setNotice(
             (await copyText(text))
@@ -164,6 +180,7 @@ ${parts}`
                         if (now !== lastQuery) {
                             setLastQuery(now)
                             setChunks(null)
+                            setErrata([])
                             setActiveLabel('')
                             setNotice('')
                             setError('')
@@ -220,6 +237,25 @@ ${parts}`
 
             {error && <p className="ra-error">{error}</p>}
             {notice && <p className="ra-notice">{notice}</p>}
+
+            {errata.length > 0 && (
+                <div className="er-box">
+                    <p className="er-box-title">
+                        玩錯紀錄（管理者記錄，非官方規則）・{errata.length} 筆
+                    </p>
+                    <ul className="er-list">
+                        {errata.map((e) => (
+                            <li key={e.id}>
+                                <div className="er-title">{e.title}</div>
+                                <p className="er-body">{e.content}</p>
+                                {e.source_note && (
+                                    <small className="er-src">來源：{e.source_note}</small>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
 
             {chunks && chunks.length > 0 && (
                 <>

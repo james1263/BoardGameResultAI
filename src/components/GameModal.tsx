@@ -19,6 +19,7 @@ import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import type { RatingsApi } from '../lib/useGameRatings'
 import GameNotesBoard from './GameNotesBoard'
 import GamePlayHistory from './GamePlayHistory'
+import GameErrata from './GameErrata'
 import { useVip } from '../lib/useVip'
 import '../styles/overview.css'
 
@@ -317,6 +318,16 @@ export default function GameModal({
                   </div>
                 </details>
               </div>
+
+              {(vip.isVip || isAdmin) && !game.referenceOnly && (
+                <div className="modal-section">
+                  <GameErrata
+                    key={game.bggName}
+                    bggName={game.bggName}
+                    isAdmin={isAdmin}
+                  />
+                </div>
+              )}
 
               {isAdmin && (
                 <div className="cover-upload">

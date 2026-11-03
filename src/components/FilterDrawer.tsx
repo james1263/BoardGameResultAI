@@ -178,13 +178,13 @@ export default function FilterDrawer(props: FilterDrawerProps) {
 
           <div className="filter-grid filter-grid-spaced">
             <NumberSelect
-              label="最佳人數"
+              label="🎯 最佳人數"
               value={props.bestPlayerCount}
               options={playerCounts}
               onChange={props.setBestPlayerCount}
             />
             <NumberSelect
-              label="推薦人數"
+              label="👥 推薦人數"
               value={props.recommendPlayerCount}
               options={playerCounts}
               onChange={props.setRecommendPlayerCount}
@@ -194,7 +194,7 @@ export default function FilterDrawer(props: FilterDrawerProps) {
           <div className="filter-group">
             <div className="filter-group-title">
               <span>
-                遊戲時間
+                ◷ 遊戲時間
                 <InfoHint text="不超過幾分鐘；再按一次可取消。" />
               </span>
             </div>
@@ -219,7 +219,7 @@ export default function FilterDrawer(props: FilterDrawerProps) {
           <div className="filter-group">
             <div className="filter-group-title">
               <span>
-                BGG 難度
+                📊 BGG 難度
                 <InfoHint text="可複選。" />
               </span>
             </div>

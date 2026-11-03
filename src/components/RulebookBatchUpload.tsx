@@ -12,6 +12,7 @@ import {
 } from '../lib/useGameDocuments'
 import { docIcon, docLabel, indexSuffix } from '../lib/docLabels'
 import '../styles/rb-docs.css'
+import ErrataAdmin from './ErrataAdmin'
 
 type GameOption = { bgg_name: string; name: string }
 type DocKind = 'rulebook' | 'faq' | 'errata'
@@ -325,7 +326,7 @@ function GameDocGroup({
 // ── 元件 ─────────────────────────────────────────────
 
 export default function RulebookBatchUpload() {
-  const [mode, setMode] = useState<'pdf' | 'link' | null>(null)
+  const [mode, setMode] = useState<'pdf' | 'link' | 'errata' | null>(null)
   const [usage, setUsage] = useState<StorageUsage | null>(null)
   const [usageError, setUsageError] = useState('')
   const [allDocs, setAllDocs] = useState<AllDoc[]>([])
@@ -612,7 +613,7 @@ export default function RulebookBatchUpload() {
   return (
     <div className="rb">
       <UsageBar usage={usage} error={usageError} />
-      <div className="rb-seg">
+      <div className="rb-seg" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <button
           type="button"
           aria-pressed={mode === 'pdf'}
@@ -630,6 +631,15 @@ export default function RulebookBatchUpload() {
           onClick={() => setMode(mode === 'link' ? null : 'link')}
         >
           ＋ 貼連結
+        </button>
+        <button
+          type="button"
+          aria-pressed={mode === 'errata'}
+          className={mode === 'errata' ? 'active' : ''}
+          disabled={running}
+          onClick={() => setMode(mode === 'errata' ? null : 'errata')}
+        >
+          ＋ 玩錯紀錄
         </button>
       </div>
 
@@ -806,6 +816,14 @@ export default function RulebookBatchUpload() {
             )}
           </form>
         </>
+      )}
+
+      {mode === 'errata' && (
+        <ErrataAdmin
+          renderPicker={(value, onChange) => (
+            <GamePicker games={games} value={value} onChange={onChange} />
+          )}
+        />
       )}
 
       <div className="rbd-title">
