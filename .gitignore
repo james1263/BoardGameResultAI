@@ -8,3 +8,4 @@ dist/
 .DS_Store
 Thumbs.db
 .env.localboardgames.csv
+rulebooks/

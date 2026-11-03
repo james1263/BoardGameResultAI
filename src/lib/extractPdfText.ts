@@ -15,6 +15,9 @@ export class PdfExtractError extends Error {
 }
 
 const MAX_CHUNK_CHARS = 800
+// 下一段開頭帶上一段結尾的句子，讓答案不會被切在兩段之間
+const OVERLAP_CHARS = 150
+const OVERLAP_MAX_SINGLE = 300
 const MAX_CHUNKS = 3000
 const CJK = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uff00-\uffef\u3000-\u303f]/
 
@@ -56,28 +59,119 @@ function itemsToLines(
   return lines.map((l) => l.replace(/\s+/g, ' ').trim()).filter(Boolean)
 }
 
-// 同一頁內切成小段，絕不跨頁（頁碼才準）
-function chunkLines(lines: string[], page: number): ExtractedChunk[] {
-  const out: ExtractedChunk[] = []
-  let buffer = ''
+// 兩段文字相接時要不要補空格（中日文之間不補）
+function joinSep(a: string, b: string): string {
+  if (!a || !b) return ''
+  if (CJK.test(a.slice(-1)) || CJK.test(b[0])) return ''
+  return ' '
+}
 
-  function flush() {
-    const text = buffer.trim()
-    if (text) out.push({ page, title: '', content: text })
-    buffer = ''
+type Unit = { text: string; newPara: boolean }
+
+function isHeading(line: string): boolean {
+  return line.length < 40 && /^[A-Z0-9 '’&\-:,]+$/.test(line) && /[A-Z]/.test(line)
+}
+
+function splitSentences(text: string): string[] {
+  const matched = text.match(/[^.!?。！？]+[.!?。！？]+["”’)」』]*\s*|[^.!?。！？]+$/g)
+  return (matched ?? [text]).map((s) => s.trim()).filter(Boolean)
+}
+
+// 把 PDF 的「行」接成句子：同一句被換行拆開的會接回來
+function linesToUnits(lines: string[]): Unit[] {
+  const units: Unit[] = []
+  let para = ''
+
+  function flushPara() {
+    const text = para.trim()
+    para = ''
+    if (!text) return
+    splitSentences(text).forEach((sentence, i) => {
+      units.push({ text: sentence, newPara: i === 0 })
+    })
   }
 
-  for (const raw of lines) {
-    let line = raw
-    while (line.length > MAX_CHUNK_CHARS) {
-      flush()
-      out.push({ page, title: '', content: line.slice(0, MAX_CHUNK_CHARS) })
-      line = line.slice(MAX_CHUNK_CHARS)
+  for (const line of lines) {
+    if (isHeading(line)) {
+      flushPara()
+      para = line
+      flushPara()
+      continue
     }
-    if (buffer && buffer.length + line.length + 1 > MAX_CHUNK_CHARS) flush()
-    buffer += (buffer ? '\n' : '') + line
+    // FAQ 的 Q: / A: 各自另起一段
+    if (/^(Q|A)\s*:/.test(line)) flushPara()
+    para += joinSep(para, line) + line
   }
-  flush()
+  flushPara()
+
+  return units
+}
+
+function render(units: Unit[]): string {
+  let out = ''
+  units.forEach((u, i) => {
+    if (i === 0) out = u.text
+    else out += (u.newPara ? '\n' : joinSep(out, u.text)) + u.text
+  })
+  return out
+}
+
+// 同一頁內依句子邊界切段，絕不跨頁（頁碼才準）；相鄰段有少量重疊
+function chunkUnits(units: Unit[], page: number): ExtractedChunk[] {
+  const out: ExtractedChunk[] = []
+  let buf: Unit[] = []
+  let size = 0
+  let fresh = 0 // 這一段裡「不是重疊帶來的」句子數
+
+  function takeOverlap(): Unit[] {
+    const carry: Unit[] = []
+    let total = 0
+    for (let i = buf.length - 1; i >= 0; i -= 1) {
+      const len = buf[i].text.length + 1
+      if (carry.length === 0) {
+        if (len > OVERLAP_MAX_SINGLE) break
+      } else if (total + len > OVERLAP_CHARS) {
+        break
+      }
+      carry.unshift(buf[i])
+      total += len
+    }
+    return carry
+  }
+
+  function flush(keepOverlap: boolean) {
+    if (fresh > 0) {
+      const text = render(buf).trim()
+      if (text) out.push({ page, title: '', content: text })
+    }
+    buf = keepOverlap && fresh > 0 ? takeOverlap() : []
+    size = buf.reduce((sum, u) => sum + u.text.length + 1, 0)
+    fresh = 0
+  }
+
+  for (const unit of units) {
+    const len = unit.text.length + 1
+
+    // 單一句子就超過上限（例如整頁沒有標點）：硬切
+    if (unit.text.length > MAX_CHUNK_CHARS) {
+      flush(false)
+      for (let i = 0; i < unit.text.length; i += MAX_CHUNK_CHARS) {
+        out.push({ page, title: '', content: unit.text.slice(i, i + MAX_CHUNK_CHARS) })
+      }
+      continue
+    }
+
+    if (fresh > 0 && size + len > MAX_CHUNK_CHARS) flush(true)
+    // 重疊再加這句還是太長：放棄重疊
+    if (size + len > MAX_CHUNK_CHARS) {
+      buf = []
+      size = 0
+    }
+    buf.push(unit)
+    size += len
+    fresh += 1
+  }
+  flush(false)
 
   return out
 }
@@ -129,7 +223,7 @@ export async function extractPdfChunks(
 
       textChars += pageChars
       if (pageChars >= 20) textPages += 1
-      chunks.push(...chunkLines(lines, pageNo))
+      chunks.push(...chunkUnits(linesToUnits(lines), pageNo))
       page.cleanup()
       onProgress?.(pageNo, totalPages)
     }
