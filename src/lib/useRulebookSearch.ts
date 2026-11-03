@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { mergeOverlappingChunks } from './mergeChunks'
 
 export type RulebookChunk = {
   doc_id: string
@@ -46,7 +47,7 @@ export async function searchRulebook(
     }
     return { chunks: [], error: '搜尋失敗，請稍後再試（這次不會扣次數）。' }
   }
-  return { chunks: (data ?? []) as RulebookChunk[], error: '' }
+return { chunks: mergeOverlappingChunks((data ?? []) as RulebookChunk[]), error: '' }
 }
 
 export async function getIndexedGames(): Promise<string[]> {
