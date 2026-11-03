@@ -15,6 +15,8 @@ export class PdfExtractError extends Error {
 }
 
 const MAX_CHUNK_CHARS = 800
+// 問題（Q:）和它的答案（A:）、標題和它底下的第一句，盡量留在同一段；綁在一起最多放寬到這個長度
+const MAX_BOUND_CHARS = 1200
 // 下一段開頭帶上一段結尾的句子，讓答案不會被切在兩段之間
 const OVERLAP_CHARS = 150
 const OVERLAP_MAX_SINGLE = 300
@@ -66,7 +68,7 @@ function joinSep(a: string, b: string): string {
   return ' '
 }
 
-type Unit = { text: string; newPara: boolean }
+type Unit = { text: string; newPara: boolean; keepWithNext?: boolean }
 
 function isHeading(line: string): boolean {
   return line.length < 40 && /^[A-Z0-9 '’&\-:,]+$/.test(line) && /[A-Z]/.test(line)
@@ -81,28 +83,34 @@ function splitSentences(text: string): string[] {
 function linesToUnits(lines: string[]): Unit[] {
   const units: Unit[] = []
   let para = ''
+  let paraIsQuestion = false
 
-  function flushPara() {
+  // keepWithNext：這一段的句子不要和「下一個單元」被切到不同段（問題接答案、標題接內文）
+  function flushPara(keepWithNext: boolean) {
     const text = para.trim()
     para = ''
     if (!text) return
     splitSentences(text).forEach((sentence, i) => {
-      units.push({ text: sentence, newPara: i === 0 })
+      units.push({ text: sentence, newPara: i === 0, keepWithNext })
     })
   }
 
   for (const line of lines) {
     if (isHeading(line)) {
-      flushPara()
+      flushPara(paraIsQuestion)
+      paraIsQuestion = false
       para = line
-      flushPara()
+      flushPara(true)
       continue
     }
     // FAQ 的 Q: / A: 各自另起一段
-    if (/^(Q|A)\s*:/.test(line)) flushPara()
+    if (/^(Q|A)\s*:/.test(line)) {
+      flushPara(paraIsQuestion)
+      paraIsQuestion = /^Q\s*:/.test(line)
+    }
     para += joinSep(para, line) + line
   }
-  flushPara()
+  flushPara(paraIsQuestion)
 
   return units
 }
@@ -122,6 +130,7 @@ function chunkUnits(units: Unit[], page: number): ExtractedChunk[] {
   let buf: Unit[] = []
   let size = 0
   let fresh = 0 // 這一段裡「不是重疊帶來的」句子數
+  let prevKeep = false // 上一個放進來的單元要不要和下一個綁在一起
 
   function takeOverlap(): Unit[] {
     const carry: Unit[] = []
@@ -155,21 +164,27 @@ function chunkUnits(units: Unit[], page: number): ExtractedChunk[] {
     // 單一句子就超過上限（例如整頁沒有標點）：硬切
     if (unit.text.length > MAX_CHUNK_CHARS) {
       flush(false)
+      prevKeep = false
       for (let i = 0; i < unit.text.length; i += MAX_CHUNK_CHARS) {
         out.push({ page, title: '', content: unit.text.slice(i, i + MAX_CHUNK_CHARS) })
       }
       continue
     }
 
-    if (fresh > 0 && size + len > MAX_CHUNK_CHARS) flush(true)
-    // 重疊再加這句還是太長：放棄重疊
-    if (size + len > MAX_CHUNK_CHARS) {
-      buf = []
-      size = 0
+    // 上一個單元要和這一個綁在一起，且加上去還沒超過放寬後的上限：不在這裡切
+    const bound = prevKeep && size + len <= MAX_BOUND_CHARS
+    if (!bound) {
+      if (fresh > 0 && size + len > MAX_CHUNK_CHARS) flush(true)
+      // 重疊再加這句還是太長：放棄重疊
+      if (size + len > MAX_CHUNK_CHARS) {
+        buf = []
+        size = 0
+      }
     }
     buf.push(unit)
     size += len
     fresh += 1
+    prevKeep = Boolean(unit.keepWithNext)
   }
   flush(false)
 
@@ -234,7 +249,7 @@ export async function extractPdfChunks(
   if (textChars < 200 || textPages / totalPages < 0.3) {
     throw new PdfExtractError(
       'NO_TEXT',
-      '這個 PDF 幾乎沒有可擷取的文字（可能是掃描圖片）。請先確認用瀏覽器開啟時能用滑鼠選取文字或按 Ctrl+F 搜尋；掃描圖片需先 OCR 轉成文字版。第一版不支援 OCR。',
+      '這個 PDF 幾乎沒有可擷取的文字（可能是掃描圖片）。請先確認用瀏覽器開啟時能用滑鼠選取文字或按 Ctrl+F 搜尋；掃描圖片請先在自己的電腦用 OCR 工具轉成文字版（例如把 PDF 拖曳到 ocr_zh.bat 或 ocr_en.bat），再重新上傳。網站本身不做 OCR。',
     )
   }
   if (chunks.length > MAX_CHUNKS) {

@@ -92,7 +92,11 @@ export default function RulebookAssistant({
         cache.current.set(key, result.chunks)
         setChunks(result.chunks)
         if (result.chunks.length === 0) {
-            setNotice('沒有找到相關段落，換個說法或點上方的英文關鍵字試試（這次不會扣次數）。')
+            setNotice(
+                suggestions.length > 0
+                    ? '沒有找到相關段落，換個說法或點上方的英文關鍵字試試（這次不會扣次數）。'
+                    : '沒有找到相關段落，換個說法試試；中文詞找不到時，請直接輸入英文關鍵字（這次不會扣次數）。',
+            )
         }
         getRulebookRemaining().then(setRemaining)
     }
