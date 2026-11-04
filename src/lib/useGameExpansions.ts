@@ -2,11 +2,15 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { uploadCover } from './uploadCover'
 
+export type ExpansionLink = { label: string; url: string }
+
 export type GameExpansion = {
   id: string
   name: string
   imagePath: string | null
   sortOrder: number
+  links: ExpansionLink[]
+  note: string
 }
 
 type Row = {
@@ -14,6 +18,80 @@ type Row = {
   name: string
   image_path: string | null
   sort_order: number
+  links: unknown
+  note: string | null
+}
+
+export const MAX_LINKS = 5
+export const MAX_NOTE = 100
+const MAX_LABEL = 60
+const MAX_URL = 300
+
+// ---------- 連結：解析與防呆（只接受 http／https） ----------
+
+export function isSafeUrl(url: string): boolean {
+  return /^https?:\/\/\S+$/i.test(url)
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
+
+// 讀資料庫時一律再過濾一次，不信任資料內容
+function cleanLinks(raw: unknown): ExpansionLink[] {
+  if (!Array.isArray(raw)) return []
+  const out: ExpansionLink[] = []
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue
+    const { label, url } = item as { label?: unknown; url?: unknown }
+    if (typeof url !== 'string' || !isSafeUrl(url)) continue
+    const text =
+      typeof label === 'string' && label.trim() !== '' ? label.trim() : hostOf(url)
+    out.push({ label: text, url })
+  }
+  return out
+}
+
+export function linksToLines(links: ExpansionLink[]): string {
+  return links.map((l) => `${l.label} ${l.url}`).join('\n')
+}
+
+// 每行：標籤 網址（網址放最後；標籤可省略，省略就用網站名稱）
+export function parseLinkLines(text: string): {
+  links: ExpansionLink[]
+  error: string
+} {
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l !== '')
+  if (lines.length > MAX_LINKS) {
+    return { links: [], error: `最多 ${MAX_LINKS} 個連結。` }
+  }
+  const links: ExpansionLink[] = []
+  for (const line of lines) {
+    const m = line.match(/^(.*?)\s*(https?:\/\/\S+)$/i)
+    if (!m) {
+      return {
+        links: [],
+        error: `這行找不到網址（要以 https:// 開頭，且網址放在最後）：${line}`,
+      }
+    }
+    const url = m[2]
+    const label = m[1].trim() || hostOf(url)
+    if (label.length > MAX_LABEL) {
+      return { links: [], error: `標籤最多 ${MAX_LABEL} 字：${label}` }
+    }
+    if (url.length > MAX_URL) {
+      return { links: [], error: `網址最多 ${MAX_URL} 字。` }
+    }
+    links.push({ label, url })
+  }
+  return { links, error: '' }
 }
 
 // ---------- 給卡片用：哪些遊戲有擴充（全站共用一份，只讀一次） ----------
@@ -72,6 +150,8 @@ function toExpansion(row: Row): GameExpansion {
     name: row.name,
     imagePath: row.image_path,
     sortOrder: row.sort_order,
+    links: cleanLinks(row.links),
+    note: row.note ?? '',
   }
 }
 
@@ -88,7 +168,7 @@ export function useGameExpansions(bggName: string) {
   const reload = useCallback(async () => {
     const { data, error: err } = await supabase
       .from('game_expansions')
-      .select('id, name, image_path, sort_order')
+      .select('id, name, image_path, sort_order, links, note')
       .eq('bgg_name', bggName)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true })
@@ -146,6 +226,20 @@ export function useGameExpansions(bggName: string) {
     return ''
   }
 
+  async function updateDetails(
+    id: string,
+    links: ExpansionLink[],
+    note: string,
+  ): Promise<string> {
+    const { error: err } = await supabase
+      .from('game_expansions')
+      .update({ links, note })
+      .eq('id', id)
+    if (err) return '儲存失敗：' + err.message
+    await reload()
+    return ''
+  }
+
   async function replaceImage(id: string, file: File): Promise<string> {
     try {
       await uploadCover(`expansions/${id}`, file)
@@ -178,5 +272,15 @@ export function useGameExpansions(bggName: string) {
     return ''
   }
 
-  return { rows, loading, error, imgTick, add, rename, replaceImage, remove }
+  return {
+    rows,
+    loading,
+    error,
+    imgTick,
+    add,
+    rename,
+    updateDetails,
+    replaceImage,
+    remove,
+  }
 }

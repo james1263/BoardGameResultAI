@@ -1,6 +1,14 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { askConfirm, askInput } from '../lib/askConfirm'
-import { expansionImageUrl, useGameExpansions } from '../lib/useGameExpansions'
+import {
+  MAX_LINKS,
+  MAX_NOTE,
+  expansionImageUrl,
+  linksToLines,
+  parseLinkLines,
+  useGameExpansions,
+  type GameExpansion,
+} from '../lib/useGameExpansions'
 import '../styles/game-expansions.css'
 
 const MAX_NAME = 60
@@ -17,6 +25,10 @@ export default function GameExpansions({
   const [newFile, setNewFile] = useState<File | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
+  const [openLinksId, setOpenLinksId] = useState<string | null>(null)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editLinks, setEditLinks] = useState('')
+  const [editNote, setEditNote] = useState('')
   const newFileRef = useRef<HTMLInputElement | null>(null)
   const replaceRef = useRef<HTMLInputElement | null>(null)
   const replaceId = useRef<string | null>(null)
@@ -88,6 +100,64 @@ export default function GameExpansions({
     await run(() => api.replaceImage(id, file))
   }
 
+  function startEdit(row: GameExpansion) {
+    if (editId === row.id) {
+      setEditId(null)
+      return
+    }
+    setMessage('')
+    setEditId(row.id)
+    setEditLinks(linksToLines(row.links))
+    setEditNote(row.note)
+  }
+
+  async function saveEdit(id: string) {
+    const parsed = parseLinkLines(editLinks)
+    if (parsed.error) {
+      setMessage(parsed.error)
+      return
+    }
+    const note = editNote.trim()
+    if (note.length > MAX_NOTE) {
+      setMessage(`備註最多 ${MAX_NOTE} 字。`)
+      return
+    }
+    await run(async () => {
+      const result = await api.updateDetails(id, parsed.links, note)
+      if (result === '') setEditId(null)
+      return result
+    })
+  }
+
+  function renderName(row: GameExpansion) {
+    if (row.links.length === 1) {
+      return (
+        <a
+          className="ge-name ge-name-link"
+          href={row.links[0].url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {row.name} <span aria-hidden="true">↗</span>
+        </a>
+      )
+    }
+    if (row.links.length > 1) {
+      const open = openLinksId === row.id
+      return (
+        <button
+          type="button"
+          className="ge-name ge-name-link"
+          aria-expanded={open}
+          onClick={() => setOpenLinksId(open ? null : row.id)}
+        >
+          {row.name} <span aria-hidden="true">{open ? '▴' : '▾'}</span>
+        </button>
+      )
+    }
+    return <span className="ge-name">{row.name}</span>
+  }
+
   return (
     <div className="modal-section">
       <details className="ov-fold">
@@ -120,7 +190,25 @@ export default function GameExpansions({
                     )}
                   </div>
                   <div className="ge-main">
-                    <span className="ge-name">{row.name}</span>
+                    {renderName(row)}
+                    {row.note && <span className="ge-note">{row.note}</span>}
+
+                    {row.links.length > 1 && openLinksId === row.id && (
+                      <ul className="ge-links">
+                        {row.links.map((link) => (
+                          <li key={link.url}>
+                            <a
+                              href={link.url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {link.label} <span aria-hidden="true">↗</span>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
                     {isAdmin && (
                       <div className="ge-actions">
                         <button
@@ -139,12 +227,62 @@ export default function GameExpansions({
                         </button>
                         <button
                           type="button"
+                          disabled={busy}
+                          onClick={() => startEdit(row)}
+                        >
+                          連結
+                        </button>
+                        <button
+                          type="button"
                           className="ge-danger"
                           disabled={busy}
                           onClick={() => void handleRemove(row.id, row.name)}
                         >
                           刪除
                         </button>
+                      </div>
+                    )}
+
+                    {isAdmin && editId === row.id && (
+                      <div className="ge-editor">
+                        <p className="ge-hint">
+                          連結：每行一個，格式「標籤 網址」（網址放最後，最多{' '}
+                          {MAX_LINKS} 個，標籤可省略）
+                        </p>
+                        <textarea
+                          className="ge-input"
+                          rows={4}
+                          value={editLinks}
+                          disabled={busy}
+                          placeholder="Rising Sun: Daimyo Box https://boardgamegeek.com/..."
+                          onChange={(event) => setEditLinks(event.target.value)}
+                        />
+                        <p className="ge-hint">備註（選填，{MAX_NOTE} 字內）</p>
+                        <input
+                          type="text"
+                          className="ge-input"
+                          maxLength={MAX_NOTE}
+                          value={editNote}
+                          disabled={busy}
+                          placeholder="例如：收錄三個擴充／中文集資版"
+                          onChange={(event) => setEditNote(event.target.value)}
+                        />
+                        <div className="ge-actions">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void saveEdit(row.id)}
+                          >
+                            {busy ? '處理中…' : '儲存'}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setEditId(null)}
+                          >
+                            取消
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

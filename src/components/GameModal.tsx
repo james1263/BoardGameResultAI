@@ -168,17 +168,20 @@ export default function GameModal({
               }
             />
             <div className="modal-head-info">
-              {game.links.bgg && (
-                <a
-                  className="bgg-link"
-                  href={game.links.bgg}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  BoardGameGeek ↗
-                </a>
-              )}
-              <h2 id="modal-title">{game.name}</h2>
+              <h2 id="modal-title">
+                {game.links.bgg ? (
+                  <a
+                    className="ge-title-link"
+                    href={game.links.bgg}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {game.name} <span aria-hidden="true">↗</span>
+                  </a>
+                ) : (
+                  game.name
+                )}
+              </h2>
               <div className="modal-score-line">
                 {game.bggScore == null ? (
                   <span className="modal-score-empty">尚無 BGG 分數</span>
