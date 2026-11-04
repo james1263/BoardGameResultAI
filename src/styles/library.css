@@ -325,3 +325,8 @@
   padding: 0 6px;
   text-align: center;
 }
+
+/* 標題列拿掉後，縮小與上方的間距 */
+.library {
+  padding-top: 6px;
+}

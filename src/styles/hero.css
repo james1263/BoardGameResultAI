@@ -248,3 +248,45 @@
 .cat-done:hover {
   background: var(--c-forest-dark);
 }
+
+/* 搜尋欄＋排序列：排序放在搜尋欄正下方 */
+.hero-tools {
+  width: min(100%, 460px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hero-tools .search-box {
+  width: 100%;
+}
+
+.hero-tools-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-tools-row .sort-control {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-tools-row .sort-control select {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-tools-row .status-legend {
+  flex: none;
+  margin: 0;
+}
+
+.hero {
+  padding-bottom: 8px;
+}
+
+.hero .quick-chips,
+.hero .category-chips {
+  margin-top: 10px;
+}

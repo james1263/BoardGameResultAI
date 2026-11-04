@@ -908,35 +908,52 @@ function Library({
                 今天，想玩<span>哪一款？</span>
               </h1>
             </div>
-            <label className="search-box">
-              <span aria-hidden="true">⌕</span>
-              <input
-                type="search"
-                placeholder="搜尋桌遊名稱，例如：璀璨寶石"
-                value={searchText}
-                onChange={(event) => setSearchText(event.target.value)}
-                aria-label="搜尋桌遊名稱"
-              />
-              <button
-                type="button"
-                className="search-filter-btn"
-                aria-label={
-                  advancedFilterCount > 0
-                    ? `更多篩選（已套用 ${advancedFilterCount} 項，顯示 ${displayedGameCount} / ${boardGames.length} 款）`
-                    : '更多篩選'
-                }
-                onClick={() => setIsFilterOpen(true)}
-              >
-                <span aria-hidden="true">☰</span>
-                {advancedFilterCount > 0 ? (
-                  <span>
-                    {displayedGameCount} / {boardGames.length}
-                  </span>
-                ) : (
-                  <span>篩選</span>
-                )}
-              </button>
-            </label>
+            <div className="hero-tools">
+              <label className="search-box">
+                <span aria-hidden="true">⌕</span>
+                <input
+                  type="search"
+                  placeholder="搜尋桌遊名稱，例如：璀璨寶石"
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  aria-label="搜尋桌遊名稱"
+                />
+                <button
+                  type="button"
+                  className="search-filter-btn"
+                  aria-label={
+                    advancedFilterCount > 0
+                      ? `更多篩選（已套用 ${advancedFilterCount} 項，顯示 ${displayedGameCount} / ${boardGames.length} 款）`
+                      : '更多篩選'
+                  }
+                  onClick={() => setIsFilterOpen(true)}
+                >
+                  <span aria-hidden="true">☰</span>
+                  {advancedFilterCount > 0 ? (
+                    <span>
+                      {displayedGameCount} / {boardGames.length}
+                    </span>
+                  ) : (
+                    <span>篩選</span>
+                  )}
+                </button>
+              </label>
+              <div className="hero-tools-row">
+                <SortControl
+                  sortBy={effectiveSortBy}
+                  isAdmin={isAdmin}
+                  showMyScores={!!session}
+                  setSortBy={handleSetSortBy}
+                  sortDirection={sortDirection}
+                  onToggleDirection={() =>
+                    setSortDirection((current) =>
+                      current === 'asc' ? 'desc' : 'asc',
+                    )
+                  }
+                />
+                <StatusLegend />
+              </div>
+            </div>
           </div>
           <CategoryChips
             games={boardGames}
@@ -948,30 +965,6 @@ function Library({
         </section>
 
         <section className="library">
-          <div className="section-heading">
-            <div className="heading-actions">
-              <SortControl
-                sortBy={effectiveSortBy}
-                isAdmin={isAdmin}
-                showMyScores={!!session}
-                setSortBy={handleSetSortBy}
-                sortDirection={sortDirection}
-                onToggleDirection={() =>
-                  setSortDirection((current) =>
-                    current === 'asc' ? 'desc' : 'asc',
-                  )
-                }
-              />
-              {(searchText !== '' ||
-                activeFilterCount > 0 ||
-                selectedCategories.length > 0) && (
-                  <span className="game-count">
-                    顯示 {displayedGameCount} / {boardGames.length} 款
-                  </span>
-                )}
-              <StatusLegend />
-            </div>
-          </div>
 
           <FilterDrawer
             isOpen={isFilterOpen}
