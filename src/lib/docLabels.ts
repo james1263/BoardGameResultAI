@@ -1,4 +1,4 @@
-import type { DocLanguage, DocType, GameDocument } from './useGameDocuments'
+import type { DocLanguage, DocScope, DocType, GameDocument } from './useGameDocuments'
 
 export const DOC_TYPE_LABELS: Record<DocType, string> = {
   rulebook: '規則書',
@@ -13,6 +13,21 @@ export const LANGUAGE_LABELS: Record<DocLanguage, string> = {
   zh: '中文',
   en: '英文',
   other: '其他語言',
+}
+
+// 文件範圍：主遊戲／擴充／FAQ／玩家整理
+export const SCOPE_LABELS: Record<DocScope, string> = {
+  main: '主遊戲',
+  expansion: '擴充',
+  faq: 'FAQ／勘誤',
+  player_notes: '玩家整理',
+}
+
+export function scopeLabel(scope: string | undefined, expansion?: string): string {
+  const key = (scope ?? 'main') as DocScope
+  const base = SCOPE_LABELS[key] ?? '主遊戲'
+  const name = (expansion ?? '').trim()
+  return key === 'expansion' && name ? `${base}：${name}` : base
 }
 
 // 畫面上只分三種：PDF（上傳、僅管理者）、影片、網頁

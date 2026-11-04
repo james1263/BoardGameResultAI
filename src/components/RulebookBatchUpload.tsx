@@ -7,10 +7,12 @@ import {
   uploadPdfDocument,
   useGameDocuments,
   type DocLanguage,
+  type DocScope,
+  updateDocScope,
   type DocType,
   type GameDocument,
 } from '../lib/useGameDocuments'
-import { docIcon, docLabel, indexSuffix } from '../lib/docLabels'
+import { docIcon, docLabel, indexSuffix, scopeLabel, SCOPE_LABELS } from '../lib/docLabels'
 import '../styles/rb-docs.css'
 import ErrataAdmin from './ErrataAdmin'
 
@@ -28,6 +30,8 @@ type Row = {
   status: RowStatus
   message: string
   guessed: boolean
+  scope: DocScope
+  expansionName: string
 }
 type StorageUsage = {
   buckets: { bucket_id: string; file_count: number; total_bytes: number }[]
@@ -38,6 +42,7 @@ type AllDoc = {
   id: string
   bgg_name: string
   title: string | null
+  source_type: string
 }
 
 // 免費方案的檔案儲存額度。請對照 Supabase 後台 Usage，數字不對就改這裡
@@ -106,6 +111,13 @@ function guessLanguage(fileName: string): Lang {
   if (/[\u4e00-\u9fff]/.test(fileName)) return 'zh'
   if (/(^|[^a-z])(zh|cn|tw|chinese)([^a-z]|$)/i.test(fileName)) return 'zh'
   return 'en'
+}
+
+function guessScope(fileName: string): DocScope {
+  const lower = fileName.toLowerCase()
+  if (lower.includes('faq') || lower.includes('errata') || fileName.includes('勘誤')) return 'faq'
+  if (lower.includes('expansion') || fileName.includes('擴充')) return 'expansion'
+  return 'main'
 }
 
 function formatMb(bytes: number): string {
@@ -261,10 +273,14 @@ function GameDocGroup({
   bggName,
   sizeByName,
   onDeleted,
+  onChanged,
+  filter,
 }: {
   bggName: string
   sizeByName: Map<string, number>
   onDeleted: () => void
+  onChanged: () => void
+  filter: (doc: GameDocument) => boolean
 }) {
   const docsApi = useGameDocuments(bggName)
   const [error, setError] = useState('')
@@ -281,13 +297,23 @@ function GameDocGroup({
     else onDeleted()
   }
 
+  async function changeScope(doc: GameDocument, scope: DocScope) {
+    let name = doc.expansion_name ?? ''
+    if (scope === 'expansion') {
+      name = window.prompt('擴充名稱（例如 Kami Unbound）', name) ?? name
+    }
+    const message = await updateDocScope(doc.id, scope, name)
+    if (message) setError(message)
+    else onChanged()
+  }
+
   return (
     <div className="rbd-body">
       {docsApi.isLoading && <p className="rb-hint">載入文件中…</p>}
       {docsApi.loadError && <p className="admin-error">{docsApi.loadError}</p>}
       {error && <p className="admin-error">{error}</p>}
       <ul>
-        {docsApi.docs.map((doc) => {
+        {docsApi.docs.filter(filter).map((doc) => {
           const size =
             doc.source_type === 'upload' ? sizeByName.get(`${doc.id}.pdf`) : undefined
           return (
@@ -305,8 +331,24 @@ function GameDocGroup({
                 <span>
                   {docIcon(doc)} {docLabel(doc)}
                   {indexSuffix(doc)}
+                  {doc.source_type === 'upload' &&
+                    `｜${scopeLabel(doc.content_scope, doc.expansion_name)}`}
                   {size != null && <span className="rbd-size">　{formatMb(size)}</span>}
                 </span>
+              )}
+              {doc.source_type === 'upload' && (
+                <select
+                  value={doc.content_scope ?? 'main'}
+                  onChange={(event) =>
+                    void changeScope(doc, event.target.value as DocScope)
+                  }
+                >
+                  {(Object.keys(SCOPE_LABELS) as DocScope[]).map((key) => (
+                    <option key={key} value={key}>
+                      {SCOPE_LABELS[key]}
+                    </option>
+                  ))}
+                </select>
               )}
               <button
                 type="button"
@@ -333,13 +375,14 @@ export default function RulebookBatchUpload() {
   const [listSearch, setListSearch] = useState('')
   const [openGames, setOpenGames] = useState<string[]>([])
   const [listTick, setListTick] = useState(0)
+  const [errataCounts, setErrataCounts] = useState<Map<string, number>>(new Map())
 
   const loadUsage = useCallback(async () => {
     const [usageResult, docsResult] = await Promise.all([
       supabase.rpc('admin_rulebook_storage_usage'),
       supabase
         .from('game_documents')
-        .select('id, bgg_name, title')
+        .select('id, bgg_name, title, source_type')
         .order('created_at', { ascending: false }),
     ])
     if (usageResult.error) {
@@ -349,6 +392,16 @@ export default function RulebookBatchUpload() {
       setUsage(usageResult.data as StorageUsage)
     }
     if (!docsResult.error) setAllDocs((docsResult.data ?? []) as AllDoc[])
+    const errataResult = await supabase.rpc('admin_count_game_errata')
+    if (!errataResult.error) {
+      setErrataCounts(
+        new Map(
+          ((errataResult.data ?? []) as { bgg_name: string; n: number }[]).map(
+            (r) => [r.bgg_name, Number(r.n)],
+          ),
+        ),
+      )
+    }
   }, [])
 
   useEffect(() => {
@@ -460,6 +513,8 @@ export default function RulebookBatchUpload() {
         status: 'ready',
         message: '',
         guessed: guess !== '',
+        scope: guessScope(file.name),
+        expansionName: '',
       })
     }
 
@@ -518,6 +573,8 @@ export default function RulebookBatchUpload() {
           title: '',
           edition: '',
           sourceNote: '',
+          scope: row.scope,
+          expansionName: row.expansionName,
           onProgress: (text) => updateRow(row.id, { message: text }),
         })
 
@@ -580,17 +637,17 @@ export default function RulebookBatchUpload() {
   const missingGame = pending.filter((r) => !r.bggName).length
   const sizeByName = new Map((usage?.files ?? []).map((f) => [f.name, f.size]))
   const listQuery = compact(listSearch)
-  const groups = (() => {
+  function buildGroups(docs: AllDoc[]) {
     const byGame = new Map<string, AllDoc[]>()
-    for (const doc of allDocs) {
+    for (const doc of docs) {
       const list = byGame.get(doc.bgg_name) ?? []
       list.push(doc)
       byGame.set(doc.bgg_name, list)
     }
     return [...byGame.entries()]
-      .map(([bggName, docs]) => {
+      .map(([bggName, list]) => {
         const name = games.find((g) => g.bgg_name === bggName)?.name || bggName
-        return { bggName, name, docs }
+        return { bggName, name, docs: list }
       })
       .filter((group) => {
         if (!listQuery) return true
@@ -600,8 +657,70 @@ export default function RulebookBatchUpload() {
         return text.includes(listQuery)
       })
       .sort((x, y) => x.name.localeCompare(y.name, 'zh-Hant'))
-  })()
+  }
+  const pdfDocs = allDocs.filter((d) => d.source_type === 'upload')
+  const linkDocs = allDocs.filter((d) => d.source_type !== 'upload')
+  const errataTotal = [...errataCounts.values()].reduce((sum, n) => sum + n, 0)
 
+  function renderDocList(
+    label: string,
+    docs: AllDoc[],
+    filter: (doc: GameDocument) => boolean,
+  ) {
+    const groups = buildGroups(docs)
+    return (
+      <>
+        <div className="rbd-title">
+          <h3>已上傳的{label}</h3>
+          <small>共 {docs.length} 份</small>
+        </div>
+        <input
+          type="search"
+          className="rb-search"
+          placeholder="搜尋遊戲名稱或文件名"
+          value={listSearch}
+          onChange={(event) => setListSearch(event.target.value)}
+        />
+        {groups.length === 0 ? (
+          <p className="rb-hint">
+            {docs.length === 0 ? `還沒有任何${label}。` : '沒有符合的文件。'}
+          </p>
+        ) : (
+          <ul className="rbd-list">
+            {groups.map((group) => {
+              const open = openGames.includes(group.bggName)
+              return (
+                <li className="rbd-group" key={group.bggName}>
+                  <button
+                    type="button"
+                    className="rbd-head"
+                    aria-expanded={open}
+                    onClick={() => toggleGame(group.bggName)}
+                  >
+                    <span className="rbd-name">{group.name}</span>
+                    <span className="rbd-count">{group.docs.length} 份</span>
+                    <span className="rbd-arrow" aria-hidden="true">
+                      {open ? '▴' : '▾'}
+                    </span>
+                  </button>
+                  {open && (
+                    <GameDocGroup
+                      key={`${group.bggName}-${listTick}`}
+                      bggName={group.bggName}
+                      sizeByName={sizeByName}
+                      filter={filter}
+                      onChanged={() => setListTick((n) => n + 1)}
+                      onDeleted={() => void loadUsage()}
+                    />
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </>
+    )
+  }
   function toggleGame(bggName: string) {
     setOpenGames((current) =>
       current.includes(bggName)
@@ -706,6 +825,31 @@ export default function RulebookBatchUpload() {
                           />
                           {row.guessed && row.bggName && (
                             <small className="rb-guess">遊戲是從檔名猜的，請確認</small>
+                          )}
+                          <select
+                            value={row.scope}
+                            disabled={locked}
+                            onChange={(event) =>
+                              updateRow(row.id, { scope: event.target.value as DocScope })
+                            }
+                          >
+                            {(Object.keys(SCOPE_LABELS) as DocScope[]).map((key) => (
+                              <option key={key} value={key}>
+                                範圍：{SCOPE_LABELS[key]}
+                              </option>
+                            ))}
+                          </select>
+                          {row.scope === 'expansion' && (
+                            <input
+                              type="text"
+                              maxLength={60}
+                              disabled={locked}
+                              placeholder="擴充名稱，例如：Kami Unbound"
+                              value={row.expansionName}
+                              onChange={(event) =>
+                                updateRow(row.id, { expansionName: event.target.value })
+                              }
+                            />
                           )}
                         </div>
                       )}
@@ -819,62 +963,21 @@ export default function RulebookBatchUpload() {
       )}
 
       {mode === 'errata' && (
-        <ErrataAdmin
+        <ErrataAdmin onChanged={() => void loadUsage()}
           renderPicker={(value, onChange) => (
             <GamePicker games={games} value={value} onChange={onChange} />
           )}
         />
       )}
 
-      <div className="rbd-title">
-        <h3>文件列表</h3>
-        <small>
-          {allDocs.length > 0
-            ? `${new Set(allDocs.map((d) => d.bgg_name)).size} 款遊戲、${allDocs.length} 份文件`
-            : ''}
-        </small>
-      </div>
-      <input
-        type="search"
-        className="rb-search"
-        placeholder="搜尋遊戲名稱或文件名"
-        value={listSearch}
-        onChange={(event) => setListSearch(event.target.value)}
-      />
-      {groups.length === 0 ? (
+      {mode === 'pdf' &&
+        renderDocList('PDF', pdfDocs, (d) => d.source_type === 'upload')}
+      {mode === 'link' &&
+        renderDocList('連結', linkDocs, (d) => d.source_type !== 'upload')}
+      {mode === 'errata' && (
         <p className="rb-hint">
-          {allDocs.length === 0 ? '還沒有任何文件。' : '沒有符合的文件。'}
+          玩錯紀錄共 {errataTotal} 份（{errataCounts.size} 款遊戲）。
         </p>
-      ) : (
-        <ul className="rbd-list">
-          {groups.map((group) => {
-            const open = openGames.includes(group.bggName)
-            return (
-              <li className="rbd-group" key={group.bggName}>
-                <button
-                  type="button"
-                  className="rbd-head"
-                  aria-expanded={open}
-                  onClick={() => toggleGame(group.bggName)}
-                >
-                  <span className="rbd-name">{group.name}</span>
-                  <span className="rbd-count">{group.docs.length} 份</span>
-                  <span className="rbd-arrow" aria-hidden="true">
-                    {open ? '▴' : '▾'}
-                  </span>
-                </button>
-                {open && (
-                  <GameDocGroup
-                    key={`${group.bggName}-${listTick}`}
-                    bggName={group.bggName}
-                    sizeByName={sizeByName}
-                    onDeleted={() => void loadUsage()}
-                  />
-                )}
-              </li>
-            )
-          })}
-        </ul>
       )}
     </div>
   )

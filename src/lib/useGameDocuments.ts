@@ -4,6 +4,7 @@ import { extractPdfChunks, PdfExtractError } from './extractPdfText'
 
 export type DocType = 'rulebook' | 'faq' | 'errata' | 'intro' | 'video' | 'other'
 export type DocLanguage = 'zh' | 'en' | 'other'
+export type DocScope = 'main' | 'expansion' | 'faq' | 'player_notes'
 export type IndexStatus =
   | 'none'
   | 'pending'
@@ -26,6 +27,8 @@ export type GameDocument = {
   page_count: number | null
   edition: string
   source_note: string
+  content_scope: DocScope
+  expansion_name: string
 }
 
 export function isSafeUrl(url: string): boolean {
@@ -43,6 +46,8 @@ export type UploadInput = {
   title: string
   edition: string
   sourceNote: string
+  scope?: DocScope
+  expansionName?: string
   onProgress?: (text: string) => void
 }
 
@@ -117,6 +122,11 @@ export async function uploadPdfDocument(
     index_status: 'processing',
     edition: input.edition.trim(),
     source_note: input.sourceNote.trim(),
+    content_scope: input.scope ?? 'main',
+    expansion_name:
+      (input.scope ?? 'main') === 'expansion'
+        ? (input.expansionName ?? '').trim().slice(0, 60)
+        : '',
   })
   if (insert.error) {
     await supabase.storage.from('rulebooks').remove([path])
@@ -138,6 +148,22 @@ export async function uploadPdfDocument(
   }
 
   return null
+}
+
+// 管理者修改已上傳文件的範圍；回傳錯誤訊息，成功回傳 null
+export async function updateDocScope(
+  docId: string,
+  scope: DocScope,
+  expansionName: string,
+): Promise<string | null> {
+  const { error } = await supabase
+    .from('game_documents')
+    .update({
+      content_scope: scope,
+      expansion_name: scope === 'expansion' ? expansionName.trim().slice(0, 60) : '',
+    })
+    .eq('id', docId)
+  return error ? '更新範圍失敗：' + error.message : null
 }
 
 export function useGameDocuments(bggName: string) {

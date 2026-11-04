@@ -14,8 +14,10 @@ import '../styles/errata.css'
 // 管理中心「規則書」分頁 →「＋ 玩錯紀錄」：直接打字，或讀入 .txt 後修改再儲存
 export default function ErrataAdmin({
   renderPicker,
+  onChanged,
 }: {
   renderPicker: (value: string, onChange: (bggName: string) => void) => ReactNode
+  onChanged?: () => void
 }) {
   const [bggName, setBggName] = useState('')
   const api = useGameErrata(bggName, bggName !== '')
@@ -93,6 +95,7 @@ export default function ErrataAdmin({
       return
     }
     setMessage(editId ? '已更新。' : '已新增。')
+    onChanged?.()
     resetForm()
     api.reload()
   }
@@ -116,6 +119,7 @@ export default function ErrataAdmin({
     }
     if (editId === item.id) resetForm()
     setMessage('已刪除。')
+      onChanged?.()
     api.reload()
   }
 

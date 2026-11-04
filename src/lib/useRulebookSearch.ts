@@ -10,6 +10,8 @@ export type RulebookChunk = {
   section_title: string | null
   content: string
   score: number
+  doc_scope?: string
+  doc_expansion?: string
 }
 
 export async function hasRulebookIndex(bggName: string): Promise<boolean> {
