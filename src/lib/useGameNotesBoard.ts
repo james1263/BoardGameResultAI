@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
+import { likeErrorText, toggleNoteLike } from './noteLikes'
 
 export type BoardNote = {
   id: string
@@ -9,6 +10,8 @@ export type BoardNote = {
   postedOn: string // YYYY-MM-DD，沒有時為空字串
   like: string // 喜歡的點（選填）
   dislike: string // 不喜歡的點（選填）
+  likeCount: number // 按讚數
+  iLiked: boolean // 我是否按過讚
 }
 
 // 自己在這款遊戲「別處玩過」類型的留言（可編輯；含被隱藏的）
@@ -30,6 +33,8 @@ type PublicRow = {
   posted_on: string | null
   like_point?: string | null
   dislike_point?: string | null
+  like_count?: number | null
+  i_liked?: boolean | null
 }
 type HiddenRow = {
   id: string
@@ -65,6 +70,7 @@ export function useGameNotesBoard(
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [likeBusyId, setLikeBusyId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!enabled) return
@@ -87,6 +93,8 @@ export function useGameNotesBoard(
         postedOn: row.posted_on ?? '',
         like: row.like_point ?? '',
         dislike: row.dislike_point ?? '',
+        likeCount: Number(row.like_count ?? 0),
+        iLiked: !!row.i_liked,
       })),
     )
 
@@ -117,6 +125,8 @@ export function useGameNotesBoard(
             postedOn: '',
             like: row.like_point ?? '',
             dislike: row.dislike_point ?? '',
+            likeCount: 0,
+            iLiked: false,
           })),
         )
       }
@@ -187,6 +197,33 @@ export function useGameNotesBoard(
     return ''
   }
 
+  // 按讚／取消讚：先在畫面上更新，失敗再還原。回傳錯誤訊息，成功回傳空字串
+  async function toggleLike(noteId: string): Promise<string> {
+    if (likeBusyId) return ''
+    const target = notes.find((note) => note.id === noteId)
+    if (!target) return ''
+    const before = { iLiked: target.iLiked, likeCount: target.likeCount }
+    const patch = (changes: Partial<BoardNote>) =>
+      setNotes((current) =>
+        current.map((note) => (note.id === noteId ? { ...note, ...changes } : note)),
+      )
+    setLikeBusyId(noteId)
+    patch({
+      iLiked: !before.iLiked,
+      likeCount: Math.max(0, before.likeCount + (before.iLiked ? -1 : 1)),
+    })
+    try {
+      const result = await toggleNoteLike(noteId)
+      patch({ iLiked: result.liked, likeCount: result.count })
+      return ''
+    } catch (error) {
+      patch(before)
+      return likeErrorText(error instanceof Error ? error.message : String(error))
+    } finally {
+      setLikeBusyId(null)
+    }
+  }
+
   return {
     notes,
     hiddenNotes,
@@ -195,6 +232,8 @@ export function useGameNotesBoard(
     error,
     busyId,
     saving,
+    likeBusyId,
+    toggleLike,
     setHidden,
     deleteMine,
     addNote,

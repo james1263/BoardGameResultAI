@@ -5,6 +5,7 @@ import {
   type BoardNote,
 } from '../lib/useGameNotesBoard'
 import NoteListItem from './NoteListItem'
+import NoteLikersButton from './NoteLikersButton'
 import NotePointsFields from './NotePointsFields'
 import PublicNoteHint from './PublicNoteHint'
 import { confirmPublicPost } from '../lib/publicNoteNotice'
@@ -240,6 +241,11 @@ export default function GameNotesBoard({
                 content={note.content}
                 like={note.like}
                 dislike={note.dislike}
+                likeCount={note.likeCount}
+                iLiked={note.iLiked}
+                canLike={!note.isMine}
+                likeBusy={api.likeBusyId === note.id}
+                onLike={() => void api.toggleLike(note.id).then(setMessage)}
                 open={open}
                 onToggle={() => setOpenId(open ? null : note.id)}
               >
@@ -250,6 +256,7 @@ export default function GameNotesBoard({
                     renderConfirm('hide', () => void hide(note))
                   )
                 ) : note.isMine || isAdmin ? (
+                  <>
                   <div className="gb-btn-row">
                     {editable && (
                       <button
@@ -287,6 +294,10 @@ export default function GameNotesBoard({
                       </button>
                     )}
                   </div>
+                  {isAdmin && note.likeCount > 0 ? (
+                    <NoteLikersButton noteId={note.id} count={note.likeCount} />
+                  ) : null}
+                  </>
                 ) : null}
               </NoteListItem>
             )

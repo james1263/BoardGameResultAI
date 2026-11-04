@@ -5,6 +5,8 @@ import type { RatingsApi } from '../lib/useGameRatings'
 import { supabase } from '../lib/supabase'
 import { MAX_NOTES_PER_GAME } from '../lib/useGameNotesBoard'
 import NoteListItem from './NoteListItem'
+import NoteLikersButton from './NoteLikersButton'
+import { likeErrorText, toggleNoteLike } from '../lib/noteLikes'
 import NotePointsFields from './NotePointsFields'
 import PublicNoteHint from './PublicNoteHint'
 import { confirmPublicPost } from '../lib/publicNoteNotice'
@@ -24,6 +26,8 @@ type NoteRow = {
   posted_on: string | null
   like_point?: string | null
   dislike_point?: string | null
+  like_count?: number | null
+  i_liked?: boolean | null
 }
 
 // 搜尋時忽略大小寫、空白與標點
@@ -76,6 +80,7 @@ export default function ClubBoard({
   const [busyId, setBusyId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
+  const [likeBusyId, setLikeBusyId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!enabled) return
@@ -153,6 +158,31 @@ export default function ClubBoard({
     setComposeOpen(false)
     setMessage('已發表。')
     await load()
+  }
+
+  // 按讚／取消讚：先在畫面上更新，失敗再還原
+  async function toggleLike(row: NoteRow) {
+    if (likeBusyId) return
+    const was = !!row.i_liked
+    const before = row.like_count ?? 0
+    const patch = (liked: boolean, count: number) =>
+      setRows((current) =>
+        current.map((item) =>
+          item.id === row.id ? { ...item, i_liked: liked, like_count: count } : item,
+        ),
+      )
+    setLikeBusyId(row.id)
+    setMessage('')
+    patch(!was, Math.max(0, before + (was ? -1 : 1)))
+    try {
+      const result = await toggleNoteLike(row.id)
+      patch(result.liked, result.count)
+    } catch (error) {
+      patch(was, before)
+      setMessage(likeErrorText(error instanceof Error ? error.message : String(error)))
+    } finally {
+      setLikeBusyId(null)
+    }
   }
 
   async function removeMine(row: NoteRow) {
@@ -313,10 +343,17 @@ export default function ClubBoard({
                         content={row.content}
                         like={row.like_point ?? ''}
                         dislike={row.dislike_point ?? ''}
+                        likeCount={row.like_count ?? 0}
+                        iLiked={!!row.i_liked}
+                        canLike={!row.is_mine}
+                        likeBusy={likeBusyId === row.id}
+                        onLike={() => void toggleLike(row)}
                         open={openId === row.id}
                         onToggle={() => setOpenId(openId === row.id ? null : row.id)}
                       >
-                        {row.is_mine ? (
+                        {row.is_mine || (isAdmin && (row.like_count ?? 0) > 0) ? (
+                          <>
+                          {row.is_mine ? (
                           <div className="nl-btnrow">
                             <button
                               type="button"
@@ -327,6 +364,11 @@ export default function ClubBoard({
                               {busyId === row.id ? '處理中…' : '刪除'}
                             </button>
                           </div>
+                          ) : null}
+                          {isAdmin && (row.like_count ?? 0) > 0 ? (
+                            <NoteLikersButton noteId={row.id} count={row.like_count ?? 0} />
+                          ) : null}
+                          </>
                         ) : null}
                       </NoteListItem>
                     )

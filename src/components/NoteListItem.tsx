@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import '../styles/note-list.css'
 import '../styles/note-points.css'
+import '../styles/note-likes.css'
 
 // 清單式留言列：收合時只顯示 名字・日期・遊戲・前兩行內容（太長以 … 結尾），
 // 點一下展開看全文與操作按鈕。
@@ -18,6 +19,11 @@ export default function NoteListItem({
   hideText = false,
   like = '',
   dislike = '',
+  likeCount,
+  iLiked = false,
+  canLike = false,
+  likeBusy = false,
+  onLike,
   children,
 }: {
   name: string
@@ -33,6 +39,11 @@ export default function NoteListItem({
   hideText?: boolean // 編輯中不顯示內文，改由 children 放輸入框
   like?: string // 喜歡的點（展開後才顯示）
   dislike?: string // 不喜歡的點（展開後才顯示）
+  likeCount?: number // 按讚數（沒傳＝不顯示按讚）
+  iLiked?: boolean
+  canLike?: boolean // 可以按（不是自己的留言、且是 VIP／管理者）
+  likeBusy?: boolean
+  onLike?: () => void
   children?: ReactNode
 }) {
   return (
@@ -57,6 +68,24 @@ export default function NoteListItem({
           {mine && <span className="gb-mine">我的</span>}
           {date && <span className="nl-date">{date}</span>}
           {badge}
+          {likeCount !== undefined &&
+            (canLike ? (
+              <button
+                type="button"
+                className={`nl-like${iLiked ? ' on' : ''}`}
+                aria-pressed={iLiked}
+                aria-label={iLiked ? '取消讚' : '按讚'}
+                disabled={likeBusy}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onLike?.()
+                }}
+              >
+                👍 {likeCount}
+              </button>
+            ) : likeCount > 0 ? (
+              <span className="nl-like off">👍 {likeCount}</span>
+            ) : null)}
           <span className="nl-caret" aria-hidden="true">
             {open ? '▴' : '▾'}
           </span>

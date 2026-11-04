@@ -1,0 +1,32 @@
+.nl-like {
+  margin-left: auto;
+  margin-right: 6px;
+  padding: 1px 8px;
+  border: 1px solid #d9c9a8;
+  border-radius: 999px;
+  background: #fbf7ec;
+  color: #5b4a32;
+  font-size: 12px;
+  line-height: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.nl-like.on {
+  background: #456b50;
+  border-color: #456b50;
+  color: #fbf7ec;
+}
+.nl-like.off {
+  cursor: default;
+  background: transparent;
+  border-color: transparent;
+}
+.nl-like:disabled {
+  opacity: 0.6;
+}
+.nlk-list {
+  margin: 6px 0 0;
+  padding: 0 0 0 18px;
+  font-size: 13px;
+  color: #34463c;
+}
