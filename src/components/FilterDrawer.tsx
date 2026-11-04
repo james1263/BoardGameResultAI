@@ -14,7 +14,8 @@ import {
   type RatingFilter,
   type ViewMode,
 } from '../lib/libraryTypes'
-import { EyeIcon } from './Icons'
+import { BrainIcon, EyeIcon, PairIcon, PersonIcon } from './Icons'
+import '../styles/filter-icons.css'
 import InfoHint from './InfoHint'
 import ViewToggle from './ViewToggle'
 
@@ -173,13 +174,21 @@ export default function FilterDrawer(props: FilterDrawerProps) {
 
           <div className="filter-grid filter-grid-spaced">
             <NumberSelect
-              label="🎯 最佳人數"
+              label={
+                <>
+                  <PairIcon /> 最佳人數
+                </>
+              }
               value={props.bestPlayerCount}
               options={playerCounts}
               onChange={props.setBestPlayerCount}
             />
             <NumberSelect
-              label="👥 推薦人數"
+              label={
+                <>
+                  <PersonIcon /> 推薦人數
+                </>
+              }
               value={props.recommendPlayerCount}
               options={playerCounts}
               onChange={props.setRecommendPlayerCount}
@@ -214,7 +223,7 @@ export default function FilterDrawer(props: FilterDrawerProps) {
           <div className="filter-group">
             <div className="filter-group-title">
               <span>
-                🧠 BGG 難度
+                <BrainIcon /> BGG 難度
                 <InfoHint text="可複選。" />
               </span>
             </div>

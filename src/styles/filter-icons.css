@@ -1,0 +1,17 @@
+/* 篩選抽屜裡的小圖示 */
+.filter-drawer svg.fact-icon {
+  width: 1.15em;
+  height: 1.15em;
+  margin-right: 4px;
+  vertical-align: -0.2em;
+  color: #456b50;
+}
+
+/* 大腦 emoji */
+.fact-emoji {
+  display: inline-block;
+  font-size: 1em;
+  line-height: 1;
+  margin-right: 2px;
+  vertical-align: -0.05em;
+}

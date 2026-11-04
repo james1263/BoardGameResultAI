@@ -66,8 +66,17 @@ export function PersonIcon() {
   )
 }
 
-// 大腦（BGG 難度）
+// 大腦（BGG 難度）：用 emoji，小尺寸比手繪線條清楚
 export function BrainIcon() {
+  return (
+    <span className="fact-emoji" aria-hidden="true">
+      🧠
+    </span>
+  )
+}
+
+// 兩個人連在一起（最佳人數）
+export function PairIcon() {
   return (
     <svg
       className="fact-icon"
@@ -75,13 +84,14 @@ export function BrainIcon() {
       aria-hidden="true"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M12 5.5A3 3 0 0 0 6.6 4.3 3.2 3.2 0 0 0 4 8.2a3.2 3.2 0 0 0 .6 5.2A3.3 3.3 0 0 0 8 18.6a3 3 0 0 0 4 .9z" />
-      <path d="M12 5.5a3 3 0 0 1 5.4-1.2A3.2 3.2 0 0 1 20 8.2a3.2 3.2 0 0 1-.6 5.2 3.3 3.3 0 0 1-3.4 5.2 3 3 0 0 1-4 .9z" />
-      <path d="M12 5.5v14M8.5 10c1 0 2 .6 2.5 1.5M15.5 10c-1 0-2 .6-2.5 1.5M8.5 14.5c1 0 2-.4 2.5-1M15.5 14.5c-1 0-2-.4-2.5-1" />
+      <circle cx="9" cy="8" r="3.2" />
+      <circle cx="16" cy="8" r="3.2" />
+      <path d="M2.5 20c0-3.6 2.9-6 6.5-6 1.2 0 2.3.3 3.2.8" />
+      <path d="M11.8 14.8c1-.5 2.1-.8 3.2-.8 3.6 0 6.5 2.4 6.5 6" />
     </svg>
   )
 }

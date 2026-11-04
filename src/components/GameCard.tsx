@@ -3,7 +3,7 @@ import type { PersonalApi } from '../lib/personalApi'
 import { getDisplayScore, type LibraryGame } from '../lib/libraryTypes'
 import { formatNumber, formatPlayers } from '../lib/gameFormat'
 import CoverImage from './CoverImage'
-import { BrainIcon, PersonIcon } from './Icons'
+import { BrainIcon, PairIcon, PersonIcon } from './Icons'
 import StatusButtons from './StatusButtons'
 import '../styles/card-compact.css'
 import '../styles/card-icons.css'
@@ -97,7 +97,9 @@ export default function GameCard({
 
         <div className="game-facts">
           <span>
-            <span title="最佳人數">🎯 {shortPlayers(game.bestPlayers)}</span>
+            <span title="最佳人數" aria-label="最佳人數">
+              <PairIcon /> {shortPlayers(game.bestPlayers)}
+            </span>
             <span title="推薦人數" aria-label="推薦人數">
               <PersonIcon /> {shortPlayers(game.recommendPlayers)}
             </span>
