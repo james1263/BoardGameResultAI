@@ -1,17 +1,16 @@
-/* 卡片上的「含擴充」標籤（位置是猜的：封面左下、類型標籤上方） */
-.game-art .ge-badge {
-  position: absolute;
-  left: 6px;
-  bottom: 34px;
-  z-index: 2;
-  padding: 2px 7px;
+/* 卡片上的「含擴」標籤：接在遊戲名稱後面，不蓋在封面上 */
+.game-info h3 .ge-badge {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 0 5px;
   border-radius: 999px;
   background: #b78a5a;
   color: #fbf7ec;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  line-height: 1.4;
-  pointer-events: none;
+  line-height: 1.6;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 /* 詳細視窗的擴充區塊（顏色寫死，避免 iPhone 深色模式吃到繼承色） */

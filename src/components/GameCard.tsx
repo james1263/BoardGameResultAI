@@ -1,4 +1,4 @@
-﻿import type { KeyboardEvent, MouseEvent } from 'react'
+import type { KeyboardEvent, MouseEvent } from 'react'
 import type { PersonalApi } from '../lib/personalApi'
 import { getDisplayScore, type LibraryGame } from '../lib/libraryTypes'
 import { formatNumber, formatPlayers } from '../lib/gameFormat'
@@ -89,7 +89,6 @@ export default function GameCard({
         ) : (
           isNew && <span className="new-badge">NEW</span>
         )}
-        {hasExpansion && <span className="ge-badge">含擴充</span>}
         <span className="game-category">
           {game.category.length > 0 ? game.category.join('、') : '尚未分類'}
         </span>
@@ -97,7 +96,10 @@ export default function GameCard({
 
       {showInfo && (
         <div className="game-info">
-          <h3>{game.name}</h3>
+          <h3>
+            {game.name}
+            {hasExpansion && <span className="ge-badge">含擴</span>}
+          </h3>
 
           <div className="game-facts">
             <span>

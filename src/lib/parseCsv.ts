@@ -19,6 +19,15 @@ function cleanText(value: unknown): string {
   return String(value).trim()
 }
 
+// 匯入時把「屬性」欄裡的「(含擴)」「（含擴）」拿掉（只動顯示名稱，不動 bggName）
+function stripExpansionTag(name: string): string {
+  const stripped = name
+    .replace(/\s*[(（]\s*含擴\s*[)）]\s*/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+  return stripped || name
+}
+
 function getNumber(value: unknown): number | null {
   const text = cleanText(value).replace(/,/g, '')
   if (!text) return null
@@ -147,7 +156,7 @@ export function parseBoardGamesCsv(csvText: string): ParseResult {
     const text = (col: string) => cleanText(row[col])
     const num = (col: string) => getNumber(row[col])
 
-    const name = text('屬性')
+    const name = stripExpansionTag(text('屬性'))
     const bggName = text('bggName')
     if (!name) throw new Error(`CSV 第 ${index + 2} 列的「屬性」欄位是空白。`)
     if (!bggName) throw new Error(`CSV 第 ${index + 2} 列的「bggName」欄位是空白。`)
