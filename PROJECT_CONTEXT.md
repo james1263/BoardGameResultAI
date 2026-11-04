@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-11-03 夜（已重新產生並併入上一版 `生成後.md` 全部內容；**最新增補在第 21 節（玩錯紀錄、英文搜尋、卡片與排序、版面 4.3、家裡 OCR），與前面衝突時以第 21 節為準**；規則助手 RAG 看第 20 節（最新是 20.13）；其餘請同時讀第 19、18 節；`生成後.md` 已重置）。
+> 最後更新：2026-11-04（已併入上一版 `生成後.md`）；前一次：2026-11-03 夜（已重新產生並併入上一版 `生成後.md` 全部內容；**最新增補在第 22 節（詞庫、未對應詞、同義詞、圖示、OCR 亂碼過濾待辦；其次第 21 節）（玩錯紀錄、英文搜尋、卡片與排序、版面 4.3、家裡 OCR），與前面衝突時以第 21 節為準**；規則助手 RAG 看第 20 節（最新是 20.13）；其餘請同時讀第 19、18 節；`生成後.md` 已重置）。
 
 ## 1. 專案簡介與技術架構
 
@@ -580,3 +580,33 @@
 ### 21.6 下一個 AI 要避開的陷阱（補）
 
 ㉖玩錯紀錄的表與函式名稱沒有記錄，動它之前先請使用者匯出；㉗玩錯紀錄與官方規則必須分開標示，不可併成同一層回答；㉘新增篩選或顯示設定，記得同步 `filterStorage.ts` 與 `App.tsx` 的寫入 `useEffect`；㉙工作根目錄若還留著 `patch_sort.py`、`patch_errata.py`（用完的腳本），不要 `git add`，可 `Remove-Item .\patch_sort.py, .\patch_errata.py`。
+
+## 22. 2026-11-04 增補（覆蓋前面衝突的敘述）
+
+- 現況與使用者決定見 `QUICKSTART.md` 2.6、第 6 節。這裡只留架構與資料庫重點。**凡是我沒看到的細節都標［未驗證］。**
+
+### 22.1 資料庫
+
+- **`game_documents` 新欄位**：`content_scope`（值 `main`／`expansion`／FAQ／玩家整理，前端 `lib/docLabels.ts` 的 `SCOPE_LABELS` 與型別 `DocScope`）、`expansion_name`（擴充名稱，可空）。欄位型別與預設值我沒看到（［未驗證］，改之前先匯出 `game_documents` 定義與 RLS）。
+- **`game_glossary`**（中英詞庫）：`id uuid, bgg_name text, zh_term text, en_term text, note text, created_at timestamptz`（皆 NOT NULL）。管理者函式 `admin_get_glossary(p_bgg_name)`、`admin_save_glossary(p_id, p_bgg_name, p_zh, p_en, p_note)`（重複略過或更新備註）、`admin_delete_glossary(p_id)` 與另一個（共 4 個，權限已驗證 `anon_exec = false`、`auth_exec = true`；表格直接權限 0 列）。旭日戰魂錄 28 組種子已寫入（「茶會 → Tea Ceremony」未驗證）；天際礦脈（`bgg_name = 'Skymines'`）`股票 → 股份` 已寫入。**`en_term` 欄位名稱沿用，但現在也可存中文同義詞。** 字數限制：中文詞 ≤ 30、對應詞 ≤ 60、備註 ≤ 100。
+- **`game_glossary_misses`**：`bgg_name, zh_term(2～30 字), hit_count, first_seen, last_seen`，主鍵 `(bgg_name, zh_term)`；RLS 開、`revoke` anon／authenticated。**不存 user_id、不存完整問題。** 函式：`admin_get_glossary_misses(p_bgg_name default null)`（排除已被詞庫涵蓋的詞，雙向包含比對）、`admin_delete_glossary_miss(p_bgg_name, p_zh_term)`、`admin_clear_glossary_misses()`；皆 `plpgsql security definer`、`search_path=''`、`revoke ... from public, anon`、`grant execute ... to authenticated`、非管理者丟 `not admin`。使用者驗證 `anon_exec = false`、`auth_exec = true`；**表格直接權限的查詢結果使用者沒貼（未確認）。**
+- **`search_rulebook_chunks(p_bgg_name, p_query)` 現在的行為（以使用者貼回並執行的版本為準，已被改過三次）**：回傳 `doc_id, doc_title, doc_kind, doc_lang, page_number, section_title, content, score, doc_scope, doc_expansion`；驗 VIP → 查詢取前 200 字 → advisory lock → 刪 7 天前 `rulebook_search_log`、刪 90 天前 `game_glossary_misses` → 非管理者今日 ≥ 30 丟 `DAILY_LIMIT` → `v_eng` ＝去掉中文的剩餘文字 → 詞庫：`position(zh_term in v_text) > 0` 的對應詞，不含中文者併入 `v_eng`（英文全文檢索 OR），含中文者進 `v_syn` → **記錄未對應詞**（中文連續字串 2～30 字，詞庫沒有包含或被包含者；`on conflict` 累加 `hit_count`；**在任何 `return` 之前執行，所以搜不到結果也會記**）→ 中文子字串比對詞 `v_cjk`（≤ 3 字整段、更長用 2 字滑動、最多 20 個）再與 `v_syn` 合併 → 沒有任何搜尋詞就 `return` → 沒有符合的段落就 `return`（不扣次數）→ 寫 `rulebook_search_log` → 回傳前 8 段、`left(content, 1300)`，分數＝英文 `ts_rank_cd` ＋ 中文詞命中數。中文正規式用 `[\u4e00-\u9fff]`。SQL 檔（`glossary_misses.sql`、`glossary_synonyms.sql`）不在 repo。
+
+### 22.2 前端
+
+- **新增檔案**：`src/components/GlossaryAdmin.tsx`（詞庫管理；標籤改為「對應詞：英文，或規則書用的中文同義詞」）、`src/components/GlossaryMisses.tsx`（未對應詞清單：依遊戲分組、複製清單、下載 `.txt`〔UTF-8 含 BOM，「遊戲名｜中文詞｜次數」〕、單筆 ×、清空、重新整理；掛在 `RulebookBatchUpload` 的詞庫模式下面）、`src/styles/rb-docs-tidy.css`（文件列 `rbd-docname`／`rbd-actions`／`rbd-scope`／`rbd-del` 與 `gm-*`）、`src/styles/filter-icons.css`（篩選抽屜內 `svg.fact-icon` 大小、`.fact-emoji`）、`src/lib/cleanOcrText.ts`（**已寫好、尚未接進任何元件**，見 22.4）。
+- **修改**：`RulebookBatchUpload.tsx`（`mode` 為 `'pdf' | 'link' | 'errata' | 'glossary'`，詞庫模式渲染 `GlossaryAdmin` ＋ `GlossaryMisses`；文件列結構：名稱一行 ＋ `rbd-actions`〔範圍選單 `rbd-scope`、刪除 `rbd-del`〕；`changeScope` 改範圍為擴充時用 `askInput` 問名稱，取消則放棄）；`Icons.tsx`（新增 `PairIcon`〔兩人〕；`BrainIcon` 改成 `<span className="fact-emoji">🧠</span>`）；`GameCard.tsx`（最佳人數 `PairIcon`、推薦人數 `PersonIcon`、難度 `BrainIcon`）；`FilterDrawer.tsx`（三個標題同樣用圖示元件）；`public/privacy.html`（2026-11-04 版：搜尋紀錄不存完整問題；詞庫找不到的中文詞會記錄詞與次數、不含帳號、90 天刪除；清單只有管理者看得到）；`96b2eb9` 的版面（排序列移到搜尋欄下方、拿掉標題列與顯示款數）我沒看到細節。
+- **規則**：玩家整句輸入且整句無詞庫詞時，30 字內的整句會被記成一個詞（清單雜訊，管理者按 × 刪）；前端搜尋前濾掉「的、是、有、會、不」，含這些字的詞庫中文詞可能比對不到。
+
+### 22.3 OCR 辨識品質觀察（天際礦脈，2026-11-04）
+
+- 規則助手顯示的片段含大量英文雜訊（`pI og Rh BRE e RRA EARAS)`、`~_!`）、符號與錯字（「氛 -3」應為「氣罐 -3」；「吊縛」；「狠得」），原因：原檔是**水印版**（檔名 `天際礦脈_水印`）與圖文混排，Tesseract 把圖案與水印當文字。第 9、20、31、36、37 頁的片段都有。**OCR 文字只幫忙找頁，一律回原頁面核對。** 之後可考慮：請出版商提供無水印版、OCR 前用 Ghostscript 提高解析度（`-r300`，沒驗證）。
+
+### 22.4 待辦：顯示時過濾亂碼（使用者提出，尚未接線）
+
+- `cleanOcrText(text)`：只在中文佔非空白字元 20% 以上時動作；移除私有區字元與 U+FFFD、連續符號雜訊（`_~|\^<>=*#@` 與括號類）、純英文字串（保留 `C`、`SP`、`CO`、`VP`、`RE`、`AI`，含數字的字串因不是純字母而保留）、中文之間多出來的空白、重複標點。已用天際礦脈第 9 頁開頭做過 Node 測試：英文雜訊與符號被濾掉、中文與數字保留。**限制**：不能修正錯字；可能誤刪夾在中文裡的真英文縮寫（遊戲專有字）；旭日繁中 OCR 規則書若含英文專有名詞（如 Kami），要在 `KEEP_ASCII` 補。
+- **接線方式（［AI 建議］）**：在 `RulebookAssistant.tsx` 顯示結果段落的地方，若該段 `doc_lang` 是中文或 `looksChinese(content)` 為真，顯示 `cleanOcrText(content)`；「複製規則片段」與「複製提示詞」仍用原文；加一個小切換「顯示原始 OCR 文字」。**要請使用者貼目前的 `RulebookAssistant.tsx` 才能改。**
+
+### 22.5 下一個 AI 要避開的陷阱（補）
+
+㉚詞庫 `en_term` 現在可存中文，改函式或前端驗證時不要加「必須是英文」的檢查；㉛`search_rulebook_chunks` 已被改三次，**再改前一定先請使用者匯出現有定義**（`select pg_get_functiondef('public.search_rulebook_chunks(text,text)'::regprocedure);`），不要憑本節重寫；㉜未對應詞清單的隱私底線是「只記詞、不記帳號與完整問題」，任何擴充（例如記搜尋次數、記使用者）都要先問並更新 `privacy.html`；㉝`BrainIcon` 現在是 emoji，樣式用 `.fact-emoji`，不要再套 `svg.fact-icon` 的規則；㉞`GlossaryMisses` 掛在詞庫模式；`mode` 型別含 `'glossary'`；㉟顯示過濾（`cleanOcrText`）只能用在畫面，**不要在寫入索引或複製提示詞時改動原文**。
