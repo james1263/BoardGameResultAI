@@ -118,7 +118,7 @@ export default function GlossaryAdmin({
       <h3>詞庫</h3>
       <p className="rb-hint">
         每款遊戲各自的「中文詞 → 英文搜尋詞」。玩家在規則助手輸入中文口語（例如「生兵」），系統會自動加上對應的英文詞去搜尋規則書。
-        同一個中文詞可以對應多個英文詞，口語與規則書用詞不同的也請都記下。詞庫只幫忙搜尋，不會顯示成規則內容。
+        同一個中文詞可以對應多個詞：英文規則書填英文，中文規則書填規則書實際用的中文（例如 股票=股份）。口語與規則書用詞不同的也請都記下。詞庫只幫忙搜尋，不會顯示成規則內容。
       </p>
 
       {renderPicker(bggName, (next) => {
@@ -135,8 +135,8 @@ export default function GlossaryAdmin({
             <input type="text" value={zh} maxLength={30} placeholder="例如：生兵" onChange={(e) => setZh(e.target.value)} />
           </label>
           <label className="admin-field">
-            <span>英文搜尋詞（最多 60 字）</span>
-            <input type="text" value={en} maxLength={60} placeholder="例如：Recruit" onChange={(e) => setEn(e.target.value)} />
+            <span>對應詞：英文，或規則書用的中文同義詞（最多 60 字）</span>
+            <input type="text" value={en} maxLength={60} placeholder="例如：Recruit（中文規則書可填：股份）" onChange={(e) => setEn(e.target.value)} />
           </label>
           <label className="admin-field">
             <span>備註（選填）</span>
@@ -158,7 +158,7 @@ export default function GlossaryAdmin({
           </div>
 
           <label className="rb-pick">
-            <span>從 .txt 匯入（每行「中文=英文」，UTF-8）</span>
+            <span>從 .txt 匯入（每行「中文=對應詞」，UTF-8）</span>
             <input type="file" accept=".txt,text/plain" disabled={busy} onChange={importFile} />
           </label>
 
