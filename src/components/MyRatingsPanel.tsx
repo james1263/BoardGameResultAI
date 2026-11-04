@@ -5,6 +5,7 @@ import { RATING_FIELDS } from '../lib/useGameRatings'
 import { isUnplayedGame } from '../lib/playedStatus'
 import type { AdminScores } from '../lib/libraryTypes'
 import ScatterChart, { type ScatterPoint } from './ScatterChart'
+import HelpFold from './HelpFold'
 import '../styles/stats-chart.css'
 
 type Metric = 'overall' | 'composite' | RatingKey
@@ -164,9 +165,11 @@ function ScoreList({
 
     return (
         <>
-            <p className="mystat-foot">
-                綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來，六項加總（最高 30 分，不含整體分數）。{csv ? '管理者以 CSV 換算分數為準，不看手動評分。' : '只算你自己的評分。'}
-            </p>
+            <HelpFold>
+                <p className="hf-text">
+                    綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來，六項加總（最高 30 分，不含整體分數）。{csv ? '管理者以 CSV 換算分數為準，不看手動評分。' : '只算你自己的評分。'}
+                </p>
+            </HelpFold>
             <div className="cls-searchbox cls-sticky">
                 <input
                     type="search"
@@ -251,9 +254,11 @@ function ScatterMine({
 
     return (
         <>
-            <p className="ma-note">
-                {csv ? '每個點是一款玩過的遊戲（CSV 換算分數）' : '每個點是一款你評過分的遊戲'}；點一下看遊戲名稱與分數。{csv ? '' : '只算你自己的評分，'}還沒玩過的遊戲不會畫出。
-            </p>
+            <HelpFold>
+                <p className="hf-text">
+                    {csv ? '每個點是一款玩過的遊戲（CSV 換算分數）' : '每個點是一款你評過分的遊戲'}；點一下看遊戲名稱與分數。{csv ? '' : '只算你自己的評分，'}還沒玩過的遊戲不會畫出。
+                </p>
+            </HelpFold>
             <div className="sc-controls">
                 <label>
                     X 軸（橫軸）

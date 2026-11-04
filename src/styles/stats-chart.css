@@ -203,3 +203,40 @@
 .fsp .sc-svg {
   max-height: 62vh;
 }
+
+/* 下拉選單不要超出螢幕（手機） */
+.sc-controls {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.sc-controls label {
+  min-width: 0;
+}
+.sc-controls select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-overflow: ellipsis;
+}
+
+/* 統計表（全螢幕頁、遊戲總表與矩陣）：表格自己有固定高度，只有表格在捲動
+   （vip.css 原本 .st-wrap 是 max-height: 60vh，手機上會變成整頁與表格兩層捲動）
+   表頭、名稱欄、矩陣合計列的 sticky 已經在 vip.css，不用再寫 */
+.fsp .st-modal.st-fill > .st-wrap {
+  max-height: calc(100vh - 270px);
+  max-height: calc(100dvh - 270px);
+  min-height: 220px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 760px) {
+  /* 手機：全螢幕頁停在底部導覽列上方，高度要扣掉 --nav-h */
+  .fsp .st-modal.st-fill > .st-wrap {
+    max-height: calc(100vh - var(--nav-h, 0px) - 270px);
+    max-height: calc(100dvh - var(--nav-h, 0px) - 270px);
+  }
+  .fsp .st-modal.st-fill .st-table th,
+  .fsp .st-modal.st-fill .st-table td {
+    padding: 6px 8px;
+  }
+}

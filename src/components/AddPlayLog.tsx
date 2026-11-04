@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
 import { askConfirm, showNotice } from '../lib/askConfirm'
 import NotePointsFields from './NotePointsFields'
+import { confirmPublicPost } from '../lib/publicNoteNotice'
 
 type PlayableGame = BoardGame & { removedAt?: string | null }
 
@@ -90,6 +91,9 @@ export default function AddPlayLog({
     ) {
       return
     }
+
+    // 要公開到討論的話，先確認過再存（取消就什麼都不存）
+    if (shareNow && !(await confirmPublicPost())) return
 
     const ok = await playSessions.addSession(selected.bggName, {
       playedOn: date,
@@ -294,7 +298,7 @@ export default function AddPlayLog({
                     htmlFor="ap-share"
                     style={{ display: 'inline', margin: 0, fontSize: 14 }}
                   >
-                    同時發表到這款遊戲的討論（VIP 都看得到，心得要有字才能勾）
+                    同時發表到這款遊戲的討論（會公開到留言板，VIP 與管理者都看得到；心得要有字才能勾）
                   </label>
                 </div>
               )}

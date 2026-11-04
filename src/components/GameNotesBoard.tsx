@@ -6,6 +6,8 @@ import {
 } from '../lib/useGameNotesBoard'
 import NoteListItem from './NoteListItem'
 import NotePointsFields from './NotePointsFields'
+import PublicNoteHint from './PublicNoteHint'
+import { confirmPublicPost } from '../lib/publicNoteNotice'
 import '../styles/game-tabs.css'
 
 function formatDate(day: string): string {
@@ -45,6 +47,7 @@ export default function GameNotesBoard({
   const editableIds = new Set(api.myNotes.map((note) => note.id))
 
   async function publish() {
+    if (!(await confirmPublicPost())) return
     setMessage('')
     const result = await api.addNote(draft, draftLike, draftDislike)
     if (result) {
@@ -111,6 +114,7 @@ export default function GameNotesBoard({
               placeholder="這款遊戲你想跟大家說什麼？（公開給 VIP，最多 200 字）"
               onChange={(event) => setDraft(event.target.value)}
             />
+            <PublicNoteHint />
             <NotePointsFields
               like={draftLike}
               dislike={draftDislike}

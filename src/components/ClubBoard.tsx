@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase'
 import { MAX_NOTES_PER_GAME } from '../lib/useGameNotesBoard'
 import NoteListItem from './NoteListItem'
 import NotePointsFields from './NotePointsFields'
+import PublicNoteHint from './PublicNoteHint'
+import { confirmPublicPost } from '../lib/publicNoteNotice'
 import '../styles/club-board.css'
 import { askConfirm } from '../lib/askConfirm'
 
@@ -129,6 +131,7 @@ export default function ClubBoard({
 
   async function publish() {
     if (!picked) return
+    if (!(await confirmPublicPost())) return
     setSaving(true)
     setMessage('')
     const { error: rpcError } = await supabase.rpc('add_game_note', {
@@ -243,6 +246,7 @@ export default function ClubBoard({
                 placeholder="想跟大家說什麼？（公開給 VIP，最多 200 字）"
                 onChange={(event) => setDraft(event.target.value)}
               />
+              <PublicNoteHint />
               <NotePointsFields
                 like={draftLike}
                 dislike={draftDislike}

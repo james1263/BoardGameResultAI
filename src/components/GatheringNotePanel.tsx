@@ -11,6 +11,7 @@ import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import { saveGatheringNote, type MyNote } from '../lib/useGatheringNotes'
 import { askConfirm } from '../lib/askConfirm'
 import NotePointsFields from './NotePointsFields'
+import { confirmPublicPost } from '../lib/publicNoteNotice'
 
 const MAX = 200
 
@@ -173,6 +174,14 @@ export default function GatheringNotePanel({
                 bothEmpty &&
                 (b.priv !== '' || b.pub !== '') &&
                 !(await askConfirm('兩欄都是空的，儲存會刪除這款在這場的心得，確定嗎？'))
+            ) {
+                return false
+            }
+            // 第一次把內容公開到留言板時確認一次（修改已公開的內容不用）
+            if (
+                d.pub.trim() !== '' &&
+                b.pub.trim() === '' &&
+                !(await confirmPublicPost())
             ) {
                 return false
             }
@@ -468,7 +477,7 @@ export default function GatheringNotePanel({
                     <p className="gn2-hint">
                         {pane === 'private'
                             ? '只有你看得到，管理者在網站上也看不到。'
-                            : 'VIP 可以閱讀；依你的暱稱設定顯示名稱。清空公開欄再儲存，就會撤回公開留言與喜歡／不喜歡的點（私人留言會保留）。'}
+                            : '儲存後會公開到留言板，VIP 與管理者都看得到；依你的暱稱設定顯示名稱，不顯示聚會與時間。清空公開欄再儲存，就會撤回公開留言與喜歡／不喜歡的點（私人留言會保留）。'}
                     </p>
 
                     <button
