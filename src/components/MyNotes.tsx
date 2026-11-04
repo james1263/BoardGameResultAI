@@ -21,6 +21,7 @@ type GameNoteRow = {
   created_at: string
   like_point: string | null
   dislike_point: string | null
+  like_count?: number | null
 }
 
 type Filter = 'all' | 'public' | 'private' | 'gathering'
@@ -36,6 +37,7 @@ type Item = {
   noteId?: string
   like?: string
   dislike?: string
+  likeCount?: number // 被按讚數（只有遊戲留言有）
   gatheringId?: string
   gatheringTitle?: string
 }
@@ -143,6 +145,7 @@ export default function MyNotes({
         noteId: row.id,
         like: row.like_point ?? '',
         dislike: row.dislike_point ?? '',
+        likeCount: Number(row.like_count ?? 0),
       })
     }
 
@@ -354,6 +357,9 @@ export default function MyNotes({
                         hideText={editing}
                         like={item.like}
                         dislike={item.dislike}
+                        likeCount={
+                          item.kind === 'game' && !item.hidden ? item.likeCount : undefined
+                        }
                         open={editing || openKey === item.key}
                         onToggle={() => {
                           if (editing) return
