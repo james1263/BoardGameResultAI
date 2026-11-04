@@ -8,6 +8,7 @@ import { suggestKeywords } from '../lib/zhEnGlossary'
 import InfoHint from './InfoHint'
 import { searchErrata, type Errata } from '../lib/useGameErrata'
 import { scopeLabel } from '../lib/docLabels'
+import { cleanOcrText } from '../lib/cleanOcrText'
 import '../styles/errata.css'
 
 type ScopedChunk = RulebookChunk & { doc_scope?: string; doc_expansion?: string }
@@ -60,6 +61,7 @@ export default function RulebookAssistant({
     const [notice, setNotice] = useState('')
     const [lastQuery, setLastQuery] = useState('')
     const [errata, setErrata] = useState<Errata[]>([])
+    const [showRaw, setShowRaw] = useState(false)
     const [remaining, setRemaining] = useState<number | null | undefined>(undefined)
     const cache = useRef<Map<string, RulebookChunk[]>>(new Map())
 
@@ -276,6 +278,16 @@ ${parts}${errataText}`
                     <p className="ra-notice">
                         搜尋：{activeLabel}・{chunks.length} 段
                     </p>
+                    {chunks.some((c) => cleanOcrText(c.content) !== c.content) && (
+                        <button
+                            className="ra-btn ra-btn-small"
+                            type="button"
+                            aria-pressed={showRaw}
+                            onClick={() => setShowRaw((v) => !v)}
+                        >
+                            {showRaw ? '隱藏亂碼（顯示整理後文字）' : '顯示原始 OCR 文字'}
+                        </button>
+                    )}
                     <ul className="ra-results">
                         {chunks.map((c, i) => {
                             const isZh = c.doc_lang === 'zh'
@@ -288,7 +300,9 @@ ${parts}${errataText}`
                                         {c.doc_title || '規則書'}（{langTag(c.doc_lang)}）【{chunkScope(c)}】
                                         {c.page_number ? `・第 ${c.page_number} 頁` : ''}
                                     </div>
-                                    <p lang={isZh ? 'zh-Hant' : 'en'}>{c.content}</p>
+                                    <p lang={isZh ? 'zh-Hant' : 'en'}>
+                                        {showRaw ? c.content : cleanOcrText(c.content)}
+                                    </p>
                                     <div className="ra-actions">
                                         {isZh ? (
                                             <span className="ra-actions-note">
