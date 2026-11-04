@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-11-04（已併入上一版 `生成後.md`）；前一次：2026-11-03 夜（已重新產生並併入上一版 `生成後.md` 全部內容；**最新增補在第 22 節（詞庫、未對應詞、同義詞、圖示、OCR 亂碼過濾待辦；其次第 21 節）（玩錯紀錄、英文搜尋、卡片與排序、版面 4.3、家裡 OCR），與前面衝突時以第 21 節為準**；規則助手 RAG 看第 20 節（最新是 20.13）；其餘請同時讀第 19、18 節；`生成後.md` 已重置）。
+> 最後更新：2026-11-04 晚（已併入上一版 `生成後.md`；**最新增補在第 23 節（OCR 過濾、說明摺疊、公開心得提醒、遊戲擴充），其次第 22 節、第 21 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
 
 ## 1. 專案簡介與技術架構
 
@@ -610,3 +610,30 @@
 ### 22.5 下一個 AI 要避開的陷阱（補）
 
 ㉚詞庫 `en_term` 現在可存中文，改函式或前端驗證時不要加「必須是英文」的檢查；㉛`search_rulebook_chunks` 已被改三次，**再改前一定先請使用者匯出現有定義**（`select pg_get_functiondef('public.search_rulebook_chunks(text,text)'::regprocedure);`），不要憑本節重寫；㉜未對應詞清單的隱私底線是「只記詞、不記帳號與完整問題」，任何擴充（例如記搜尋次數、記使用者）都要先問並更新 `privacy.html`；㉝`BrainIcon` 現在是 emoji，樣式用 `.fact-emoji`，不要再套 `svg.fact-icon` 的規則；㉞`GlossaryMisses` 掛在詞庫模式；`mode` 型別含 `'glossary'`；㉟顯示過濾（`cleanOcrText`）只能用在畫面，**不要在寫入索引或複製提示詞時改動原文**。
+
+## 23. 2026-11-04 晚增補（覆蓋前面衝突的敘述）
+
+- 現況與使用者決定見 `QUICKSTART.md` 2.7、第 6 節。這裡只留架構與資料庫重點。**凡是我沒看到的細節都標［未驗證］。**
+
+### 23.1 OCR 亂碼過濾（`dfaad42`、`868d383`）
+- `src/lib/cleanOcrText.ts`：只在中文佔非空白字元 20% 以上時動作；移除私有區字元與 U+FFFD、連續符號雜訊、純英文字串（保留 `C`、`SP`、`CO`、`VP`、`RE`、`AI`；含數字的字串保留）、中文間多餘空白、符號 `€»«§¢£¥©®™`；`°`（連同前後空白）換成 `。`；中文之間被認成半形的 `,`、`:`、`;` 換成全形。**不能修正錯字**（「氛」應為「氣罐」等），不建議寫修正表；可能誤刪夾在中文裡的真英文縮寫（要補 `KEEP_ASCII`）。
+- `RulebookAssistant.tsx`：`showRaw` 狀態，顯示 `showRaw ? c.content : cleanOcrText(c.content)`；有被過濾的段落出現切換鈕；「複製規則片段」「複製給 AI 的提示詞」仍用原文；英文規則書不受影響。欄位順序錯亂與錯字的根本改善要出版商無水印版或重做 OCR（提高解析度，未驗證）。
+
+### 23.2 說明摺疊、統計表手機版面（`06d5614`）
+- 新檔：`components/HelpFold.tsx`（`<details className="hf">`，summary 只有靠左三角形，預設收起）、`components/PublicNoteHint.tsx`（`.pn-hint`）、`lib/publicNoteNotice.ts`（`PUBLIC_NOTE_HINT`、`confirmPublicPost()`）、`styles/help-fold.css`（元件自己 import，不在 `App.css`）。`StatsTables.tsx`、`MyRatingsPanel.tsx` 的說明改用 `HelpFold`。
+- 統計表手機：全螢幕頁（非 `embedded`）且分頁不是 `chart` 時外層 div 加 `st-fill`；`stats-chart.css`：`.fsp .st-modal.st-fill > .st-wrap { max-height: calc(100dvh - 270px) }`（手機再扣 `--nav-h`）、`min-height: 220px`、手機 th／td padding 6px 8px。原因：`vip.css` 的 `.st-wrap` 寫死 `max-height: 60vh; overflow: auto`，與全螢幕頁的 `.fsp-body`（`overflow: auto`）形成兩層捲動。分布圖 `.sc-controls` 改 `minmax(0, 1fr)`、select `width: 100%; min-width: 0; text-overflow: ellipsis`。
+- 綜合評分說明被擋住的原因：`drawer-top.css` 的 `.cls-searchbox.cls-sticky` 有 `box-shadow: 0 -16px 0 紙色`；`help-fold.css` 追加 `.mylist-body .hf + .cls-searchbox.cls-sticky { margin-top: 16px }`。`.cls-sticky` 在 `drawer-top.css`，不在 `vip.css`。
+- 全螢幕頁結構：`.fsp` > `.fsp-head` ＋ `.fsp-body`（`flex: 1; overflow: auto; max-width: 1100px`）；手機 `.fsp { bottom: var(--nav-h) }`。
+
+### 23.3 公開心得提醒
+- 四個入口：`GameNotesBoard.tsx`（`publish()` 先 `confirmPublicPost()`，輸入框下有 `PublicNoteHint`）、`ClubBoard.tsx`、`AddPlayLog.tsx`（`shareNow` 時在存遊玩紀錄之前確認，取消就什麼都不存）、`GatheringNotePanel.tsx`（`saveOne` 在公開欄有字且原本是空時才確認）。按「確定」後 `localStorage` 鍵 `boardgame-public-note-ack` 記 `'1'`，同一瀏覽器之後不再跳；修改已發布留言不呼叫。若要每次都跳，拿掉 `publicNoteNotice.ts` 讀寫 `ACK_KEY` 的部分。
+
+### 23.4 遊戲擴充（`11843c5`、`6701a30`、`c2f2997`）
+- **資料庫 `game_expansions`**：`id uuid pk default gen_random_uuid()`、`bgg_name text not null`（無外鍵）、`name text not null`（1～60 字 check）、`image_path text null`、`sort_order int not null default 0`、`created_at timestamptz not null default now()`、`links jsonb not null default '[]'`（check：陣列、最多 5 個，每項 `{label, url}`）、`note text not null default ''`（≤ 100 字 check）。索引 `game_expansions_bgg_name_idx`。RLS 開；`grant select to anon, authenticated`、`grant insert, update, delete to authenticated`；政策：select 任何人、寫入只有 `public.is_admin()`。**權限驗證查詢使用者沒貼結果，未確認 anon 只有 SELECT。** 網址格式由前端檢查（`parseLinkLines`、`cleanLinks`／`isSafeUrl`，任何 http／https 網址、不限 BGG；標籤 ≤ 60 字、網址 ≤ 300 字）。
+- **前端新增**：`lib/useGameExpansions.ts`（`useGameExpansions(bggName)` 回傳 `rows, loading, error, imgTick, add, rename, updateDetails, replaceImage, remove`；`useHasExpansion(bggName)` 用模組層級 `expansionSet` 快取＋`listeners`，全站只讀一次 `bgg_name`，管理者新增／刪除後呼叫 `refreshExpansionSet()`；`expansionImageUrl`；匯出 `MAX_LINKS`、`MAX_NOTE`、`isSafeUrl`、`parseLinkLines`、`linksToLines`）、`components/GameExpansions.tsx`、`styles/game-expansions.css`（`ge-*`，元件自己 import，顏色寫死避免 iPhone 深色模式）。
+- **前端修改**：`GameModal.tsx`（`GameExpansions` 插在「規則連結與影片」摺疊區與 `GameErrata` 之間；標題 `<h2>` 有 `game.links.bgg` 就包 `ge-title-link`〔`target="_blank"`〕，並移除原「BoardGameGeek ↗」`bgg-link` 那行；`bgg-link` 樣式可能仍被別處用，未清）、`GameCard.tsx`（`useHasExpansion` ＋ `<span className="ge-badge">含擴充</span>`，放在 `game-category` 前；位置 `left:6px; bottom:34px` 是猜的）。
+- **行為**：擴充名稱 0 個連結＝純文字、1 個＝點名稱開新分頁、2 個以上＝名稱是展開鈕列出各連結；備註在名稱下方小字。管理者每筆有改名／換圖／連結／刪除；連結每行「標籤 網址」（網址放最後，標籤可省略）；底部「＋ 新增擴充」（名稱必填、圖片選填，新增時不能同時填連結）。一般人沒有擴充就不顯示整個區塊。圖片沿用 `uploadCover('expansions/{id}', file)`，存成 `covers/expansions/{id}.webp`（最寬 600px），刪擴充時盡力刪圖檔（已驗證 `covers` 寫入政策允許此路徑）。
+- **與規則助手的關係**：`game_documents.expansion_name` 目前仍是自由輸入，之後可改成從這張表選（使用者同意先不做）。擴充不進 CSV 匯入流程（匯入把「資料庫正常、CSV 沒有」的遊戲移垃圾桶，不影響這張表）。
+
+### 23.5 下一個 AI 要避開的陷阱（補）
+㊱大檔案要改時，請使用者上傳目前版本、AI 做唯一錨點取代（保留 CRLF）、整份交回；他曾沒套用 Ctrl+F 局部修改（`GameModal.tsx` 兩次沒改到），先用 `Select-String` 確認；㊲沒有擴充資料時「含擴充」標籤本來就不出現，不要誤判沒生效，擴充區塊在概覽最下面；㊳改版面前先確認真正的規則來源（`.cls-sticky` 在 `drawer-top.css`）；㊴`bggName` 絕不能動，「(含擴)」在 CSV「屬性」欄；㊵評論按讚要改 `get_public_gathering_notes`，先請使用者匯出現有定義；㊶新檔案用 LF，Git 會警告 CRLF 轉換可忽略，多數既有檔案是 CRLF，覆蓋時保持原樣。
