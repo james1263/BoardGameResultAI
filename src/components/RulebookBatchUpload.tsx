@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
-import { askConfirm } from '../lib/askConfirm'
+import { askConfirm, askInput } from '../lib/askConfirm'
 import {
   defaultDocTitle,
   isSafeUrl,
@@ -14,8 +14,10 @@ import {
 } from '../lib/useGameDocuments'
 import { docIcon, docLabel, indexSuffix, scopeLabel, SCOPE_LABELS } from '../lib/docLabels'
 import '../styles/rb-docs.css'
+import '../styles/rb-docs-tidy.css'
 import ErrataAdmin from './ErrataAdmin'
 import GlossaryAdmin from './GlossaryAdmin'
+import GlossaryMisses from './GlossaryMisses'
 
 type GameOption = { bgg_name: string; name: string }
 type DocKind = 'rulebook' | 'faq' | 'errata'
@@ -301,7 +303,12 @@ function GameDocGroup({
   async function changeScope(doc: GameDocument, scope: DocScope) {
     let name = doc.expansion_name ?? ''
     if (scope === 'expansion') {
-      name = window.prompt('擴充名稱（例如 Kami Unbound）', name) ?? name
+      const input = await askInput('擴充名稱（例如 Kami Unbound）', {
+        placeholder: 'Kami Unbound',
+        defaultValue: name,
+      })
+      if (input === null) return
+      name = input.trim()
     }
     const message = await updateDocScope(doc.id, scope, name)
     if (message) setError(message)
@@ -329,16 +336,17 @@ function GameDocGroup({
                   {docIcon(doc)} {docLabel(doc)} ↗
                 </a>
               ) : (
-                <span>
+                <span className="rbd-docname">
                   {docIcon(doc)} {docLabel(doc)}
                   {indexSuffix(doc)}
-                  {doc.source_type === 'upload' &&
-                    `｜${scopeLabel(doc.content_scope, doc.expansion_name)}`}
                   {size != null && <span className="rbd-size">　{formatMb(size)}</span>}
                 </span>
               )}
+              <div className="rbd-actions">
               {doc.source_type === 'upload' && (
                 <select
+                  className="rbd-scope"
+                  title={scopeLabel(doc.content_scope, doc.expansion_name)}
                   value={doc.content_scope ?? 'main'}
                   onChange={(event) =>
                     void changeScope(doc, event.target.value as DocScope)
@@ -353,11 +361,12 @@ function GameDocGroup({
               )}
               <button
                 type="button"
-                className="admin-link"
+                className="rbd-del"
                 onClick={() => remove(doc)}
               >
                 刪除
               </button>
+              </div>
             </li>
           )
         })}
@@ -987,6 +996,8 @@ export default function RulebookBatchUpload() {
           )}
         />
       )}
+
+      {mode === 'glossary' && <GlossaryMisses />}
 
       {mode === 'pdf' &&
         renderDocList('PDF', pdfDocs, (d) => d.source_type === 'upload')}

@@ -214,7 +214,7 @@ export default function FilterDrawer(props: FilterDrawerProps) {
           <div className="filter-group">
             <div className="filter-group-title">
               <span>
-                📊 BGG 難度
+                🧠 BGG 難度
                 <InfoHint text="可複選。" />
               </span>
             </div>

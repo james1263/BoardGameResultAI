@@ -1,0 +1,82 @@
+/* 規則書文件列：名稱一行、範圍選單與刪除並排 */
+.rbd-body .rb-docitem {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px 2px;
+  border-bottom: 1px solid #e3d9c4;
+}
+.rbd-body .rb-docitem:last-child { border-bottom: 0; }
+.rbd-body .rbd-docname,
+.rbd-body .rb-docitem > a.bgg-link {
+  display: block;
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.rbd-body .rbd-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rbd-body .rbd-scope {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 220px;
+  height: 34px;
+  padding: 0 28px 0 12px;
+  font-size: 14px;
+  color: #34463c;
+  background-color: #fbf7ec;
+  border: 1px solid #d8c9a8;
+  border-radius: 999px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #456b50 50%),
+    linear-gradient(135deg, #456b50 50%, transparent 50%);
+  background-position: calc(100% - 16px) 15px, calc(100% - 11px) 15px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.rbd-body .rbd-del {
+  flex: 0 0 auto;
+  margin-left: auto;
+  height: 34px;
+  padding: 0 14px;
+  font-size: 13px;
+  color: #a4432f;
+  background: #fbf7ec;
+  border: 1px solid #e2b9ad;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rbd-body .rbd-del:hover { background: #f8e6df; }
+
+/* 詞庫：找不到英文的詞 */
+.gm-box { margin-top: 22px; padding-top: 14px; border-top: 1px solid #e3d9c4; }
+.gm-box h4 { margin: 0 0 6px; font-size: 16px; color: #34463c; }
+.gm-hint { margin: 0 0 10px; font-size: 13px; line-height: 1.6; color: #6b6a5c; }
+.gm-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.gm-btn {
+  height: 34px; padding: 0 14px; font-size: 13px; color: #34463c;
+  background: #fbf7ec; border: 1px solid #d8c9a8; border-radius: 999px; cursor: pointer;
+}
+.gm-btn.primary { color: #fff; background: #456b50; border-color: #456b50; }
+.gm-btn.danger { color: #a4432f; border-color: #e2b9ad; }
+.gm-btn:disabled { opacity: .5; cursor: default; }
+.gm-game { margin: 12px 0 4px; font-size: 14px; font-weight: 700; color: #34463c; }
+.gm-list { list-style: none; margin: 0; padding: 0; }
+.gm-row {
+  display: flex; align-items: center; gap: 8px; padding: 7px 0;
+  border-bottom: 1px solid #eee5d0; font-size: 14px;
+}
+.gm-term { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; text-align: left; }
+.gm-count { flex: 0 0 auto; font-size: 12px; color: #8a7a5a; }
+.gm-x {
+  flex: 0 0 auto; width: 28px; height: 28px; font-size: 16px; line-height: 1;
+  color: #a4432f; background: transparent; border: 1px solid #e2b9ad;
+  border-radius: 50%; cursor: pointer;
+}
