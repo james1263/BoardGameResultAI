@@ -15,6 +15,7 @@ import {
 import { docIcon, docLabel, indexSuffix, scopeLabel, SCOPE_LABELS } from '../lib/docLabels'
 import '../styles/rb-docs.css'
 import ErrataAdmin from './ErrataAdmin'
+import GlossaryAdmin from './GlossaryAdmin'
 
 type GameOption = { bgg_name: string; name: string }
 type DocKind = 'rulebook' | 'faq' | 'errata'
@@ -368,7 +369,7 @@ function GameDocGroup({
 // ── 元件 ─────────────────────────────────────────────
 
 export default function RulebookBatchUpload() {
-  const [mode, setMode] = useState<'pdf' | 'link' | 'errata' | null>(null)
+  const [mode, setMode] = useState<'pdf' | 'link' | 'errata' | 'glossary' | null>(null)
   const [usage, setUsage] = useState<StorageUsage | null>(null)
   const [usageError, setUsageError] = useState('')
   const [allDocs, setAllDocs] = useState<AllDoc[]>([])
@@ -732,7 +733,7 @@ export default function RulebookBatchUpload() {
   return (
     <div className="rb">
       <UsageBar usage={usage} error={usageError} />
-      <div className="rb-seg" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      <div className="rb-seg" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <button
           type="button"
           aria-pressed={mode === 'pdf'}
@@ -759,6 +760,15 @@ export default function RulebookBatchUpload() {
           onClick={() => setMode(mode === 'errata' ? null : 'errata')}
         >
           ＋ 玩錯紀錄
+        </button>
+        <button
+          type="button"
+          aria-pressed={mode === 'glossary'}
+          className={mode === 'glossary' ? 'active' : ''}
+          disabled={running}
+          onClick={() => setMode(mode === 'glossary' ? null : 'glossary')}
+        >
+          ＋ 詞庫
         </button>
       </div>
 
@@ -964,6 +974,14 @@ export default function RulebookBatchUpload() {
 
       {mode === 'errata' && (
         <ErrataAdmin onChanged={() => void loadUsage()}
+          renderPicker={(value, onChange) => (
+            <GamePicker games={games} value={value} onChange={onChange} />
+          )}
+        />
+      )}
+
+      {mode === 'glossary' && (
+        <GlossaryAdmin
           renderPicker={(value, onChange) => (
             <GamePicker games={games} value={value} onChange={onChange} />
           )}
