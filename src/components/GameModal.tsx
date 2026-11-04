@@ -21,6 +21,7 @@ import GameNotesBoard from './GameNotesBoard'
 import GamePlayHistory from './GamePlayHistory'
 import GameErrata from './GameErrata'
 import GameExpansions from './GameExpansions'
+import GameBackground from './GameBackground'
 import { useVip } from '../lib/useVip'
 import '../styles/overview.css'
 
@@ -322,6 +323,12 @@ export default function GameModal({
                   </div>
                 </details>
               </div>
+
+              <GameBackground
+                key={game.bggName}
+                bggName={game.bggName}
+                isAdmin={isAdmin}
+              />
 
               <GameExpansions
                 key={game.bggName}

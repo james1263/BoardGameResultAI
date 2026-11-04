@@ -1,0 +1,9 @@
+/* 遊戲背景：保留換行，顏色寫死避免 iPhone 深色模式吃到繼承色 */
+.gbg-text {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #34463c;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
