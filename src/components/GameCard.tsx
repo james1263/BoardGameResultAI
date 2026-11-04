@@ -7,6 +7,8 @@ import { BrainIcon, PairIcon, PersonIcon } from './Icons'
 import StatusButtons from './StatusButtons'
 import '../styles/card-compact.css'
 import '../styles/card-icons.css'
+import '../styles/game-expansions.css'
+import { useHasExpansion } from '../lib/useGameExpansions'
 
 function stop(event: MouseEvent | KeyboardEvent) {
   event.stopPropagation()
@@ -35,6 +37,7 @@ export default function GameCard({
   showInfo?: boolean
   onOpen: (game: LibraryGame) => void
 }) {
+  const hasExpansion = useHasExpansion(game.bggName)
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
     // 只處理卡片本身的按鍵；愛心／勾勾按鈕自己的 Enter 不要被搶走
     if (event.target !== event.currentTarget) return
@@ -86,39 +89,40 @@ export default function GameCard({
         ) : (
           isNew && <span className="new-badge">NEW</span>
         )}
+        {hasExpansion && <span className="ge-badge">含擴充</span>}
         <span className="game-category">
           {game.category.length > 0 ? game.category.join('、') : '尚未分類'}
         </span>
       </div>
 
       {showInfo && (
-      <div className="game-info">
-        <h3>{game.name}</h3>
+        <div className="game-info">
+          <h3>{game.name}</h3>
 
-        <div className="game-facts">
-          <span>
-            <span title="最佳人數" aria-label="最佳人數">
-              <PairIcon /> {shortPlayers(game.bestPlayers)}
+          <div className="game-facts">
+            <span>
+              <span title="最佳人數" aria-label="最佳人數">
+                <PairIcon /> {shortPlayers(game.bestPlayers)}
+              </span>
+              <span title="推薦人數" aria-label="推薦人數">
+                <PersonIcon /> {shortPlayers(game.recommendPlayers)}
+              </span>
             </span>
-            <span title="推薦人數" aria-label="推薦人數">
-              <PersonIcon /> {shortPlayers(game.recommendPlayers)}
+            <span>
+              <span title="遊戲時間（分鐘）">◷ {timeText}</span>
+              <span title="BGG 難度" aria-label="BGG 難度">
+                <BrainIcon /> {difficultyText}
+              </span>
             </span>
-          </span>
-          <span>
-            <span title="遊戲時間（分鐘）">◷ {timeText}</span>
-            <span title="BGG 難度" aria-label="BGG 難度">
-              <BrainIcon /> {difficultyText}
-            </span>
-          </span>
+          </div>
+
+          {isAdmin && (
+            <p className="game-admin-line">
+              RE {formatNumber(game.rankingEngine)}｜綜合{' '}
+              {formatNumber(getDisplayScore(game.scoreRank))}
+            </p>
+          )}
         </div>
-
-        {isAdmin && (
-          <p className="game-admin-line">
-            RE {formatNumber(game.rankingEngine)}｜綜合{' '}
-            {formatNumber(getDisplayScore(game.scoreRank))}
-          </p>
-        )}
-      </div>
       )}
     </article>
   )
