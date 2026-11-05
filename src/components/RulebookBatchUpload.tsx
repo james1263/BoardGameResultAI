@@ -68,7 +68,20 @@ function compact(text: string): string {
 
 // 檔名裡常見、但不屬於遊戲名稱的字
 const NOISE =
-  /\b(rulebook|rulebooks|rules|rule|faq|errata|manual|english|chinese|en|zh|cn|tw|v\d+|final|web|print)\b/g
+  /\b(rulebook|rulebooks|rules|rule|faq|errata|manual|english|chinese|en|zh|cn|tw|v\d+|final|web|print|compressed|ocr|pager|teach|aid)\b/g
+
+// 遊戲名稱裡的版本字（Second Edition、2e…），比對時不當成名稱的一部分
+const EDITION_WORDS = new Set([
+  'the', 'a', 'an', 'of', 'and', 'edition', 'ed', 'second', 'first', 'third',
+  '1st', '2nd', '3rd', '1e', '2e', '3e',
+])
+
+function coreName(text: string): string {
+  return normalize(text.replace(/\(.*?\)/g, ' '))
+    .split(' ')
+    .filter((t) => t && !EDITION_WORDS.has(t))
+    .join('')
+}
 
 function guessGame(fileName: string, games: GameOption[]): string {
   const base = fileName.replace(/\.pdf$/i, '')
@@ -78,7 +91,7 @@ function guessGame(fileName: string, games: GameOption[]): string {
   let bestNames: string[] = []
 
   for (const game of games) {
-    const english = compact(game.bgg_name.replace(/\(.*?\)/g, ' '))
+    const english = coreName(game.bgg_name)
     const chinese = game.name.trim()
     let score = 0
 
