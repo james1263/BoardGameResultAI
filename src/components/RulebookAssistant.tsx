@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
     getRulebookRemaining,
     searchRulebook,
@@ -46,6 +46,177 @@ function langTag(lang: string): string {
     return '其他語言'
 }
 
+// 英文 OCR 亂碼過濾（只用在顯示；複製與提示詞仍用原文）
+const COMMON_SHORT = new Set([
+    'a', 'i', 'an', 'as', 'at', 'be', 'by', 'do', 'go', 'if', 'in', 'is', 'it', 'me', 'my', 'no', 'of',
+    'on', 'or', 'so', 'to', 'up', 'us', 'we', 'vs', 'and', 'any', 'are', 'can', 'did', 'for', 'get',
+    'has', 'her', 'him', 'his', 'how', 'its', 'may', 'not', 'one', 'our', 'out', 'per', 'the', 'too',
+    'two', 'use', 'was', 'who', 'why', 'you', 'all', 'add', 'buy', 'pay', 'run', 'set', 'she', 'sun',
+    'tap', 'win', 'yes', 'war', 'new', 'old', 'off', 'own', 'put', 'see', 'top', 'ten', 'six', 'end',
+    'tie', 'via', 'nor', 'yet', 'but', 'few', 'let', 'die', 'act', 'try', 'way', 'now', 'map', 'bid',
+    'day', 'key', 'box', 'age', 'ask', 'big', 'low', 'far', 'due', 'row', 'tab', 'ally', 'vp',
+])
+const CAPS_OK = new Set(['VP', 'OR', 'IF', 'TO', 'OF', 'IN', 'ON', 'NO', 'US', 'AI', 'AT', 'BY', 'IS', 'IT', 'AS', 'AN'])
+const BULLETS = new Set(['¢', '«', '»', '+', '*', '•', '·', '■', '□', '●', '○'])
+
+function isPlausibleWord(tok: string): boolean {
+    const w = tok.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '')
+    if (!w) return false
+    if (/\d/.test(w)) return true
+    if (/^[QA]$/.test(w) && /[.:]$/.test(tok)) return true
+    if (w.length >= 4 && /^[A-Za-z'’-]+$/.test(w)) return /[aeiouyAEIOUY]/.test(w)
+    if (COMMON_SHORT.has(w.toLowerCase())) return true
+    if (/^[A-Z][a-z]{1,2}$/.test(w)) return true
+    if (/^[A-Z]{3,4}$/.test(w)) return true
+    return CAPS_OK.has(w)
+}
+
+function cleanEnglishOcr(text: string): string {
+    const base = text
+        .replace(/[\uE000-\uF8FF\uFFFD@§©®™€£¥]/g, ' ')
+    const out: string[] = []
+    for (const rawLine of base.split('\n')) {
+        let toks = rawLine.split(/\s+/).filter((t) => t.length > 0)
+        // 項目符號、孤立符號、孤立單字母
+        const mapped: string[] = []
+        toks.forEach((t, idx) => {
+            if (t === '|') {
+                mapped.push('I')
+            } else if (BULLETS.has(t)) {
+                if (mapped.length === 0 && idx === 0) mapped.push('•')
+            } else if (!/[A-Za-z0-9]/.test(t)) {
+                if (/^[-—–&/]$/.test(t)) mapped.push(t)
+            } else if (/^[A-Za-z]$/.test(t) && !/^[aAI]$/.test(t)) {
+                // 孤立單字母（圖示被讀成字）
+            } else {
+                mapped.push(t)
+            }
+        })
+        toks = mapped
+        const words = toks.filter((t) => /[A-Za-z0-9]/.test(t))
+        if (words.length === 0) continue
+        const alnum = words.join('').replace(/[^A-Za-z0-9]/g, '')
+        if (alnum.length <= 2 || /^\d+$/.test(alnum)) continue
+        // 短的全大寫標題列（例如 SEASONAL INCOME）前後混入的小寫雜字
+        const capsCount = words.filter((w) => /^[A-Z]{4,}[:.]?$/.test(w)).length
+        if (words.length <= 6 && capsCount >= 2) {
+            toks = toks.filter((x) => !/^[a-z]/.test(x) || COMMON_SHORT.has(x.toLowerCase().replace(/[^a-z]/g, '')))
+        }
+        const good = words.filter(isPlausibleWord).length
+        const ratio = good / words.length
+        if (words.length >= 3 && ratio < 0.5) continue
+        if (words.length >= 2 && ratio < 0.75) {
+            toks = toks.filter((t) => !/[A-Za-z0-9]/.test(t) || isPlausibleWord(t))
+        }
+        const line = toks.join(' ').trim()
+        if (line) out.push(line)
+    }
+    return out.join('\n')
+}
+
+function cleanFor(lang: string, text: string): string {
+    if (lang === 'zh') return cleanOcrText(text)
+    if (lang === 'en') return cleanEnglishOcr(text)
+    return text
+}
+
+const FONT_KEY = 'boardgame-ra-font'
+type FontSize = 'normal' | 'large' | 'xl'
+const FONT_PX: Record<FontSize, number> = { normal: 16, large: 18, xl: 21 }
+const FONT_LABEL: Record<FontSize, string> = { normal: 'A 標準', large: 'A 大', xl: 'A 特大' }
+
+function loadFont(): FontSize {
+    try {
+        const v = localStorage.getItem(FONT_KEY)
+        if (v === 'normal' || v === 'large' || v === 'xl') return v
+    } catch {
+        /* ignore */
+    }
+    return 'normal'
+}
+
+// 從搜尋內容抽出要標黃底、並用來挑重點句的詞
+function buildTerms(q: string, extra: string[]): string[] {
+    const set = new Set<string>()
+    for (const w of `${q} ${extra.join(' ')}`.split(/[^A-Za-z0-9\u00C0-\u024F]+/)) {
+        if (w.length >= 3) set.add(w.toLowerCase())
+    }
+    for (const run of q.match(/[\u4e00-\u9fff]+/g) ?? []) {
+        if (run.length <= 3) {
+            if (run.length >= 2 && !/^[的了是會能有在和跟或要我你他這那個被把就都也不]+$/.test(run)) set.add(run)
+        } else {
+            for (let i = 0; i < run.length - 1; i++) {
+                const two = run.slice(i, i + 2)
+                if (!/[的了嗎呢吧]/.test(two)) set.add(two)
+            }
+        }
+    }
+    return Array.from(set)
+}
+
+function escapeRegex(t: string): string {
+    return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function highlight(text: string, terms: string[]): ReactNode {
+    if (terms.length === 0) return text
+    const sorted = [...terms].sort((a, b) => b.length - a.length)
+    const re = new RegExp(`(${sorted.map(escapeRegex).join('|')})`, 'gi')
+    return text.split(re).map((part, i) =>
+        i % 2 === 1 ? (
+            <mark key={i} style={{ background: '#f6e2a3', color: 'inherit', borderRadius: 3, padding: '0 1px' }}>
+                {part}
+            </mark>
+        ) : (
+            <Fragment key={i}>{part}</Fragment>
+        ),
+    )
+}
+
+function clampSentence(s: string, terms: string[]): string {
+    if (s.length <= 240) return s
+    const lower = s.toLowerCase()
+    let idx = -1
+    for (const t of terms) {
+        const p = lower.indexOf(t)
+        if (p >= 0 && (idx < 0 || p < idx)) idx = p
+    }
+    const start = Math.max(0, (idx < 0 ? 0 : idx) - 80)
+    return `${start > 0 ? '…' : ''}${s.slice(start, start + 240)}…`
+}
+
+// 挑出命中詞最多的 2 句（不是 AI 摘要，只是依命中詞挑句子）
+function pickSnippet(text: string, terms: string[]): { text: string; partial: boolean } {
+    const sentences = (text.match(/[^.!?。！？\n]+[.!?。！？]*/g) ?? [])
+        .map((x) => x.trim())
+        .filter((x) => x.length > 0)
+    if (sentences.length <= 2 || text.length < 160) return { text, partial: false }
+    const scored = sentences.map((x, i) => {
+        const lower = x.toLowerCase()
+        const compact = lower.replace(/\s+/g, '')
+        let n = 0
+        for (const t of terms) if (lower.includes(t) || compact.includes(t)) n++
+        return { i, n }
+    })
+    const max = Math.max(...scored.map((x) => x.n))
+    let chosen: number[] =
+        max === 0
+            ? [0, 1]
+            : [...scored]
+                  .filter((x) => x.n > 0)
+                  .sort((a, b) => b.n - a.n || a.i - b.i)
+                  .slice(0, 2)
+                  .map((x) => x.i)
+    // 問題（Q:）要連同它的答案（A:）一起顯示
+    for (const i of [...chosen]) {
+        if (/^Q[.:]/.test(sentences[i]) && i + 1 < sentences.length && /^A[.:]/.test(sentences[i + 1])) {
+            chosen.push(i + 1)
+        }
+    }
+    chosen = Array.from(new Set(chosen)).sort((a, b) => a - b)
+    return { text: chosen.map((i) => clampSentence(sentences[i], terms)).join('\n'), partial: true }
+}
+
 export default function RulebookAssistant({
     bggName,
     gameName,
@@ -62,6 +233,9 @@ export default function RulebookAssistant({
     const [lastQuery, setLastQuery] = useState('')
     const [errata, setErrata] = useState<Errata[]>([])
     const [showRaw, setShowRaw] = useState(false)
+    const [fontSize, setFontSize] = useState<FontSize>(loadFont)
+    const [searchTerms, setSearchTerms] = useState<string[]>([])
+    const [openSet, setOpenSet] = useState<Set<string>>(new Set())
     const [remaining, setRemaining] = useState<number | null | undefined>(undefined)
     const cache = useRef<Map<string, RulebookChunk[]>>(new Map())
 
@@ -78,6 +252,19 @@ export default function RulebookAssistant({
     // 輸入內容的英文關鍵字建議（來自內建對照表）
     const suggestions = useMemo(() => suggestKeywords(query), [query])
 
+    useEffect(() => {
+        setOpenSet(new Set())
+    }, [chunks])
+
+    function changeFont(size: FontSize) {
+        setFontSize(size)
+        try {
+            localStorage.setItem(FONT_KEY, size)
+        } catch {
+            /* ignore */
+        }
+    }
+
     async function loadErrata(q: string) {
         const result = await searchErrata(bggName, q)
         setErrata(result.items)
@@ -92,6 +279,7 @@ export default function RulebookAssistant({
             return
         }
         setActiveLabel(label)
+        setSearchTerms(buildTerms(q, label === '全部輸入內容' ? suggestions : []))
         const key = q.toLowerCase()
         const cached = cache.current.get(key)
         if (cached) {
@@ -278,7 +466,7 @@ ${parts}${errataText}`
                     <p className="ra-notice">
                         搜尋：{activeLabel}・{chunks.length} 段
                     </p>
-                    {chunks.some((c) => cleanOcrText(c.content) !== c.content) && (
+                    {chunks.some((c) => cleanFor(c.doc_lang, c.content) !== c.content) && (
                         <button
                             className="ra-btn ra-btn-small"
                             type="button"
@@ -288,10 +476,42 @@ ${parts}${errataText}`
                             {showRaw ? '隱藏亂碼（顯示整理後文字）' : '顯示原始 OCR 文字'}
                         </button>
                     )}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', margin: '8px 0' }}>
+                        <span style={{ fontSize: 13 }}>字體</span>
+                        {(['normal', 'large', 'xl'] as FontSize[]).map((size) => (
+                            <button
+                                key={size}
+                                type="button"
+                                className="ra-btn ra-btn-small"
+                                aria-pressed={fontSize === size}
+                                style={fontSize === size ? { background: '#456B50', color: '#fff' } : undefined}
+                                onClick={() => changeFont(size)}
+                            >
+                                {FONT_LABEL[size]}
+                            </button>
+                        ))}
+                        <button
+                            type="button"
+                            className="ra-btn ra-btn-small"
+                            onClick={() => {
+                                const keys = chunks.map((c, i) => `${c.doc_id}-${c.page_number}-${i}`)
+                                setOpenSet(keys.every((k) => openSet.has(k)) ? new Set() : new Set(keys))
+                            }}
+                        >
+                            {chunks.every((c, i) => openSet.has(`${c.doc_id}-${c.page_number}-${i}`))
+                                ? '全部收合'
+                                : '全部展開'}
+                        </button>
+                    </div>
                     <ul className="ra-results">
                         {chunks.map((c, i) => {
                             const isZh = c.doc_lang === 'zh'
                             const translateHref = buildTranslateUrl(c.content)
+                            const rowKey = `${c.doc_id}-${c.page_number}-${i}`
+                            const isOpen = openSet.has(rowKey)
+                            const fullText = showRaw ? c.content : cleanFor(c.doc_lang, c.content)
+                            const snip = pickSnippet(fullText, searchTerms)
+                            const shown = isOpen || !snip.partial ? fullText : snip.text
                             const canTranslate =
                                 !isZh && translateHref.length <= TRANSLATE_URL_LIMIT
                             return (
@@ -300,9 +520,29 @@ ${parts}${errataText}`
                                         {c.doc_title || '規則書'}（{langTag(c.doc_lang)}）【{chunkScope(c)}】
                                         {c.page_number ? `・第 ${c.page_number} 頁` : ''}
                                     </div>
-                                    <p lang={isZh ? 'zh-Hant' : 'en'}>
-                                        {showRaw ? c.content : cleanOcrText(c.content)}
+                                    <p
+                                        lang={isZh ? 'zh-Hant' : 'en'}
+                                        style={{ fontSize: FONT_PX[fontSize], lineHeight: 1.7, whiteSpace: 'pre-line' }}
+                                    >
+                                        {highlight(shown, searchTerms)}
                                     </p>
+                                    {snip.partial && (
+                                        <button
+                                            className="ra-btn ra-btn-small"
+                                            type="button"
+                                            aria-expanded={isOpen}
+                                            onClick={() =>
+                                                setOpenSet((prev) => {
+                                                    const next = new Set(prev)
+                                                    if (next.has(rowKey)) next.delete(rowKey)
+                                                    else next.add(rowKey)
+                                                    return next
+                                                })
+                                            }
+                                        >
+                                            {isOpen ? '收合 ▴' : '看完整段落 ▾'}
+                                        </button>
+                                    )}
                                     <div className="ra-actions">
                                         {isZh ? (
                                             <span className="ra-actions-note">
