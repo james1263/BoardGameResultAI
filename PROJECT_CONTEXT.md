@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-11-04 晚（已併入上一版 `生成後.md`；**最新增補在第 23 節（OCR 過濾、說明摺疊、公開心得提醒、遊戲擴充），其次第 22 節、第 21 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
+> 最後更新：2026-11-05（已併入上一版 `生成後.md`；**最新增補在第 24 節（按讚、遊戲背景、規則助手 v5b、OCR 波蘭文／德文、去掉「(含擴)」），其次第 23、22、21 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
 
 ## 1. 專案簡介與技術架構
 
@@ -637,3 +637,53 @@
 
 ### 23.5 下一個 AI 要避開的陷阱（補）
 ㊱大檔案要改時，請使用者上傳目前版本、AI 做唯一錨點取代（保留 CRLF）、整份交回；他曾沒套用 Ctrl+F 局部修改（`GameModal.tsx` 兩次沒改到），先用 `Select-String` 確認；㊲沒有擴充資料時「含擴充」標籤本來就不出現，不要誤判沒生效，擴充區塊在概覽最下面；㊳改版面前先確認真正的規則來源（`.cls-sticky` 在 `drawer-top.css`）；㊴`bggName` 絕不能動，「(含擴)」在 CSV「屬性」欄；㊵評論按讚要改 `get_public_gathering_notes`，先請使用者匯出現有定義；㊶新檔案用 LF，Git 會警告 CRLF 轉換可忽略，多數既有檔案是 CRLF，覆蓋時保持原樣。
+
+## 24. 2026-11-05 增補（覆蓋前面衝突的敘述）
+
+- 現況與使用者決定見 `QUICKSTART.md` 2.8、第 6 節。這裡只留架構與資料庫重點。**凡是我沒看到的細節都標［未驗證］。**
+
+### 24.1 去掉「(含擴)」與卡片標籤（`d7f247a`）
+- `src/lib/parseCsv.ts` 新增 `stripExpansionTag(name)`，正規式 `/\s*[(（]\s*含擴\s*[)）]\s*/g`，**只動 `name`**，不動 `bggName`、不動 CSV 欄名；結果為空保留原名；只認「含擴」。Notion 不改。
+- `GameCard.tsx`：`<h3>` 內名稱後面 `{hasExpansion && <span className="ge-badge">含擴</span>}`（文字是「含擴」，不是「含擴充」）；`game-expansions.css` 的 `.game-info h3 .ge-badge`（inline-block）。取捨：篩選裡關掉卡片下方文字時標籤也消失。**第 23.4 節「標籤在封面左下、`left:6px; bottom:34px`」已過時。** 使用者已實測。
+
+### 24.2 評論按讚（`4c2f377`、`ce60294`；資料庫＋前端都完成）
+- **資料庫**
+  - 表 `public.note_likes`：`note_id uuid`、`user_id uuid → auth.users on delete cascade`、`created_at`；主鍵 `(note_id, user_id)`、索引 `note_likes_note_idx`；**`note_id` 不做外鍵**（對應 `game_notes` 與 `gathering_notes` 兩個來源）；RLS 開、anon／authenticated 全 revoke，只走函式。
+  - `toggle_note_like(p_note)` → jsonb `{liked, count}`；錯誤 `not logged in`／`not vip`／`note not found`／`own note`。
+  - `admin_get_note_likers(p_note)` → `nickname, contact_name`；非管理者丟 `not admin`。
+  - `get_public_gathering_notes` 多回 `like_count integer`、`i_liked boolean`；`get_my_all_game_notes()` 多回 `like_count`。
+  - 權限都已驗證只有 `authenticated`（`get_my_all_game_notes` 為 `authenticated`／`postgres`／`service_role`）。
+  - **已知限制**：留言被刪或隱藏後 `note_likes` 的列留著（畫面不顯示，刪帳號才連動刪除）。
+- **前端**：新檔 `src/lib/noteLikes.ts`、`src/components/NoteLikersButton.tsx`、`src/styles/note-likes.css`；`useGameNotesBoard.ts`（`BoardNote` 多 `likeCount`、`iLiked`；`toggleLike` 先本地更新、失敗還原）；`NoteListItem.tsx`（選填 `likeCount`／`iLiked`／`canLike`／`likeBusy`／`onLike`，沒傳 `likeCount`＝不顯示）；`GameNotesBoard.tsx`、`ClubBoard.tsx`、`MyList` 的 `MyNotes.tsx`（遊戲留言顯示 `likeCount`；**聚會心得公開欄刻意不顯示**）；`public/privacy.html` 加「留言按讚」說明。
+- **規則**：只有 VIP 與管理者能按；不能按自己的；每人每則一個、可取消；所有人只看數字；名單只有管理者；不影響排序。**陷阱**：聚會心得公開欄也走 `get_public_gathering_notes` 與 `toggle_note_like`，所以它們在討論分頁與留言板也能被按讚，只是「我的心得」不顯示自己那邊的讚數。**這推翻了 QUICKSTART 舊文「第一版不做按讚」。**
+
+### 24.3 遊戲背景（科普）（`3d91f7b`）
+- **位置與行為**：遊戲詳細資料「概覽」，插在「規則連結與影片」摺疊區與 `GameExpansions` 之間；可收合、預設收起；與既有「簡介」（300 字內，`DescriptionEditor`）分開。所有人（含訪客）看得到有資料的遊戲；沒資料的遊戲一般人與訪客看不到區塊；編輯只有管理者（每款都看得到區塊，按「＋ 新增背景」或「編輯」）；三欄全空再儲存＝刪除該筆；底下固定小字「管理者整理，僅供參考」；不進 CSV 匯入、規則助手不搜尋。連結每行「標籤 網址」（做法同擴充連結）。
+- **檔案**：新增 `src/lib/useGameBackground.ts`、`src/components/GameBackground.tsx`、`src/styles/game-background.css`；改 `src/components/GameModal.tsx`（一行 import＋插入 `<GameBackground />`）。
+- **資料庫 `game_backgrounds`（2026-11-05 使用者貼回結果，已驗證）**
+  - 欄位：`bgg_name text not null`、`content text not null default ''`、`links jsonb not null default '[]'`、`source_note text not null default ''`、`updated_at timestamptz not null default now()`。
+  - 限制：`game_backgrounds_pkey` 主鍵 `(bgg_name)`（每款一筆）；`content` ≤ 2000 字；`links` 必須是陣列且 ≤ 5 筆；`source_note` ≤ 100 字。**上限都由資料庫擋住，不只前端。**
+  - 權限：`anon` 只有 `SELECT`；`authenticated` 有 `SELECT／INSERT／UPDATE／DELETE`（沒有 `TRUNCATE／REFERENCES／TRIGGER`）；RLS 開；政策 `background read all`（SELECT，`true`）、`background admin insert／update／delete`（條件 `is_admin()`；角色顯示 `{public}`，但 anon 沒寫入權限、一般玩家過不了 `is_admin()`）。
+  - 沒有外鍵，永久刪除遊戲時背景列會留著；建表 SQL 檔 `game_backgrounds.sql` 不在 repo。不涉及個人資料，`privacy.html` 沒改。
+- 提醒：AI 整理的文字可能有錯或近似版權文字，長篇原文用連結不要整段貼。
+
+### 24.4 規則助手長句關鍵字與其他語言文件（`b82447e`＋資料庫 `search_rulebook_chunks` v5b）
+- **前端 `RulebookAssistant.tsx`**：只改 `ZH_STOP` 一行，現在只拿掉問句用語與標點：`/請問|可不可以|可以|是不是|有沒有|什麼|怎麼|如何|為什麼|還是|或者|的話|嗎|呢|吧/g`。原本會把「的、是、有、會、能、不、被、把、在、我」換成空白，改交給資料庫處理（**22.2「前端搜尋前濾掉的、是、有…」已過時**）。
+- **資料庫 v5b（使用者已執行，驗證 `is_fixed = true`；權限只有 `authenticated`／`postgres`／`service_role`、無 `anon`）**：回傳欄位、扣次數、未對應詞記錄、前 8 段（`left(content, 1300)`）都沒變。
+  1. 英文／德文／波蘭文：使用者直接輸入的非中文字進 `v_eng`。
+  2. 詞庫整句比對，**最長詞優先**；比對到的詞從 `v_rest` 拿掉，不再被切成 2 字詞；對應詞含中文者進同義詞 `v_syn`，否則併入英文搜尋。
+  3. 中文比對詞：`v_rest` 剩下的中文，≤ 3 字整段、更長用 2 字滑動；**跳過全是虛字的詞**（`^[的了是會能有在和跟或要我你他這那個被把就都也不嗎呢吧]+$`）與**含「的了嗎呢吧」的 2 字詞**；依句中出現順序取，**上限 30 個**（22.1 寫 20 個，已過時；`order by min(q.pos) limit 30` 在 `group by` 的子查詢裡）。
+  4. 加上詞庫命中的中文詞本身與同義詞；比對時 `replace(c.content, ' ', '')`。
+  5. **其他語言文件（`game_documents.language = 'other'`）**：英文框的字與詞庫對應詞（長度 ≥ 3）轉小寫後比對子字串（`position(word in lower(content))`），命中數加進分數。
+- **v5 的錯誤與修正**：第一版 v5 建立成功，但搜尋回 HTTP 400、畫面「搜尋失敗」。原因：「中文比對詞」那段在聚合查詢外層又寫 `order by t.pos`，PostgreSQL 回 `must appear in the GROUP BY`；plpgsql 的 SQL 只在執行時才檢查。v5b 把排序與 `limit` 移進子查詢。**排查**：F12 → Console 看 400 → Network → 點該請求 → Response 看 `message／code／details／hint`；再匯出 `pg_get_functiondef`。v5b 的 SQL 檔不在 repo。
+- **已實測 OK（2026-11-05）**：「福祿壽可以生兵嗎」（`RisingSun_v1.2` 第 3 頁 Recruit 與 `Rising_Sun_FAQ_2.0` 第 3 頁福祿壽都找到）；「結盟可以被解除嗎」（v1.2 第 3、4、5 頁與 FAQ 第 1 頁）；天際礦脈「股票」（第 9、20、31、36、37 頁）；「戰鬥平手算誰贏」（AI 由結果推測）8 段都是繁中 OCR 規則書，第 23 頁「戰力值平手的話，較高榮耀的玩家贏得勝利」**排第 6**。分數只是詞命中數，**沒有「最切題」排序**。
+- **波蘭文、德文規則書使用方式**：上傳時語言選**「其他」**，不要選英文；後台詞庫（規則書 → ＋詞庫）填中文詞對應該語言的詞（詞庫每款一份，不分文件語言，多種語言的詞可全放）；掃描圖片版要先 OCR。**AI 無法在容器實測，使用者說「以後再測」。** 波蘭文字尾變化多，精確比對常失敗，所以用子字串比對；德文、波蘭文用 `to_tsvector('english', …)` 的效果沒驗證。
+- **［AI 想法，使用者未回覆］** 排序可提高詞庫命中詞的權重或依詞數加權，要先用題庫量過再說，**未動工**。不另做「自動翻譯成各國語言」（詞庫沒有的詞仍要人工整理，免費翻譯服務品質與條款沒查證）。
+
+### 24.5 OCR 工具新增波蘭文、德文（`b82447e`）
+- `tools/ocr/ocr_pl.bat`（`pol+eng`）、`ocr_de.bat`（`deu+eng`）：與 `ocr_zh.bat`／`ocr_en.bat` 同結構（`TESSDATA_PREFIX=D:\tessdata`、`python -m ocrmypdf -l <語言> --skip-text --output-type pdf --jobs 2`、可拖多檔、輸出 `原檔名_OCR.pdf`、CRLF）。
+- 語言包：`pol.traineddata` 使用者說已下載（未回報確認放進 `D:\tessdata`）；`deu.traineddata` 不確定。下載 `https://github.com/tesseract-ocr/tessdata_best/raw/main/<pol|deu>.traineddata`；`Get-ChildItem D:\tessdata` 確認檔案大小約 10～15 MB（只有幾 KB＝下載到網頁，要重下）。
+- OCR 完先用瀏覽器 `Ctrl + F` 搜一個已知字再上傳；波蘭文 ą、ę、ł、ż、德文 ä、ö、ü、ß 辨識錯字會比英文多。**家裡與公司電腦都要自己備好語言包，Git 只同步 `.bat`**（見 20.13、21.5）。
+
+### 24.6 下一個 AI 要避開的陷阱（補）
+㊷改 `search_rulebook_chunks` 前一定先請使用者匯出現有定義（現行是 v5b，已改過四次），改完立刻請他實測搜尋；㊸評論按讚要影響 `get_public_gathering_notes` 或 `get_my_all_game_notes` 時先匯出定義，兩個函式都已多回 `like_count`；㊹聚會心得公開欄與遊戲留言共用按讚函式，不要只測其中一種來源；㊺新增以 `bgg_name` 為鍵的表，照第 2 節通則（RLS、`revoke`、`anon` 無權限）並驗證；㊻`bggName` 絕不能動，「(含擴)」只在 CSV 的 `name` 去掉；㊼給使用者 SQL 要說明貼在 Supabase SQL Editor、不是 PowerShell。
