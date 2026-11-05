@@ -10,7 +10,9 @@ import {
   saveErrata,
   useGameErrata,
   usePendingErrata,
+  useAllErrata,
   type PendingErrata,
+  type AdminErrataRow,
   type Errata,
 } from '../lib/useGameErrata'
 import '../styles/errata.css'
@@ -26,6 +28,7 @@ export default function ErrataAdmin({
   const [bggName, setBggName] = useState('')
   const api = useGameErrata(bggName, bggName !== '')
   const pending = usePendingErrata(true)
+  const all = useAllErrata(true)
   const [editId, setEditId] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -104,6 +107,7 @@ export default function ErrataAdmin({
     onChanged?.()
     resetForm()
     api.reload()
+    all.reload()
   }
 
   async function review(item: PendingErrata, approve: boolean) {
@@ -131,6 +135,7 @@ export default function ErrataAdmin({
     onChanged?.()
     pending.reload()
     api.reload()
+    all.reload()
   }
 
   function startEdit(item: Errata) {
@@ -154,6 +159,38 @@ export default function ErrataAdmin({
     setMessage('已刪除。')
       onChanged?.()
     api.reload()
+    all.reload()
+  }
+
+  async function removeRow(row: AdminErrataRow) {
+    if (!(await askConfirm(`確定要刪除「${row.title}」嗎？無法復原。`))) return
+    setError('')
+    const result = await deleteErrata(row.id)
+    if (result) {
+      setError(result)
+      return
+    }
+    setMessage('已刪除。')
+    onChanged?.()
+    pending.reload()
+    api.reload()
+    all.reload()
+  }
+
+  function editRow(row: AdminErrataRow) {
+    setBggName(row.bgg_name)
+    setEditId(row.id)
+    setTitle(row.title)
+    setContent(row.content)
+    setSource(row.source_note)
+    setError('')
+    setMessage('已把這筆放進下方表單，修改後按「更新這筆」。')
+  }
+
+  const grouped = new Map<string, AdminErrataRow[]>()
+  for (const row of all.items) {
+    const key = row.bgg_name
+    grouped.set(key, [...(grouped.get(key) ?? []), row])
   }
 
   return (
@@ -164,7 +201,19 @@ export default function ErrataAdmin({
         一筆內容最多 {ERRATA_MAX_CONTENT} 字；一個 .txt 檔就是一筆。
       </p>
 
-      <h4 className="er-list-title">待審核的玩家投稿（{pending.items.length}）</h4>
+      {renderPicker(bggName, (next) => {
+        setBggName(next)
+        resetForm()
+        setError('')
+        setMessage('')
+      })}
+
+      <details
+        key={pending.items.length > 0 ? 'has-pending' : 'no-pending'}
+        className="ov-fold"
+        open={pending.items.length > 0}
+      >
+        <summary>待審核的玩家投稿（{pending.items.length}）</summary>
       {pending.loading && <p className="rb-hint">載入中…</p>}
       {pending.error && <p className="admin-error">{pending.error}</p>}
       {!pending.loading && !pending.error && pending.items.length === 0 && (
@@ -195,13 +244,49 @@ export default function ErrataAdmin({
           </li>
         ))}
       </ul>
+      </details>
 
-      {renderPicker(bggName, (next) => {
-        setBggName(next)
-        resetForm()
-        setError('')
-        setMessage('')
-      })}
+      <h4 className="er-list-title">全部玩錯紀錄（{all.items.length}）</h4>
+      {all.loading && <p className="rb-hint">載入中…</p>}
+      {all.error && <p className="admin-error">{all.error}</p>}
+      {!all.loading && !all.error && all.items.length === 0 && (
+        <p className="rb-hint">目前還沒有任何玩錯紀錄。</p>
+      )}
+      {[...grouped.entries()].map(([name, rows]) => (
+        <details key={name} className="ov-fold">
+          <summary>
+            {rows[0].game_name || name}（{rows.length}）
+          </summary>
+          <ul className="er-list">
+            {rows.map((row) => (
+              <li key={row.id}>
+                <div className="er-title">
+                  {row.title}
+                  <small className="er-src">
+                    {' '}・{row.from_player ? '玩家投稿' : '管理者記錄'}・
+                    {row.status === 'pending' ? '待審核' : row.status === 'rejected' ? '已退回' : '已核准'}
+                  </small>
+                </div>
+                <p className="er-body">{row.content}</p>
+                <small className="er-src">
+                  {row.nickname ? `投稿者：${row.nickname}　` : ''}
+                  {row.page_ref ? `頁碼：${row.page_ref}　` : ''}
+                  {row.source_note ? `來源：${row.source_note}　` : ''}
+                  {row.status === 'rejected' && row.reject_reason ? `退回原因：${row.reject_reason}` : ''}
+                </small>
+                <div className="rb-actions">
+                  <button type="button" className="admin-link" onClick={() => editRow(row)}>
+                    編輯
+                  </button>
+                  <button type="button" className="admin-link" onClick={() => void removeRow(row)}>
+                    刪除
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ))}
 
       {bggName && (
         <div className="er-form">

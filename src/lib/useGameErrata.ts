@@ -173,6 +173,53 @@ export async function reviewErrata(
   return error ? errataErrorText(error.message ?? '') : ''
 }
 
+export type AdminErrataRow = {
+  id: string
+  bgg_name: string
+  game_name: string | null
+  title: string
+  content: string
+  source_note: string
+  page_ref: string
+  verified: boolean
+  status: 'pending' | 'approved' | 'rejected'
+  reject_reason: string
+  from_player: boolean
+  nickname: string
+  updated_at: string
+}
+
+// 管理者：所有遊戲、所有狀態的玩錯紀錄
+export function useAllErrata(enabled: boolean) {
+  const [items, setItems] = useState<AdminErrataRow[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => {
+    if (!enabled) return
+    let cancelled = false
+    setLoading(true)
+    supabase.rpc('admin_get_all_errata').then(({ data, error: rpcError }) => {
+      if (cancelled) return
+      setLoading(false)
+      if (rpcError) {
+        setError('讀取全部玩錯紀錄失敗：' + (rpcError.message ?? ''))
+        setItems([])
+        return
+      }
+      setError('')
+      setItems((data ?? []) as AdminErrataRow[])
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [enabled, tick])
+
+  const reload = useCallback(() => setTick((n) => n + 1), [])
+  return { items, loading, error, reload }
+}
+
 // 管理者：所有遊戲的待審投稿
 export function usePendingErrata(enabled: boolean) {
   const [items, setItems] = useState<PendingErrata[]>([])
