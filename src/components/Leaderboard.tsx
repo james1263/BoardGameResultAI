@@ -18,6 +18,7 @@ import { usePlayerStats } from '../lib/usePlayerStats'
 import { useCommunityStats } from '../lib/useCommunityStats'
 import StatsTables from './StatsTables'
 import PlayersBoard from './PlayersBoard'
+import RuleStatsBoard from './RuleStatsBoard'
 import '../styles/stats-chart.css'
 import InfoHint from './InfoHint'
 import '../styles/leaderboard-filter.css'
@@ -142,7 +143,7 @@ export default function Leaderboard({
   const [board, setBoard] = useState<BoardKey>('want')
   const [period, setPeriod] = useState<Period>('all')
   const [openNames, setOpenNames] = useState<string[]>([])
-  const [page, setPage] = useState<'games' | 'players'>('games')
+  const [page, setPage] = useState<'games' | 'players' | 'rules'>('games')
   // 統計表用彈出視窗打開（嵌在抽屜裡太小，手機更看不清楚）
   const [statsOpen, setStatsOpen] = useState(false)
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
@@ -458,6 +459,13 @@ export default function Leaderboard({
                 </button>
                 <button
                   type="button"
+                  className={page === 'rules' ? 'active' : ''}
+                  onClick={() => setPage('rules')}
+                >
+                  規則助手
+                </button>
+                <button
+                  type="button"
                   className={statsOpen ? 'active' : ''}
                   onClick={() => setStatsOpen(true)}
                 >
@@ -474,6 +482,14 @@ export default function Leaderboard({
                   isAdmin={isAdmin}
                   boardGames={boardGames}
                   renderCover={renderCover}
+                  onOpenGame={onOpenGame}
+                />
+              </div>
+            ) : page === 'rules' && (canSeePeople || isAdmin) ? (
+              <div className="mylist-body">
+                <RuleStatsBoard
+                  enabled={isOpen}
+                  boardGames={boardGames}
                   onOpenGame={onOpenGame}
                 />
               </div>

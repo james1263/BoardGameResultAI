@@ -9,6 +9,7 @@ import InfoHint from './InfoHint'
 import { searchErrata, type Errata } from '../lib/useGameErrata'
 import { scopeLabel } from '../lib/docLabels'
 import { cleanOcrText } from '../lib/cleanOcrText'
+import { useHotKeywords } from '../lib/useRuleSearchStats'
 import '../styles/errata.css'
 
 type ScopedChunk = RulebookChunk & { doc_scope?: string; doc_expansion?: string }
@@ -238,6 +239,7 @@ export default function RulebookAssistant({
     const [openSet, setOpenSet] = useState<Set<string>>(new Set())
     const [remaining, setRemaining] = useState<number | null | undefined>(undefined)
     const cache = useRef<Map<string, RulebookChunk[]>>(new Map())
+    const hot = useHotKeywords(bggName, true)
 
     useEffect(() => {
         let cancelled = false
@@ -442,12 +444,50 @@ ${parts}${errataText}`
                 {busy ? '搜尋中…' : '搜尋'}
             </button>
 
-            {remaining !== undefined && (
-                <p className="ra-remaining">
-                    {remaining === null
-                        ? '管理者不限次數'
-                        : `今天還剩 ${remaining} 次（找到結果才扣）`}
-                </p>
+            {remaining !== undefined && remaining !== null && (
+                <p className="ra-remaining">今天還剩 {remaining} 次（找到結果才扣）</p>
+            )}
+
+            {chunks === null && activeLabel === '' && !busy && hot.loaded && (
+                <div style={{ margin: '14px 0' }}>
+                    <p style={{ fontWeight: 700, margin: '0 0 2px' }}>大家最近常查</p>
+                    <p style={{ fontSize: 12, opacity: 0.75, margin: '0 0 6px' }}>
+                        最近 30 天，點一下直接搜尋
+                    </p>
+                    {hot.items.length === 0 ? (
+                        <p style={{ fontSize: 13, opacity: 0.75 }}>這款還沒有人搜尋過。</p>
+                    ) : (
+                        <ol style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                            {hot.items.map((item, index) => (
+                                <li key={item.keyword}>
+                                    <button
+                                        type="button"
+                                        className="admin-link"
+                                        style={{
+                                            display: 'flex',
+                                            width: '100%',
+                                            gap: 10,
+                                            padding: '9px 0',
+                                            border: 0,
+                                            borderBottom: '1px solid #e3d9c4',
+                                            background: 'transparent',
+                                            textAlign: 'left',
+                                        }}
+                                        onClick={() => {
+                                            setQuery(item.keyword)
+                                            setLastQuery(item.keyword)
+                                            void run(item.keyword, '全部輸入內容')
+                                        }}
+                                    >
+                                        <span style={{ width: 22 }}>{index + 1}</span>
+                                        <span style={{ flex: 1 }}>{item.keyword}</span>
+                                        <span style={{ opacity: 0.7 }}>{item.count} 次</span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ol>
+                    )}
+                </div>
             )}
 
             {error && <p className="ra-error">{error}</p>}
@@ -489,6 +529,8 @@ ${parts}${errataText}`
                     <p className="ra-notice">
                         搜尋：{activeLabel}・{chunks.length} 段
                     </p>
+                    <details style={{ margin: '8px 0' }}>
+                    <summary style={{ cursor: 'pointer', padding: '6px 0' }}>⚙ 顯示設定</summary>
                     {chipsBlock}
                     {chunks.some((c) => cleanFor(c.doc_lang, c.content) !== c.content) && (
                         <button
@@ -527,6 +569,7 @@ ${parts}${errataText}`
                                 : '全部展開'}
                         </button>
                     </div>
+                    </details>
                     <ul className="ra-results">
                         {chunks.map((c, i) => {
                             const isZh = c.doc_lang === 'zh'
