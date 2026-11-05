@@ -454,6 +454,17 @@ ${parts}${errataText}`
             {notice && <p className="ra-notice">{notice}</p>}
             {!(chunks && chunks.length > 0) && chipsBlock}
 
+            {chunks && chunks.length > 0 && (
+                <button
+                    className="ra-btn"
+                    type="button"
+                    onClick={copyAnswerPrompt}
+                    style={{ margin: '10px 0' }}
+                >
+                    複製給我的 AI（含問題、片段與回答規範）
+                </button>
+            )}
+
             {errata.length > 0 && (
                 <div className="er-box">
                     <p className="er-box-title">
@@ -590,9 +601,6 @@ ${parts}${errataText}`
                     <p className="ra-notice">
                         按「翻譯成繁體中文」會把這段文字傳到 Google 翻譯，請勿翻譯個人或機密內容。
                     </p>
-                    <button className="ra-btn" type="button" onClick={copyAnswerPrompt}>
-                        複製給我的 AI（含問題、片段與回答規範）
-                    </button>
                 </>
             )}
         </div>
