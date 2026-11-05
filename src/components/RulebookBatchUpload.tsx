@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { askConfirm, askInput } from '../lib/askConfirm'
+import { takeEmptyPageNote } from '../lib/extractPdfText'
 import {
   defaultDocTitle,
   isSafeUrl,
@@ -576,6 +577,7 @@ export default function RulebookBatchUpload() {
           continue
         }
 
+        takeEmptyPageNote()
         const message = await uploadPdfDocument(row.bggName, {
           file: row.file,
           docType: row.docType,
@@ -591,7 +593,11 @@ export default function RulebookBatchUpload() {
         if (message) {
           updateRow(row.id, { status: 'error', message })
         } else {
-          updateRow(row.id, { status: 'done', message: '已上傳並建立索引' })
+          const note = takeEmptyPageNote()
+          updateRow(row.id, {
+            status: 'done',
+            message: note ? `已上傳並建立索引。${note}` : '已上傳並建立索引',
+          })
         }
       } catch (error) {
         updateRow(row.id, {

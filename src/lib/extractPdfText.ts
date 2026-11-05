@@ -21,6 +21,18 @@ const MAX_BOUND_CHARS = 1200
 const OVERLAP_CHARS = 150
 const OVERLAP_MAX_SINGLE = 300
 const MAX_CHUNKS = 3000
+// 最近一次擷取時「幾乎沒有文字」的頁碼，上傳成功後讓畫面提醒（只提醒，不阻擋）
+let lastEmptyPages: number[] = []
+
+export function takeEmptyPageNote(): string {
+  const pages = lastEmptyPages
+  lastEmptyPages = []
+  if (pages.length === 0) return ''
+  const shown = pages.slice(0, 10).join('、')
+  const more = pages.length > 10 ? `…（共 ${pages.length} 頁）` : ''
+  return `提醒：第 ${shown} 頁${more}沒有文字，這幾頁搜不到。若內容重要，請先 OCR 再重傳（封面或空白頁可忽略）。`
+}
+
 const CJK = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uff00-\uffef\u3000-\u303f]/
 
 async function sha256Hex(buffer: ArrayBuffer): Promise<string> {
@@ -224,6 +236,8 @@ export async function extractPdfChunks(
 
   const totalPages = pdf.numPages
   const chunks: ExtractedChunk[] = []
+  const emptyPages: number[] = []
+  lastEmptyPages = []
   let textChars = 0
   let textPages = 0
 
@@ -238,6 +252,7 @@ export async function extractPdfChunks(
 
       textChars += pageChars
       if (pageChars >= 20) textPages += 1
+      else emptyPages.push(pageNo)
       chunks.push(...chunkUnits(linesToUnits(lines), pageNo))
       page.cleanup()
       onProgress?.(pageNo, totalPages)
@@ -259,5 +274,6 @@ export async function extractPdfChunks(
     )
   }
 
+  lastEmptyPages = emptyPages
   return { pageCount: totalPages, chunks, fileHash }
 }

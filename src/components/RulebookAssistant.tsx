@@ -307,7 +307,7 @@ export default function RulebookAssistant({
         if (result.chunks.length === 0) {
             setNotice(
                 suggestions.length > 0
-                    ? '沒有找到相關段落，換個說法或點上方的英文關鍵字試試（這次不會扣次數）。'
+                    ? '沒有找到相關段落，換個說法或點下方的英文關鍵字試試（這次不會扣次數）。'
                     : '沒有找到相關段落，換個說法試試；中文詞找不到時，請直接輸入英文關鍵字（這次不會扣次數）。',
             )
         }
@@ -367,6 +367,35 @@ ${parts}${errataText}`
         )
     }
 
+    // 搜尋之後才出現；點英文關鍵字只會搜那一個英文詞，「全部」回到完整搜尋
+    const chipsBlock =
+        activeLabel !== '' && suggestions.length > 0 ? (
+            <div className="ra-suggest">
+                <span className="ra-suggest-title">
+                    想縮小範圍？點一個詞只搜它（點「全部」回到完整搜尋）
+                </span>
+                <div className="ra-chips">
+                    {['全部輸入內容', ...suggestions].map((word) => (
+                        <button
+                            key={word}
+                            type="button"
+                            className="ra-chip"
+                            disabled={busy}
+                            aria-pressed={activeLabel === word}
+                            style={
+                                activeLabel === word
+                                    ? { background: '#456B50', color: '#fff' }
+                                    : undefined
+                            }
+                            onClick={() => (word === '全部輸入內容' ? handleSearch() : handleChip(word))}
+                        >
+                            {word === '全部輸入內容' ? '全部' : word}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        ) : null
+
     return (
         <div className="ra">
             <label className="ra-field">
@@ -406,31 +435,6 @@ ${parts}${errataText}`
                 {busy ? '搜尋中…' : '搜尋'}
             </button>
 
-            {suggestions.length > 0 && (
-                <div className="ra-suggest">
-                    <span className="ra-suggest-title">英文關鍵字（點一下直接搜尋）</span>
-                    <div className="ra-chips">
-                        {suggestions.map((word) => (
-                            <button
-                                key={word}
-                                type="button"
-                                className="ra-chip"
-                                disabled={busy}
-                                aria-pressed={activeLabel === word}
-                                style={
-                                    activeLabel === word
-                                        ? { background: '#456B50', color: '#fff' }
-                                        : undefined
-                                }
-                                onClick={() => handleChip(word)}
-                            >
-                                {word}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-
             {remaining !== undefined && (
                 <p className="ra-remaining">
                     {remaining === null
@@ -441,6 +445,7 @@ ${parts}${errataText}`
 
             {error && <p className="ra-error">{error}</p>}
             {notice && <p className="ra-notice">{notice}</p>}
+            {!(chunks && chunks.length > 0) && chipsBlock}
 
             {errata.length > 0 && (
                 <div className="er-box">
@@ -466,6 +471,7 @@ ${parts}${errataText}`
                     <p className="ra-notice">
                         搜尋：{activeLabel}・{chunks.length} 段
                     </p>
+                    {chipsBlock}
                     {chunks.some((c) => cleanFor(c.doc_lang, c.content) !== c.content) && (
                         <button
                             className="ra-btn ra-btn-small"
