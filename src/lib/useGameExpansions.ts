@@ -33,7 +33,7 @@ export function isSafeUrl(url: string): boolean {
   return /^https?:\/\/\S+$/i.test(url)
 }
 
-function hostOf(url: string): string {
+export function hostOf(url: string): string {
   try {
     return new URL(url).hostname.replace(/^www\./, '')
   } catch {
@@ -42,26 +42,37 @@ function hostOf(url: string): string {
 }
 
 // 讀資料庫時一律再過濾一次，不信任資料內容
-function cleanLinks(raw: unknown): ExpansionLink[] {
+export function cleanLinks(raw: unknown): ExpansionLink[] {
   if (!Array.isArray(raw)) return []
   const out: ExpansionLink[] = []
   for (const item of raw) {
     if (!item || typeof item !== 'object') continue
     const { label, url } = item as { label?: unknown; url?: unknown }
     if (typeof url !== 'string' || !isSafeUrl(url)) continue
-    const text =
-      typeof label === 'string' && label.trim() !== '' ? label.trim() : hostOf(url)
+    const named = typeof label === 'string' ? label.trim() : ''
+    // 沒填名字時資料庫存的是網站名稱，這裡還原成「沒有名字」（空字串）
+    const text = named === hostOf(url) ? '' : named
     out.push({ label: text, url })
   }
   return out
 }
 
-export function linksToLines(links: ExpansionLink[]): string {
-  return links.map((l) => `${l.label} ${l.url}`).join('\n')
+// 顯示用：有名字秀名字，沒有名字秀網址
+export function linkLabel(link: ExpansionLink): string {
+  return link.label !== '' ? link.label : link.url
 }
 
-// 每行：標籤 網址（網址放最後；標籤可省略，省略就用網站名稱）
-export function parseLinkLines(text: string): {
+// 寫入資料庫用：沒有名字時沿用舊格式（存網站名稱），讀回來會還原成沒有名字
+export function toStoredLinks(links: ExpansionLink[]): ExpansionLink[] {
+  return links.map((l) => ({ label: l.label !== '' ? l.label : hostOf(l.url), url: l.url }))
+}
+
+export function linksToLines(links: ExpansionLink[]): string {
+  return links.map((l) => (l.label !== '' ? `${l.label} ${l.url}` : l.url)).join('\n')
+}
+
+// 每行：標籤 網址（網址放最後；標籤可省略，省略就直接顯示網址）
+export function parseLinkLines(text: string, max: number = MAX_LINKS): {
   links: ExpansionLink[]
   error: string
 } {
@@ -69,8 +80,8 @@ export function parseLinkLines(text: string): {
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter((l) => l !== '')
-  if (lines.length > MAX_LINKS) {
-    return { links: [], error: `最多 ${MAX_LINKS} 個連結。` }
+  if (lines.length > max) {
+    return { links: [], error: `最多 ${max} 個連結。` }
   }
   const links: ExpansionLink[] = []
   for (const line of lines) {
@@ -82,7 +93,7 @@ export function parseLinkLines(text: string): {
       }
     }
     const url = m[2]
-    const label = m[1].trim() || hostOf(url)
+    const label = m[1].trim()
     if (label.length > MAX_LABEL) {
       return { links: [], error: `標籤最多 ${MAX_LABEL} 字：${label}` }
     }
@@ -233,7 +244,7 @@ export function useGameExpansions(bggName: string) {
   ): Promise<string> {
     const { error: err } = await supabase
       .from('game_expansions')
-      .update({ links, note })
+      .update({ links: toStoredLinks(links), note })
       .eq('id', id)
     if (err) return '儲存失敗：' + err.message
     await reload()

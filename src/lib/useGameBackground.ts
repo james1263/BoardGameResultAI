@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
-import { MAX_LINKS, isSafeUrl, type ExpansionLink } from './useGameExpansions'
+import { cleanLinks, toStoredLinks, type ExpansionLink } from './useGameExpansions'
 
-export const MAX_BACKGROUND = 2000
+export const MAX_BACKGROUND = 5000
 export const MAX_SOURCE_NOTE = 100
-export { MAX_LINKS }
+export const MAX_LINKS = 10
 
 export type GameBackground = {
   content: string
@@ -16,30 +16,6 @@ type Row = {
   content: string | null
   links: unknown
   source_note: string | null
-}
-
-function hostOf(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '')
-  } catch {
-    return url
-  }
-}
-
-// 讀資料庫時一律再過濾一次，不信任資料內容
-function cleanLinks(raw: unknown): ExpansionLink[] {
-  if (!Array.isArray(raw)) return []
-  const out: ExpansionLink[] = []
-  for (const item of raw) {
-    if (!item || typeof item !== 'object') continue
-    const { label, url } = item as { label?: unknown; url?: unknown }
-    if (typeof url !== 'string' || !isSafeUrl(url)) continue
-    out.push({
-      label: typeof label === 'string' && label.trim() !== '' ? label.trim() : hostOf(url),
-      url,
-    })
-  }
-  return out
 }
 
 export function useGameBackground(bggName: string) {
@@ -94,7 +70,7 @@ export function useGameBackground(bggName: string) {
         {
           bgg_name: bggName,
           content,
-          links,
+          links: toStoredLinks(links),
           source_note: sourceNote,
           updated_at: new Date().toISOString(),
         },

@@ -4,6 +4,7 @@ import {
   MAX_LINKS,
   MAX_NOTE,
   expansionImageUrl,
+  linkLabel,
   linksToLines,
   parseLinkLines,
   useGameExpansions,
@@ -202,7 +203,7 @@ export default function GameExpansions({
                               target="_blank"
                               rel="noreferrer"
                             >
-                              {link.label} <span aria-hidden="true">↗</span>
+                              {linkLabel(link)} <span aria-hidden="true">↗</span>
                             </a>
                           </li>
                         ))}
@@ -247,7 +248,7 @@ export default function GameExpansions({
                       <div className="ge-editor">
                         <p className="ge-hint">
                           連結：每行一個，格式「標籤 網址」（網址放最後，最多{' '}
-                          {MAX_LINKS} 個，標籤可省略）
+                          {MAX_LINKS} 個，沒填標籤就直接顯示網址）
                         </p>
                         <textarea
                           className="ge-input"

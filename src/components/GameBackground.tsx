@@ -5,7 +5,7 @@ import {
   MAX_SOURCE_NOTE,
   useGameBackground,
 } from '../lib/useGameBackground'
-import { linksToLines, parseLinkLines } from '../lib/useGameExpansions'
+import { linkLabel, linksToLines, parseLinkLines } from '../lib/useGameExpansions'
 import '../styles/game-expansions.css'
 import '../styles/game-background.css'
 
@@ -49,7 +49,7 @@ export default function GameBackground({
       setMessage(`來源說明最多 ${MAX_SOURCE_NOTE} 字。`)
       return
     }
-    const parsed = parseLinkLines(linkText)
+    const parsed = parseLinkLines(linkText, MAX_LINKS)
     if (parsed.error) {
       setMessage(parsed.error)
       return
@@ -80,7 +80,7 @@ export default function GameBackground({
                   {data.links.map((link) => (
                     <li key={link.url}>
                       <a href={link.url} target="_blank" rel="noreferrer">
-                        {link.label} <span aria-hidden="true">↗</span>
+                        {linkLabel(link)} <span aria-hidden="true">↗</span>
                       </a>
                     </li>
                   ))}
@@ -120,11 +120,11 @@ export default function GameBackground({
               />
               <p className="ge-hint">{text.length} / {MAX_BACKGROUND}</p>
               <p className="ge-hint">
-                連結：每行一個，格式「標籤 網址」（網址放最後，最多 {MAX_LINKS} 個，標籤可省略）
+                連結：每行一個，格式「標籤 網址」（網址放最後，最多 {MAX_LINKS} 個，沒填標籤就直接顯示網址）
               </p>
               <textarea
                 className="ge-input"
-                rows={3}
+                rows={6}
                 value={linkText}
                 disabled={busy}
                 placeholder="維基百科 https://zh.wikipedia.org/..."
