@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from './supabase'
 import type { LibraryGame } from './libraryTypes'
+import { cleanupGameData, cleanupMessage } from './gameCleanup'
 
 type GameRef = Pick<LibraryGame, 'bggName' | 'name'>
 type GamesUpdater = (updater: (games: LibraryGame[]) => LibraryGame[]) => void
@@ -42,13 +43,21 @@ export function useTrashActions(
   }
   async function trashGame(game: GameRef): Promise<boolean> {
     const input = window.prompt(
-      `要把「${game.name}」移到垃圾桶嗎？\n可填寫原因（例如：已售出、送人），也可以留空。\n按「取消」則不移動。`,
+      `要把「${game.name}」移到垃圾桶嗎？\n移到垃圾桶後只會保留封面與基本資料；這款的規則書 PDF 與搜尋索引、擴充、背景介紹、詞庫都會被刪除，無法復原。\n可填寫原因（例如：已售出、送人），也可以留空。\n按「取消」則不移動。`,
       '',
     )
     if (input === null) return false
 
     const reason = input.trim().slice(0, 200)
-    return setRemovedAt(game, new Date().toISOString(), reason || null)
+    const moved = await setRemovedAt(game, new Date().toISOString(), reason || null)
+    if (moved) {
+      setBusyName(game.bggName)
+      const result = await cleanupGameData(game.bggName)
+      setBusyName(null)
+      const message = cleanupMessage(game.name, result)
+      if (message) window.alert(message)
+    }
+    return moved
   }
 
   async function restoreGame(game: GameRef): Promise<boolean> {
@@ -56,33 +65,24 @@ export function useTrashActions(
   }
 
   async function deleteForever(game: LibraryGame): Promise<boolean> {
-    // 先記下這款遊戲上傳過的規則書檔案（刪遊戲後文件列會被連帶刪掉，就查不到路徑了）
-    const docsResult = await supabase
-      .from('game_documents')
-      .select('storage_path, source_type')
-      .eq('bgg_name', game.bggName)
-    if (docsResult.error) {
-      window.alert('讀取這款遊戲的規則書失敗，沒有刪除：' + docsResult.error.message)
-      return false
-    }
-    const pdfPaths = ((docsResult.data ?? []) as {
-      storage_path: string | null
-      source_type: string
-    }[])
-      .filter((doc) => doc.source_type === 'upload' && doc.storage_path)
-      .map((doc) => doc.storage_path as string)
-
     if (
       !window.confirm(
-        `確定要永久刪除「${game.name}」嗎？\n遊戲資料、雲端封面` +
-          (pdfPaths.length > 0 ? `與 ${pdfPaths.length} 份規則書 PDF` : '') +
-          `會被刪除，無法復原。`,
+        `確定要永久刪除「${game.name}」嗎？\n遊戲資料、雲端封面與所有附屬資料（規則書、擴充、背景介紹、詞庫）會被刪除，無法復原。`,
       )
     ) {
       return false
     }
 
     setBusyName(game.bggName)
+    // 先清附屬資料（含規則書 PDF）；檔案刪不掉就先不刪遊戲，避免留下孤兒檔
+    const cleaned = await cleanupGameData(game.bggName)
+    if (cleaned.errors.length > 0) {
+      setBusyName(null)
+      window.alert(
+        '附屬資料清理失敗，沒有刪除遊戲：\n' + cleaned.errors.join('\n'),
+      )
+      return false
+    }
     const { data, error } = await supabase
       .from('board_games')
       .delete()
@@ -111,20 +111,9 @@ export function useTrashActions(
       }
     }
 
-    // 規則書 PDF 不會跟著資料列一起刪，要自己從 Storage 刪掉，不然會變成沒人看得到、卻佔容量的檔案
-    if (pdfPaths.length > 0) {
-      const { error: pdfError } = await supabase.storage
-        .from('rulebooks')
-        .remove(pdfPaths)
-      if (pdfError) {
-        window.alert(
-          '遊戲已刪除，但規則書 PDF 刪除失敗（可到管理中心「規則書」的「檢查孤兒檔」清掉）：' +
-            pdfError.message,
-        )
-      }
-    }
-
     setBusyName(null)
+    const leftover = cleanupMessage(game.name, cleaned)
+    if (leftover) window.alert(leftover)
     onGamesChange((list) =>
       list.filter((item) => item.bggName !== game.bggName),
     )
