@@ -128,7 +128,7 @@ export async function cleanupGameData(bggName: string): Promise<CleanupResult> {
   } catch (error) {
     warnings.push('清理未對應詞時發生錯誤：' + (error instanceof Error ? error.message : '未知'))
   }
-    // 6. 玩錯紀錄
+  // 6. 玩錯紀錄
   try {
     const list = await supabase.rpc('get_game_errata', { p_bgg_name: bggName })
     if (list.error) {
@@ -144,6 +144,13 @@ export async function cleanupGameData(bggName: string): Promise<CleanupResult> {
     }
   } catch (error) {
     warnings.push('清理玩錯紀錄時發生錯誤：' + (error instanceof Error ? error.message : '未知'))
+  }
+  // 7. 規則助手熱搜統計
+  try {
+    const del = await supabase.rpc('admin_delete_rule_stats', { p_bgg_name: bggName })
+    if (del.error) warnings.push('刪除搜尋統計失敗：' + del.error.message)
+  } catch (error) {
+    warnings.push('清理搜尋統計時發生錯誤：' + (error instanceof Error ? error.message : '未知'))
   }
 
   return { errors, warnings }
