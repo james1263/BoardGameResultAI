@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-11-05（已併入上一版 `生成後.md`；**最新增補在第 25 節（規則助手顯示改版、v6 排序加權、垃圾桶只留封面、規則書大小與項目符號、上傳空白頁提醒、背景上限調高），其次第 24 節（按讚、遊戲背景、規則助手 v5b、OCR 波蘭文／德文、去掉「(含擴)」），其次第 23、22、21 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
+> 最後更新：2026-11-05 深夜（已併入上一版 `生成後.md`；**最新增補在第 26 節（熱搜與統計、規則助手畫面整理與放大、垃圾桶補清玩錯紀錄、漏底、ChatGPT 知識庫規格對照），其次第 25 節**（規則助手顯示改版、v6 排序加權、垃圾桶只留封面、規則書大小與項目符號、上傳空白頁提醒、背景上限調高），其次第 24 節（按讚、遊戲背景、規則助手 v5b、OCR 波蘭文／德文、去掉「(含擴)」），其次第 23、22、21 節（規則助手顯示改版、v6 排序加權、垃圾桶只留封面、規則書大小與項目符號、上傳空白頁提醒、背景上限調高），其次第 24 節（按讚、遊戲背景、規則助手 v5b、OCR 波蘭文／德文、去掉「(含擴)」），其次第 23、22、21 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
 
 ## 1. 專案簡介與技術架構
 
@@ -734,3 +734,33 @@
 
 ### 25.9 下一個 AI 要避開的陷阱（補）
 ㊽交付檔案要寫清楚完整路徑，使用者貼 `git status` 時檢查有沒有 Untracked 或該改卻沒 modified 的檔（`git add` 對沒變動的檔不會報錯）；㊾垃圾桶現在是「只留封面」，之後任何「移到垃圾桶」的新入口都要呼叫 `cleanupGameData`，否則會留下孤兒檔；㊿改 `search_rulebook_chunks` 前先匯出（現行 v6）；51 玩錯紀錄表與函式名稱仍未知，改垃圾桶清理前要請使用者貼 `ErrataAdmin.tsx`／`useGameErrata.ts`；52 `RulebookAssistant.tsx` 曾由 AI 依對話內容重建，下次改前請使用者上傳目前版本；53 commit 訊息用中文。
+
+## 26. 2026-11-05 深夜增補（覆蓋前面衝突的敘述）
+
+- 現況與使用者決定見 `QUICKSTART.md` 2.10、第 6 節。本節併入上一版 `生成後.md` 全部內容。**凡是我沒看到的細節都標［未驗證］。**
+
+### 26.1 熱搜與統計（階段 1；資料庫由使用者在 Supabase SQL Editor 執行，SQL 檔不在 repo）
+- **資料表**：`rule_search_daily_stats(bgg_name, day date, search_count int)`，主鍵 `(bgg_name, day)`；`rule_search_keyword_stats(bgg_name, day, keyword text 1～30 字, search_count)`，主鍵 `(bgg_name, day, keyword)`。RLS 開、`revoke all ... from anon, authenticated`（資料表權限查詢回「No rows」）；**沒有 `user_id`**；每次寫入順便刪 400 天前的列；沒有外鍵。
+- **`search_rulebook_chunks` 現況（已改過八次以上，再改前一定先請使用者匯出）**：v7 文件範圍加分（faq 0.9、player_notes 0.6、main 0.3、其他 0）＋**統計寫入**：用 `do $$ … replace(v_def, 'return query', v_add || 'return query') … execute v_new $$` 插在 `insert into rulebook_search_log` 之後、`return query` 之前。條件：**非管理者**（`not public.is_admin()`）、**找到結果才記**（所以每位 VIP 一天最多 30 次，沒有另外的防灌水機制）；關鍵字＝`v_hits`（詞庫命中的中文詞，長度 ≥ 2）＋整句 `length(v_text) <= 8` 時的 `lower(v_text)`；長句沒命中詞庫就只加進遊戲每日搜尋量。驗證 `position('rule_search_daily_stats' in pg_get_functiondef(...)) > 0` 為 true。
+- **三個讀取函式**（`plpgsql stable security definer`、`search_path=''`；非 VIP 且非管理者丟 `not vip`；`revoke ... from public, anon`、`grant execute ... to authenticated`；權限已驗證 `anon_exec = false`、`auth_exec = true`）：`get_rule_hot_keywords(p_bgg_name, p_days int default 30, p_limit int default 5)` → `keyword, search_count`（天數夾 1～400、筆數夾 1～20）；`get_rule_stats_games(p_period text default 'all')` → `bgg_name, search_count`（前 20，join `board_games` 排除垃圾桶）；`get_rule_stats_keywords(p_period)` → `keyword, search_count, game_count`（前 20）。`p_period`：`all`／`month`／`quarter`／`year`（`date_trunc`，台北日期）。bigint 在前端用 `Number()` 轉。
+- **前端**：新檔 `src/lib/useRuleSearchStats.ts`（`useHotKeywords(bggName, enabled)`、`useRuleStats(period, enabled)`）、`src/components/RuleStatsBoard.tsx`（統計中心「規則助手」頁，期間沿用 `lb-tabs`／`lb-tab`，inline 樣式，沒動 CSS；最常被查的遊戲可點開遊戲視窗）；`Leaderboard.tsx`（`page` 型別 `'games' | 'players' | 'rules'`、分頁鈕「規則助手」、`canSeePeople || isAdmin` 才顯示）；`RulebookAssistant.tsx`（搜尋前＋沒有搜尋標籤＋不在搜尋中＋`hot.loaded` 時顯示「大家最近常查」前 5 名，點一下 `setQuery`＋`setLastQuery`＋`run(word, '全部輸入內容')`；管理者「不限次數」文字隱藏，一般 VIP 仍顯示剩餘次數；結果頁的英文關鍵字區、OCR 切換、字體三鍵、全部展開包進 `<details>`「⚙ 顯示設定」，預設收起；「複製給我的 AI」與玩錯紀錄位置不變）。
+- **取捨與限制**：管理者搜尋不計入（測試要用一般 VIP 帳號）；長句沒命中詞庫就沒有關鍵字；短整句存小寫；同義詞／相近說法沒有合併；統計說明小字寫明「只統計 VIP 一般成員找到結果的搜尋」；統計中心只有 VIP 與管理者看得到。
+- **`privacy.html`（2026-11-05 版）**：補「規則助手熱門搜尋統計（僅 VIP 與管理者可看）」：只記遊戲、日期、關鍵字、次數，不含帳號與長句，保留 400 天，管理者自己的搜尋不計入；第二節資料用途與第三節「誰看得到什麼」各補一句。**是否已覆蓋並 push 未確認。**
+
+### 26.2 規則助手其他變更（`51dcd96`、`af6339d`）
+- 「複製給我的 AI」按鈕在 `er-box` 上方，只在有結果時出現。
+- `RulebookPage.tsx` 多 `import '../styles/ra-large.css'`；`ra-large.css` **第二版**（`body .ra-backdrop { display: block; padding: 0 }`、`body .ra-backdrop .ra-page { position: static; width: 100%; height: 100%; max-width: none; max-height: none; border-radius: 0; display: flex; flex-direction: column }`、`.ra-page-body { flex: 1; min-height: 0; overflow-y: auto; max-width: 1000px; margin: 0 auto }`）。第一版用 `position: fixed`，`vip.css` 第 1255 行 `@media (max-width: 520px) .ra-backdrop .ra-page { height: 100% }` 讓它蓋住手機導覽列；**手機必須保留底部導覽列**（`vip.css` 第 1236 行 `.ra-backdrop` 手機版 `bottom: var(--nav-h)`）。電腦版截圖鋪滿正常，手機版未回報。
+
+### 26.3 垃圾桶清理補玩錯紀錄（`src/lib/gameCleanup.ts`）
+- 新增第 6 步：`get_game_errata(p_bgg_name)` 逐筆呼叫 `admin_delete_game_errata(p_id)`；失敗只進 `warnings`。玩錯紀錄函式名稱（來自 `useGameErrata.ts`、`ErrataAdmin.tsx`）：讀取 `get_game_errata`、搜尋 `search_game_errata`（不扣次數）、儲存 `admin_save_game_errata(p_id, p_bgg_name, p_title, p_content, p_source)`、刪除 `admin_delete_game_errata(p_id)`；欄位 `id, title, content, source_note, updated_at`；標題 ≤ 60、內容 ≤ 1200、來源 ≤ 100；錯誤字串 `too long`／`empty`／`not found`／`not admin`。**表名仍未看到**。
+- **待做（SQL 已給使用者、是否執行未確認）**：`admin_delete_rule_stats(p_bgg_name text)`（管理者專用，刪兩張統計表該遊戲的列）與 `gameCleanup.ts` 第 7 步（`supabase.rpc('admin_delete_rule_stats', { p_bgg_name: bggName })`，失敗進 warnings）。**先執行 SQL 再 push 程式**。
+
+### 26.4 漏底（iPhone Google App，桌遊收藏首頁與每個畫面往上滑都會出現，未實測修法）
+- 根因推測（［未驗證］）：`index.html` 的 viewport 沒有 `viewport-fit=cover`，`env(safe-area-inset-bottom)` 一直是 0，`sitebar.css` 的安全區設定沒作用。修法：viewport 改為 `width=device-width, initial-scale=1.0, viewport-fit=cover`；`sitebar.css` 最底下加 `@media (max-width: 760px) { .sb-nav::after { position: absolute; top: 100%; right: 0; left: 0; height: 120px; background: var(--c-paper); content: ''; pointer-events: none; } }`（遮住用）。加 `cover` 後底部導覽列會多出 home 指示條高度（預期）。`sitebar.css` 手機版 `.sb-nav` 是 `position: fixed; bottom: 0`，`body` 有 `padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px))`。
+
+### 26.5 使用者貼的 ChatGPT「知識庫 Phase 1」規格（只當參考，沒採用整包）
+- 內容：玩家 FAQ、公開問題、個人收藏、投稿審核、熱搜榜、六張表（`rule_search_logs`、`rule_questions`、`rule_answers`、`rule_answer_submissions`、`rule_favorites`、`rule_answer_votes`）、RLS 矩陣、資料欄位建議。**我的對照**：它的 `query_text` 會存完整問題，與使用者「不存問題內容」的決定衝突；「已核准 FAQ」本質上是玩錯紀錄的擴充，不另起一套；匿名識別碼去重沒採用（統計直接寫在搜尋函式裡）。**採納**：搜尋次數與答案品質分開呈現、玩家答案不冒充官方規則、待審核內容只有投稿者與管理者看得到、投稿要有狀態與退回原因。
+- **階段 2 設計方向（使用者「照建議」，細節未定）**：擴充現有玩錯紀錄；來源分管理者輸入與 VIP 投稿；VIP 投稿欄位：問題、答案、參考頁碼、是否已核對規則書；狀態 `pending`／`approved`／`rejected`（退回要有原因）；核准後才進搜尋結果，標「玩家整理・已審核」；未核對規則書標【未驗證】；管理者要有審核頁。**動工前必須先匯出玩錯紀錄的表與函式定義。**
+
+### 26.6 下一個 AI 要避開的陷阱（補）
+54 覆蓋大檔案前先確認是從使用者目前版本改的：`GameModal.tsx` 曾是舊版，`git diff` 才發現會刪掉 `GameBackground` 與標題 BGG 連結，`git status` 若出現 AI 沒動過的 modified 檔要先 `git diff` 再決定；55 熱搜統計管理者不計入，測試要用一般 VIP 帳號，且每位 VIP 一天最多 30 次；56 新增以 `bgg_name` 為鍵的表（含統計表、日後的 FAQ 表）要同步考慮垃圾桶清理（`cleanupGameData`）；57 改 `search_rulebook_chunks` 前一定先匯出現有定義，用 `replace` 改函式要選不含空白換行的短字串；58 `ra-large.css` 要用 `body` 前綴蓋過 `vip.css`，且手機不可蓋住底部導覽列；59 熱搜與已審核 FAQ 要分開呈現，搜尋次數不代表答案正確；60 給使用者 commit 指令時用中文訊息、逐檔 `git add`、分批 commit，並叮嚀 build 通過再推。
