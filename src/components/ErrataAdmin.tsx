@@ -1,12 +1,16 @@
 import { useState, type ChangeEvent, type ReactNode } from 'react'
-import { askConfirm } from '../lib/askConfirm'
+import { askConfirm, askInput } from '../lib/askConfirm'
 import {
   deleteErrata,
   ERRATA_MAX_CONTENT,
   ERRATA_MAX_SOURCE,
+  ERRATA_MAX_REASON,
   ERRATA_MAX_TITLE,
+  reviewErrata,
   saveErrata,
   useGameErrata,
+  usePendingErrata,
+  type PendingErrata,
   type Errata,
 } from '../lib/useGameErrata'
 import '../styles/errata.css'
@@ -21,6 +25,7 @@ export default function ErrataAdmin({
 }) {
   const [bggName, setBggName] = useState('')
   const api = useGameErrata(bggName, bggName !== '')
+  const pending = usePendingErrata(true)
   const [editId, setEditId] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -30,6 +35,7 @@ export default function ErrataAdmin({
   const [error, setError] = useState('')
 
   const over = content.length > ERRATA_MAX_CONTENT
+  const listItems = api.items.filter((item) => item.status !== 'pending')
 
   function resetForm() {
     setEditId(null)
@@ -100,6 +106,33 @@ export default function ErrataAdmin({
     api.reload()
   }
 
+  async function review(item: PendingErrata, approve: boolean) {
+    setError('')
+    setMessage('')
+    let reason = ''
+    if (!approve) {
+      const input = await askInput('請寫退回原因（投稿者看得到，最多 ' + ERRATA_MAX_REASON + ' 字）', {
+        placeholder: '例如：和規則書第 7 頁不符',
+        confirmText: '退回',
+      })
+      if (input === null) return
+      reason = input.trim().slice(0, ERRATA_MAX_REASON)
+      if (!reason) {
+        setError('退回時必須寫原因。')
+        return
+      }
+    }
+    const result = await reviewErrata(item.id, approve, reason)
+    if (result) {
+      setError(result)
+      return
+    }
+    setMessage(approve ? '已核准，之後會出現在規則助手與遊戲詳細資料。' : '已退回。')
+    onChanged?.()
+    pending.reload()
+    api.reload()
+  }
+
   function startEdit(item: Errata) {
     setEditId(item.id)
     setTitle(item.title)
@@ -130,6 +163,38 @@ export default function ErrataAdmin({
         記錄玩家玩錯過的規則。VIP 與管理者能在遊戲詳細資料與規則助手看到，一律標示為「管理者記錄、非官方規則」，不會和規則書混在一起。
         一筆內容最多 {ERRATA_MAX_CONTENT} 字；一個 .txt 檔就是一筆。
       </p>
+
+      <h4 className="er-list-title">待審核的玩家投稿（{pending.items.length}）</h4>
+      {pending.loading && <p className="rb-hint">載入中…</p>}
+      {pending.error && <p className="admin-error">{pending.error}</p>}
+      {!pending.loading && !pending.error && pending.items.length === 0 && (
+        <p className="rb-hint">目前沒有待審的投稿。</p>
+      )}
+      <ul className="er-list">
+        {pending.items.map((item) => (
+          <li key={item.id}>
+            <div className="er-title">
+              《{item.game_name || item.bgg_name}》{item.title}
+            </div>
+            <p className="er-body">{item.content}</p>
+            <small className="er-src">
+              投稿者：{item.nickname || '（未設暱稱）'}
+              {item.contact_name ? `（${item.contact_name}）` : ''}
+              {item.page_ref ? `　頁碼：${item.page_ref}` : ''}
+              {item.source_note ? `　來源：${item.source_note}` : ''}
+              {item.verified ? '　已對照規則書' : '　未對照規則書'}
+            </small>
+            <div className="rb-actions">
+              <button type="button" className="admin-link" onClick={() => void review(item, true)}>
+                核准
+              </button>
+              <button type="button" className="admin-link" onClick={() => void review(item, false)}>
+                退回
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
 
       {renderPicker(bggName, (next) => {
         setBggName(next)
@@ -201,13 +266,20 @@ export default function ErrataAdmin({
             )}
           </div>
 
-          <h4 className="er-list-title">這款已有的玩錯紀錄（{api.items.length}）</h4>
+          <h4 className="er-list-title">這款已有的玩錯紀錄（{listItems.length}）</h4>
           {api.loading && <p className="rb-hint">載入中…</p>}
           {api.error && <p className="admin-error">{api.error}</p>}
           <ul className="er-list">
-            {api.items.map((item) => (
+            {listItems.map((item) => (
               <li key={item.id}>
-                <div className="er-title">{item.title}</div>
+                <div className="er-title">
+                  {item.title}
+                  {item.from_player && (
+                    <small className="er-src">
+                      {' '}・玩家投稿（{item.status === 'rejected' ? '已退回' : '已核准'}）
+                    </small>
+                  )}
+                </div>
                 <p className="er-body">{item.content}</p>
                 {item.source_note && (
                   <small className="er-src">來源：{item.source_note}</small>
