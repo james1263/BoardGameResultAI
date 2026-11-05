@@ -1,0 +1,28 @@
+/* 規則助手：頁面放大。外層遮罩 .ra-backdrop 在手機上本來就停在導覽列上方（vip.css 的 bottom: var(--nav-h)），
+   所以這裡只讓頁面填滿遮罩，不另外用 fixed 定位。用 body 前綴提高優先權，蓋過 vip.css 的舊規則。 */
+body .ra-backdrop {
+  display: block;
+  padding: 0;
+}
+
+body .ra-backdrop .ra-page {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border-radius: 0;
+}
+
+body .ra-backdrop .ra-page .ra-page-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}

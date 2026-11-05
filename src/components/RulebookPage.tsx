@@ -4,6 +4,7 @@ import type { LibraryGame } from '../lib/libraryTypes'
 import RulebookAssistant from './RulebookAssistant'
 import { getIndexedGames } from '../lib/useRulebookSearch'
 import { useBackClose } from '../lib/useBackClose'
+import '../styles/ra-large.css'
 
 export default function RulebookPage({
   boardGames,
