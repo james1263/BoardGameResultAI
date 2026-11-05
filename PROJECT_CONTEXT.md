@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-11-05（已併入上一版 `生成後.md`；**最新增補在第 24 節（按讚、遊戲背景、規則助手 v5b、OCR 波蘭文／德文、去掉「(含擴)」），其次第 23、22、21 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
+> 最後更新：2026-11-05（已併入上一版 `生成後.md`；**最新增補在第 25 節（規則助手顯示改版、v6 排序加權、垃圾桶只留封面、規則書大小與項目符號、上傳空白頁提醒、背景上限調高），其次第 24 節（按讚、遊戲背景、規則助手 v5b、OCR 波蘭文／德文、去掉「(含擴)」），其次第 23、22、21 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
 
 ## 1. 專案簡介與技術架構
 
@@ -687,3 +687,50 @@
 
 ### 24.6 下一個 AI 要避開的陷阱（補）
 ㊷改 `search_rulebook_chunks` 前一定先請使用者匯出現有定義（現行是 v5b，已改過四次），改完立刻請他實測搜尋；㊸評論按讚要影響 `get_public_gathering_notes` 或 `get_my_all_game_notes` 時先匯出定義，兩個函式都已多回 `like_count`；㊹聚會心得公開欄與遊戲留言共用按讚函式，不要只測其中一種來源；㊺新增以 `bgg_name` 為鍵的表，照第 2 節通則（RLS、`revoke`、`anon` 無權限）並驗證；㊻`bggName` 絕不能動，「(含擴)」只在 CSV 的 `name` 去掉；㊼給使用者 SQL 要說明貼在 Supabase SQL Editor、不是 PowerShell。
+
+## 25. 2026-11-05 晚增補（覆蓋前面衝突的敘述）
+
+- 現況與使用者決定見 `QUICKSTART.md` 2.9、第 6 節。本節併入上一版 `生成後.md` 全部內容與之後的垃圾桶改版。**凡是我沒看到的細節都標［未驗證］。**
+
+### 25.1 遊戲背景：上限調高與連結命名（`4c022ff`；覆蓋 24.3 的數字）
+- 資料庫（使用者在 Supabase SQL Editor 執行並驗證）：`game_backgrounds_content_check` 改為 `char_length(content) <= 5000`；`game_backgrounds_links_check` 改為 `CASE WHEN jsonb_typeof(links) = 'array' THEN jsonb_array_length(links) <= 10 ELSE false END`（原本寫法被截圖切掉，是依「陣列且有筆數上限」重寫的）；`source_note` ≤ 100 沒動。
+- 前端：`useGameBackground.ts` 的 `MAX_BACKGROUND = 5000`、`MAX_LINKS = 10`（不再從擴充檔轉出）；**擴充連結上限仍是 5**（`useGameExpansions.ts` 的 `MAX_LINKS`，`game_expansions` 的 check 沒動）；`parseLinkLines(text, max = MAX_LINKS)` 多一個選填上限參數。
+- 連結命名（擴充與背景共用，使用者決定：只秀自己打的名字，沒名字才秀網址）：原因是沒填名字時程式把網站名稱（如 boardgamegeek.com）存成名字，編輯框又顯示出來，刪不掉。`useGameExpansions.ts`：`hostOf`、`cleanLinks` 改為 export；讀資料時名字等於網站名稱視為沒有名字（空字串）；新增 `linkLabel(link)`（有名字秀名字、沒有秀完整網址）與 `toStoredLinks(links)`（寫入時沒名字仍存網站名稱，沿用舊格式，避免 `game_expansions` check 不明而失敗）；`linksToLines` 沒名字只輸出網址；`parseLinkLines` 不再自動補網站名稱；`updateDetails` 寫入前呼叫 `toStoredLinks`。`useGameBackground.ts` 改用共用的 `cleanLinks`／`toStoredLinks`。畫面：`GameExpansions.tsx`、`GameBackground.tsx` 連結改 `linkLabel(link)`；背景連結輸入框 `rows` 3→6。
+- 舊資料：已存成「名稱 boardgamegeek.com」的連結要使用者自己開「連結」改掉，沒跑資料遷移。**陷阱**：名字剛好填成網站名稱會被當成沒名字。使用者已測沒問題。
+
+### 25.2 資料庫 `search_rulebook_chunks` v6（排序加權；使用者執行並驗證）
+- 只改評分：`v_key`＝詞庫命中的詞與中文同義詞；中文比對詞命中時，詞庫詞／同義詞 +2、3 字以上整段詞 +1、2 字滑動詞 +0.5，再加英文 `ts_rank_cd`（原本每個命中詞都 +1）。回傳欄位、`limit 8`、1300 字截斷、扣次數、未對應詞記錄、其他語言文件比對都沒動。**已改過五次，再改前一定先請使用者匯出現有定義，SQL 檔不在 repo。**
+- 驗收：旭日「戰鬥平手算誰贏」繁中規則書第 23 頁排第 3（原本第 6），第 7、28 頁在前面（內容也與平手、榮耀有關）。福祿壽、結盟、天際礦脈「股票」改過後沒有人貼結果，［未驗證］是否仍都找得到。
+- 沒做：「主遊戲與 FAQ 排在擴充與玩家整理前面」，因為 `content_scope` 實際存的值不確定，要先匯出。
+
+### 25.3 規則助手前端改版（`90ddf97`，`RulebookAssistant.tsx`；使用者決定：照建議，嫌字太小）
+- 重點截取：每段預設只顯示命中詞最多的 2 句（只選真的命中的句子；`Q:` 命中連同它的 `A:`；完全沒命中詞才退回前 2 句）、命中詞標黃底、每張卡有「看完整段落 ▾」、結果上方有「全部展開／全部收合」。只是依命中詞挑句子，不是 AI 摘要。「複製規則片段」「複製提示詞」仍用完整原文。
+- 字體：「A 標準（16px）／A 大（18）／A 特大（21）」，`localStorage` 鍵 `boardgame-ra-font`。
+- 英文 OCR 亂碼過濾（`cleanEnglishOcr`，寫在 `RulebookAssistant.tsx` 裡，只用在顯示）：移除 `¢ « + @ § © ®`、孤立單字母、`SEASONAL INCOME` 旁雜字、幾乎全是雜訊的行；單獨 `|` 改回 `I`；`Q.`／`A.` 保留。只套用 `doc_lang === 'en'`，`zh` 沿用 `cleanOcrText`，「其他」語言不處理；「顯示原始 OCR 文字」按鈕條件改為任一語言過濾後內容不同。限制：被讀歪的字（`Draconriy`、`Turtve`）與少空格（`tothe`）修不了；啟發式規則可能誤刪不常見短字，要請使用者貼被刪壞的段落再調。
+- 英文關鍵字區：搜尋前不顯示；搜尋後才出現，標題「想縮小範圍？點一個詞只搜它（點「全部」回到完整搜尋）」，放在「搜尋：…・N 段」那行下面（無結果時放提示文字下面）；最前面多一顆「全部」。原因：點英文詞只會搜那個英文詞、搜不到繁中規則書，使用者會誤以為結果消失。
+- **［重要］檔案來源**：使用者那次上傳的 `RulebookAssistant.tsx` 沒存在容器裡，AI 是依對話中貼出的內容重建原檔再修改，已轉成 CRLF；覆蓋前請 `git diff` 確認只多了本次功能。
+
+### 25.4 上傳提醒「第 N 頁沒有文字」（`90ddf97`，`extractPdfText.ts`、`RulebookBatchUpload.tsx`）
+- 每頁文字少於 20 字視為沒有文字；`extractPdfChunks` 把頁碼存在模組變數，匯出 `takeEmptyPageNote()`；`RulebookBatchUpload.tsx` 上傳前清空、成功後讀取，在該列顯示「已上傳並建立索引。提醒：第 3、5、8 頁沒有文字…（封面或空白頁可忽略）」；最多列 10 頁，超過寫「共 N 頁」。只提醒、不阻擋；全書沒文字仍是 `NO_TEXT`；不動資料庫、不動 `useGameDocuments.ts`。限制：只有管理中心批次上傳這條路徑會顯示。
+
+### 25.5 規則書管理：文件列大小、垃圾桶 PDF、項目符號（`ba94031`、`edc1bb3`）
+- 只看到 commit 訊息與上一輪 AI 的交付說明［未驗證］：文件列顯示每款大小；可清掉垃圾桶遊戲的 PDF；永久刪除時一併刪 PDF；項目符號修正（`itemsToLines` 把私有區字元換成 `- `，**要重傳才生效**）。涉及檔案推測為 `RulebookBatchUpload.tsx`、`extractPdfText.ts`；兩次 commit 各帶哪些檔用 `git show --stat ba94031 edc1bb3` 確認。
+
+### 25.6 垃圾桶只留封面（`edc1bb3`；使用者決定，與 AI 先前的建議不同；覆蓋第 3 節「匯入行為」與垃圾桶的敘述）
+- 規則：移到垃圾桶（單款手動，或 CSV 匯入自動）就刪除這款的規則書 PDF（`rulebooks` bucket）、搜尋索引（`rulebook_chunks`）、貼的連結（`game_documents` 的列）、擴充（`game_expansions` 與 `covers/expansions/` 圖片）、背景（`game_backgrounds`）、詞庫與「找不到英文的詞」（`game_glossary`、`game_glossary_misses`）。保留：`board_games` 基本資料、封面、移除原因。
+- 永久刪除：先清上面這些，再刪遊戲與封面；PDF 或擴充圖片刪不掉就不刪遊戲（避免孤兒檔）。
+- 垃圾桶新增搜尋框（名稱、英文名、移除原因）與「清掉全部垃圾桶遊戲的附屬資料」按鈕（`cleanAll`，清以前就丟進去的；只有管理者看得到）。
+- 還原只救回遊戲本身，規則書要重傳。CSV 匯入警告文字改為「無法復原」（原本「資料都保留，可以還原」）。**CSV 不完整時會比以前危險**：匯入前一定看預覽的垃圾桶清單；超過 5 款仍要輸入「移除」（沒動）。
+- 檔案：新檔 `src/lib/gameCleanup.ts`（`cleanupGameData`）；改 `src/lib/useTrashActions.ts`、`src/components/TrashSection.tsx`、`src/AdminPanel.tsx`。**`AdminPanel.tsx` 被使用者放進 `src/components/`（git status 顯示 Untracked），`src/AdminPanel.tsx` 沒改，所以 CSV 匯入自動清理與警告文字尚未生效；放錯的那份路徑錯誤，本機 build 可能失敗。**
+- 沒清：玩錯紀錄（表與函式名稱不明）；玩家資料（想玩、已玩、評分、心得、遊玩紀錄、聚會）刻意不碰。詞庫清理呼叫 `admin_get_glossary`、`admin_delete_glossary` 等，回傳欄位 `id`、`zh_term` 是依文件推測［未驗證］，失敗只顯示在警告。
+
+### 25.7 資料矛盾
+- `Rising_Sun_FAQ_2.0` 第 3 頁說福祿壽可以被殺，`Rising_Sun_One-Sheet_v6` 第 2 頁說不行（Strongholds 不能被殺）。FAQ 2.0 標示「Latest updates in red」，AI 推測 FAQ 2.0 較新［未驗證］，使用者尚未回覆怎麼處理（例如刪除 One-Sheet、或把範圍標成較舊版本）。規則助手目前兩份都搜得到。
+
+### 25.8 募資與家裡電腦本機 AI（使用者 2026-11-05 決定／提出，多半未定）
+- 募資「可以做」：收款方式想到銀行（問號提出，未定）；用途＝開發桌遊網站／提高資料庫上限（規則書空間等）→ 訓練 AI → 投資下一個想要的桌遊；目標金額請 AI 幫忙確認（未定）；想開放給非 VIP 的一般使用者：考慮把部分功能（例如遊戲背景）鎖起來讓非 VIP 付費解鎖，或做成較開源的版本讓愛好者先體驗，想建立自己的桌遊庫時依他的收藏自動生成 BGG 資訊、照本站雛形生成他自己的收藏庫；長期也想做給桌遊店管理桌遊資訊的專用網站；啟動時間：等 AI 桌遊助手與畫面美化都做完之後。
+- ［AI 提醒，未驗證，使用者尚未回覆］①目標金額要先查 Supabase、Vercel、網域的實際價格（會變，要搜尋官方頁）；②台灣收款的所得申報、營業登記、發票與「贊助 vs 付費解鎖」的差別沒查證，建議問會計師或國稅局，AI 不是會計師或律師；③背景文字建議不要鎖（使用者先前決定所有人都看得到），要鎖的候選是規則助手每日次數與日後雲端 AI；④規則書有版權，收費解鎖會讓風險高於現在私下使用；⑤自助建庫版的核心是自動產生 BGG 資訊，BGG 使用條款（API token、商業使用）沒查證，對外或收費前要先查清楚。
+- 家裡電腦本機桌遊 AI（使用者要求記錄，切換到家裡電腦時接續）：家裡電腦的 RTX 3060 Ti 可以用（原本懷疑故障，實際是 NVIDIA 驅動程式問題）；想用家裡電腦訓練桌遊 AI，與網站專案分開，不直接改 `D:\BoardGameResultAI`，也不碰 Supabase SQL。使用者貼來的兩份 ChatGPT 計畫只是參考，尚未選定先做哪個，也尚未回答對方的三個問題（Python 是否已安裝、每週可投入時數、先做 A／B／C）；**上一版 `生成後.md` 這段在第一個計畫（8 週完全本機的桌遊規則 AI）處被截斷，計畫細節遺失**，接續時請使用者重貼。接續時先問：在哪台電腦、Python 是否已安裝、每週時數、先做 A／B／C 哪個。
+
+### 25.9 下一個 AI 要避開的陷阱（補）
+㊽交付檔案要寫清楚完整路徑，使用者貼 `git status` 時檢查有沒有 Untracked 或該改卻沒 modified 的檔（`git add` 對沒變動的檔不會報錯）；㊾垃圾桶現在是「只留封面」，之後任何「移到垃圾桶」的新入口都要呼叫 `cleanupGameData`，否則會留下孤兒檔；㊿改 `search_rulebook_chunks` 前先匯出（現行 v6）；51 玩錯紀錄表與函式名稱仍未知，改垃圾桶清理前要請使用者貼 `ErrataAdmin.tsx`／`useGameErrata.ts`；52 `RulebookAssistant.tsx` 曾由 AI 依對話內容重建，下次改前請使用者上傳目前版本；53 commit 訊息用中文。
