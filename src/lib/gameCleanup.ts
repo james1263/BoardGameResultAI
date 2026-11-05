@@ -3,7 +3,7 @@ import { supabase } from './supabase'
 // 遊戲進垃圾桶（或永久刪除）時，清掉這款遊戲的附屬資料，只留封面與基本資料。
 // 會刪除：規則書／FAQ 的 PDF 與搜尋索引、貼的連結、擴充（含圖片與連結）、背景介紹、詞庫與未對應詞。
 // 不會動：玩家自己的想玩／已玩、評分、心得、遊玩紀錄、聚會資料（那是玩家的紀錄）。
-// 玩錯紀錄（errata）的表與函式名稱還沒確認，這個函式不處理它。
+// 玩錯紀錄也會一併刪除。
 export type CleanupResult = {
   // 嚴重：檔案沒刪成功（會變成孤兒檔），呼叫端應該提醒
   errors: string[]
@@ -127,6 +127,23 @@ export async function cleanupGameData(bggName: string): Promise<CleanupResult> {
     }
   } catch (error) {
     warnings.push('清理未對應詞時發生錯誤：' + (error instanceof Error ? error.message : '未知'))
+  }
+    // 6. 玩錯紀錄
+  try {
+    const list = await supabase.rpc('get_game_errata', { p_bgg_name: bggName })
+    if (list.error) {
+      warnings.push('讀取玩錯紀錄失敗：' + list.error.message)
+    } else {
+      for (const row of (list.data ?? []) as { id: string }[]) {
+        const del = await supabase.rpc('admin_delete_game_errata', { p_id: row.id })
+        if (del.error) {
+          warnings.push('刪除玩錯紀錄失敗：' + del.error.message)
+          break
+        }
+      }
+    }
+  } catch (error) {
+    warnings.push('清理玩錯紀錄時發生錯誤：' + (error instanceof Error ? error.message : '未知'))
   }
 
   return { errors, warnings }
