@@ -15,6 +15,7 @@ import {
 import { uploadCover } from './lib/uploadCover'
 import { useIsAdmin } from './lib/useIsAdmin'
 import { OPEN_CSV_IMPORT_EVENT } from './lib/adminEvents'
+import { cleanupGameData } from './lib/gameCleanup'
 
 type RemovedGame = {
     bggName: string
@@ -212,7 +213,7 @@ export default function AdminPanel() {
 
         if (removed.length > 0) {
             confirmText +=
-                `\n\n🗑️ 有 ${removed.length} 款在資料庫裡、但 CSV 沒有，將移到垃圾桶（資料與封面都保留，可以還原）：\n` +
+                `\n\n🗑️ 有 ${removed.length} 款在資料庫裡、但 CSV 沒有，將移到垃圾桶（只保留封面與基本資料；規則書、擴充、背景介紹、詞庫會被刪除，無法復原）：\n` +
                 removed.map((item) => `・${item.name}（${item.bggName}）`).join('\n')
         }
 
@@ -292,6 +293,16 @@ export default function AdminPanel() {
                 problems.push('移到垃圾桶失敗：' + trashError.message)
             } else {
                 trashedGames = trashedRows?.length ?? 0
+                // 移到垃圾桶的遊戲只留封面與基本資料，附屬資料一併清掉
+                for (const row of trashedRows ?? []) {
+                    const cleaned = await cleanupGameData(row.bgg_name as string)
+                    if (cleaned.errors.length > 0 || cleaned.warnings.length > 0) {
+                        problems.push(
+                            `${row.bgg_name} 的附屬資料沒有完全清乾淨：` +
+                                [...cleaned.errors, ...cleaned.warnings].join('；'),
+                        )
+                    }
+                }
                 if (trashedGames < removed.length) {
                     problems.push(
                         `有 ${removed.length - trashedGames} 款沒有被移到垃圾桶。`,
@@ -307,7 +318,7 @@ export default function AdminPanel() {
             message += `\n已寫入簡介 ${descriptionCount} 款。`
         }
         if (removed.length > 0) {
-            message += `\n已移到垃圾桶 ${trashedGames} 款遊戲（封面保留，可在頁面最下方的垃圾桶還原）。`
+            message += `\n已移到垃圾桶 ${trashedGames} 款遊戲（只保留封面與基本資料，可在頁面最下方的垃圾桶還原，但規則書等附屬資料需重新建立）。`
         }
         if (problems.length > 0) {
             message += '\n' + problems.join('\n')
@@ -457,7 +468,7 @@ export default function AdminPanel() {
                                     {preview.removed.length > 0 && (
                                         <>
                                             <p className="admin-error">
-                                                按「確認匯入」後，這些遊戲會被移到垃圾桶（資料與封面都保留，可以還原）：
+                                                按「確認匯入」後，這些遊戲會被移到垃圾桶（只保留封面與基本資料；規則書、擴充、背景介紹、詞庫會被刪除，無法復原）：
                                             </p>
                                             <ul>
                                                 {preview.removed.map((item) => (
