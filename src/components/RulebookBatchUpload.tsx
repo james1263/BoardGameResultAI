@@ -20,7 +20,7 @@ import ErrataAdmin from './ErrataAdmin'
 import GlossaryAdmin from './GlossaryAdmin'
 import GlossaryMisses from './GlossaryMisses'
 
-type GameOption = { bgg_name: string; name: string }
+type GameOption = { bgg_name: string; name: string; removed_at?: string | null }
 type DocKind = 'rulebook' | 'faq' | 'errata'
 type Lang = 'zh' | 'en'
 type RowStatus = 'ready' | 'uploading' | 'done' | 'error'
@@ -47,6 +47,7 @@ type AllDoc = {
   bgg_name: string
   title: string | null
   source_type: string
+  storage_path: string | null
 }
 
 // 免費方案的檔案儲存額度。請對照 Supabase 後台 Usage，數字不對就改這裡
@@ -386,6 +387,9 @@ export default function RulebookBatchUpload() {
   const [listSearch, setListSearch] = useState('')
   const [openGames, setOpenGames] = useState<string[]>([])
   const [listTick, setListTick] = useState(0)
+  const [sortBySize, setSortBySize] = useState(false)
+  const [clearingGame, setClearingGame] = useState('')
+  const [orphanMsg, setOrphanMsg] = useState('')
   const [errataCounts, setErrataCounts] = useState<Map<string, number>>(new Map())
 
   const loadUsage = useCallback(async () => {
@@ -393,7 +397,7 @@ export default function RulebookBatchUpload() {
       supabase.rpc('admin_rulebook_storage_usage'),
       supabase
         .from('game_documents')
-        .select('id, bgg_name, title, source_type')
+        .select('id, bgg_name, title, source_type, storage_path')
         .order('created_at', { ascending: false }),
     ])
     if (usageResult.error) {
@@ -420,6 +424,7 @@ export default function RulebookBatchUpload() {
   }, [loadUsage, mode])
   const [games, setGames] = useState<GameOption[]>([])
   const [gamesError, setGamesError] = useState('')
+  const activeGames = games.filter((g) => !g.removed_at)
 
   // 批次上傳 PDF
   const [rows, setRows] = useState<Row[]>([])
@@ -472,7 +477,7 @@ export default function RulebookBatchUpload() {
     let cancelled = false
     supabase
       .from('board_games')
-      .select('bgg_name, name')
+      .select('bgg_name, name, removed_at')
       .order('bgg_name', { ascending: true })
       .then(({ data, error }) => {
         if (cancelled) return
@@ -514,7 +519,7 @@ export default function RulebookBatchUpload() {
         continue
       }
 
-      const guess = guessGame(file.name, games)
+      const guess = guessGame(file.name, activeGames)
       added.push({
         id: crypto.randomUUID(),
         file,
@@ -662,8 +667,13 @@ export default function RulebookBatchUpload() {
     }
     return [...byGame.entries()]
       .map(([bggName, list]) => {
-        const name = games.find((g) => g.bgg_name === bggName)?.name || bggName
-        return { bggName, name, docs: list }
+        const info = games.find((g) => g.bgg_name === bggName)
+        const name = info?.name || bggName
+        const bytes = list.reduce((sum, d) => {
+          if (d.source_type !== 'upload') return sum
+          return sum + (sizeByName.get(d.storage_path || `${d.id}.pdf`) ?? 0)
+        }, 0)
+        return { bggName, name, docs: list, bytes, trashed: Boolean(info?.removed_at) }
       })
       .filter((group) => {
         if (!listQuery) return true
@@ -672,11 +682,75 @@ export default function RulebookBatchUpload() {
         )
         return text.includes(listQuery)
       })
-      .sort((x, y) => x.name.localeCompare(y.name, 'zh-Hant'))
+      .sort((x, y) =>
+        sortBySize && x.bytes !== y.bytes
+          ? y.bytes - x.bytes
+          : x.name.localeCompare(y.name, 'zh-Hant'),
+      )
   }
   const pdfDocs = allDocs.filter((d) => d.source_type === 'upload')
   const linkDocs = allDocs.filter((d) => d.source_type !== 'upload')
   const errataTotal = [...errataCounts.values()].reduce((sum, n) => sum + n, 0)
+
+  // 清掉某款遊戲的所有文件（PDF 原檔＋索引＋連結）；遊戲本身不動
+  async function clearGameDocs(group: { bggName: string; name: string; docs: AllDoc[]; bytes: number }) {
+    const paths = group.docs
+      .filter((d) => d.source_type === 'upload')
+      .map((d) => d.storage_path || `${d.id}.pdf`)
+    const ok = await askConfirm(
+      `確定要清掉「${group.name}」的 ${group.docs.length} 份文件嗎？\n` +
+        `PDF 原檔與搜尋索引都會刪除（約釋放 ${formatMb(group.bytes)}），無法復原。\n` +
+        `遊戲本身不會被刪除。`,
+    )
+    if (!ok) return
+    setClearingGame(group.bggName)
+    if (paths.length > 0) {
+      const removed = await supabase.storage.from('rulebooks').remove(paths)
+      if (removed.error) {
+        setClearingGame('')
+        await askConfirm('刪除 PDF 失敗，沒有繼續：' + removed.error.message)
+        return
+      }
+    }
+    const { error } = await supabase
+      .from('game_documents')
+      .delete()
+      .eq('bgg_name', group.bggName)
+    setClearingGame('')
+    if (error) {
+      await askConfirm('PDF 已刪除，但文件列刪除失敗：' + error.message)
+    }
+    setOpenGames((current) => current.filter((n) => n !== group.bggName))
+    void loadUsage()
+    setListTick((n) => n + 1)
+  }
+
+  // 孤兒檔：Storage 裡有 PDF，但資料庫已經沒有對應的文件列
+  const knownPdfNames = new Set(
+    allDocs.filter((d) => d.source_type === 'upload').flatMap((d) => [`${d.id}.pdf`, d.storage_path ?? '']),
+  )
+  const orphanFiles = (usage?.files ?? []).filter(
+    (f) => /\.pdf$/i.test(f.name) && !knownPdfNames.has(f.name),
+  )
+  const orphanBytes = orphanFiles.reduce((sum, f) => sum + f.size, 0)
+
+  async function clearOrphans() {
+    if (orphanFiles.length === 0 || running) return
+    const ok = await askConfirm(
+      `找到 ${orphanFiles.length} 個沒有對應文件列的 PDF，共 ${formatMb(orphanBytes)}。\n` +
+        `這些檔案在網站上看不到、也搜不到，確定要刪除嗎？無法復原。`,
+    )
+    if (!ok) return
+    const removed = await supabase.storage
+      .from('rulebooks')
+      .remove(orphanFiles.map((f) => f.name))
+    if (removed.error) {
+      setOrphanMsg('刪除失敗：' + removed.error.message)
+      return
+    }
+    setOrphanMsg(`已刪除 ${orphanFiles.length} 個孤兒檔，釋放約 ${formatMb(orphanBytes)}。`)
+    void loadUsage()
+  }
 
   function renderDocList(
     label: string,
@@ -684,6 +758,9 @@ export default function RulebookBatchUpload() {
     filter: (doc: GameDocument) => boolean,
   ) {
     const groups = buildGroups(docs)
+    const trashedGroups = buildGroups(docs).filter((g) => g.trashed && g.bytes > 0)
+    const trashedBytes = trashedGroups.reduce((sum, g) => sum + g.bytes, 0)
+    const trashedGroupCount = trashedGroups.length
     return (
       <>
         <div className="rbd-title">
@@ -697,6 +774,30 @@ export default function RulebookBatchUpload() {
           value={listSearch}
           onChange={(event) => setListSearch(event.target.value)}
         />
+        {label === 'PDF' && (
+          <>
+            <p className="rb-hint">
+              <button type="button" className="admin-link" onClick={() => setSortBySize((v) => !v)}>
+                排序：{sortBySize ? '依大小（大 → 小）' : '依名稱'}（點一下切換）
+              </button>
+            </p>
+            {trashedBytes > 0 && (
+              <p className="rb-warn">
+                垃圾桶裡的遊戲還有 {trashedGroupCount} 款留著規則書，共 {formatMb(trashedBytes)}。
+                在下方找到有「🗑 垃圾桶」標記的遊戲，可以清掉它們的規則書。
+              </p>
+            )}
+            {orphanFiles.length > 0 && (
+              <p className="rb-warn">
+                有 {orphanFiles.length} 個沒有對應文件列的 PDF 孤兒檔（共 {formatMb(orphanBytes)}）。{' '}
+                <button type="button" className="admin-link" onClick={() => void clearOrphans()}>
+                  清掉孤兒檔
+                </button>
+              </p>
+            )}
+            {orphanMsg && <p className="rb-msg">{orphanMsg}</p>}
+          </>
+        )}
         {groups.length === 0 ? (
           <p className="rb-hint">
             {docs.length === 0 ? `還沒有任何${label}。` : '沒有符合的文件。'}
@@ -713,12 +814,33 @@ export default function RulebookBatchUpload() {
                     aria-expanded={open}
                     onClick={() => toggleGame(group.bggName)}
                   >
-                    <span className="rbd-name">{group.name}</span>
-                    <span className="rbd-count">{group.docs.length} 份</span>
+                    <span className="rbd-name">
+                      {group.trashed ? '🗑 ' : ''}
+                      {group.name}
+                    </span>
+                    <span className="rbd-count">
+                      {group.docs.length} 份
+                      {group.bytes > 0 ? `・${formatMb(group.bytes)}` : ''}
+                    </span>
                     <span className="rbd-arrow" aria-hidden="true">
                       {open ? '▴' : '▾'}
                     </span>
                   </button>
+                  {open && group.trashed && (
+                    <p className="rb-warn">
+                      這款遊戲已在垃圾桶。{' '}
+                      <button
+                        type="button"
+                        className="rbd-del"
+                        disabled={clearingGame === group.bggName}
+                        onClick={() => void clearGameDocs(group)}
+                      >
+                        {clearingGame === group.bggName
+                          ? '清除中…'
+                          : `清掉這款的規則書（釋放 ${formatMb(group.bytes)}）`}
+                      </button>
+                    </p>
+                  )}
                   {open && (
                     <GameDocGroup
                       key={`${group.bggName}-${listTick}`}
@@ -841,7 +963,7 @@ export default function RulebookBatchUpload() {
                       {row.status !== 'done' && (
                         <div className="rb-fields">
                           <GamePicker
-                            games={games}
+                            games={activeGames}
                             value={row.bggName}
                             disabled={locked}
                             onChange={(bggName) =>
@@ -938,7 +1060,7 @@ export default function RulebookBatchUpload() {
 
           <form className="rb-fields rb-linkform" onSubmit={submitLink}>
             <GamePicker
-              games={games}
+              games={activeGames}
               value={linkGame}
               onChange={(bggName) => {
                 setLinkGame(bggName)
@@ -990,7 +1112,7 @@ export default function RulebookBatchUpload() {
       {mode === 'errata' && (
         <ErrataAdmin onChanged={() => void loadUsage()}
           renderPicker={(value, onChange) => (
-            <GamePicker games={games} value={value} onChange={onChange} />
+            <GamePicker games={activeGames} value={value} onChange={onChange} />
           )}
         />
       )}
@@ -998,7 +1120,7 @@ export default function RulebookBatchUpload() {
       {mode === 'glossary' && (
         <GlossaryAdmin
           renderPicker={(value, onChange) => (
-            <GamePicker games={games} value={value} onChange={onChange} />
+            <GamePicker games={activeGames} value={value} onChange={onChange} />
           )}
         />
       )}

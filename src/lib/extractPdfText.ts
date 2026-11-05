@@ -51,7 +51,8 @@ function itemsToLines(
 
   for (const item of items) {
     if (typeof item.str !== 'string') continue
-    const text = item.str
+    // 項目符號常被讀成私有區字元（顯示成方框），換成「- 」
+    const text = item.str.replace(/[\uE000-\uF8FF]\s*/g, '- ')
 
     if (text) {
       const needSpace =

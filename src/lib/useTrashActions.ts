@@ -56,9 +56,27 @@ export function useTrashActions(
   }
 
   async function deleteForever(game: LibraryGame): Promise<boolean> {
+    // 先記下這款遊戲上傳過的規則書檔案（刪遊戲後文件列會被連帶刪掉，就查不到路徑了）
+    const docsResult = await supabase
+      .from('game_documents')
+      .select('storage_path, source_type')
+      .eq('bgg_name', game.bggName)
+    if (docsResult.error) {
+      window.alert('讀取這款遊戲的規則書失敗，沒有刪除：' + docsResult.error.message)
+      return false
+    }
+    const pdfPaths = ((docsResult.data ?? []) as {
+      storage_path: string | null
+      source_type: string
+    }[])
+      .filter((doc) => doc.source_type === 'upload' && doc.storage_path)
+      .map((doc) => doc.storage_path as string)
+
     if (
       !window.confirm(
-        `確定要永久刪除「${game.name}」嗎？\n遊戲資料與雲端封面會被刪除，無法復原。`,
+        `確定要永久刪除「${game.name}」嗎？\n遊戲資料、雲端封面` +
+          (pdfPaths.length > 0 ? `與 ${pdfPaths.length} 份規則書 PDF` : '') +
+          `會被刪除，無法復原。`,
       )
     ) {
       return false
@@ -90,6 +108,19 @@ export function useTrashActions(
         .remove([`${game.coverSlug}.webp`])
       if (removeError) {
         window.alert('遊戲已刪除，但雲端封面刪除失敗：' + removeError.message)
+      }
+    }
+
+    // 規則書 PDF 不會跟著資料列一起刪，要自己從 Storage 刪掉，不然會變成沒人看得到、卻佔容量的檔案
+    if (pdfPaths.length > 0) {
+      const { error: pdfError } = await supabase.storage
+        .from('rulebooks')
+        .remove(pdfPaths)
+      if (pdfError) {
+        window.alert(
+          '遊戲已刪除，但規則書 PDF 刪除失敗（可到管理中心「規則書」的「檢查孤兒檔」清掉）：' +
+            pdfError.message,
+        )
       }
     }
 
