@@ -33,8 +33,8 @@ function buildTranslateUrl(text: string): string {
     return `https://translate.google.com/?sl=auto&tl=zh-TW&op=translate&text=${encodeURIComponent(text)}`
 }
 
-// 中文問句裡的雜訊詞，搜尋前先拿掉（會把連續中文切開）
-const ZH_STOP = /可以|可不可以|是不是|有沒有|什麼|怎麼|如何|為什麼|還是|或者|嗎|呢|吧|的|了|是|會|能|有|在|和|跟|或|要|我|你|他|這|那|個|被|把|就|都|也|不/g
+// 中文問句裡的問句用語，搜尋前先拿掉；單字虛字（的、不、被…）交給資料庫處理，避免把詞庫詞切碎
+const ZH_STOP = /請問|可不可以|可以|是不是|有沒有|什麼|怎麼|如何|為什麼|還是|或者|的話|嗎|呢|吧/g
 
 function prepareQuery(text: string): string {
     return text.replace(ZH_STOP, ' ').replace(/[?？!！。，,、；;：:]/g, ' ').replace(/\s+/g, ' ').trim()
