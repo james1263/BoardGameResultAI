@@ -224,3 +224,17 @@
     right: 6px;
   }
 }
+
+/* 修 iPhone Google App 底部漏底：導覽列背景往下延伸 */
+@media (max-width: 760px) {
+  .sb-nav::after {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    height: 120px;
+    background: var(--c-paper);
+    content: '';
+    pointer-events: none;
+  }
+}
