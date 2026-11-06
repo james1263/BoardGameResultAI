@@ -4,6 +4,8 @@
 > 最後更新：2026-11-06 夜（見下一行；以下為舊的）（已併入上一版 `生成後.md`；**最新增補在第 27 節（玩家 FAQ 階段 2 投稿與審核、待審清單修正與全部列表、管理者待審紅點、規則助手內投稿與 AI 好答案的設計），其次第 26、25 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
 
 > **2026-11-06 夜更新：最新增補在第 29 節（心得留言 A、B、C、B2 批、補日期、死程式清理、使用者決定與教訓），與前面衝突時以較大的節號為準；`生成後.md` 已重置。**
+> **2026-11-07 更新：最新增補在第 30 節（家裡電腦繁中 OCR：Tesseract 結案、PaddleOCR 整本批次成功，與網站專案分開），與前面衝突時以較大的節號為準；`生成後.md` 已重置。**
+
 
 > **2026-11-06 晚更新：最新增補在第 28 節（規則助手內投稿＋AI 回饋、我的投稿、規則助手單頁、「心得留言」統一方案），與前面衝突時以較大的節號為準；`生成後.md` 已重置。**
 
@@ -908,3 +910,23 @@
 
 #### 29.10 下一個 AI 要避開的陷阱（補）
 73 plpgsql 函式建立成功不代表能執行，`get_notes_unseen_count` 的欄位名稱要等實測才算確認；74 B2 後寫作入口只有一個（俱樂部「我的心得」寫作畫面），遊戲視窗與留言板都只是跳轉，新增寫作入口前先看 `MyList.openWrite`；75 公開留言標聚會時是更新原留言（`gathering_notes.public_note`，同人同場同款一則），不是新增；76 前端統一鎖「未玩遊戲不能公開留言」，資料庫只對 `add_game_note` 檢查已玩，兩者不一致，不要以為資料庫也擋；77 「我的場次」不會因為新增遊玩紀錄而增加，兩者是不同資料；78 刪死檔前已掃過引用，之後再刪仍要先 `Select-String`。
+
+## 30. 2026-11-07 增補（覆蓋前面衝突的敘述）
+
+- 現況見 `QUICKSTART.md` 2.14。本節併入上一版 `生成後.md` 全部內容；**網站程式與資料庫這段期間沒有變動**，全是本機 AI 專案。**凡是我沒看到的細節都標［未驗證］。**
+
+### 30.1 繁中 OCR 引擎比較
+
+路徑 `D:\LocalAI-Lab\02_BoardGame-RAG`（Python 3.11.9、RTX 3060 Ti、每週約 8–10 小時；進度紀錄 `LocalAI-Lab_BoardGame-RAG_進度紀錄.md`），與網站專案、`ocr_zh.bat`、Supabase 完全分開；不是 push：
+- **Tesseract 結案**：整頁 chi_tra、400 DPI、600 DPI、改 psm 都沒變準，只是換一批錯（「遊戲目標」→「說戲跨標」、「榮耀」→「榮胞」「榮梭」、第 23 頁「戰爭針果」「攸用浪人」）；來源頁是掃描圖，300 DPI 只有 1250×1250 像素，放大 DPI 只是插值；問題在版面（兩欄、書法體標題、目錄點線）；Tesseract 輸出的中文字之間有空格，進 chunking 前要先去掉；`chi_tra_vert` 找不到只是警告。位置 `data\original_pdfs`：`Rising_Sun_Rulebook_Traditional_Chinese_OCR.pdf`（14,870,780 位元組，已含舊文字層，沒有原始圖片版）、`Rising_Sun_zh_only_OCR.pdf`、`Rising_Sun_zh_400_OCR.pdf`（後兩個是實驗檔，舊檔沒動）。
+- **PaddleOCR 環境**：獨立虛擬環境 `.venv-paddle`（paddle 3.3.1、paddleocr 3.7.0），與原本 `.venv`（PyTorch、PyMuPDF）分開；**CPU 版，沒用 RTX 3060 Ti**；模型 `PP-OCRv6_medium_det`／`PP-OCRv6_medium_rec` 第一次執行自動下載到 `C:\Users\User\.paddlex\official_models\`；啟動警告「找不到提供模式的檔案」「No ccache found」可忽略。**錯誤與修法**：`NotImplementedError: ConvertPirAttribute2RuntimeAttribute not support ... onednn`（Paddle 3.3.x Windows CPU 的 oneDNN 問題）→ 建立 `PaddleOCR(...)` 時加 `enable_mkldnn=False`。
+- **單頁腳本** `src\paddle_test.py`：`PaddleOCR(lang="chinese_cht", use_doc_orientation_classify=False, use_doc_unwarping=False, use_textline_orientation=False, enable_mkldnn=False)`；`ocr.predict(圖片)` 回傳 `rec_texts`、`rec_scores`、`rec_boxes`（`x1 y1 x2 y2`）。第 2 頁（80 行、33.5 秒）：標題與右欄故事讀對、沒有 Tesseract 式亂碼；仍有「神明们」「赢得」（簡體字形）、點線讀成不等長 `...`、頁碼偶爾缺位或黏在項目名稱後、印章讀成「旭」；輸出是逐行由上到下，左欄目錄（x 約 164～546）與右欄故事（x 約 632～1166）交錯，**可依 x 座標（分界約 590）切欄再各自依 y 排序**。
+- **整本 28 頁批次（2026-11-07，全部成功）**：三個腳本在 `src\`（`postprocess.py` 覆蓋舊版，沒新增套件）：`render_all.py`（`.venv`，300 DPI 轉圖）、`paddle_batch.py`（`.venv-paddle`，一頁一個結果檔 `data\extracted_text\rising_sun_paddle\raw\page_NN.txt`，重跑會略過已完成頁）、`postprocess.py all`（後處理並合併成 `rising_sun_paddle.txt`，印關鍵詞次數）。執行順序：`.\.venv\Scripts\python.exe src\render_all.py` → `.\.venv-paddle\Scripts\python.exe src\paddle_batch.py` → `.\.venv\Scripts\python.exe src\postprocess.py all`。**共 743 秒（約 12 分鐘）**，合併文字 **20,239 字**；第 1 頁 8 行（可能封面）、第 4 頁 28 行、第 6 頁 87 行最多。後處理的實際細節 AI 沒再讀（［未驗證］），改它之前請使用者重新上傳。
+- **關鍵詞次數（合併文字檔內出現次數）vs Tesseract（Chrome 搜尋命中數）**：背叛 18 vs 11；榮耀 68 vs 40；結盟 44 vs 36；另戰爭結果 4、雇用浪人 5、福祿壽 0（繁中規則書正文不見得提到，不代表漏字）。**口徑不同，只看量級與方向，不是精確對照。** Tesseract 典型錯字（榮胞、榮梭、戰爭針果、攸用、說戲、玩事介）在整本輸出**完全消失**（`Select-String` 無結果）。
+- **第 4 頁（零件清單）抽查**：零件名稱與數量讀得好；插圖區變成低信心雜訊（`FA1r`、`OOOOO`、「生金童」0.28、「租」0.32、「旭」）；**使用者沒說原圖有什麼，「有沒有整塊漏掉」［未驗證］**。後處理可用信心分數（例如 < 0.5）濾掉雜訊行，候選做法，尚未做。
+- **［AI 判斷，使用者未回覆］** 初步驗證通過：整本可跑、速度可接受、錯字大幅減少；仍要抽查更多頁（第 23 頁、圖多頁）才能說可取代網站目前的 Tesseract 文字層；簡體字形仍存在，可考慮簡繁轉換，**不要憑空寫修正表**。**PaddleOCR 不會直接產生帶文字層的 PDF**（［未驗證］，目前腳本只輸出座標＋文字）；要用到網站得另外疊文字層或只用文字檔，**牽涉網站上傳流程，使用者尚未決定，先不碰**。
+- **下一步（［AI 建議］，一次一步）**：①使用者抽查更多頁（`rising_sun_paddle.txt` 對照原 PDF 第 23 頁與一頁純內文頁）；②決定用途：只當 RAG 文字檔（與網站分開），或疊回 PDF 隱形文字層（用 PyMuPDF 在 `.venv`，要另外討論）；③若走 RAG，先定輸出格式（純文字＋頁碼）、切段與去中文字間空格規則；④若使用者放棄這條線：維持現狀，網站的 Tesseract 文字層只用來找頁碼，品質可用。
+- **使用者說明**：之前貼來的「本機 AI 計畫 A／B／C」找不到了，「看之後再做打算」，不要追問、不要催；他另有較新的 `LocalAI.md`（2026-11-06 版，含 7.1 節 Tesseract 比較）。
+
+### 30.2 下一個 AI 要避開的陷阱（補）
+79 本機 RAG 與網站專案必須分開，不改網站程式、SQL，不動網站 OCR 的 `.bat`；80 PaddleOCR 在 `.venv-paddle`（無 PyMuPDF），轉圖用 `.venv`，不要混用也不要在沒問過使用者時新增依賴；81 PaddleOCR 輸出的是座標＋文字，不是 PDF 文字層，要接網站得另外討論上傳流程與頁碼對應；82 關鍵詞次數比較口徑不同，不能當精確對照；83 使用者找不到的「本機 AI 計畫 A／B／C」不要追問；84 容器可能被限流，如實告知、稍後重試。

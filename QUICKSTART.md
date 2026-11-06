@@ -3,6 +3,7 @@
 > 最後更新：2026-11-06（已併入上一版 `生成後.md` 全部內容：玩家 FAQ 階段 2 投稿與審核、待審清單修正與全部玩錯紀錄列表、管理者待審紅點；更早：熱搜與統計、規則助手畫面整理與放大、垃圾桶補清玩錯紀錄、漏底修法；**最新現況看第 2.11 節，其次第 2.10、2.9 節**；`生成後.md` 已重置）。
 > **2026-11-06 晚更新：最新現況看第 2.12 節（規則助手內投稿＋AI 回饋、我的投稿、規則助手單頁、「心得留言」統一方案〔已決定、分 A／B／C 三批、尚未動工〕），已併入上一版 `生成後.md`；`生成後.md` 已重置。**
 > **2026-11-06 夜更新：最新現況看第 2.13 節（心得留言 A、B、C、B2 批與補日期、死程式清理都已 push；實測使用者說先跳過），已併入上一版 `生成後.md`；`生成後.md` 已重置。**
+> **2026-11-07 更新：最新現況看第 2.14 節（家裡電腦繁中 OCR：Tesseract 結案、PaddleOCR 整本 28 頁批次成功），已併入上一版 `生成後.md`；網站程式沒有新 push，最新程式 commit 仍是 `ff53766`；`生成後.md` 已重置。**
 > **分工**：本檔＝現況、待辦、合作規則；`PROJECT_CONTEXT.md`＝架構、資料庫、功能規則、規則助手設計；`生成後.md`＝這兩份之後的修改紀錄與文件維護計數（**開工前三份都要讀，衝突時以 `生成後.md` 為準**）。
 > **文件維護規則**見第 9 節。
 
@@ -121,6 +122,23 @@
 - **下一步（［AI 建議］）**：①家裡電腦 B：繁中 OCR 改善（先請使用者貼 `ocr_*.bat` 內容、`Get-ChildItem D:\tessdata` 與進度紀錄；網站專案不動）；②規則助手其他（福祿壽排序、`guessScope`、項目符號重傳、其他桌遊詞庫）；③本機 AI → 請 ChatGPT 美化 → 募資與非 VIP 付費解鎖（PROJECT_CONTEXT 25.8）。
 - **教訓**：①plpgsql 欄位名稱先查 `information_schema.columns`，建立成功不等於能執行；②覆蓋檔案後用 `(Get-Item).Length` 與 `Select-String` 確認不是空檔、貼 `git status`；③`GameModal.tsx` 曾是舊版，動它前請使用者上傳目前版本；④大改版前先把決定列成清單、請使用者回「照建議」再一次做完同一批；⑤使用者訊息可能被截斷，先做能做的、再問。
 
+### 2.14 2026-11-07：上一輪主文件（含 2.13）之後（最新，覆蓋 2.13 與其他節的衝突敘述；細節在 PROJECT_CONTEXT 第 30 節）
+
+- **git**：網站 repo 這段期間沒有新的程式 push，origin/master 最新程式 commit 仍是 `ff53766`（［未驗證］，開工請使用者貼 `git log --oneline -3`）。本次重新產生的三份 .md 要等使用者 commit／push，該次不計入次數。
+- **這一輪只有家裡電腦的本機繁中 OCR 實驗，與網站專案分開**；（`D:\LocalAI-Lab\02_BoardGame-RAG`，與網站專案、`ocr_zh.bat`、Supabase 完全分開；不是 push）：
+  - **Tesseract 結案**：整頁 chi_tra、400 DPI、600 DPI、改 psm 都沒變準，只是換一批錯（「遊戲目標」→「說戲跨標」、「榮耀」→「榮胞」「榮梭」、第 23 頁「戰爭針果」「攸用浪人」）；來源頁是掃描圖，300 DPI 只有 1250×1250 像素，放大 DPI 只是插值；問題在版面（兩欄、書法體標題、目錄點線）；Tesseract 輸出的中文字之間有空格，進 chunking 前要先去掉；`chi_tra_vert` 找不到只是警告。位置 `data\original_pdfs`：`Rising_Sun_Rulebook_Traditional_Chinese_OCR.pdf`（14,870,780 位元組，已含舊文字層，沒有原始圖片版）、`Rising_Sun_zh_only_OCR.pdf`、`Rising_Sun_zh_400_OCR.pdf`（後兩個是實驗檔，舊檔沒動）。
+  - **PaddleOCR 環境**：獨立虛擬環境 `.venv-paddle`（paddle 3.3.1、paddleocr 3.7.0），與原本 `.venv`（PyTorch、PyMuPDF）分開；**CPU 版，沒用 RTX 3060 Ti**；模型 `PP-OCRv6_medium_det`／`PP-OCRv6_medium_rec` 第一次執行自動下載到 `C:\Users\User\.paddlex\official_models\`；啟動警告「找不到提供模式的檔案」「No ccache found」可忽略。**錯誤與修法**：`NotImplementedError: ConvertPirAttribute2RuntimeAttribute not support ... onednn`（Paddle 3.3.x Windows CPU 的 oneDNN 問題）→ 建立 `PaddleOCR(...)` 時加 `enable_mkldnn=False`。
+  - **單頁腳本** `src\paddle_test.py`：`PaddleOCR(lang="chinese_cht", use_doc_orientation_classify=False, use_doc_unwarping=False, use_textline_orientation=False, enable_mkldnn=False)`；`ocr.predict(圖片)` 回傳 `rec_texts`、`rec_scores`、`rec_boxes`（`x1 y1 x2 y2`）。第 2 頁（80 行、33.5 秒）：標題與右欄故事讀對、沒有 Tesseract 式亂碼；仍有「神明们」「赢得」（簡體字形）、點線讀成不等長 `...`、頁碼偶爾缺位或黏在項目名稱後、印章讀成「旭」；輸出是逐行由上到下，左欄目錄（x 約 164～546）與右欄故事（x 約 632～1166）交錯，**可依 x 座標（分界約 590）切欄再各自依 y 排序**。
+  - **整本 28 頁批次（2026-11-07，全部成功）**：三個腳本在 `src\`（`postprocess.py` 覆蓋舊版，沒新增套件）：`render_all.py`（`.venv`，300 DPI 轉圖）、`paddle_batch.py`（`.venv-paddle`，一頁一個結果檔 `data\extracted_text\rising_sun_paddle\raw\page_NN.txt`，重跑會略過已完成頁）、`postprocess.py all`（後處理並合併成 `rising_sun_paddle.txt`，印關鍵詞次數）。執行順序：`.\.venv\Scripts\python.exe src\render_all.py` → `.\.venv-paddle\Scripts\python.exe src\paddle_batch.py` → `.\.venv\Scripts\python.exe src\postprocess.py all`。**共 743 秒（約 12 分鐘）**，合併文字 **20,239 字**；第 1 頁 8 行（可能封面）、第 4 頁 28 行、第 6 頁 87 行最多。後處理的實際細節 AI 沒再讀（［未驗證］），改它之前請使用者重新上傳。
+  - **關鍵詞次數（合併文字檔內出現次數）vs Tesseract（Chrome 搜尋命中數）**：背叛 18 vs 11；榮耀 68 vs 40；結盟 44 vs 36；另戰爭結果 4、雇用浪人 5、福祿壽 0（繁中規則書正文不見得提到，不代表漏字）。**口徑不同，只看量級與方向，不是精確對照。** Tesseract 典型錯字（榮胞、榮梭、戰爭針果、攸用、說戲、玩事介）在整本輸出**完全消失**（`Select-String` 無結果）。
+  - **第 4 頁（零件清單）抽查**：零件名稱與數量讀得好；插圖區變成低信心雜訊（`FA1r`、`OOOOO`、「生金童」0.28、「租」0.32、「旭」）；**使用者沒說原圖有什麼，「有沒有整塊漏掉」［未驗證］**。後處理可用信心分數（例如 < 0.5）濾掉雜訊行，候選做法，尚未做。
+  - **［AI 判斷，使用者未回覆］** 初步驗證通過：整本可跑、速度可接受、錯字大幅減少；仍要抽查更多頁（第 23 頁、圖多頁）才能說可取代網站目前的 Tesseract 文字層；簡體字形仍存在，可考慮簡繁轉換，**不要憑空寫修正表**。**PaddleOCR 不會直接產生帶文字層的 PDF**（［未驗證］，目前腳本只輸出座標＋文字）；要用到網站得另外疊文字層或只用文字檔，**牽涉網站上傳流程，使用者尚未決定，先不碰**。
+  - **下一步（［AI 建議］，一次一步）**：①使用者抽查更多頁（`rising_sun_paddle.txt` 對照原 PDF 第 23 頁與一頁純內文頁）；②決定用途：只當 RAG 文字檔（與網站分開），或疊回 PDF 隱形文字層（用 PyMuPDF 在 `.venv`，要另外討論）；③若走 RAG，先定輸出格式（純文字＋頁碼）、切段與去中文字間空格規則；④若使用者放棄這條線：維持現狀，網站的 Tesseract 文字層只用來找頁碼，品質可用。
+  - **使用者說明**：之前貼來的「本機 AI 計畫 A／B／C」找不到了，「看之後再做打算」，不要追問、不要催；他另有較新的 `LocalAI.md`（2026-11-06 版，含 7.1 節 Tesseract 比較）。
+- **使用者行為提醒**：測試結果仍先跳過（見 2.13）；不要主動追問；他提起再處理。
+- **下一步（［AI 建議］）**：①開工先確認三份 .md 是否已 commit／push、在哪台電腦；②網站側：規則助手其他（福祿壽排序、`guessScope`、項目符號重傳、其他桌遊詞庫）；③本機 OCR 照上面「下一步」；④本機 AI → 請 ChatGPT 美化 → 募資與非 VIP 付費解鎖（PROJECT_CONTEXT 25.8）。
+- **教訓**：①上一輪更新 `生成後.md` 做到一半額度用完、檔案沒存下來，容器也會被限流，要如實告訴使用者、稍後重試，更新文件時同時存進 Projects 並交出；②比較兩種 OCR 命中數要說清楚統計口徑；③新套件參數名稱隨版本變（PaddleOCR 3.x 用 `predict()`、`enable_mkldnn`），報錯先看最後一行；④本機 AI 實驗一次只改一件事、請使用者貼輸出再進下一步。
+
 ### 2.3 已知限制與沒處理的事
 
 - `join_gathering` 名額已核對一致（總人數 ≥ `capacity` 回 `full`，含管理者與手動加入；`gatherings` 列 `for update` 鎖；只在聚會當天有效），不用再查。
@@ -185,6 +203,8 @@
 - **教訓**：①覆蓋後用 `(Get-Item).Length` 與 `Select-String` 確認檔案不是空檔；②「找不到功能入口」先查程式是否依身分隱藏；③plpgsql 欄位名稱先查 `information_schema.columns`；④從遊戲視窗跳到俱樂部子畫面時要確認 `useBackClose`／`view` 初始值不會把畫面重設回首頁（`d5be8c0`）。
 
 ## 3. 仍值得追問的實測（使用者多半沒逐項回報，要主動問）
+
+- **2026-11-07 更新**：使用者仍說測試結果先跳過，清單在 2.13 與 PROJECT_CONTEXT 29.9，**不要主動追問**。本輪新增的只有本機 OCR 抽查（2.14：請他對照 `rising_sun_paddle.txt` 與原 PDF 第 23 頁、一頁純內文頁），那是他有興趣時才做。
 
 - **2026-11-06 夜更新**：使用者明說「測試結果先跳過，之後有問題再來用」；清單在 2.13 最後「尚未回報的實測」與 PROJECT_CONTEXT 29.9。**不要主動逐項追問，等他提起。** 2.12 的「五項待問」與「問第 3 節第 5 項」也一併先跳過。
 
@@ -358,3 +378,4 @@
 - 2026-11-06：使用者說「照建議」，`生成後.md` 更新次數已滿 3（上一輪已寫明），依規則 3 重新產生 `QUICKSTART.md`＋`PROJECT_CONTEXT.md`（併入階段 2 投稿與審核、待審清單修正與全部列表、紅點、管理者不能投稿的設計說明）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。（以增補第 2.11 節與第 27 節方式併入。）上一輪已 push 的 `38a4c85`、`27f3799`、`c72bc1a` 與 `c8b4865` 都已併入，不再計數。
 - 2026-11-06（晚）：`生成後.md` 上次記 push 次數 1、更新次數 2；之後 `d2313a1`、`d333b51`、`3611957`、`d5be8c0` 共 4 次 push（`651be27` 只更新 `生成後.md`），更新次數滿 3，依規則重新產生 `QUICKSTART.md`＋`PROJECT_CONTEXT.md`（併入規則助手內投稿＋AI 回饋、我的投稿、規則助手單頁、「心得留言」統一方案）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。（以增補第 2.12 節與第 28 節方式併入。）上述 push 都已併入，不再計數。
 - 2026-11-06（夜）：使用者在家裡電腦說「先幫我更新.md」，`生成後.md` 更新次數已滿 3（本檔上一輪寫明），push 次數 2（`54ef56d`、`ff53766`），依規則 3 重新產生 `QUICKSTART.md`＋`PROJECT_CONTEXT.md`（併入心得留言 A、B、C、B2 批、補日期、死程式清理）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。（以增補第 2.13 節與第 29 節方式併入。）上述 push 都已併入，不再計數。
+- 2026-11-07：使用者說「先幫我更新三分.md」，`生成後.md` 更新次數已滿 3（2026-11-06 深夜兩次、2026-11-07 一次，push 次數 0），依規則 3 重新產生 `QUICKSTART.md`＋`PROJECT_CONTEXT.md`（併入整本 28 頁 PaddleOCR 批次、Tesseract 結案）；`生成後.md` 重置、兩個計數歸零；使用者需 commit／push 這三份 .md，**該次 push 不計入次數**。（以增補第 2.14 節與第 30 節方式併入。）
