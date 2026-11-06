@@ -18,6 +18,7 @@ import { useGameDocuments } from '../lib/useGameDocuments'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import type { RatingsApi } from '../lib/useGameRatings'
 import GameNotesBoard from './GameNotesBoard'
+import '../styles/discussion-links.css'
 import GamePlayHistory from './GamePlayHistory'
 import GameErrata from './GameErrata'
 import GameExpansions from './GameExpansions'
@@ -57,6 +58,8 @@ export default function GameModal({
   onSwitchGame,
   fullRatingForm = false,
   onOpenMyRatings,
+  onOpenBoard,
+  onOpenMyNotes,
   onClose,
 }: {
   game: LibraryGame
@@ -81,6 +84,9 @@ export default function GameModal({
   fullRatingForm?: boolean
   // 有傳才會把評分分頁換成「摘要＋前往我的評分」
   onOpenMyRatings?: () => void
+  // 討論分頁的兩顆按鈕：前往留言板（預填這款遊戲）、前往我的心得（只看這款）
+  onOpenBoard?: () => void
+  onOpenMyNotes?: () => void
   onClose: () => void
 }) {
   const [tab, setTab] = useState<TabKey>(
@@ -498,17 +504,39 @@ export default function GameModal({
           {activeTab === 'discussion' && (
             <div className="modal-section">
               {vip.isVip || isAdmin ? (
-                <GameNotesBoard
-                  key={game.bggName}
-                  bggName={game.bggName}
-                  isAdmin={isAdmin}
-                  enabled
-                  canWrite={
-                    isAdmin ||
-                    personal.getEntry(game.bggName).played ||
-                    ratings.getMine(game.bggName) !== null
-                  }
-                />
+                <>
+                  {(onOpenBoard ||
+                    (onOpenMyNotes &&
+                      (personal.getEntry(game.bggName).played ||
+                        ratings.getMine(game.bggName) !== null))) && (
+                    <div className="gdl-row">
+                      {onOpenBoard && (
+                        <button type="button" className="gdl-btn" onClick={onOpenBoard}>
+                          前往留言板 ›
+                        </button>
+                      )}
+                      {onOpenMyNotes &&
+                        (personal.getEntry(game.bggName).played ||
+                          ratings.getMine(game.bggName) !== null) && (
+                          <button type="button" className="gdl-btn" onClick={onOpenMyNotes}>
+                            前往我的心得 ›
+                          </button>
+                        )}
+                    </div>
+                  )}
+                  <GameNotesBoard
+                    key={game.bggName}
+                    bggName={game.bggName}
+                    isAdmin={isAdmin}
+                    enabled
+                    hideCompose={!!onOpenBoard}
+                    canWrite={
+                      isAdmin ||
+                      personal.getEntry(game.bggName).played ||
+                      ratings.getMine(game.bggName) !== null
+                    }
+                  />
+                </>
               ) : (
                 <p className="personal-hint">只有 VIP 可以看到大家的留言。</p>
               )}

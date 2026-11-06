@@ -1,0 +1,12 @@
+/* 遊戲視窗「討論」分頁上方的兩顆前往按鈕 */
+.gdl-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.gdl-btn {
+  padding: 8px 14px;
+  border: 1px solid #456b50;
+  border-radius: 999px;
+  background: #fbf7ec;
+  color: #365b40;
+  font-size: 14px;
+  cursor: pointer;
+}
+.gdl-btn:hover { background: #eef3ea; }

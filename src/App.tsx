@@ -199,6 +199,8 @@ function Library({
   const [jumpGatheringId, setJumpGatheringId] = useState<string | null>(null)
   // 從遊戲視窗「前往我的評分」跳到俱樂部的我的評分頁
   const [jumpRatings, setJumpRatings] = useState<string | null>(null)
+  // 從遊戲視窗「前往留言板／我的心得」跳到俱樂部對應子畫面（並帶入那款遊戲）
+  const [jumpView, setJumpView] = useState<{ view: 'board' | 'notes'; bggName: string } | null>(null)
   // 聚會報到後評分：遊戲視窗要顯示完整評分表單（集點必填）
   const [ratingFromCheckin, setRatingFromCheckin] = useState(false)
   const isMyListOpen = activePage === 'mylist' || activePage === 'loyalty'
@@ -307,6 +309,7 @@ function Library({
   function goHome() {
     setJumpGatheringId(null)
     setJumpRatings(null)
+    setJumpView(null)
     setSelectedGame(null)
     setIsFilterOpen(false)
     setActivePage(null)
@@ -320,6 +323,7 @@ function Library({
     setInviteFocus(null)
     setInviteKey((count) => count + 1)
     setMyListMode('list')
+    setJumpView(null)
     setJumpGatheringId(gatheringId)
     setActivePage('mylist')
   }
@@ -334,7 +338,23 @@ function Library({
     setInviteKey((count) => count + 1)
     setMyListMode('list')
     setJumpGatheringId(null)
+    setJumpView(null)
     setJumpRatings(bggName)
+    setActivePage('mylist')
+  }
+
+  // 遊戲視窗討論分頁「前往留言板」「前往我的心得」→ 關掉遊戲視窗，開在俱樂部對應子畫面
+  function openClubViewFromGame(view: 'board' | 'notes', bggName: string) {
+    setSelectedGame(null)
+    setSelectedTab('overview')
+    setRatingFromCheckin(false)
+    setIsFilterOpen(false)
+    setInviteFocus(null)
+    setInviteKey((count) => count + 1)
+    setMyListMode('list')
+    setJumpGatheringId(null)
+    setJumpRatings(null)
+    setJumpView({ view, bggName })
     setActivePage('mylist')
   }
 
@@ -342,6 +362,7 @@ function Library({
     // 點導覽時，先關掉開著的詳細視窗與進階篩選，避免視窗疊在一起
     setJumpGatheringId(null)
     setJumpRatings(null)
+    setJumpView(null)
     setSelectedGame(null)
     setIsFilterOpen(false)
     if (activePage === page) {
@@ -1098,6 +1119,8 @@ function Library({
           }}
           fullRatingForm={ratingFromCheckin}
           onOpenMyRatings={() => openMyRatingsFromGame(selectedGame.bggName)}
+          onOpenBoard={() => openClubViewFromGame('board', selectedGame.bggName)}
+          onOpenMyNotes={() => openClubViewFromGame('notes', selectedGame.bggName)}
           initialTab={selectedTab}
           onOpenGathering={openGatheringFromGame}
           isAdmin={isAdmin}
@@ -1164,6 +1187,7 @@ function Library({
         focusDate={inviteFocus}
         openGatheringId={jumpGatheringId}
         openRatings={jumpRatings}
+        openView={jumpView}
         boardGames={statGames}
         trashedGames={trashedGames}
         personal={personal}

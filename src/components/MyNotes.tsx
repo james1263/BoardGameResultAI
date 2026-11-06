@@ -101,6 +101,7 @@ export default function MyNotes({
   onOpenGathering,
   onOpenAddPlay,
   onOpenWriteGathering,
+  focusGame = null,
 }: {
   boardGames: ListedGame[]
   renderCover: (game: BoardGame) => ReactNode
@@ -109,6 +110,8 @@ export default function MyNotes({
   onOpenGathering: (gatheringId: string) => void
   onOpenAddPlay: () => void
   onOpenWriteGathering: () => void
+  // 從遊戲視窗「前往我的心得」進來：只看這一款（可按 × 取消）
+  focusGame?: string | null
 }) {
   const gatheringNotes = useAllMyNotes()
   const gameNotes = useMyAllGameNotes()
@@ -121,6 +124,7 @@ export default function MyNotes({
   const [draftLike, setDraftLike] = useState('')
   const [draftDislike, setDraftDislike] = useState('')
   const [message, setMessage] = useState('')
+  const [focus, setFocus] = useState<string | null>(focusGame)
 
   const gameByName = useMemo(() => {
     const map = new Map<string, ListedGame>()
@@ -189,11 +193,12 @@ export default function MyNotes({
   }, [gameNotes.rows, gatheringNotes.rows, gatherings.rows])
 
   const shown = useMemo(() => {
-    if (filter === 'public') return items.filter((i) => i.kind !== 'gprivate')
-    if (filter === 'private') return items.filter((i) => i.kind === 'gprivate')
-    if (filter === 'gathering') return items.filter((i) => i.kind !== 'game')
-    return items
-  }, [items, filter])
+    const base = focus ? items.filter((i) => i.bggName === focus) : items
+    if (filter === 'public') return base.filter((i) => i.kind !== 'gprivate')
+    if (filter === 'private') return base.filter((i) => i.kind === 'gprivate')
+    if (filter === 'gathering') return base.filter((i) => i.kind !== 'game')
+    return base
+  }, [items, filter, focus])
 
   const loading = gatheringNotes.loading || gameNotes.loading || gatherings.loading
   const failed = gatheringNotes.error || gameNotes.error || gatherings.error
@@ -298,6 +303,26 @@ export default function MyNotes({
             </button>
           </div>
 
+          {focus && (
+            <p style={{ margin: '0 0 8px', fontSize: 13, color: '#34463c' }}>
+              只看《{gameByName.get(focus)?.name ?? focus}》的心得{' '}
+              <button
+                type="button"
+                aria-label="看全部心得"
+                style={{
+                  border: '1px solid #cdbf9f',
+                  borderRadius: 999,
+                  background: '#fbf7ec',
+                  color: '#34463c',
+                  padding: '0 8px',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setFocus(null)}
+              >
+                ×
+              </button>
+            </p>
+          )}
           <div className="mh-filters" role="tablist" aria-label="心得分類">
             {FILTERS.map((item) => (
               <button
@@ -333,7 +358,11 @@ export default function MyNotes({
               )}
               {shown.length === 0 ? (
                 <p className="mylist-empty">
-                  {items.length === 0 ? '還沒有心得。' : '這個分類還沒有內容。'}
+                  {items.length === 0
+                    ? '還沒有心得。'
+                    : focus && !items.some((i) => i.bggName === focus)
+                      ? '這款還沒有心得。可以用上面的「寫聚會心得」或「新增遊玩紀錄」來寫。'
+                      : '這個分類還沒有內容。'}
                 </p>
               ) : (
                 <ul className="nl-list">

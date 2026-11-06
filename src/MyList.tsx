@@ -268,6 +268,7 @@ export default function MyList({
     focusDate,
     openGatheringId,
     openRatings = null,
+    openView = null,
     isAdmin,
     isVip,
     todayPending,
@@ -297,6 +298,8 @@ export default function MyList({
     openGatheringId?: string | null
     // 從遊戲視窗「前往我的評分」進來，直接開在我的評分頁
     openRatings?: string | null
+    // 從遊戲視窗「前往留言板／我的心得」進來：直接開在那個子畫面，並帶入遊戲
+    openView?: { view: 'board' | 'notes'; bggName: string } | null
     isAdmin: boolean
     isVip: boolean
     todayPending: boolean
@@ -314,9 +317,13 @@ export default function MyList({
     onOpenRules?: () => void
     renderCover: (game: BoardGame) => ReactNode
 }) {
-    const [view, setView] = useState<View>(openGatheringId ? 'gatherings' : openRatings ? 'ratings' : 'home')
+    const [view, setView] = useState<View>(
+        openGatheringId ? 'gatherings' : openRatings ? 'ratings' : openView ? openView.view : 'home',
+    )
     // 從遊戲視窗跳來時，我的評分頁直接展開那一款（只用一次）
     const [ratingsFocus, setRatingsFocus] = useState<string | null>(openRatings)
+    // 留言板預填、我的心得只看這款（回到首頁就清掉）
+    const [viewFocus, setViewFocus] = useState<string | null>(openView?.bggName ?? null)
     // 要直接打開的聚會詳情（從遊戲視窗或「我的心得」跳過來）
     const [gatheringTarget, setGatheringTarget] = useState<string | null>(openGatheringId ?? null)
     // 從「我的心得」進來選聚會寫心得；離開我的場次就自動關閉
@@ -347,6 +354,11 @@ export default function MyList({
         isOpen && mode !== 'loyalty' && view !== 'home',
     )
 
+    // 回到首頁就清掉「前往留言板／我的心得」帶來的遊戲
+    useEffect(() => {
+        if (view === 'home') setViewFocus(null)
+    }, [view])
+
     // 離開「我的場次」就關掉「選聚會寫心得」模式
     useEffect(() => {
         if (view !== 'gatherings') setGatheringWrite(false)
@@ -356,7 +368,7 @@ export default function MyList({
     useEffect(() => {
         if (isOpen) {
             // 從遊戲視窗「前往我的評分」進來時，開在我的評分頁；其他情況回首頁
-            setView(openRatings ? 'ratings' : 'home')
+            setView(openRatings ? 'ratings' : openView ? openView.view : 'home')
             setStatsTab('overview')
             setLoyaltyTab('card')
             setSearch('')
@@ -616,6 +628,9 @@ export default function MyList({
                 onBack={() => setView('home')}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
+                initialSearch={
+                    viewFocus ? (lookupGames.find((g) => g.bggName === viewFocus)?.name ?? '') : ''
+                }
             />
         )
     }
@@ -628,6 +643,7 @@ export default function MyList({
                 renderCover={renderCover}
                 onBack={() => setView('home')}
                 onClose={onClose}
+                focusGame={viewFocus}
                 onOpenAddPlay={() => setView('addplay')}
                 onOpenWriteGathering={() => {
                     setGatheringTarget(null)
@@ -649,6 +665,7 @@ export default function MyList({
                 boardGames={lookupGames}
                 personal={personal}
                 playSessions={playSessions}
+                ratings={ratings}
                 isAdmin={isAdmin}
                 initialGatheringId={gatheringTarget}
                 writeMode={gatheringWrite}

@@ -20,11 +20,14 @@ export default function GameNotesBoard({
   isAdmin,
   enabled,
   canWrite,
+  hideCompose = false,
 }: {
   bggName: string
   isAdmin: boolean
   enabled: boolean
   canWrite: boolean
+  // true＝不顯示發表框（改去留言板／我的心得寫）；自己的留言仍可編輯、刪除
+  hideCompose?: boolean
 }) {
   const api = useGameNotesBoard(bggName, enabled, isAdmin)
   const [showHidden, setShowHidden] = useState(false)
@@ -105,6 +108,7 @@ export default function GameNotesBoard({
       {api.error && <p className="gb-empty">{api.error}</p>}
 
       {!api.loading &&
+        !hideCompose &&
         (canWrite ? (
           <div className="gb-mine-box">
             <textarea

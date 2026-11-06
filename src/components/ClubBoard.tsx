@@ -55,6 +55,7 @@ export default function ClubBoard({
   onBack,
   onClose,
   onOpenGame,
+  initialSearch = '',
 }: {
   boardGames: ListedGame[]
   personal: PersonalApi
@@ -64,12 +65,14 @@ export default function ClubBoard({
   onBack: () => void
   onClose: () => void
   onOpenGame: (game: BoardGame, tab?: 'discussion') => void
+  // 從遊戲視窗「前往留言板」進來時，預先填入遊戲名稱
+  initialSearch?: string
 }) {
   const enabled = isVip || isAdmin
   const [rows, setRows] = useState<NoteRow[]>([])
   const [loading, setLoading] = useState(enabled)
   const [error, setError] = useState('')
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch)
   const [composeOpen, setComposeOpen] = useState(false)
   const [pickSearch, setPickSearch] = useState('')
   const [picked, setPicked] = useState<ListedGame | null>(null)

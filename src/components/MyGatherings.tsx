@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { PersonalApi } from '../lib/personalApi'
 import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
-import { useMyGatheringNotes, useNoteStatus } from '../lib/useGatheringNotes'
+import { useAllMyNotes, useMyGatheringNotes, useNoteStatus } from '../lib/useGatheringNotes'
+import { useMyGatheringGames } from '../lib/useMyGatheringGames'
+import type { RatingsApi } from '../lib/useGameRatings'
 import {
   useGatheringDetail,
   useMyGatherings,
@@ -12,6 +14,7 @@ import {
 import GatheringNotePanel, { type NoteGame } from './GatheringNotePanel'
 import { useBackClose } from '../lib/useBackClose'
 import '../styles/my-gatherings-write.css'
+import '../styles/my-gatherings-cards.css'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -29,17 +32,6 @@ function dateParts(iso: string) {
   }
 }
 
-function DateBadge({ iso }: { iso: string }) {
-  const p = dateParts(iso)
-  return (
-    <div className="mg-date" aria-hidden="true">
-      <small>{p.month}</small>
-      <strong>{p.day}</strong>
-      <small>{p.weekday}</small>
-    </div>
-  )
-}
-
 function sourceLabel(person: GatheringAttendee): string | null {
   if (person.s === 'self') return '自己報到'
   if (person.s === 'admin') return '手動加入'
@@ -50,6 +42,7 @@ export default function MyGatherings({
   boardGames,
   personal,
   playSessions,
+  ratings,
   isAdmin,
   initialGatheringId,
   writeMode = false,
@@ -61,6 +54,8 @@ export default function MyGatherings({
   boardGames: BoardGame[]
   personal: PersonalApi
   playSessions: PlaySessionsApi
+  // 有傳才會把「還沒評分」的遊戲封面變淡
+  ratings?: RatingsApi
   isAdmin: boolean
   initialGatheringId?: string | null
   // 從「我的心得」進來：只列聚會日已到的場次，點一場直接到心得區
@@ -78,6 +73,14 @@ export default function MyGatherings({
   const detail = useGatheringDetail(selectedId)
   const notes = useMyGatheringNotes(selectedId)
   const noteStatus = useNoteStatus()
+  // 每場聚會的全部指定遊戲、我在每款遊戲寫過的心得（卡片用）
+  const gamesByGathering = useMyGatheringGames()
+  const allNotes = useAllMyNotes()
+  const noteByKey = useMemo(() => {
+    const map = new Map<string, { privateNote: string; publicNote: string }>()
+    for (const row of allNotes.rows) map.set(`${row.gatheringId}|${row.bggName}`, row)
+    return map
+  }, [allNotes.rows])
   const selected = list.rows.find((row) => row.id === selectedId) ?? null
   // 心得區會把「有未存變更」的檢查函式放進來
   const guardRef = useRef<(() => boolean) | null>(null)
@@ -198,6 +201,9 @@ export default function MyGatherings({
               {writeMode && (
                 <p className="mg-muted">選一場你出席過的聚會，就能寫這場的心得。</p>
               )}
+              {!writeMode && ratings && (
+                <p className="mg-muted">封面變淡的遊戲，代表你還沒評分。</p>
+              )}
               {list.loading ? (
                 <p className="mylist-empty">讀取中…</p>
               ) : list.error ? (
@@ -239,55 +245,78 @@ export default function MyGatherings({
                         {open && (
                           <ul className="mg-list">
                             {group.rows.map((row) => {
-                              const status = noteStatus.get(row.id)
-                              const pending =
-                                status !== null &&
-                                status.gameCount > 0 &&
-                                status.doneCount < status.gameCount
                               const canWrite = row.gatheredOn <= today
+                              const gameNames = gamesByGathering.games.get(row.id) ?? []
+                              const parts = dateParts(row.gatheredOn)
                               return (
                                 <li key={row.id}>
                                   <button
                                     type="button"
-                                    className="mg-item"
+                                    className="mgc-card"
                                     onClick={() => {
-                                      if (writeMode) setScrollToNotes(true)
+                                      if (canWrite || writeMode) setScrollToNotes(true)
                                       setSelectedId(row.id)
                                     }}
                                   >
-                                    <DateBadge iso={row.gatheredOn} />
-                                    <span className="mg-info">
-                                      <b className="mg-title">
-                                        {row.title}
-                                        {pending && status && (
-                                          <span className="mg-quiet">
-                                            已記錄心得 {status.doneCount}/{status.gameCount}
-                                          </span>
-                                        )}
+                                    <span className="mgc-head">
+                                      <b className="mgc-title">
+                                        {parts.full}（{parts.weekday.replace('週', '')}）
                                       </b>
-                                      <span className="mg-sub">
-                                        {dateParts(row.gatheredOn).full}・
-                                        {row.attendeeCount} 人出席
+                                      <span className="mgc-arrow" aria-hidden="true">
+                                        ›
                                       </span>
                                     </span>
-                                    <span className="mg-arrow" aria-hidden="true">
-                                      ›
+                                    <span className="mgc-sub">
+                                      {row.title}・{row.attendeeCount} 位玩家
+                                    </span>
+                                    {gameNames.length > 0 ? (
+                                      <span className="mgc-games">
+                                        {gameNames.map((bggName) => {
+                                          const game = gameByName.get(bggName) ?? null
+                                          const note = noteByKey.get(`${row.id}|${bggName}`)
+                                          const privateDone = (note?.privateNote ?? '').trim() !== ''
+                                          const publicDone = (note?.publicNote ?? '').trim() !== ''
+                                          const rated = ratings ? ratings.getMine(bggName) !== null : true
+                                          const showChip = canWrite && (!isAdmin || privateDone)
+                                          return (
+                                            <span
+                                              className={`mgc-game${rated ? '' : ' mgc-dim'}`}
+                                              key={bggName}
+                                            >
+                                              <span className="mgc-cover">
+                                                {game ? renderCover(game) : '🎲'}
+                                              </span>
+                                              <span className="mgc-info">
+                                                <b>{game?.name ?? bggName}</b>
+                                                {canWrite && (!isAdmin || privateDone) && (
+                                                  <small>
+                                                    私人心得：{privateDone ? '已填寫' : '尚未填寫'}
+                                                    {publicDone ? '・公開留言：已填寫' : ''}
+                                                  </small>
+                                                )}
+                                              </span>
+                                              {showChip && (
+                                                <span className={`mgc-chip ${privateDone ? 'done' : 'todo'}`}>
+                                                  {privateDone ? '已完成' : '待填寫'}
+                                                </span>
+                                              )}
+                                            </span>
+                                          )
+                                        })}
+                                      </span>
+                                    ) : (
+                                      <span className="mgc-sub">
+                                        {gamesByGathering.loading
+                                          ? '讀取遊戲中…'
+                                          : '這場沒有指定遊戲。'}
+                                      </span>
+                                    )}
+                                    <span className="mgc-foot">
+                                      {canWrite
+                                        ? '點擊整張聚會卡片，前往填寫心得 →'
+                                        : '聚會還沒到，當天之後才能寫心得 →'}
                                     </span>
                                   </button>
-                                  {canWrite && !writeMode && (
-                                    <div className="mg-write-row">
-                                      <button
-                                        type="button"
-                                        className="mg-write-btn"
-                                        onClick={() => {
-                                          setScrollToNotes(true)
-                                          setSelectedId(row.id)
-                                        }}
-                                      >
-                                        補寫心得 ›
-                                      </button>
-                                    </div>
-                                  )}
                                 </li>
                               )
                             })}
@@ -385,6 +414,7 @@ export default function MyGatherings({
                         onChanged={() => {
                           notes.reload()
                           noteStatus.reload()
+                          allNotes.reload()
                         }}
                         guardRef={guardRef}
                         onLeave={() => setSelectedId(null)}

@@ -1,0 +1,52 @@
+/* 我的場次：整張卡片可點，顯示當天全部指定遊戲（顏色寫死，避免 iPhone 深色模式） */
+.mgc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 14px;
+  border: 1px solid #e3d9c4;
+  border-radius: 14px;
+  background: #fbf7ec;
+  color: #34463c;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mgc-head { display: flex; align-items: center; justify-content: space-between; }
+.mgc-title { font-size: 16px; color: #34463c; }
+.mgc-arrow { color: #8a7a5c; font-size: 20px; }
+.mgc-sub { color: #6b6450; font-size: 12px; }
+.mgc-games { display: flex; flex-direction: column; gap: 8px; }
+.mgc-game { display: flex; align-items: center; gap: 10px; }
+.mgc-cover {
+  display: inline-flex;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+.mgc-cover img { width: 100%; height: 100%; object-fit: cover; }
+.mgc-dim .mgc-cover { opacity: 0.4; }
+.mgc-info { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; }
+.mgc-info b { color: #34463c; font-size: 14px; }
+.mgc-info small { color: #6b6450; font-size: 12px; }
+.mgc-chip {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.mgc-chip.done { background: #d9efdc; color: #2d6a3e; }
+.mgc-chip.todo { background: #f7dfd0; color: #a4532c; }
+.mgc-foot {
+  padding-top: 8px;
+  border-top: 1px solid #e3d9c4;
+  color: #2d6a3e;
+  font-size: 13px;
+}
