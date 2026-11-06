@@ -1016,7 +1016,7 @@ export default function MyList({
                                                                             aria-label="減少遊玩次數"
                                                                             title={
                                                                                 (entry?.playCount ?? 0) <= 0 && summary.count > 0
-                                                                                    ? '有日期的紀錄請在點「紀錄與心得」按鈕刪除'
+                                                                                    ? '有日期的紀錄請點「補日期」按鈕，在「所有已玩日期」裡刪除'
                                                                                     : undefined
                                                                             }
                                                                             disabled={!personal.canEdit || (entry?.playCount ?? 0) <= 0}
@@ -1067,10 +1067,6 @@ export default function MyList({
                                                                         gameName={game.name}
                                                                         personal={personal}
                                                                         playSessions={playSessions}
-                                                                        onOpenGathering={(id) => {
-                                                                            setGatheringTarget(id)
-                                                                            setView('gatherings')
-                                                                        }}
                                                                     />
                                                                 )}
                                                                 {entry?.note && (

@@ -76,7 +76,7 @@ export default function PlaySessions({
           disabled={!personal.canEdit || api.status !== 'ready'}
           onClick={() => setIsOpen(true)}
         >
-          ＋ 記錄一次遊玩
+          ＋ 補一個日期
         </button>
       ) : (
         <form className="play-sessions-form" onSubmit={handleSubmit}>
@@ -141,7 +141,7 @@ export default function PlaySessions({
       {list.length > 0 && (
         <details className="play-sessions-fold">
           <summary style={{ cursor: 'pointer', margin: '8px 0 4px' }}>
-            遊玩日期紀錄 {list.length} 筆（手動 {manualCount}・自動 {autoCount}）
+            所有已玩日期 {list.length} 筆（手動 {manualCount}・自動 {autoCount}）
           </summary>
         <ul className="play-sessions-list">
           {list.map((item) => (
