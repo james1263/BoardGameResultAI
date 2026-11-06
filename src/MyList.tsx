@@ -15,6 +15,7 @@ import MyNotes from './components/MyNotes'
 import AddPlayLog from './components/AddPlayLog'
 import PlayedGameRecord from './components/PlayedGameRecord'
 import ClubBoard from './components/ClubBoard'
+import MySubmissions from './components/MySubmissions'
 import MyRatingsPanel from './components/MyRatingsPanel'
 import MyRatingsHub from './components/MyRatingsHub'
 import UpcomingGatherings from './components/UpcomingGatherings'
@@ -26,7 +27,7 @@ type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
-type View = 'home' | 'stats' | 'ratings' | 'gatherings' | 'addplay' | 'notes' | 'board'
+type View = 'home' | 'stats' | 'ratings' | 'gatherings' | 'addplay' | 'notes' | 'board' | 'submissions'
 type StatsTab = 'overview' | 'want' | 'played' | 'score' | 'chart'
 type SortKey =
     | 'added'
@@ -278,6 +279,7 @@ export default function MyList({
     onBrowse,
     onOpenGame,
     onOpenLoyalty,
+    onOpenRules,
     renderCover,
 }: {
     boardGames: ListedGame[]
@@ -305,6 +307,8 @@ export default function MyList({
     onBrowse: () => void
     onOpenGame: (game: BoardGame, tab?: 'ratings' | 'discussion') => void
     onOpenLoyalty: () => void
+    // 從「我的投稿 → AI 回答」跳到規則助手（App 傳入；沒傳就不顯示按鈕）
+    onOpenRules?: () => void
     renderCover: (game: BoardGame) => ReactNode
 }) {
     const [view, setView] = useState<View>(openGatheringId ? 'gatherings' : 'home')
@@ -660,6 +664,18 @@ export default function MyList({
                 canShare={isVip || isAdmin}
                 onBack={() => setView('notes')}
                 onClose={onClose}
+            />
+        )
+    }
+
+    // ---------- 我的投稿 ----------
+    if (view === 'submissions') {
+        return (
+            <MySubmissions
+                boardGames={boardGames}
+                onBack={() => setView('home')}
+                onClose={onClose}
+                onOpenRules={onOpenRules}
             />
         )
     }
@@ -1067,6 +1083,22 @@ export default function MyList({
                                         已評分 {playedGames.filter((game) => ratings.getMine(game.bggName)).length}・已玩 {playedGames.length}
                                     </span>
                                 )}
+                                <span className="club-menu-arrow" aria-hidden="true">›</span>
+                            </button>
+                        </div>
+                    )}
+                    {personal.isLoggedIn && isVip && !isAdmin && (
+                        <div className="club-list club-more">
+                            <button
+                                type="button"
+                                className="club-menu-item club-menu-single"
+                                onClick={() => setView('submissions')}
+                            >
+                                <span className="club-menu-icon" aria-hidden="true">✍️</span>
+                                <span className="club-menu-text">
+                                    <b>我的投稿</b>
+                                    <span className="club-menu-sub">玩錯紀錄、規則連結、詞庫</span>
+                                </span>
                                 <span className="club-menu-arrow" aria-hidden="true">›</span>
                             </button>
                         </div>

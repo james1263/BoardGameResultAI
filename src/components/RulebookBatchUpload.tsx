@@ -20,6 +20,8 @@ import ErrataAdmin from './ErrataAdmin'
 import GlossaryAdmin from './GlossaryAdmin'
 import GlossaryMisses from './GlossaryMisses'
 import PendingBadge from './PendingBadge'
+import SubmissionsAdmin from './SubmissionsAdmin'
+import { reviewSubmission, useAdminSubmissions, type AdminSubmission } from '../lib/useRuleSubmissions'
 
 type GameOption = { bgg_name: string; name: string; removed_at?: string | null }
 type DocKind = 'rulebook' | 'faq' | 'errata'
@@ -398,7 +400,10 @@ export default function RulebookBatchUpload({
 }: {
   pendingErrata?: number
 }) {
-  const [mode, setMode] = useState<'pdf' | 'link' | 'errata' | 'glossary' | null>(null)
+  const [mode, setMode] = useState<'pdf' | 'link' | 'errata' | 'glossary' | 'submissions' | null>(null)
+  const subs = useAdminSubmissions(true)
+  // 從玩家投稿帶進「貼連結」表單時，記下投稿 id，新增成功後才標成已核准
+  const [linkFromSub, setLinkFromSub] = useState<string | null>(null)
   const [usage, setUsage] = useState<StorageUsage | null>(null)
   const [usageError, setUsageError] = useState('')
   const [allDocs, setAllDocs] = useState<AllDoc[]>([])
@@ -666,6 +671,12 @@ export default function RulebookBatchUpload({
     setLinkTitle('')
     setLinkUrl('')
     setLinkDone('已新增連結，可在下方文件列表看到。')
+    if (linkFromSub) {
+      const reviewMessage = await reviewSubmission(linkFromSub, true)
+      if (reviewMessage) setLinkError(`連結已新增，但標記核准失敗：${reviewMessage}`)
+      setLinkFromSub(null)
+      void subs.reload()
+    }
     void loadUsage()
     setListTick((n) => n + 1)
   }
@@ -915,7 +926,7 @@ export default function RulebookBatchUpload({
           onClick={() => setMode(mode === 'errata' ? null : 'errata')}
         >
           ＋ 玩錯紀錄
-          <PendingBadge count={pendingErrata} />
+          <PendingBadge count={Math.max(0, pendingErrata - subs.rows.length)} />
         </button>
         <button
           type="button"
@@ -925,6 +936,16 @@ export default function RulebookBatchUpload({
           onClick={() => setMode(mode === 'glossary' ? null : 'glossary')}
         >
           ＋ 詞庫
+        </button>
+        <button
+          type="button"
+          aria-pressed={mode === 'submissions'}
+          className={mode === 'submissions' ? 'active' : ''}
+          disabled={running}
+          onClick={() => setMode(mode === 'submissions' ? null : 'submissions')}
+        >
+          ＋ 連結／詞庫投稿
+          <PendingBadge count={subs.rows.length} />
         </button>
       </div>
 
@@ -1145,6 +1166,23 @@ export default function RulebookBatchUpload({
       )}
 
       {mode === 'glossary' && <GlossaryMisses />}
+
+      {mode === 'submissions' && (
+        <SubmissionsAdmin
+          rows={subs.rows}
+          error={subs.error}
+          onChanged={() => void subs.reload()}
+          onUseLink={(row: AdminSubmission) => {
+            setLinkFromSub(row.id)
+            setLinkGame(row.bgg_name)
+            setLinkTitle(row.title)
+            setLinkUrl(row.value)
+            setLinkError('')
+            setLinkDone('')
+            setMode('link')
+          }}
+        />
+      )}
 
       {mode === 'pdf' &&
         renderDocList('PDF', pdfDocs, (d) => d.source_type === 'upload')}

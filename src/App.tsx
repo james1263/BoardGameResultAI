@@ -1126,6 +1126,7 @@ function Library({
         gameChanges={loyaltyAlerts.changes}
         onAlertsSeen={loyaltyAlerts.markAllSeen}
         onOpenLoyalty={openMyLoyalty}
+        onOpenRules={() => setActivePage('rules')}
         isAdmin={isAdmin}
         isVip={vip.isVip}
         onBrowse={() => {
