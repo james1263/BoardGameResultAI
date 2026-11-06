@@ -3,6 +3,8 @@
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
 > 最後更新：2026-11-06（已併入上一版 `生成後.md`；**最新增補在第 27 節（玩家 FAQ 階段 2 投稿與審核、待審清單修正與全部列表、管理者待審紅點、規則助手內投稿與 AI 好答案的設計），其次第 26、25 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
 
+> **2026-11-06 晚更新：最新增補在第 28 節（規則助手內投稿＋AI 回饋、我的投稿、規則助手單頁、「心得留言」統一方案），與前面衝突時以較大的節號為準；`生成後.md` 已重置。**
+
 ## 1. 專案簡介與技術架構
 
 - **目標**：桌遊收藏與規則查詢網站（106 款，使用者在 Notion 整理後匯出 CSV）；最終 VIP 可查規則書（第 7 節）。網站**公開瀏覽，只有管理者能編輯**；朋友圈是主要玩家。
@@ -799,3 +801,40 @@
 
 ### 27.5 下一個 AI 要避開的陷阱（補）
 61 plpgsql 函式建立成功不代表能執行（`pp.user_id`），改完一定要請使用者實測，欄位名稱先查 `information_schema.columns`；62 管理者與 VIP 看到的畫面不同（投稿表單只給非管理者），使用者說「找不到入口」先查是不是依身分隱藏，測玩家端要用另一個非管理者的 Google 帳號；63 `admin_get_pending_errata`、`admin_get_all_errata` 回傳型別改變要先 `drop` 再 `create`；64 新增待審類型要同步 `admin_pending_count()`、`PENDING_CHANGED_EVENT`、`privacy.html`；65 `player_profiles` 的主鍵是 `id` 不是 `user_id`；66 `delete_my_game_errata`、`admin_review_game_errata`、`admin_save_game_errata`、`admin_delete_game_errata`、`admin_count_game_errata` 定義沒看過，改之前先請使用者匯出。
+
+## 28. 2026-11-06 晚增補（覆蓋前面衝突的敘述）
+
+- 現況與使用者決定見 `QUICKSTART.md` 2.12、第 6 節。本節併入上一版 `生成後.md` 全部內容。**凡是我沒看到的細節都標［未驗證］。27.4 的「尚未動工」已過時，見 28.1。**
+
+### 28.1 規則助手內投稿＋AI 回饋（`0f07c04`、`b309f5b`；資料庫由使用者在 SQL Editor 執行，驗證結果未貼回［未驗證］，SQL 檔不在 repo）
+- 資料庫：`game_errata` 新增 `kind text not null default 'errata'`（check：`errata`｜`ai_answer`）；重建 `get_game_errata`、`search_game_errata`、`admin_get_pending_errata`、`admin_get_all_errata`（回傳多 `kind`）、`submit_game_errata`（多 `p_kind default 'errata'`；`ai_answer` 必須有頁碼，否則 `page required`）；新增 `get_errata_feed(p_bgg_name, p_limit)`（各遊戲最新已核准，依 `reviewed_at`／`updated_at`）、`get_errata_unseen_count(p_since)`（不算自己投稿的）。權限（7 個函式 `anon_exec` 全 false、`auth_exec` 全 true）已驗證。
+- 規則助手（`RulebookAssistant.tsx`，第 25.3、26.1 的改版之上）：關鍵字區移到結果上方，分「全部｜中文詞（問句自動切、最多 5 個）｜英文詞」；結果中文規則書排前面（同語言內順序不變）；「甚麼」與「什麼」同樣當問句用語。
+- AI 回饋投稿：只有按「複製給我的 AI」後才出現；提示詞多一段規定，要求 AI 末尾輸出固定格式回饋區塊（含本次**核對碼**）；貼回時前端檢查核對碼、有「第 N 頁」、頁碼在複製的片段內，不符不能送出；玩錯紀錄投稿表單沒有 AI 選項；管理者待審清單標「AI 回饋」並提醒回規則書核對；核准後標「玩家整理・AI 回答（已審核）」。**只是擋亂貼，不是防偽。**
+- 其他：`ErrataBoard.tsx`（「玩錯紀錄・投稿」分頁，規則助手單頁改版後沒人用，未刪）、`lib/useErrataUnseen.ts`（導覽列「規則助手」紅色未看數字，打開最近更新會歸零，第一次使用現有紀錄都算已看過）、`GameErrata.tsx` 選填 prop `bigSubmit`（整行綠色大按鈕，表單在清單上方）與 `hideSubmit`（只看不投稿）、`public/privacy.html` 補 AI 回饋說明。
+
+### 28.2 我的投稿（`56943cf`、`24a8289`；使用者測試「沒有問題」；SQL 檔 `rule_submissions.sql` 不在 repo）
+- **資料庫**：新表 `rule_submissions`（`kind` link／glossary、`bgg_name`、`title`、`value`、`note`、`status`、`reject_reason`、`user_id` 刪帳號連動；RLS 開、anon／authenticated 全 revoke，表格權限查詢結果未回報［未驗證］）；函式 `submit_rule_submission`（VIP；每人每款待審 ≤ 3、待審總數 ≤ 10；連結標題 ≤ 60、網址 ≤ 300 且須 http(s)；詞庫中文詞 ≤ 30、對應詞 ≤ 60）、`delete_my_rule_submission`、`get_my_rule_submissions`、`get_my_errata`（我的玩錯紀錄跨遊戲）、`admin_get_rule_submissions`、`admin_review_rule_submission`（詞庫核准直接寫 `game_glossary`；連結核准只標記）；**`admin_pending_count()` 重寫＝`game_errata` 待審＋`rule_submissions` 待審**。6 個函式 `anon_exec` 全 false、`auth_exec` 全 true 已驗證。
+- **前端**：新檔 `lib/useRuleSubmissions.ts`、`components/MySubmissions.tsx`（四分頁玩錯紀錄／規則連結／詞庫／AI 回答）、`components/SubmissionsAdmin.tsx`；改 `MyList.tsx`（`view` 多 `'submissions'`、首頁「✍️ 我的投稿」只給 VIP 非管理者、選填 prop `onOpenRules`）、`App.tsx`（傳 `onOpenRules={() => setActivePage('rules')}`）、`RulebookBatchUpload.tsx`（`mode` 多 `'submissions'`「＋ 連結／詞庫投稿」；連結核准＝帶入「貼連結」表單，新增成功才標核准）、`styles/trash.css`（垃圾桶手機版按鈕換行；曾誤放 `components/`，已搬回）。
+- **使用者決定**：投稿（玩錯紀錄／連結／詞庫）放俱樂部「我的投稿」；AI 回答投稿留在規則助手、俱樂部只放說明與跳轉；規則助手改成搜尋優先單頁；主畫面「規則助手」紅點保留；**不存完整問題，所以沒有「歷史問答」**（替代＝熱搜關鍵字與已核准 AI 好答案）；PDF 投稿先不做。
+
+### 28.3 規則助手單頁與其後四次 push
+- **`RulebookPage.tsx` 整份改寫**：取消兩個分頁；首頁＝搜尋框（搜全部非僅供參考的遊戲，最多 8 筆，沒索引的標「無規則書搜尋」）＋可收合「最近更新的玩錯紀錄」（有新的自動展開、標「N 則新」）；選遊戲後＝規則連結按鈕＋可收合 `GameErrata`（`hideSubmit`）＋`RulebookAssistant`（沒索引的遊戲不顯示）。手機版未回報。事故見 QUICKSTART 2.12。
+- **`d2313a1`**：垃圾桶文字靠左、「清理附屬資料」顯示進度（推測在 `TrashSection.tsx`、`trash.css`，［未驗證］）。
+- **`d333b51`**：管理中心把連結與詞庫投稿待審移到各自分頁；上傳檔名猜「玩家整理」範圍（推測在 `RulebookBatchUpload.tsx`、`SubmissionsAdmin.tsx`，［未驗證］）。
+- **`3611957`、`d5be8c0`**：遊戲視窗評分分頁改成摘要，「前往我的評分」會直接展開那一款；`d5be8c0` 修正「從遊戲視窗前往我的評分時被強制回首頁」（推測是 `MyList.tsx` 的 `view` 初始值或 `useBackClose` 處理，［未驗證］，A 批做跳轉前先看這兩個 commit 的 `git show`）。**第 18 節「就地評分／遊戲視窗評分表單保留」的取捨以此為準：遊戲視窗現在只留摘要，評分在「我的評分」。**
+- 家裡電腦繁中 OCR 流程（`D:\LocalAI-Lab\02_BoardGame-RAG`，與網站專案分開，不要混用）：Tesseract 5.4 `chi_tra+eng` PSM 3 測《旭日戰魂錄》繁中版第 2 頁仍有亂碼與順序問題；**使用者決議先保留，等家裡新舊對照檔再判斷，之前不動任何 `.bat`**（目前 `ocr_zh.bat` 已是 `chi_tra+eng`、OCRmyPDF；先看過 `ocr_*.bat` 內容與 `Get-ChildItem D:\tessdata` 再談）。
+
+### 28.4 「心得留言」統一方案（使用者 2026-11-06「照建議」；尚未動工；資料庫沿用現有）
+- **起因**：現在有 5 個地方能寫東西且表單不同：遊戲視窗「討論」、俱樂部「留言板」、「我的心得」、聚會詳情私人／公開心得、「補記遊玩」的心得欄（＋「同時發表到討論」）。使用者怕朋友搞混。另一個 AI 的整理版本只當參考，內容與下列一致。
+- **兩種表單，欄位固定**（遊戲、內容、選填「關聯聚會」）：**留言＝公開、心得＝私人**；可互相複製（**先複製到另一個編輯框，使用者確認後才儲存，不直接覆蓋原內容；複製不等於變成同一筆資料**）。
+- **存放位置（沿用，不新增表）**：①留言、沒標聚會→`game_notes`（每款每人 ≤ 10 則，`add_game_note`）；②留言、標聚會→該場聚會的公開欄（`gathering_notes.public_note`，同人同場同款只有一列，所以是更新而非新增，**表單要提示「這場聚會已有留言，儲存後將更新原留言」**）；③心得、標聚會→`gathering_notes.private_note`（規則不變：我在出席名單、聚會日已到、該款是當天指定遊戲）；④心得、沒標聚會→`user_game_status.note`（我的整體心得，每款一則，可編輯）。關聯聚會清單只列：我出席過、日期已到、包含這款遊戲的聚會。
+- **我的場次**：每場一張卡片，顯示日期、出席人數、**當天全部指定遊戲**（有評分的正常封面、沒評分的淡色，封面縮小；不只依賴評分，因為免評分或尚未評分者不代表沒玩）、心得填寫狀態；點整張卡片直接進心得填寫（自動帶入該場全部指定遊戲，每款一個欄位）；**可逐款儲存，不要求全部填完**；拿掉「補寫心得」按鈕。
+- **遊戲視窗「討論」**：拿掉視窗裡的發表框，留留言列表＋按鈕；沒玩過也沒評分過的遊戲資料庫本來就不讓留言，所以「前往留言板」只是去看這款留言（用留言板搜尋框預填遊戲名稱）；已玩的遊戲加第二顆「前往我的心得」，直接帶該款遊戲開心得畫面。
+- **俱樂部**：「我的心得」＋「留言板」合併成「心得留言」（統一表單＋自己寫過的清單，可依聚會篩選）；「我的場次」仍是入口之一。
+- **留言板移位**：一般 VIP 的「大家的留言」移到集點聚會第三分頁（分頁順序「集點卡｜未來聚會｜留言板」）；**管理者沒有集點聚會頁，所以在俱樂部保留留言板（隱藏不當留言的入口）**；非 VIP 登入者本來就看不到內容，失去入口沒關係。
+- **紅點分級**：導覽列「集點聚會」紅色數字只算重要的事（新的未來聚會、被移除的指定遊戲，即現有 `useLoyaltyAlerts` 與 `planned.unseenCount`）；新留言不計入導覽列，改成留言板分頁標籤自己的灰褐色小數字；有新的未來聚會時預設開「未來聚會」分頁並用紅色；導覽列要不要加無數字灰點未決定（使用者決定的是「分級」，沒有加灰點）。新留言數需要**新增一個小資料庫函式**（類似 `get_errata_unseen_count`，已讀記在 `localStorage`，第一次使用現有留言全當已看過；不算自己的留言）。
+- **分批（每批測完再做下一批）**：**A**＝遊戲視窗按鈕、我的場次卡片、直接填寫心得（不動資料庫）；**B**＝統一表單、聚會關聯、互相複製（優先沿用）、俱樂部合併；**C**＝留言板移到集點聚會第三分頁、紅點分級、管理者入口（只新增必要函式）。
+- **注意**：①A 批的跳轉要避免 `d5be8c0` 修過的「被強制回首頁」；②`NotePointsFields` 切換資料來源要用 `key` 重新掛載（第 19 節）；③`gathering_notes` 兩欄（喜歡／不喜歡的點）與「複製到公開／私人」只複製心得文字的規則仍成立；④`AddPlayLog` 的「同時發表到討論」要與新表單一致，B 批要決定保留或併入（未決）；⑤改 `get_public_gathering_notes` 等函式前先請使用者匯出定義；⑥使用者的聚會心得公開提醒（第 23.3）要在新表單保留。
+
+### 28.5 下一個 AI 要避開的陷阱（補）
+67 覆蓋檔案後用 `(Get-Item).Length` 確認不是空檔；68 `GameModal.tsx` 曾是舊版，動它前請使用者上傳目前版本並 `git diff`；69 跳轉到俱樂部子畫面要查 `view` 初始值與 `useBackClose`（`d5be8c0`）；70 新增待審類型要同步 `admin_pending_count()`；71 留言（`game_notes`）、聚會公開欄、`user_game_status.note` 是三個不同儲存位置，統一表單只合併畫面，不要把它們合併成同一筆資料；72 `ErrataBoard.tsx`、`get_play_totals` 一類沒人用的檔案刪除前先掃引用。
