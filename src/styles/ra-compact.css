@@ -1,0 +1,180 @@
+/* 規則助手：精簡版面（搜尋列、狀態列、縮小搜尋範圍抽屜、結果卡片） */
+.ra2 .ra2-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: #34463c;
+}
+.ra2 .ra2-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.ra2 .ra2-row input.ra2-input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #d8cdb4;
+  border-radius: 10px;
+  background: #fff;
+  color: #34463c;
+  font-size: 16px;
+}
+.ra2 .ra2-row button.ra2-go {
+  flex: none;
+  min-width: 76px;
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #456b50;
+  color: #fbf7ec;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ra2 .ra2-row button.ra2-go:disabled {
+  opacity: 0.6;
+}
+.ra2 .ra2-small {
+  margin: 6px 0;
+  font-size: 12px;
+  color: #6d6a5c;
+}
+.ra2 .ra2-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+  margin: 8px 0 4px;
+  font-size: 13px;
+  color: #5b6a60;
+}
+.ra2 .ra2-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ra2 .ra2-pill {
+  padding: 6px 12px;
+  border: 1px solid #456b50;
+  border-radius: 999px;
+  background: transparent;
+  color: #365b40;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ra2 .ra2-ocr {
+  margin: 4px 0 2px;
+  font-size: 12px;
+  color: #8a6a3c;
+}
+.ra2 .ra2-list {
+  margin: 4px 0 8px;
+  padding: 0;
+  list-style: none;
+}
+.ra2 .ra2-list > li {
+  padding: 12px 2px 10px;
+  border-bottom: 1px solid #e3d9c4;
+}
+.ra2 .ra2-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+}
+.ra2 .ra2-page {
+  font-size: 15px;
+  font-weight: 700;
+  color: #365b40;
+}
+.ra2 .ra2-doc {
+  font-size: 12px;
+  color: #7a7766;
+}
+.ra2 .ra2-text {
+  margin: 6px 0 4px;
+  line-height: 1.7;
+  white-space: pre-line;
+  color: #34463c;
+}
+.ra2 .ra2-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.ra2 .ra2-link {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #456b50;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ra2-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1270;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(30, 40, 34, 0.45);
+}
+@media (max-width: 760px) {
+  .ra2-backdrop {
+    bottom: var(--nav-h, 0px);
+  }
+}
+.ra2-sheet {
+  width: 100%;
+  max-width: 640px;
+  max-height: 80%;
+  margin: 0 auto;
+  padding: 14px 16px 18px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  border-radius: 16px 16px 0 0;
+  background: #fbf7ec;
+  color: #34463c;
+}
+.ra2-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 16px;
+}
+.ra2-sheet .ra2-x {
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  color: #34463c;
+  font-size: 18px;
+  cursor: pointer;
+}
+.ra2-sheet .ra2-sec {
+  margin-top: 12px;
+}
+.ra2-sheet .ra2-sec-title {
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #6d6a5c;
+}
+.ra2-sheet .ra2-set summary {
+  cursor: pointer;
+  padding: 6px 0;
+  font-size: 14px;
+}
+.ra2-sheet .ra2-set-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 8px 0;
+}

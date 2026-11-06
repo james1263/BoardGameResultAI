@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import {
     getRulebookRemaining,
     searchRulebook,
@@ -17,7 +18,9 @@ import { useIsAdmin } from '../lib/useIsAdmin'
 import { scopeLabel } from '../lib/docLabels'
 import { cleanOcrText } from '../lib/cleanOcrText'
 import { useHotKeywords } from '../lib/useRuleSearchStats'
+import { useBackClose } from '../lib/useBackClose'
 import '../styles/errata.css'
+import '../styles/ra-compact.css'
 
 type ScopedChunk = RulebookChunk & { doc_scope?: string; doc_expansion?: string }
 function chunkScope(c: RulebookChunk): string {
@@ -326,7 +329,6 @@ function pickSnippet(text: string, terms: string[]): { text: string; partial: bo
 export default function RulebookAssistant({
     bggName,
     gameName,
-    onGoSubmit,
 }: {
     bggName: string
     gameName: string
@@ -355,11 +357,15 @@ export default function RulebookAssistant({
     const [fbBusy, setFbBusy] = useState(false)
     const [fbErr, setFbErr] = useState('')
     const [fbSent, setFbSent] = useState(false)
+    const [fbShown, setFbShown] = useState(false)
+    const [langFilter, setLangFilter] = useState<'all' | 'zh' | 'en'>('all')
+    const [drawerOpen, setDrawerOpen] = useState(false)
     const fbRef = useRef<HTMLDivElement | null>(null)
     const zhChips = useMemo(() => {
         const chips = zhChipsFor(fullQuery)
         return chips.length === 1 && chips[0] === fullQuery ? [] : chips
     }, [fullQuery])
+    useBackClose(() => setDrawerOpen(false), drawerOpen)
     const parsed = useMemo(
         () => (fb && fbText.trim() ? parseFeedback(fbText, fb) : null),
         [fb, fbText],
@@ -399,6 +405,8 @@ export default function RulebookAssistant({
     async function run(rawQuery: string, label: string) {
         setError('')
         setNotice('')
+        setFbShown(false)
+        setLangFilter('all')
         const q = prepareQuery(rawQuery)
         if (!q) {
             setError('請先輸入要查的內容。')
@@ -434,7 +442,7 @@ export default function RulebookAssistant({
         if (result.chunks.length === 0) {
             setNotice(
                 suggestions.length > 0
-                    ? '沒有找到相關段落，換個說法或點下方的英文關鍵字試試（這次不會扣次數）。'
+                    ? '沒有找到相關段落，換個說法，或到「縮小搜尋範圍」點英文關鍵字試試（這次不會扣次數）。'
                     : '沒有找到相關段落，換個說法試試；中文詞找不到時，請直接輸入英文關鍵字（這次不會扣次數）。',
             )
         }
@@ -518,6 +526,7 @@ ${parts}${errataText}
             const ctx: FeedbackCtx = { code: fbCode, pages: fbPages, ts: Date.now() }
             saveFeedbackCtx(bggName, ctx)
             setFb(ctx)
+            setFbShown(true)
             setFbSent(false)
             setFbText('')
             setFbVerified(false)
@@ -564,78 +573,182 @@ ${parts}${errataText}
     function dismissFeedback() {
         clearFeedbackCtx(bggName)
         setFb(null)
+        setFbShown(false)
         setFbText('')
         setFbErr('')
     }
 
-    // 搜尋之後才出現：「全部」＝整句（中文結果排前面）；中文詞與英文詞各自只搜那一個詞
     const chipStyle = (word: string) =>
         activeLabel === word ? { background: '#456B50', color: '#fff' } : undefined
-    const chipsBlock =
-        activeLabel !== '' && (zhChips.length > 0 || suggestions.length > 0) ? (
-            <div className="ra-suggest">
-                <span className="ra-suggest-title">
-                    想縮小範圍？點一個詞只搜它；點「全部」回到整句搜尋（中文規則書的結果排前面）
-                </span>
-                <div className="ra-chips">
-                    <button
-                        type="button"
-                        className="ra-chip"
-                        disabled={busy}
-                        aria-pressed={activeLabel === '全部輸入內容'}
-                        style={chipStyle('全部輸入內容')}
-                        onClick={handleSearch}
-                    >
-                        全部
-                    </button>
-                </div>
-                {zhChips.length > 0 && (
-                    <div className="ra-chips">
-                        <span style={{ fontSize: 12, opacity: 0.75, alignSelf: 'center' }}>中文</span>
-                        {zhChips.map((word) => (
-                            <button
-                                key={`zh-${word}`}
-                                type="button"
-                                className="ra-chip"
-                                disabled={busy}
-                                aria-pressed={activeLabel === word}
-                                style={chipStyle(word)}
-                                onClick={() => handleChip(word)}
-                            >
-                                {word}
-                            </button>
-                        ))}
-                    </div>
-                )}
-                {suggestions.length > 0 && (
-                    <div className="ra-chips">
-                        <span style={{ fontSize: 12, opacity: 0.75, alignSelf: 'center' }}>英文</span>
-                        {suggestions.map((word) => (
-                            <button
-                                key={`en-${word}`}
-                                type="button"
-                                className="ra-chip"
-                                disabled={busy}
-                                aria-pressed={activeLabel === word}
-                                style={chipStyle(word)}
-                                onClick={() => handleChip(word)}
-                            >
-                                {word}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-        ) : null
+    const allChunks = chunks ?? []
+    const hasChunks = allChunks.length > 0
+    const visible = allChunks
+        .map((c, i) => ({ c, i }))
+        .filter(({ c }) => langFilter === 'all' || c.doc_lang === langFilter)
+    const zhCount = allChunks.filter((c) => c.doc_lang === 'zh').length
+    const enCount = allChunks.filter((c) => c.doc_lang === 'en').length
+    const hasZhVisible = visible.some(({ c }) => c.doc_lang === 'zh')
+    const keyOf = (c: RulebookChunk, i: number) => `${c.doc_id}-${c.page_number}-${i}`
+    const visibleKeys = visible.map(({ c, i }) => keyOf(c, i))
+    const allOpen = visibleKeys.length > 0 && visibleKeys.every((k) => openSet.has(k))
+    const canNarrow = activeLabel !== ''
+
+    function pickChip(word: string) {
+        setDrawerOpen(false)
+        handleChip(word)
+    }
+
+    const drawer =
+        drawerOpen && typeof document !== 'undefined'
+            ? createPortal(
+                  <div className="ra2-backdrop" onClick={() => setDrawerOpen(false)}>
+                      <div
+                          className="ra2-sheet"
+                          role="dialog"
+                          aria-label="縮小搜尋範圍"
+                          onClick={(event) => event.stopPropagation()}
+                      >
+                          <div className="ra2-sheet-head">
+                              <strong>縮小搜尋範圍</strong>
+                              <button
+                                  type="button"
+                                  className="ra2-x"
+                                  aria-label="關閉"
+                                  onClick={() => setDrawerOpen(false)}
+                              >
+                                  ✕
+                              </button>
+                          </div>
+
+                          <div className="ra2-sec">
+                              <div className="ra2-sec-title">結果語言（只是篩選畫面，不扣次數）</div>
+                              <div className="ra-chips">
+                                  {(
+                                      [
+                                          ['all', `全部（${allChunks.length}）`],
+                                          ['zh', `中文（${zhCount}）`],
+                                          ['en', `英文（${enCount}）`],
+                                      ] as const
+                                  ).map(([key, label]) => (
+                                      <button
+                                          key={key}
+                                          type="button"
+                                          className="ra-chip"
+                                          aria-pressed={langFilter === key}
+                                          style={
+                                              langFilter === key
+                                                  ? { background: '#456B50', color: '#fff' }
+                                                  : undefined
+                                          }
+                                          onClick={() => setLangFilter(key)}
+                                      >
+                                          {label}
+                                      </button>
+                                  ))}
+                              </div>
+                          </div>
+
+                          <div className="ra2-sec">
+                              <div className="ra2-sec-title">
+                                  只搜某個關鍵字（會重新搜尋，找到結果才扣次數）
+                              </div>
+                              <div className="ra-chips">
+                                  <button
+                                      type="button"
+                                      className="ra-chip"
+                                      disabled={busy}
+                                      aria-pressed={activeLabel === '全部輸入內容'}
+                                      style={chipStyle('全部輸入內容')}
+                                      onClick={() => {
+                                          setDrawerOpen(false)
+                                          handleSearch()
+                                      }}
+                                  >
+                                      整句（預設）
+                                  </button>
+                                  {zhChips.map((word) => (
+                                      <button
+                                          key={`zh-${word}`}
+                                          type="button"
+                                          className="ra-chip"
+                                          disabled={busy}
+                                          aria-pressed={activeLabel === word}
+                                          style={chipStyle(word)}
+                                          onClick={() => pickChip(word)}
+                                      >
+                                          {word}
+                                      </button>
+                                  ))}
+                                  {suggestions.map((word) => (
+                                      <button
+                                          key={`en-${word}`}
+                                          type="button"
+                                          className="ra-chip"
+                                          disabled={busy}
+                                          aria-pressed={activeLabel === word}
+                                          style={chipStyle(word)}
+                                          onClick={() => pickChip(word)}
+                                      >
+                                          {word}
+                                      </button>
+                                  ))}
+                              </div>
+                          </div>
+
+                          <details className="ra2-sec ra2-set">
+                              <summary>⚙ 顯示設定</summary>
+                              {allChunks.some((c) => cleanFor(c.doc_lang, c.content) !== c.content) && (
+                                  <button
+                                      className="ra-btn ra-btn-small"
+                                      type="button"
+                                      aria-pressed={showRaw}
+                                      onClick={() => setShowRaw((v) => !v)}
+                                  >
+                                      {showRaw ? '隱藏亂碼（顯示整理後文字）' : '顯示原始 OCR 文字'}
+                                  </button>
+                              )}
+                              <div className="ra2-set-row">
+                                  <span style={{ fontSize: 13 }}>字體</span>
+                                  {(['normal', 'large', 'xl'] as FontSize[]).map((size) => (
+                                      <button
+                                          key={size}
+                                          type="button"
+                                          className="ra-btn ra-btn-small"
+                                          aria-pressed={fontSize === size}
+                                          style={
+                                              fontSize === size
+                                                  ? { background: '#456B50', color: '#fff' }
+                                                  : undefined
+                                          }
+                                          onClick={() => changeFont(size)}
+                                      >
+                                          {FONT_LABEL[size]}
+                                      </button>
+                                  ))}
+                                  <button
+                                      type="button"
+                                      className="ra-btn ra-btn-small"
+                                      onClick={() => setOpenSet(allOpen ? new Set() : new Set(visibleKeys))}
+                                  >
+                                      {allOpen ? '全部收合' : '全部展開'}
+                                  </button>
+                              </div>
+                          </details>
+                      </div>
+                  </div>,
+                  document.body,
+              )
+            : null
 
     return (
-        <div className="ra">
-            <label className="ra-field">
-                <span>
-                    搜尋規則書
-                    <InfoHint text="可輸入中文或英文。中文會比對中文規則書，英文比對英文規則書；中文問題若有內建對照的英文詞，會在下方列出，點一下就搜尋。這是規則書段落檢索，不是 AI 回答。" />
-                </span>
+        <div className="ra ra2">
+            <div className="ra2-label">
+                搜尋規則書
+                <InfoHint text="可輸入中文或英文。中文會比對中文規則書，英文比對英文規則書；中文問題若有內建對照的英文詞，可在「縮小搜尋範圍」裡點一下只搜它。這是規則書段落檢索，不是 AI 回答。" />
+            </div>
+            <div className="ra2-row">
                 <input
+                    className="ra2-input"
                     type="text"
                     value={query}
                     maxLength={200}
@@ -647,6 +760,8 @@ ${parts}${errataText}
                             setChunks(null)
                             setErrata([])
                             setActiveLabel('')
+                            setFbShown(false)
+                            setLangFilter('all')
                             setNotice('')
                             setError('')
                         }
@@ -656,32 +771,19 @@ ${parts}${errataText}
                     }}
                     placeholder="例如：行動、結算、計分"
                 />
-            </label>
+                <button className="ra2-go" type="button" disabled={busy} onClick={handleSearch}>
+                    {busy ? '搜尋中…' : '搜尋'}
+                </button>
+            </div>
 
-            <button
-                className="ra-btn ra-btn-main"
-                type="button"
-                disabled={busy}
-                onClick={handleSearch}
-            >
-                {busy ? '搜尋中…' : '搜尋'}
-            </button>
-
-            {remaining !== undefined && remaining !== null && (
-                <p className="ra-remaining">今天還剩 {remaining} 次（找到結果才扣）</p>
-            )}
-            {onGoSubmit && !isAdmin && (
-                <p className="ra-remaining">
-                    <button type="button" className="admin-link" onClick={onGoSubmit}>
-                        發現玩錯的規則？到「玩錯紀錄・投稿」分頁分享
-                    </button>
-                </p>
+            {activeLabel === '' && remaining !== undefined && remaining !== null && (
+                <p className="ra2-small">今天還剩 {remaining} 次（找到結果才扣）</p>
             )}
 
             {chunks === null && activeLabel === '' && !busy && hot.loaded && (
-                <div style={{ margin: '14px 0' }}>
+                <div style={{ margin: '10px 0' }}>
                     <p style={{ fontWeight: 700, margin: '0 0 2px' }}>大家最近常查</p>
-                    <p style={{ fontSize: 12, opacity: 0.75, margin: '0 0 6px' }}>
+                    <p style={{ fontSize: 12, opacity: 0.75, margin: '0 0 4px' }}>
                         最近 30 天，點一下直接搜尋
                     </p>
                     {hot.items.length === 0 ? (
@@ -697,7 +799,7 @@ ${parts}${errataText}
                                             display: 'flex',
                                             width: '100%',
                                             gap: 10,
-                                            padding: '9px 0',
+                                            padding: '7px 0',
                                             border: 0,
                                             borderBottom: '1px solid #e3d9c4',
                                             background: 'transparent',
@@ -720,23 +822,34 @@ ${parts}${errataText}
                 </div>
             )}
 
-            {error && <p className="ra-error">{error}</p>}
-            {notice && <p className="ra-notice">{notice}</p>}
-            {!(chunks && chunks.length > 0) && chipsBlock}
-
-            {chunks && chunks.length > 0 && (
-                <button
-                    className="ra-btn"
-                    type="button"
-                    onClick={copyAnswerPrompt}
-                    style={{ margin: '10px 0' }}
-                >
-                    複製給我的 AI（含問題、片段與回答規範）
-                </button>
+            {canNarrow && (
+                <div className="ra2-status">
+                    <span>
+                        {chunks === null
+                            ? '搜尋中…'
+                            : langFilter === 'all'
+                              ? `找到 ${allChunks.length} 段`
+                              : `顯示 ${visible.length} / ${allChunks.length} 段`}
+                        {remaining !== undefined && remaining !== null ? `・今天剩 ${remaining} 次` : ''}
+                    </span>
+                    <span className="ra2-tools">
+                        <button type="button" className="ra2-pill" onClick={() => setDrawerOpen(true)}>
+                            縮小搜尋範圍 ▾
+                        </button>
+                        {hasChunks && (
+                            <button type="button" className="ra2-pill" onClick={copyAnswerPrompt}>
+                                複製給我的 AI
+                            </button>
+                        )}
+                    </span>
+                </div>
             )}
 
-            {fb && !isAdmin && (
-                <div className="er-box" ref={fbRef} style={{ margin: '12px 0' }}>
+            {error && <p className="ra-error">{error}</p>}
+            {notice && <p className="ra-notice">{notice}</p>}
+
+            {fb && fbShown && !isAdmin && (
+                <div className="er-box" ref={fbRef} style={{ margin: '10px 0' }}>
                     <p className="er-box-title">AI 回饋投稿</p>
                     {fbSent ? (
                         <p className="er-note">已送出，管理者審核通過後才會公開。謝謝你分享！</p>
@@ -788,105 +901,46 @@ ${parts}${errataText}
                 </div>
             )}
 
-            {errata.length > 0 && (
-                <div className="er-box">
-                    <p className="er-box-title">
-                        玩錯紀錄・AI 回饋（管理者記錄或玩家整理・已審核，非官方規則）・{errata.length} 筆
-                    </p>
-                    <ul className="er-list">
-                        {errata.map((e) => (
-                            <li key={e.id}>
-                                <div className="er-title">
-                                    {e.title}
-                                    {e.from_player && (
-                                        <small className="er-src"> ・{errataTag(e)}</small>
-                                    )}
-                                </div>
-                                <p className="er-body">{e.content}</p>
-                                {e.page_ref && (
-                                    <small className="er-src">參考頁碼：{e.page_ref}　</small>
-                                )}
-                                {e.source_note && (
-                                    <small className="er-src">來源：{e.source_note}</small>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+            {hasChunks && hasZhVisible && (
+                <p className="ra2-ocr">中文結果是 OCR 辨識文字，可能有錯字，請回原頁面核對。</p>
             )}
 
-            {chunks && chunks.length > 0 && (
-                <>
-                    <p className="ra-notice">
-                        搜尋：{activeLabel}・{chunks.length} 段
-                    </p>
-                    {chipsBlock}
-                    <details style={{ margin: '8px 0' }}>
-                    <summary style={{ cursor: 'pointer', padding: '6px 0' }}>⚙ 顯示設定</summary>
-                    {chunks.some((c) => cleanFor(c.doc_lang, c.content) !== c.content) && (
-                        <button
-                            className="ra-btn ra-btn-small"
-                            type="button"
-                            aria-pressed={showRaw}
-                            onClick={() => setShowRaw((v) => !v)}
-                        >
-                            {showRaw ? '隱藏亂碼（顯示整理後文字）' : '顯示原始 OCR 文字'}
-                        </button>
-                    )}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', margin: '8px 0' }}>
-                        <span style={{ fontSize: 13 }}>字體</span>
-                        {(['normal', 'large', 'xl'] as FontSize[]).map((size) => (
-                            <button
-                                key={size}
-                                type="button"
-                                className="ra-btn ra-btn-small"
-                                aria-pressed={fontSize === size}
-                                style={fontSize === size ? { background: '#456B50', color: '#fff' } : undefined}
-                                onClick={() => changeFont(size)}
-                            >
-                                {FONT_LABEL[size]}
-                            </button>
-                        ))}
-                        <button
-                            type="button"
-                            className="ra-btn ra-btn-small"
-                            onClick={() => {
-                                const keys = chunks.map((c, i) => `${c.doc_id}-${c.page_number}-${i}`)
-                                setOpenSet(keys.every((k) => openSet.has(k)) ? new Set() : new Set(keys))
-                            }}
-                        >
-                            {chunks.every((c, i) => openSet.has(`${c.doc_id}-${c.page_number}-${i}`))
-                                ? '全部收合'
-                                : '全部展開'}
-                        </button>
-                    </div>
-                    </details>
-                    <ul className="ra-results">
-                        {chunks.map((c, i) => {
-                            const isZh = c.doc_lang === 'zh'
-                            const translateHref = buildTranslateUrl(c.content)
-                            const rowKey = `${c.doc_id}-${c.page_number}-${i}`
-                            const isOpen = openSet.has(rowKey)
-                            const fullText = showRaw ? c.content : cleanFor(c.doc_lang, c.content)
-                            const snip = pickSnippet(fullText, searchTerms)
-                            const shown = isOpen || !snip.partial ? fullText : snip.text
-                            const canTranslate =
-                                !isZh && translateHref.length <= TRANSLATE_URL_LIMIT
-                            return (
-                                <li key={`${c.doc_id}-${c.page_number}-${i}`}>
-                                    <div className="ra-source">
+            {hasChunks && visible.length === 0 && (
+                <p className="ra-notice">這個語言沒有結果，請到「縮小搜尋範圍」改回全部。</p>
+            )}
+
+            {visible.length > 0 && (
+                <ul className="ra2-list">
+                    {visible.map(({ c, i }) => {
+                        const isZh = c.doc_lang === 'zh'
+                        const translateHref = buildTranslateUrl(c.content)
+                        const rowKey = keyOf(c, i)
+                        const isOpen = openSet.has(rowKey)
+                        const fullText = showRaw ? c.content : cleanFor(c.doc_lang, c.content)
+                        const snip = pickSnippet(fullText, searchTerms)
+                        const shown = isOpen || !snip.partial ? fullText : snip.text
+                        const canTranslate = !isZh && translateHref.length <= TRANSLATE_URL_LIMIT
+                        return (
+                            <li key={rowKey}>
+                                <div className="ra2-head">
+                                    <span className="ra2-page">
+                                        {c.page_number ? `第 ${c.page_number} 頁` : '頁碼不明'}
+                                    </span>
+                                    <span className="ra2-doc">
                                         {c.doc_title || '規則書'}（{langTag(c.doc_lang)}）【{chunkScope(c)}】
-                                        {c.page_number ? `・第 ${c.page_number} 頁` : ''}
-                                    </div>
-                                    <p
-                                        lang={isZh ? 'zh-Hant' : 'en'}
-                                        style={{ fontSize: FONT_PX[fontSize], lineHeight: 1.7, whiteSpace: 'pre-line' }}
-                                    >
-                                        {highlight(shown, searchTerms)}
-                                    </p>
+                                    </span>
+                                </div>
+                                <p
+                                    className="ra2-text"
+                                    lang={isZh ? 'zh-Hant' : 'en'}
+                                    style={{ fontSize: FONT_PX[fontSize] }}
+                                >
+                                    {highlight(shown, searchTerms)}
+                                </p>
+                                <div className="ra2-actions">
                                     {snip.partial && (
                                         <button
-                                            className="ra-btn ra-btn-small"
+                                            className="ra2-link"
                                             type="button"
                                             aria-expanded={isOpen}
                                             onClick={() =>
@@ -901,42 +955,57 @@ ${parts}${errataText}
                                             {isOpen ? '收合 ▴' : '看完整段落 ▾'}
                                         </button>
                                     )}
-                                    <div className="ra-actions">
-                                        {isZh ? (
-                                            <span className="ra-actions-note">
-                                                這是 OCR 辨識文字，可能有錯字，請回原頁面核對。
-                                            </span>
-                                        ) : canTranslate ? (
-                                            <a
-                                                className="ra-btn ra-btn-small"
-                                                href={translateHref}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                翻譯成繁體中文
-                                            </a>
-                                        ) : (
-                                            <span className="ra-actions-note">
-                                                這段太長，無法帶入翻譯網頁，請改用「複製規則片段」。
-                                            </span>
-                                        )}
-                                        <button
-                                            className="ra-btn ra-btn-small"
-                                            type="button"
-                                            onClick={() => void copyChunk(c)}
+                                    {canTranslate && (
+                                        <a
+                                            className="ra2-link"
+                                            href={translateHref}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
                                         >
-                                            複製規則片段
-                                        </button>
-                                    </div>
-                                </li>
-                            )
-                        })}
-                    </ul>
-                    <p className="ra-notice">
-                        按「翻譯成繁體中文」會把這段文字傳到 Google 翻譯，請勿翻譯個人或機密內容。
-                    </p>
-                </>
+                                            翻譯成繁體中文
+                                        </a>
+                                    )}
+                                    <button className="ra2-link" type="button" onClick={() => void copyChunk(c)}>
+                                        複製規則片段
+                                    </button>
+                                </div>
+                                {!isZh && !canTranslate && (
+                                    <p className="ra2-small">這段太長，無法帶入翻譯網頁，請改用「複製規則片段」。</p>
+                                )}
+                            </li>
+                        )
+                    })}
+                </ul>
             )}
+
+            {errata.length > 0 && (
+                <div className="er-box">
+                    <p className="er-box-title">
+                        玩錯紀錄・AI 回饋（管理者記錄或玩家整理・已審核，非官方規則）・{errata.length} 筆
+                    </p>
+                    <ul className="er-list">
+                        {errata.map((e) => (
+                            <li key={e.id}>
+                                <div className="er-title">
+                                    {e.title}
+                                    {e.from_player && <small className="er-src"> ・{errataTag(e)}</small>}
+                                </div>
+                                <p className="er-body">{e.content}</p>
+                                {e.page_ref && <small className="er-src">參考頁碼：{e.page_ref}　</small>}
+                                {e.source_note && <small className="er-src">來源：{e.source_note}</small>}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {hasChunks && visible.some(({ c }) => c.doc_lang !== 'zh') && (
+                <p className="ra2-small">
+                    按「翻譯成繁體中文」會把這段文字傳到 Google 翻譯，請勿翻譯個人或機密內容。
+                </p>
+            )}
+
+            {drawer}
         </div>
     )
 }
