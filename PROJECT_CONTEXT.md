@@ -1,7 +1,9 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-11-06（已併入上一版 `生成後.md`；**最新增補在第 27 節（玩家 FAQ 階段 2 投稿與審核、待審清單修正與全部列表、管理者待審紅點、規則助手內投稿與 AI 好答案的設計），其次第 26、25 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
+> 最後更新：2026-11-06 夜（見下一行；以下為舊的）（已併入上一版 `生成後.md`；**最新增補在第 27 節（玩家 FAQ 階段 2 投稿與審核、待審清單修正與全部列表、管理者待審紅點、規則助手內投稿與 AI 好答案的設計），其次第 26、25 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
+
+> **2026-11-06 夜更新：最新增補在第 29 節（心得留言 A、B、C、B2 批、補日期、死程式清理、使用者決定與教訓），與前面衝突時以較大的節號為準；`生成後.md` 已重置。**
 
 > **2026-11-06 晚更新：最新增補在第 28 節（規則助手內投稿＋AI 回饋、我的投稿、規則助手單頁、「心得留言」統一方案），與前面衝突時以較大的節號為準；`生成後.md` 已重置。**
 
@@ -838,3 +840,71 @@
 
 ### 28.5 下一個 AI 要避開的陷阱（補）
 67 覆蓋檔案後用 `(Get-Item).Length` 確認不是空檔；68 `GameModal.tsx` 曾是舊版，動它前請使用者上傳目前版本並 `git diff`；69 跳轉到俱樂部子畫面要查 `view` 初始值與 `useBackClose`（`d5be8c0`）；70 新增待審類型要同步 `admin_pending_count()`；71 留言（`game_notes`）、聚會公開欄、`user_game_status.note` 是三個不同儲存位置，統一表單只合併畫面，不要把它們合併成同一筆資料；72 `ErrataBoard.tsx`、`get_play_totals` 一類沒人用的檔案刪除前先掃引用。
+
+## 29. 2026-11-06 夜增補（覆蓋前面衝突的敘述）
+
+- 現況與使用者決定見 `QUICKSTART.md` 2.13、第 6 節。本節併入上一版 `生成後.md` 全部內容（心得留言 A、B、C、B2 批、補日期、死程式清理 E、F）。**凡是我沒看到的細節都標［未驗證］。28.4「心得留言統一方案尚未動工」已過時：A、B、C、B2 都已做並 push，見下。**
+
+#### 29.1 狀態更新（覆蓋下面各小節裡的「未確認」）
+- **git**：origin/master 最新 **`ff53766`**（`(HEAD -> master, origin/master, origin/HEAD)`）。本節各批的 commit：A `8793eae`、B＋C `d252a7b`、B2 `574ebb1`、補日期 `64f1097`、E `318c341`、F `54ef56d`（移除 `writeMode`／`gatheringWrite`，`Select-String` 確認無殘留）、`ff53766`（刪除 `AddPlayLog.tsx`、`GameGatheringNotes.tsx`、`PersonalNote.tsx`、`ErrataBoard.tsx` 四個死檔；`useErrataUnseen.ts` 仍有人用、保留）。**下面 29.2～ 的「F 批尚未確認」「待做：刪四個死檔」已完成。**
+- **實測**：使用者 2026-11-06 夜說「測試結果先跳過，之後有問題再來用」，所以 B2、補日期、`get_notes_unseen_count`、灰褐色新留言數字都**未實測**（`npm.cmd run build` 通過，228 modules，只有 chunk 大於 500 kB 警告）。
+- 使用者上一句「照建議，另外要記得」被截斷的部分，使用者說是**多打的**，不用補。
+- 使用者此時在**家裡電腦**；決定「先做 C（網站收尾）再做 B（繁中 OCR）」，其中網站收尾的程式與文件已完成，測試先跳過。
+
+#### 29.2 A. 心得留言 A 批（`8793eae`，已 push）
+- 我的場次改成卡片：日期、人數、當天**全部指定遊戲**（有評分正常封面、沒評分淡色）、私人心得「已填寫／尚未填寫」徽章；遊戲視窗討論分頁加「前往留言板」「前往我的心得」。細節見 PROJECT_CONTEXT 28.4。
+
+#### 29.3 B＋C. 心得留言 B、C 批（`d252a7b`，已 push，**一次 push 算一次**）
+- **統一表單 `NoteForm.tsx`＋`note-form.css`**：留言（公開）／心得（私人）兩種，可互相複製（只複製到另一個編輯框、確認後才儲存）；存放位置：公開沒標聚會→`game_notes`（≤10 則）、公開標聚會→`gathering_notes.public_note`（同人同場同款一則，會提示「儲存後將更新原留言」）、私人標聚會→`gathering_notes.private_note`、私人沒標→`user_game_status.note`（整體心得，≤500 字）。
+- `MyNotes.tsx` 加 `composer` prop；`ClubBoard.tsx` 加 `embedded` prop。
+- **C：留言板移位**：一般 VIP（非管理者）的集點聚會頁分頁＝「集點卡｜未來聚會｜留言板」；俱樂部首頁「留言板」入口只剩管理者；**導覽列紅色數字只算新的未來聚會與被移除的指定遊戲，不含新留言**；留言板分頁標籤用灰褐色小數字（`#a89478`）；有新的未來聚會（且沒有集點卡通知、不是報到連結進來）預設開「未來聚會」分頁。
+- **資料庫（使用者已執行並驗證 `anon_exec = false`、`auth_exec = true`）**：`get_notes_unseen_count(p_since timestamptz)` → integer；`plpgsql stable security definer`、`search_path=''`；未登入丟 `not logged in`、`p_since` 為 null 或非 VIP／管理者回 0；數 `game_notes` ＋ `gathering_notes` 的公開、visible、非自己、`created_at > p_since`，排除垃圾桶與僅供參考遊戲。**函式要等實測才算確認欄位名稱沒錯（plpgsql 到執行時才檢查）。**
+- 前端新檔 `src/lib/useNotesUnseen.ts`（已讀時間記在 `localStorage` 鍵 `boardgame-seen-notes:<帳號id>`，第一次使用把現有留言全當已看過；每 120 秒與切回網站時重讀）；`App.tsx` 傳 `notesUnseen`、`onNotesSeen` 給 `MyList`。
+
+#### 29.4 C. 心得留言 B2 批（`574ebb1`，已 push；**AI 未看到 build 與實測結果，［未驗證］**）
+使用者看完 B／C 批截圖後提出改版，四個預設都「照建議」（見第 6 節）。**8 個檔案**：`src/MyList.tsx`、`src/App.tsx`、`src/components/NoteForm.tsx`（整份重寫）、`MyNotes.tsx`（整份重寫）、`ClubBoard.tsx`、`GameModal.tsx`、`MyGatherings.tsx`、新檔 `src/styles/note-form-b2.css`。
+- **單一入口**：遊戲視窗討論分頁只剩「寫心得／留言 ›」（`GameModal` 的 `onOpenBoard`／`onOpenMyNotes` 換成 `onOpenWrite`，`hideCompose` 沿用），按下去開到俱樂部「我的心得」寫作畫面並帶入當前遊戲（已玩、未玩都一樣）；`App.tsx` 的 `openClubViewFromGame` 改成 `openWriteNotes(bggName | null)`，`jumpView` 型別多 `write?: boolean`、`bggName` 可為 null。
+- **留言板**：「＋ 發表留言」不再就地開表單，改呼叫 `onWrite`→俱樂部寫作畫面（不帶遊戲）；`ClubBoard` 不再收 `personal`、`ratings`；**管理者在留言板清單多「隱藏」**（`admin_hide_gathering_note`），恢復仍在遊戲視窗討論分頁的「已隱藏的留言」。
+- **場次標籤（FB tag 式）**：`NoteForm` 的「關聯聚會」下拉選單改成 chips（單選、再點取消），只列我出席過、聚會日已到、當天指定遊戲包含這款的場次。
+- **我的場次**：點整張卡片→`MyNotes` 寫作畫面（`MyList.openWrite(null, gatheringId)`），上方顯示該場全部指定遊戲封面（`nf-covers`），點封面代入遊戲、場次標籤自動選好；卡片下方多小連結「聚會詳情（出席者）›」進原詳情頁（`MyGatherings` 新選填 prop `onWriteGathering`）。
+- **未玩的遊戲**：遊戲搜尋可選任何遊戲；沒玩過、沒評分過的遊戲「留言（公開）」分頁 🔒 停用（管理者例外），只能寫私人心得（**前端統一鎖，包含標場次時；資料庫對標場次的公開心得其實不檢查已玩，只對 `add_game_note` 檢查**）。心得（私人）分頁圖示由 🔒 改 📝。
+- **我的心得清單**：左封面右內容（沿用 `NoteListItem` 的 `thumb`、`badge`）；項目＝一般留言（`game`，每則一列）、聚會心得（`gathering`，私人＋公開兩欄合成一列，兩個標籤「留言」「心得」並列，兩種都有時展開看到 🔒 私人心得文字，刪除分「刪除留言」「刪除心得」）、整體心得（`overall`，來自 `personal.entries[].note`，原本不顯示）；篩選「全部／公開留言／私人心得／來自聚會」依 `pubText`／`privText`；「編輯」聚會心得與整體心得＝開寫作畫面並帶好遊戲與場次。頂端只剩一顆「＋ 寫心得／留言」（所以一排）；**「＋ 寫聚會心得」「＋ 新增遊玩紀錄」兩顆已拿掉**，`MyNotes` 不再收 `onOpenGathering`／`onOpenAddPlay`／`onOpenWriteGathering`。
+- **`MyList.tsx`**：新增 `writeReq` 狀態與 `openWrite(bggName, gatheringId)`（回首頁就清掉）、`onOpenWrite` prop（只給集點聚會頁的留言板跨抽屜用）；首頁「我的心得」副標改「寫心得／留言、我寫過的紀錄」。
+- **使用者說明的行為（不要當成 bug）**：①「我的場次」不會因為新增遊玩紀錄而增加——兩者是不同資料（場次＝管理者記錄你出席的聚會；遊玩紀錄＝某天玩了某款，算已玩次數、最近遊玩、總時數）；②隱藏留言的入口原本就在遊戲視窗討論分頁，不在留言板；③「寫這款的心得」與「寫心得／留言」只是有沒有帶遊戲進來的標籤差異，B2 已統一。
+
+#### 29.5 D. 「補日期」（`64f1097`，已 push；使用者貼 `git log` 確認 `(HEAD -> master, origin/master, origin/HEAD)`；**AI 未看到 build 與實測，［未驗證］**）
+- 位置：「我的統計 → 已玩」（想玩分頁同一顆按鈕）。3 個檔案：
+  - `PlayedGameRecord.tsx`：按鈕「紀錄與心得 ›」→「**補日期 ›**」；視窗只留累計次數＋`PlaySessions`，**整體心得 `PersonalNote` 與聚會心得 `GameGatheringNotes` 已拿掉**（心得統一在「我的心得」，這是 AI 預設、使用者回「照建議」）；`onOpenGathering` prop 已移除。
+  - `PlaySessions.tsx`：「＋ 記錄一次遊玩」→「**＋ 補一個日期**」；原本就有的可折疊清單改名「**所有已玩日期 N 筆（手動 x・自動 y）**」，預設收合，每筆可刪除；`useGamePlaySessions.ts` 沒動（`getSessions(bggName)` 本來就回全部日期）。
+  - `MyList.tsx`：不再傳 `onOpenGathering`；「−」按鈕提示改指向「補日期」。
+- 測試（未回報）：按鈕名稱、新增日期後累計次數 +1、「所有已玩日期」展開／刪除／「自動」標籤、想玩分頁也有按鈕。
+
+#### 29.6 E. 死程式清理（`318c341` 已 push：「清理死程式：移除補記遊玩畫面與沒人用的元件」；使用者貼 `git log` 確認 `(HEAD -> master, origin/master, origin/HEAD)`）
+- 交付新的 `src/MyList.tsx`：移除 `import AddPlayLog`、`View` 型別的 `'addplay'`、`useBackClose` 裡的 `addplay` 判斷與整段 `view === 'addplay'` 分支。
+- 使用者 `Select-String` 結果：`GameGatheringNotes`、`PersonalNote`、`ErrataBoard` 除了自己檔案外**沒有任何引用**；`AddPlayLog` 只剩 `MyList` 引用（套用新 `MyList.tsx` 後也沒有）。可刪檔案：`src\components\AddPlayLog.tsx`、`GameGatheringNotes.tsx`、`PersonalNote.tsx`、`ErrataBoard.tsx`；**刪之前先 build 通過，並用 `Select-String -Path src\styles\*.css` 看有沒有只給它們用的樣式（`ap-*` 等，不急著清）。**
+- **刻意沒動**：`MyGatherings` 的 `writeMode`、`MyList` 的 `gatheringWrite`／`gatheringWriteRef`（`MyGatherings` 我沒看過，要先請使用者上傳目前版本再決定）；`ErrataBoard` 相關的 `useErrataUnseen.ts` 仍有人用（導覽列紅點），不要刪。
+
+#### 29.7 F. `writeMode` 死分支清理（**AI 已交付兩個檔案；build 已通過但是否套用、push 未確認**）
+- 依據：`MyList` 的 `gatheringWrite` 全檔只有 `setGatheringWrite(false)`，從未設成 `true`，所以 `MyGatherings` 的 `writeMode` 永遠是 `false`（使用者上傳目前 `MyGatherings.tsx` 後確認）。
+- `MyList.tsx`：移除 `gatheringWrite` state、`gatheringWriteRef`、離開場次時重設的 `useEffect`；`useBackClose` 簡化成 `setView('home')`；不再傳 `writeMode`；`onBack` 一律回首頁。`useRef`／`useEffect` 仍有其他用處，`import` 不動。
+- `MyGatherings.tsx`：移除 `writeMode` prop、依 `writeMode` 過濾的邏輯、「選擇聚會寫心得」標題與提示、空狀態文字分支；`import { todayLocal }` 仍在用。
+- 行為不變：點整張卡片→「我的心得」寫作畫面（`onWriteGathering`）、「聚會詳情（出席者）›」小連結。
+- 待做：套用兩檔→build→`Select-String -Path src\*.tsx,src\components\*.tsx -Pattern "writeMode|gatheringWrite"` 應無結果→刪四個死檔（`AddPlayLog.tsx`、`GameGatheringNotes.tsx`、`PersonalNote.tsx`、`ErrataBoard.tsx`；`useErrataUnseen.ts` 不要刪）→再 build→push。
+
+#### 29.8 使用者決定與測試清單（原 `生成後.md` 第 6 節）
+
+- **使用者決定（2026-11-06）**：①拿掉「新增遊玩紀錄」按鈕（資料不刪）；②遊玩紀錄移到「我的統計 → 已玩」，按鈕叫「補日期」，不要補記遊玩視窗，已玩要能看所有日期（**已做**）；③未玩遊戲不能公開留言→留言選項上鎖（沒玩過不能解鎖）；④留言板加管理者隱藏；⑤清單／標籤照預設（見 C）；⑥「寫聚會心得」按鈕拿掉，改場次標籤；⑦我的場次點卡片進寫作畫面並顯示該場遊戲封面；⑧順序：C 批先做（已完成），其他測試最後一起測；⑨補日期視窗只留日期與次數、清死程式（使用者回「照建議」）。
+- **B2 測試清單（未回報）**：①遊戲視窗「寫心得／留言」表單自動展開並帶遊戲，關掉再開一致；②未玩遊戲「留言」🔒、私人心得可存；③同款有出席的場次，點標籤後舊內容自動帶入；④我的場次點卡片：上方封面可點、標籤自動選、「聚會詳情」能進；⑤我的心得清單標籤、編輯、刪除（兩種都有時分兩顆刪除鈕）；⑥管理者在留言板隱藏別人留言；⑦一般 VIP 在集點聚會留言板按「發表留言」跳到俱樂部寫作畫面；⑧手機版標籤 chips 與封面橫向捲動不擠；⑨未玩遊戲存私人整體心得後，是否影響「想玩／已玩」狀態（預期不影響，未驗證）。
+
+#### 29.9 教訓（補）
+
+- plpgsql 函式建立成功不代表能執行（`pp.user_id` 事故）：改完函式一定請使用者實測；欄位名稱先查 `information_schema.columns`。
+- 覆蓋檔案後，請使用者用 `Select-String` 確認新字串在檔案裡，並用 `(Get-Item).Length` 確認不是空檔，貼 `git status`。
+- 「找不到功能入口」先查程式是否依身分隱藏（投稿表單只給非管理者 VIP；隱藏留言鈕在遊戲視窗討論分頁），測玩家端要用另一個非管理者帳號。
+- 使用者額度會在工作中途用完、也會突然要離開；文件更新要同時存進 Projects 並交出。
+- 大改版前先用截圖與文字把決定列成清單、請使用者回「照建議」再動工，一次做完同一批的所有檔案，比一個一個改穩。
+- 使用者的訊息可能被截斷（「另外要記得」後面沒內容），先做完能做的、再問他補完。
+- 改使用者上傳的檔案時先確認行尾（這些檔案都是 CRLF），用 Python 唯一錨點取代並保留 CRLF。
+
+#### 29.10 下一個 AI 要避開的陷阱（補）
+73 plpgsql 函式建立成功不代表能執行，`get_notes_unseen_count` 的欄位名稱要等實測才算確認；74 B2 後寫作入口只有一個（俱樂部「我的心得」寫作畫面），遊戲視窗與留言板都只是跳轉，新增寫作入口前先看 `MyList.openWrite`；75 公開留言標聚會時是更新原留言（`gathering_notes.public_note`，同人同場同款一則），不是新增；76 前端統一鎖「未玩遊戲不能公開留言」，資料庫只對 `add_game_note` 檢查已玩，兩者不一致，不要以為資料庫也擋；77 「我的場次」不會因為新增遊玩紀錄而增加，兩者是不同資料；78 刪死檔前已掃過引用，之後再刪仍要先 `Select-String`。
