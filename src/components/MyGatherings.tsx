@@ -46,6 +46,7 @@ export default function MyGatherings({
   isAdmin,
   initialGatheringId,
   writeMode = false,
+  onWriteGathering,
   onBack,
   onClose,
   onOpenGame,
@@ -60,6 +61,8 @@ export default function MyGatherings({
   initialGatheringId?: string | null
   // 從「我的心得」進來：只列聚會日已到的場次，點一場直接到心得區
   writeMode?: boolean
+  // 點整張場次卡片：到「我的心得」寫這場的心得（有傳才會用；沒傳就進聚會詳情）
+  onWriteGathering?: (gatheringId: string) => void
   onBack: () => void
   onClose: () => void
   onOpenGame: (game: BoardGame) => void
@@ -254,6 +257,10 @@ export default function MyGatherings({
                                     type="button"
                                     className="mgc-card"
                                     onClick={() => {
+                                      if (onWriteGathering && canWrite) {
+                                        onWriteGathering(row.id)
+                                        return
+                                      }
                                       if (canWrite || writeMode) setScrollToNotes(true)
                                       setSelectedId(row.id)
                                     }}
@@ -317,6 +324,23 @@ export default function MyGatherings({
                                         : '聚會還沒到，當天之後才能寫心得 →'}
                                     </span>
                                   </button>
+                                  {onWriteGathering && canWrite && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedId(row.id)}
+                                      style={{
+                                        display: 'block',
+                                        margin: '4px 0 0 auto',
+                                        border: 'none',
+                                        background: 'none',
+                                        color: '#456b50',
+                                        fontSize: 13,
+                                        cursor: 'pointer',
+                                      }}
+                                    >
+                                      聚會詳情（出席者）›
+                                    </button>
+                                  )}
                                 </li>
                               )
                             })}

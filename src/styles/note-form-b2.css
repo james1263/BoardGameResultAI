@@ -1,0 +1,74 @@
+/* 心得留言 B2：場次標籤、我的場次封面、上鎖的公開留言 */
+.nf-tagbox,
+.nf-ctx {
+  margin: 10px 0;
+}
+.nf-taglabel {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #34463c;
+  text-align: left;
+}
+.nf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.nf-chip {
+  border: 1px solid #cdbf9f;
+  border-radius: 999px;
+  background: #fbf7ec;
+  color: #34463c;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.nf-chip.on {
+  border-color: #456b50;
+  background: #456b50;
+  color: #fff;
+}
+.nf-covers {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.nf-cover {
+  flex: 0 0 auto;
+  width: 84px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: #fbf7ec;
+  padding: 4px;
+  cursor: pointer;
+  color: #34463c;
+}
+.nf-cover.on {
+  border-color: #456b50;
+  background: #e3ead9;
+}
+.nf-cover-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.nf-cover-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.nf-cover-name {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.3;
+  max-height: 2.6em;
+  overflow: hidden;
+}
+.nf-tab.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

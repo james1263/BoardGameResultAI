@@ -1,16 +1,13 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
-import {
-  saveGatheringNote,
-  useAllMyNotes,
-} from '../lib/useGatheringNotes'
+import { saveGatheringNote, useAllMyNotes } from '../lib/useGatheringNotes'
 import { useMyGatherings } from '../lib/useMyGatherings'
 import { supabase } from '../lib/supabase'
 import NoteListItem from './NoteListItem'
 import NotePointsFields from './NotePointsFields'
 import '../styles/my-notes.css'
 import { askConfirm } from '../lib/askConfirm'
-import NoteForm from './NoteForm'
+import NoteForm, { type NoteKind } from './NoteForm'
 import type { PersonalApi } from '../lib/personalApi'
 import type { RatingsApi } from '../lib/useGameRatings'
 
@@ -29,18 +26,20 @@ type GameNoteRow = {
 
 type Filter = 'all' | 'public' | 'private' | 'gathering'
 
-// game：遊戲公開留言；gpublic／gprivate：場次心得的公開欄／私人欄（各自一張卡）
+// game：遊戲公開留言（沒標場次）；gathering：某場聚會的心得（私人＋公開兩欄合成一列）；
+// overall：這款的整體心得（沒標場次的私人心得）
 type Item = {
   key: string
-  kind: 'game' | 'gpublic' | 'gprivate'
+  kind: 'game' | 'gathering' | 'overall'
   bggName: string
   date: string // YYYY-MM-DD，沒有日期是空字串
-  content: string
+  pubText: string
+  privText: string
   hidden: boolean
   noteId?: string
   like?: string
   dislike?: string
-  likeCount?: number // 被按讚數（只有遊戲留言有）
+  likeCount?: number
   gatheringId?: string
   gatheringTitle?: string
 }
@@ -51,6 +50,8 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'private', label: '私人心得' },
   { id: 'gathering', label: '來自聚會' },
 ]
+
+type ComposeState = { game: string | null; gid: string | null; kind: NoteKind; nonce: number }
 
 function taipeiDate(iso: string): string {
   const time = new Date(iso)
@@ -95,28 +96,24 @@ function explain(message: string): string {
   return '操作失敗：' + message
 }
 
-// 俱樂部「我的心得」：我留下的公開留言、私人心得與聚會心得（只讀原紀錄，不另存副本）
+// 俱樂部「我的心得」：寫心得／留言的唯一入口，下面列出我寫過的留言與心得
 export default function MyNotes({
   boardGames,
   renderCover,
   onBack,
   onClose,
-  onOpenGathering,
-  onOpenAddPlay,
-  onOpenWriteGathering,
   focusGame = null,
+  writeRequest = null,
   composer,
 }: {
   boardGames: ListedGame[]
   renderCover: (game: BoardGame) => ReactNode
   onBack: () => void
   onClose: () => void
-  onOpenGathering: (gatheringId: string) => void
-  onOpenAddPlay: () => void
-  onOpenWriteGathering: () => void
-  // 從遊戲視窗「前往我的心得」進來：只看這一款（可按 × 取消）
+  // 從遊戲視窗進來：只看這一款（可按 × 取消）
   focusGame?: string | null
-  // 給了才會出現「＋ 寫心得／留言」（統一表單）
+  // 一進來就打開寫作畫面：帶遊戲（遊戲視窗）或帶場次（我的場次）
+  writeRequest?: { bggName: string | null; gatheringId: string | null } | null
   composer?: { personal: PersonalApi; ratings: RatingsApi; isAdmin: boolean; canPublic: boolean }
 }) {
   const gatheringNotes = useAllMyNotes()
@@ -131,13 +128,25 @@ export default function MyNotes({
   const [draftDislike, setDraftDislike] = useState('')
   const [message, setMessage] = useState('')
   const [focus, setFocus] = useState<string | null>(focusGame)
-  const [composeOpen, setComposeOpen] = useState(false)
+  const [compose, setCompose] = useState<ComposeState | null>(
+    writeRequest
+      ? {
+          game: writeRequest.bggName,
+          gid: writeRequest.gatheringId,
+          kind: 'private',
+          nonce: 0,
+        }
+      : null,
+  )
+  const topRef = useRef<HTMLDivElement | null>(null)
 
   const gameByName = useMemo(() => {
     const map = new Map<string, ListedGame>()
     for (const game of boardGames) map.set(game.bggName, game)
     return map
   }, [boardGames])
+
+  const personalEntries = composer?.personal.entries
 
   const items = useMemo(() => {
     const gatheringById = new Map(gatherings.rows.map((row) => [row.id, row]))
@@ -151,7 +160,8 @@ export default function MyNotes({
         kind: 'game',
         bggName: row.bgg_name,
         date: taipeiDate(row.created_at),
-        content: row.content ?? '',
+        pubText: row.content ?? '',
+        privText: '',
         hidden: row.status === 'hidden',
         noteId: row.id,
         like: row.like_point ?? '',
@@ -161,49 +171,55 @@ export default function MyNotes({
     }
 
     for (const row of gatheringNotes.rows) {
+      const pubText = row.publicNote.trim() !== '' ? row.publicNote : ''
+      const privText = row.privateNote.trim() !== '' ? row.privateNote : ''
+      if (!pubText && !privText) continue
       const gathering = gatheringById.get(row.gatheringId)
-      const base = {
+      list.push({
+        key: `gathering|${row.gatheringId}|${row.bggName}`,
+        kind: 'gathering',
         bggName: row.bggName,
         date: gathering?.gatheredOn ?? '',
         gatheringId: row.gatheringId,
         gatheringTitle: gathering?.title ?? '聚會',
-      }
-      if (row.privateNote.trim() !== '') {
+        pubText,
+        privText,
+        hidden: pubText !== '' && row.publicStatus === 'hidden',
+        like: row.likePoint,
+        dislike: row.dislikePoint,
+      })
+    }
+
+    if (personalEntries) {
+      for (const [bggName, entry] of Object.entries(personalEntries)) {
+        const note = (entry?.note ?? '').trim()
+        if (!note) continue
         list.push({
-          ...base,
-          key: `gprivate|${row.gatheringId}|${row.bggName}`,
-          kind: 'gprivate',
-          content: row.privateNote,
+          key: `overall|${bggName}`,
+          kind: 'overall',
+          bggName,
+          date: '',
+          pubText: '',
+          privText: entry?.note ?? '',
           hidden: false,
-        })
-      }
-      if (row.publicNote.trim() !== '') {
-        list.push({
-          ...base,
-          key: `gpublic|${row.gatheringId}|${row.bggName}`,
-          kind: 'gpublic',
-          content: row.publicNote,
-          hidden: row.publicStatus === 'hidden',
-          like: row.likePoint,
-          dislike: row.dislikePoint,
         })
       }
     }
 
-    // 日期新到舊；沒有日期的排最後
+    // 日期新到舊；沒有日期的（整體心得）排最後
     return list.sort((a, b) => {
       if (a.date === b.date) return 0
       if (!a.date) return 1
       if (!b.date) return -1
       return b.date.localeCompare(a.date)
     })
-  }, [gameNotes.rows, gatheringNotes.rows, gatherings.rows])
+  }, [gameNotes.rows, gatheringNotes.rows, gatherings.rows, personalEntries])
 
   const shown = useMemo(() => {
     const base = focus ? items.filter((i) => i.bggName === focus) : items
-    if (filter === 'public') return base.filter((i) => i.kind !== 'gprivate')
-    if (filter === 'private') return base.filter((i) => i.kind === 'gprivate')
-    if (filter === 'gathering') return base.filter((i) => i.kind !== 'game')
+    if (filter === 'public') return base.filter((i) => i.pubText !== '')
+    if (filter === 'private') return base.filter((i) => i.privText !== '')
+    if (filter === 'gathering') return base.filter((i) => i.kind === 'gathering')
     return base
   }, [items, filter, focus])
 
@@ -216,9 +232,14 @@ export default function MyNotes({
     gatherings.reload()
   }
 
-  async function removeItem(item: Item) {
+  function openCompose(next: Omit<ComposeState, 'nonce'>) {
+    setCompose((current) => ({ ...next, nonce: (current?.nonce ?? 0) + 1 }))
+    window.setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0)
+  }
+
+  async function removeItem(item: Item, part: 'pub' | 'priv') {
     const question =
-      item.kind === 'gprivate' ? '要刪除這則私人心得嗎？' : '要刪除這則公開留言嗎？刪除後無法復原。'
+      part === 'priv' ? '要刪除這則私人心得嗎？' : '要刪除這則公開留言嗎？刪除後無法復原。'
     if (!(await askConfirm(question))) return
     setBusyKey(item.key)
     setMessage('')
@@ -234,8 +255,18 @@ export default function MyNotes({
       return
     }
 
+    if (item.kind === 'overall') {
+      if (!composer?.personal.canEdit) {
+        setBusyKey(null)
+        setMessage('目前無法刪除，請稍後再試。')
+        return
+      }
+      composer.personal.updateEntry(item.bggName, { note: '' })
+      setBusyKey(null)
+      return
+    }
+
     // 場次心得：只清掉這一欄，另一欄原樣傳回；兩欄都空會整則刪除
-    // 刪公開欄時，喜歡／不喜歡的點一起清；刪私人欄時，公開欄與兩個點原樣傳回
     const row = gatheringNotes.rows.find(
       (r) => r.gatheringId === item.gatheringId && r.bggName === item.bggName,
     )
@@ -247,10 +278,10 @@ export default function MyNotes({
     const result = await saveGatheringNote(
       item.gatheringId,
       item.bggName,
-      item.kind === 'gprivate' ? '' : row.privateNote,
-      item.kind === 'gpublic' ? '' : row.publicNote,
-      item.kind === 'gpublic' ? '' : row.likePoint,
-      item.kind === 'gpublic' ? '' : row.dislikePoint,
+      part === 'priv' ? '' : row.privateNote,
+      part === 'pub' ? '' : row.publicNote,
+      part === 'pub' ? '' : row.likePoint,
+      part === 'pub' ? '' : row.dislikePoint,
     )
     setBusyKey(null)
     if (!result.ok) {
@@ -301,37 +332,37 @@ export default function MyNotes({
         </div>
 
         <div className="mylist-body">
-          <div className="mh-top">
+          <div className="mh-top" ref={topRef}>
             {composer && (
               <button
                 type="button"
                 className="mh-add"
-                aria-expanded={composeOpen}
-                onClick={() => setComposeOpen((value) => !value)}
+                aria-expanded={compose !== null}
+                onClick={() =>
+                  compose
+                    ? setCompose(null)
+                    : openCompose({ game: focus, gid: null, kind: 'private' })
+                }
               >
-                {focus ? '＋ 寫這款的心得' : '＋ 寫心得／留言'}
+                ＋ 寫心得／留言
               </button>
             )}
-            <button type="button" className="mh-add" onClick={onOpenWriteGathering}>
-              ＋ 寫聚會心得
-            </button>
-            <button type="button" className="mh-add" onClick={onOpenAddPlay}>
-              ＋ 新增遊玩紀錄
-            </button>
           </div>
 
-          {composer && composeOpen && (
+          {composer && compose && (
             <NoteForm
-              key={focus ?? ''}
+              key={`${compose.game ?? ''}|${compose.gid ?? ''}|${compose.nonce}`}
               games={boardGames}
               personal={composer.personal}
               ratings={composer.ratings}
               isAdmin={composer.isAdmin}
               canPublic={composer.canPublic}
-              initialGame={focus ? (gameByName.get(focus) ?? null) : null}
-              initialKind="private"
+              initialGame={compose.game ? (gameByName.get(compose.game) ?? null) : null}
+              initialGatheringId={compose.gid}
+              initialKind={compose.kind}
+              renderCover={renderCover}
               onSaved={reloadAll}
-              onCancel={() => setComposeOpen(false)}
+              onCancel={() => setCompose(null)}
             />
           )}
 
@@ -391,33 +422,41 @@ export default function MyNotes({
               {shown.length === 0 ? (
                 <p className="mylist-empty">
                   {items.length === 0
-                    ? '還沒有心得。'
+                    ? '還沒有心得。按上面的「寫心得／留言」開始寫。'
                     : focus && !items.some((i) => i.bggName === focus)
-                      ? '這款還沒有心得。可以用上面的「寫聚會心得」或「新增遊玩紀錄」來寫。'
+                      ? '這款還沒有心得。按上面的「寫心得／留言」來寫。'
                       : '這個分類還沒有內容。'}
                 </p>
               ) : (
                 <ul className="nl-list">
                   {shown.map((item) => {
                     const game = gameByName.get(item.bggName) ?? null
-                    const isPublic = item.kind !== 'gprivate'
                     const editing = editKey === item.key
                     const busy = busyKey === item.key
+                    const both = item.pubText !== '' && item.privText !== ''
+                    const primary = item.pubText !== '' ? item.pubText : item.privText
+                    const dateText =
+                      item.kind === 'overall'
+                        ? '整體心得'
+                        : item.date
+                          ? item.date.replace(/-/g, '/')
+                          : '日期不明'
                     return (
                       <NoteListItem
                         key={item.key}
                         name={`《${game?.name ?? item.bggName}》`}
-                        date={item.date ? item.date.replace(/-/g, '/') : '日期不明'}
+                        date={dateText}
                         badge={
-                          <span className={`mh-badge ${isPublic ? 'pub' : 'pri'}`}>
-                            {isPublic ? '公開留言' : '私人心得'}
-                          </span>
+                          <>
+                            {item.pubText !== '' && <span className="mh-badge pub">留言</span>}
+                            {item.privText !== '' && <span className="mh-badge pri">心得</span>}
+                          </>
                         }
                         thumb={game ? renderCover(game) : <span aria-hidden="true">🎲</span>}
-                        content={item.content}
+                        content={primary}
                         hideText={editing}
-                        like={item.like}
-                        dislike={item.dislike}
+                        like={item.pubText !== '' ? item.like : undefined}
+                        dislike={item.pubText !== '' ? item.dislike : undefined}
                         likeCount={
                           item.kind === 'game' && !item.hidden ? item.likeCount : undefined
                         }
@@ -469,12 +508,13 @@ export default function MyNotes({
                                 這則留言已被管理者隱藏，只有你和管理者看得到。
                               </p>
                             )}
+                            {both && (
+                              <p className="mh-source">🔒 私人心得：{item.privText}</p>
+                            )}
                             <p className="mh-source">
-                              {item.kind === 'game' && '發布於：遊戲詳細資料 → 討論'}
-                              {item.kind === 'gpublic' &&
-                                `發布於：遊戲討論（寫於聚會「${item.gatheringTitle}」）`}
-                              {item.kind === 'gprivate' &&
-                                `關聯場次：${item.gatheringTitle}`}
+                              {item.kind === 'game' && '一般留言（沒有標場次）'}
+                              {item.kind === 'gathering' && `🏷 場次：${item.gatheringTitle}`}
+                              {item.kind === 'overall' && '這款的整體心得（沒有標場次）'}
                             </p>
                             <div className="mh-actions">
                               {item.kind === 'game' ? (
@@ -484,7 +524,7 @@ export default function MyNotes({
                                   disabled={busy}
                                   onClick={() => {
                                     setMessage('')
-                                    setDraft(item.content)
+                                    setDraft(item.pubText)
                                     setDraftLike(item.like ?? '')
                                     setDraftDislike(item.dislike ?? '')
                                     setEditKey(item.key)
@@ -492,23 +532,41 @@ export default function MyNotes({
                                 >
                                   編輯
                                 </button>
-                              ) : (
+                              ) : composer ? (
                                 <button
                                   type="button"
                                   className="mh-link"
-                                  onClick={() => onOpenGathering(item.gatheringId ?? '')}
+                                  onClick={() =>
+                                    openCompose({
+                                      game: item.bggName,
+                                      gid: item.gatheringId ?? null,
+                                      kind: item.pubText !== '' ? 'public' : 'private',
+                                    })
+                                  }
                                 >
-                                  到這場聚會編輯 ›
+                                  編輯
+                                </button>
+                              ) : null}
+                              {item.pubText !== '' && (
+                                <button
+                                  type="button"
+                                  className="mh-link mh-danger"
+                                  disabled={busy}
+                                  onClick={() => void removeItem(item, 'pub')}
+                                >
+                                  {busy ? '處理中…' : both ? '刪除留言' : '刪除'}
                                 </button>
                               )}
-                              <button
-                                type="button"
-                                className="mh-link mh-danger"
-                                disabled={busy}
-                                onClick={() => void removeItem(item)}
-                              >
-                                {busy ? '處理中…' : '刪除'}
-                              </button>
+                              {item.privText !== '' && (
+                                <button
+                                  type="button"
+                                  className="mh-link mh-danger"
+                                  disabled={busy}
+                                  onClick={() => void removeItem(item, 'priv')}
+                                >
+                                  {busy ? '處理中…' : both ? '刪除心得' : '刪除'}
+                                </button>
+                              )}
                             </div>
                           </>
                         )}

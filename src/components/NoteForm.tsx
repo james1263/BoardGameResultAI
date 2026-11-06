@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { PersonalApi } from '../lib/personalApi'
 import type { RatingsApi } from '../lib/useGameRatings'
@@ -12,6 +12,7 @@ import { confirmPublicPost } from '../lib/publicNoteNotice'
 import NotePointsFields from './NotePointsFields'
 import PublicNoteHint from './PublicNoteHint'
 import '../styles/note-form.css'
+import '../styles/note-form-b2.css'
 
 type ListedGame = BoardGame & { removedAt?: string | null }
 export type NoteKind = 'public' | 'private'
@@ -29,12 +30,13 @@ function explainAdd(message: string): string {
   return '儲存失敗：' + message
 }
 
-// 統一表單：留言（公開）＝別人看得到；心得（私人）＝只有自己看得到。兩種都可以選填「關聯聚會」。
-// 存放位置（沿用現有的表）：
-//   公開、沒選聚會 → 遊戲留言（game_notes，新增一則）
-//   公開、選聚會   → 該場聚會的公開欄（同人同場同款只有一則，會更新原留言）
-//   私人、選聚會   → 該場聚會的私人欄
-//   私人、沒選聚會 → 我的整體心得（每款一則）
+// 統一表單：留言（公開）＝別人看得到；心得（私人）＝只有自己看得到。
+// 「這是哪一場？」場次標籤（選填，單選）。存放位置（沿用現有的表）：
+//   公開、沒選場次 → 遊戲留言（game_notes，新增一則）
+//   公開、選場次   → 該場聚會的公開欄（同人同場同款只有一則，會更新原留言）
+//   私人、選場次   → 該場聚會的私人欄
+//   私人、沒選場次 → 我的整體心得（每款一則）
+// 沒玩過、沒評分過的遊戲：只能寫私人心得，公開留言上鎖（管理者不受限）。
 export default function NoteForm({
   games,
   personal,
@@ -42,7 +44,9 @@ export default function NoteForm({
   isAdmin,
   canPublic,
   initialGame = null,
+  initialGatheringId = null,
   initialKind = 'private',
+  renderCover,
   onSaved,
   onCancel,
 }: {
@@ -52,28 +56,33 @@ export default function NoteForm({
   isAdmin: boolean
   canPublic: boolean
   initialGame?: ListedGame | null
+  // 從「我的場次」進來：上方列出這場玩過的遊戲封面，點封面代入遊戲，場次標籤自動選好
+  initialGatheringId?: string | null
   initialKind?: NoteKind
+  renderCover?: (game: BoardGame) => ReactNode
   onSaved: () => void
   onCancel?: () => void
 }) {
   const allNotes = useAllMyNotes()
   const gatherings = useMyGatherings()
   const gatheringGames = useMyGatheringGames()
+  const lockedGid = initialGatheringId
 
   const startGame = initialGame && !initialGame.removedAt ? initialGame : null
   const [pickSearch, setPickSearch] = useState('')
   const [picked, setPicked] = useState<ListedGame | null>(startGame)
-  const [kind, setKind] = useState<NoteKind>(canPublic ? initialKind : 'private')
-  const [gid, setGid] = useState('')
+  const [kindState, setKindState] = useState<NoteKind>(canPublic ? initialKind : 'private')
+  const [gid, setGid] = useState(startGame && lockedGid ? lockedGid : '')
   const [pub, setPub] = useState('')
   const [priv, setPriv] = useState(() =>
-    startGame ? (personal.getEntry(startGame.bggName).note ?? '') : '',
+    startGame && !lockedGid ? (personal.getEntry(startGame.bggName).note ?? '') : '',
   )
   const [like, setLike] = useState('')
   const [dislike, setDislike] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
+  const hydrated = useRef(false)
 
   const noteMap = useMemo(() => {
     const map = new Map<string, (typeof allNotes.rows)[number]>()
@@ -81,7 +90,26 @@ export default function NoteForm({
     return map
   }, [allNotes.rows])
 
-  // 可以寫的遊戲：管理者不限，其他人要已玩或評分過
+  // 沒玩過、沒評分過的遊戲不能公開留言（管理者例外）
+  const isPlayed = picked
+    ? personal.getEntry(picked.bggName).played || ratings.getMine(picked.bggName) !== null
+    : true
+  const publicLocked = canPublic && !!picked && !isAdmin && !isPlayed
+  const kind: NoteKind = publicLocked || !canPublic ? 'private' : kindState
+
+  // 一開始就帶著場次進來：等心得讀好再把那場的內容填進去（只做一次）
+  useEffect(() => {
+    if (hydrated.current) return
+    if (!picked || !gid || allNotes.loading) return
+    hydrated.current = true
+    const note = noteMap.get(`${gid}|${picked.bggName}`)
+    setPub(note?.publicNote ?? '')
+    setPriv(note?.privateNote ?? '')
+    setLike(note?.likePoint ?? '')
+    setDislike(note?.dislikePoint ?? '')
+  }, [picked, gid, allNotes.loading, noteMap])
+
+  // 可以選的遊戲：所有遊戲（沒玩過的只能寫私人心得）
   const matches = useMemo(() => {
     const query = normalize(pickSearch)
     if (!query) return []
@@ -89,15 +117,12 @@ export default function NoteForm({
       .filter(
         (game) =>
           !game.removedAt &&
-          (isAdmin ||
-            personal.getEntry(game.bggName).played ||
-            ratings.getMine(game.bggName) !== null) &&
           (normalize(game.name).includes(query) || normalize(game.bggName).includes(query)),
       )
       .slice(0, 8)
-  }, [games, pickSearch, isAdmin, personal, ratings])
+  }, [games, pickSearch])
 
-  // 關聯聚會：我出席過、聚會日已到、當天指定遊戲包含這款
+  // 場次標籤：我出席過、聚會日已到、當天指定遊戲包含這款
   const gatheringOptions = useMemo(() => {
     if (!picked) return []
     const today = todayLocal()
@@ -110,41 +135,56 @@ export default function NoteForm({
       .sort((a, b) => b.gatheredOn.localeCompare(a.gatheredOn))
   }, [picked, gatherings.rows, gatheringGames.games])
 
+  // 從我的場次進來時，上方的遊戲封面
+  const contextGathering = lockedGid ? (gatherings.rows.find((row) => row.id === lockedGid) ?? null) : null
+  const contextGames = useMemo(() => {
+    if (!lockedGid) return []
+    const names = gatheringGames.games.get(lockedGid) ?? []
+    return names
+      .map((name) => games.find((game) => game.bggName === name))
+      .filter((game): game is ListedGame => !!game)
+  }, [lockedGid, gatheringGames.games, games])
+
   const existing = picked && gid ? noteMap.get(`${gid}|${picked.bggName}`) : undefined
   const willUpdatePublic = kind === 'public' && gid !== '' && (existing?.publicNote ?? '').trim() !== ''
   const overallNote = kind === 'private' && gid === ''
   const maxLen = overallNote ? 500 : 200
   const text = kind === 'public' ? pub : priv
 
-  function pickGame(game: ListedGame) {
-    setPicked(game)
-    setPickSearch('')
-    setGid('')
-    setPub('')
-    setLike('')
-    setDislike('')
-    setPriv(personal.getEntry(game.bggName).note ?? '')
-    setError('')
-    setInfo('')
-  }
-
-  function changeGathering(next: string) {
-    if (!picked) return
-    setGid(next)
-    setError('')
-    setInfo('')
-    if (next) {
-      const note = noteMap.get(`${next}|${picked.bggName}`)
+  function loadFor(game: ListedGame, target: string) {
+    if (target) {
+      const note = noteMap.get(`${target}|${game.bggName}`)
       setPub(note?.publicNote ?? '')
       setPriv(note?.privateNote ?? '')
       setLike(note?.likePoint ?? '')
       setDislike(note?.dislikePoint ?? '')
     } else {
       setPub('')
-      setPriv(personal.getEntry(picked.bggName).note ?? '')
+      setPriv(personal.getEntry(game.bggName).note ?? '')
       setLike('')
       setDislike('')
     }
+  }
+
+  function pickGame(game: ListedGame) {
+    hydrated.current = true
+    const target =
+      lockedGid && (gatheringGames.games.get(lockedGid) ?? []).includes(game.bggName) ? lockedGid : ''
+    setPicked(game)
+    setPickSearch('')
+    setGid(target)
+    loadFor(game, target)
+    setError('')
+    setInfo('')
+  }
+
+  function changeGathering(next: string) {
+    if (!picked) return
+    hydrated.current = true
+    setGid(next)
+    setError('')
+    setInfo('')
+    loadFor(picked, next)
   }
 
   // 複製到另一個編輯框（還不會儲存）
@@ -152,6 +192,7 @@ export default function NoteForm({
     const fromPublic = kind === 'public'
     const source = fromPublic ? pub : priv
     if (source.trim() === '') return
+    if (!fromPublic && publicLocked) return
     const targetHas = (fromPublic ? priv : pub).trim() !== ''
     const message = fromPublic
       ? '要把留言（公開）複製到心得（私人）嗎？複製後還不會儲存，可以先修改。'
@@ -160,7 +201,7 @@ export default function NoteForm({
     if (!(await askConfirm(message + warn, { danger: false }))) return
     if (fromPublic) setPriv(source)
     else setPub(source.slice(0, 200))
-    setKind(fromPublic ? 'private' : 'public')
+    setKindState(fromPublic ? 'private' : 'public')
     setError('')
     setInfo(`已複製到${fromPublic ? '心得（私人）' : '留言（公開）'}，檢查後按儲存。`)
   }
@@ -227,7 +268,7 @@ export default function NoteForm({
           return
         }
         personal.updateEntry(picked.bggName, { note: priv.trim() })
-        setInfo('已儲存為這款的整體心得（可在「我的統計 → 紀錄與心得」看到）。')
+        setInfo('已儲存為這款的整體心得。')
       }
       allNotes.reload()
       onSaved()
@@ -238,46 +279,78 @@ export default function NoteForm({
 
   return (
     <div className="nf">
+      {lockedGid && (
+        <div className="nf-ctx">
+          <p className="nf-taglabel">
+            {contextGathering
+              ? `${contextGathering.gatheredOn.replaceAll('-', '/')}　${contextGathering.title}`
+              : '這場聚會'}
+            ・點一款遊戲來寫
+          </p>
+          {contextGames.length === 0 ? (
+            <p className="nf-hint">{gatheringGames.loading ? '讀取中…' : '這場沒有指定遊戲。'}</p>
+          ) : (
+            <div className="nf-covers">
+              {contextGames.map((game) => (
+                <button
+                  type="button"
+                  key={game.bggName}
+                  className={`nf-cover${picked?.bggName === game.bggName ? ' on' : ''}`}
+                  onClick={() => pickGame(game)}
+                >
+                  <span className="nf-cover-img">{renderCover ? renderCover(game) : '🎲'}</span>
+                  <span className="nf-cover-name">{game.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {picked ? (
         <p className="nf-picked">
           <b>{picked.name}</b>
-          <button
-            type="button"
-            className="nf-link"
-            onClick={() => {
-              setPicked(null)
-              setGid('')
-              setError('')
-              setInfo('')
-            }}
-          >
-            換一款
-          </button>
+          {!lockedGid && (
+            <button
+              type="button"
+              className="nf-link"
+              onClick={() => {
+                setPicked(null)
+                setGid('')
+                setError('')
+                setInfo('')
+              }}
+            >
+              換一款
+            </button>
+          )}
         </p>
       ) : (
-        <>
-          <input
-            type="search"
-            className="nf-input"
-            placeholder="輸入遊戲名稱（只能選你玩過或評分過的）"
-            value={pickSearch}
-            onChange={(event) => setPickSearch(event.target.value)}
-          />
-          {matches.length > 0 && (
-            <ul className="nf-list">
-              {matches.map((game) => (
-                <li key={game.bggName}>
-                  <button type="button" onClick={() => pickGame(game)}>
-                    {game.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {pickSearch.trim() !== '' && matches.length === 0 && (
-            <p className="nf-hint">找不到符合的遊戲（要標記已玩或評分過才能寫）。</p>
-          )}
-        </>
+        !lockedGid && (
+          <>
+            <input
+              type="search"
+              className="nf-input"
+              placeholder="輸入遊戲名稱（中文或英文）"
+              value={pickSearch}
+              onChange={(event) => setPickSearch(event.target.value)}
+            />
+            {matches.length > 0 && (
+              <ul className="nf-list">
+                {matches.map((game) => (
+                  <li key={game.bggName}>
+                    <button type="button" onClick={() => pickGame(game)}>
+                      {game.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {pickSearch.trim() !== '' && matches.length === 0 && (
+              <p className="nf-hint">找不到符合的遊戲。</p>
+            )}
+          </>
+        )
       )}
 
       {canPublic && (
@@ -286,42 +359,49 @@ export default function NoteForm({
             type="button"
             role="tab"
             aria-selected={kind === 'public'}
-            className={`nf-tab${kind === 'public' ? ' on' : ''}`}
-            onClick={() => setKind('public')}
+            disabled={publicLocked}
+            className={`nf-tab${kind === 'public' ? ' on' : ''}${publicLocked ? ' locked' : ''}`}
+            onClick={() => setKindState('public')}
           >
-            👥 留言（公開）
+            {publicLocked ? '🔒' : '👥'} 留言（公開）
           </button>
           <button
             type="button"
             role="tab"
             aria-selected={kind === 'private'}
             className={`nf-tab${kind === 'private' ? ' on' : ''}`}
-            onClick={() => setKind('private')}
+            onClick={() => setKindState('private')}
           >
-            🔒 心得（私人）
+            📝 心得（私人）
           </button>
         </div>
       )}
-
-      {picked && (
-        <label className="nf-label">
-          關聯聚會（選填）
-          <select
-            className="nf-select"
-            value={gid}
-            onChange={(event) => changeGathering(event.target.value)}
-          >
-            <option value="">不關聯聚會</option>
-            {gatheringOptions.map((row) => (
-              <option key={row.id} value={row.id}>
-                {row.gatheredOn.replaceAll('-', '/')}　{row.title}
-              </option>
-            ))}
-          </select>
-        </label>
+      {publicLocked && (
+        <p className="nf-hint">標記已玩或評分過這款，才能發公開留言；現在只能寫私人心得。</p>
       )}
-      {picked && gatheringOptions.length === 0 && !gatherings.loading && (
-        <p className="nf-hint">沒有你出席過、而且指定了這款的聚會。</p>
+
+      {picked && gatheringOptions.length > 0 && (
+        <div className="nf-tagbox">
+          <p className="nf-taglabel">
+            這是哪一場？（選填；不選就是一般{kind === 'public' ? '留言' : '整體心得'}）
+          </p>
+          <div className="nf-chips">
+            {gatheringOptions.map((row) => (
+              <button
+                type="button"
+                key={row.id}
+                aria-pressed={gid === row.id}
+                className={`nf-chip${gid === row.id ? ' on' : ''}`}
+                onClick={() => changeGathering(gid === row.id ? '' : row.id)}
+              >
+                🏷 {row.gatheredOn.replaceAll('-', '/')}　{row.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {picked && gatheringOptions.length === 0 && !gatherings.loading && !lockedGid && (
+        <p className="nf-hint">這款沒有你出席過、而且指定了它的聚會，所以沒有場次標籤可選。</p>
       )}
 
       {willUpdatePublic && (
@@ -361,7 +441,7 @@ export default function NoteForm({
       ) : (
         <p className="nf-hint">
           {overallNote
-            ? '只有你看得到。沒有關聯聚會時，會存成這款遊戲的「整體心得」（每款一則，再寫會取代）。'
+            ? '只有你看得到。沒有選場次時，會存成這款遊戲的「整體心得」（每款一則，再寫會取代）。'
             : '只有你看得到，管理者在網站上也看不到。'}
         </p>
       )}
@@ -374,7 +454,7 @@ export default function NoteForm({
           {text.length} / {maxLen}
         </span>
         <div className="nf-btns">
-          {canPublic && (
+          {canPublic && !publicLocked && (
             <button
               type="button"
               className="nf-copy"

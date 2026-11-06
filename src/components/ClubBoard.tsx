@@ -1,16 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
-import type { usePersonalCollection } from '../lib/usePersonalCollection'
-import type { RatingsApi } from '../lib/useGameRatings'
 import { supabase } from '../lib/supabase'
 import NoteListItem from './NoteListItem'
 import NoteLikersButton from './NoteLikersButton'
 import { likeErrorText, toggleNoteLike } from '../lib/noteLikes'
-import NoteForm from './NoteForm'
 import '../styles/club-board.css'
 import { askConfirm } from '../lib/askConfirm'
 
-type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
 
 type NoteRow = {
@@ -34,8 +30,6 @@ function normalizeText(text: string): string {
 
 export default function ClubBoard({
   boardGames,
-  personal,
-  ratings,
   isAdmin,
   isVip,
   onBack,
@@ -43,10 +37,9 @@ export default function ClubBoard({
   onOpenGame,
   initialSearch = '',
   embedded = false,
+  onWrite,
 }: {
   boardGames: ListedGame[]
-  personal: PersonalApi
-  ratings: RatingsApi
   isAdmin: boolean
   isVip: boolean
   onBack: () => void
@@ -56,13 +49,14 @@ export default function ClubBoard({
   initialSearch?: string
   // 放在集點聚會頁的分頁裡時只畫內容（不自己開抽屜與標題）
   embedded?: boolean
+  // 「＋ 發表留言」：跳到俱樂部「我的心得」的寫心得／留言畫面
+  onWrite: () => void
 }) {
   const enabled = isVip || isAdmin
   const [rows, setRows] = useState<NoteRow[]>([])
   const [loading, setLoading] = useState(enabled)
   const [error, setError] = useState('')
   const [search, setSearch] = useState(initialSearch)
-  const [composeOpen, setComposeOpen] = useState(initialSearch !== '')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
@@ -103,16 +97,6 @@ export default function ClubBoard({
     )
   }, [rows, search])
 
-  // 從遊戲視窗進來時，表單預先填好這款（要是可以留言的遊戲才填）
-  const initialGame = useMemo(() => {
-    if (!initialSearch) return null
-    const game = boardGames.find((item) => item.name === initialSearch || item.bggName === initialSearch)
-    if (!game || game.removedAt) return null
-    if (!isAdmin && !personal.entries[game.bggName]?.played && ratings.getMine(game.bggName) === null)
-      return null
-    return game
-  }, [boardGames, initialSearch, isAdmin, personal.entries, ratings])
-
   // 按讚／取消讚：先在畫面上更新，失敗再還原
   async function toggleLike(row: NoteRow) {
     if (likeBusyId) return
@@ -138,6 +122,23 @@ export default function ClubBoard({
     }
   }
 
+  // 管理者隱藏別人的留言（可在遊戲視窗討論分頁的「已隱藏的留言」恢復）
+  async function hideNote(row: NoteRow) {
+    if (!(await askConfirm('確定要隱藏這則留言嗎？之後可以在遊戲視窗的討論分頁恢復。'))) return
+    setBusyId(row.id)
+    setMessage('')
+    const { error: rpcError } = await supabase.rpc('admin_hide_gathering_note', {
+      p_note: row.id,
+      p_hide: true,
+    })
+    setBusyId(null)
+    if (rpcError) {
+      setMessage('隱藏失敗：' + rpcError.message)
+      return
+    }
+    await load()
+  }
+
   async function removeMine(row: NoteRow) {
     if (!(await askConfirm('確定要刪除這則留言嗎？刪除後無法復原。'))) return
     setBusyId(row.id)
@@ -160,27 +161,11 @@ export default function ClubBoard({
               <button
                 type="button"
                 className="cb-btn"
-                aria-expanded={composeOpen}
-                onClick={() => setComposeOpen((value) => !value)}
+                onClick={onWrite}
               >
                 ＋ 發表留言
               </button>
             </div>
-          )}
-
-          {composeOpen && enabled && (
-            <NoteForm
-              key={initialGame?.bggName ?? ''}
-              games={boardGames}
-              personal={personal}
-              ratings={ratings}
-              isAdmin={isAdmin}
-              canPublic={enabled}
-              initialGame={initialGame}
-              initialKind="public"
-              onSaved={() => void load()}
-              onCancel={() => setComposeOpen(false)}
-            />
           )}
 
           {message && <p className="gb-empty">{message}</p>}
@@ -237,23 +222,34 @@ export default function ClubBoard({
                         open={openId === row.id}
                         onToggle={() => setOpenId(openId === row.id ? null : row.id)}
                       >
-                        {row.is_mine || (isAdmin && (row.like_count ?? 0) > 0) ? (
+                        {row.is_mine || isAdmin ? (
                           <>
-                          {row.is_mine ? (
-                          <div className="nl-btnrow">
-                            <button
-                              type="button"
-                              className="cb-link cb-danger"
-                              disabled={busyId === row.id}
-                              onClick={() => void removeMine(row)}
-                            >
-                              {busyId === row.id ? '處理中…' : '刪除'}
-                            </button>
-                          </div>
-                          ) : null}
-                          {isAdmin && (row.like_count ?? 0) > 0 ? (
-                            <NoteLikersButton noteId={row.id} count={row.like_count ?? 0} />
-                          ) : null}
+                            {row.is_mine ? (
+                              <div className="nl-btnrow">
+                                <button
+                                  type="button"
+                                  className="cb-link cb-danger"
+                                  disabled={busyId === row.id}
+                                  onClick={() => void removeMine(row)}
+                                >
+                                  {busyId === row.id ? '處理中…' : '刪除'}
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="nl-btnrow">
+                                <button
+                                  type="button"
+                                  className="cb-link"
+                                  disabled={busyId === row.id}
+                                  onClick={() => void hideNote(row)}
+                                >
+                                  {busyId === row.id ? '處理中…' : '隱藏'}
+                                </button>
+                              </div>
+                            )}
+                            {isAdmin && (row.like_count ?? 0) > 0 ? (
+                              <NoteLikersButton noteId={row.id} count={row.like_count ?? 0} />
+                            ) : null}
                           </>
                         ) : null}
                       </NoteListItem>

@@ -58,8 +58,7 @@ export default function GameModal({
   onSwitchGame,
   fullRatingForm = false,
   onOpenMyRatings,
-  onOpenBoard,
-  onOpenMyNotes,
+  onOpenWrite,
   onClose,
 }: {
   game: LibraryGame
@@ -84,9 +83,8 @@ export default function GameModal({
   fullRatingForm?: boolean
   // 有傳才會把評分分頁換成「摘要＋前往我的評分」
   onOpenMyRatings?: () => void
-  // 討論分頁的兩顆按鈕：前往留言板（預填這款遊戲）、前往我的心得（只看這款）
-  onOpenBoard?: () => void
-  onOpenMyNotes?: () => void
+  // 討論分頁的「寫心得／留言」：跳到俱樂部「我的心得」的寫作畫面，帶入這款遊戲
+  onOpenWrite?: () => void
   onClose: () => void
 }) {
   const [tab, setTab] = useState<TabKey>(
@@ -505,23 +503,11 @@ export default function GameModal({
             <div className="modal-section">
               {vip.isVip || isAdmin ? (
                 <>
-                  {(onOpenBoard ||
-                    (onOpenMyNotes &&
-                      (personal.getEntry(game.bggName).played ||
-                        ratings.getMine(game.bggName) !== null))) && (
+                  {onOpenWrite && (
                     <div className="gdl-row">
-                      {onOpenBoard && (
-                        <button type="button" className="gdl-btn" onClick={onOpenBoard}>
-                          前往留言板 ›
-                        </button>
-                      )}
-                      {onOpenMyNotes &&
-                        (personal.getEntry(game.bggName).played ||
-                          ratings.getMine(game.bggName) !== null) && (
-                          <button type="button" className="gdl-btn" onClick={onOpenMyNotes}>
-                            前往我的心得 ›
-                          </button>
-                        )}
+                      <button type="button" className="gdl-btn" onClick={onOpenWrite}>
+                        寫心得／留言 ›
+                      </button>
                     </div>
                   )}
                   <GameNotesBoard
@@ -529,7 +515,7 @@ export default function GameModal({
                     bggName={game.bggName}
                     isAdmin={isAdmin}
                     enabled
-                    hideCompose={!!onOpenBoard}
+                    hideCompose={!!onOpenWrite}
                     canWrite={
                       isAdmin ||
                       personal.getEntry(game.bggName).played ||

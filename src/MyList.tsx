@@ -283,6 +283,7 @@ export default function MyList({
     onBrowse,
     onOpenGame,
     onOpenLoyalty,
+    onOpenWrite,
     onOpenRules,
     renderCover,
 }: {
@@ -301,7 +302,7 @@ export default function MyList({
     // 從遊戲視窗「前往我的評分」進來，直接開在我的評分頁
     openRatings?: string | null
     // 從遊戲視窗「前往留言板／我的心得」進來：直接開在那個子畫面，並帶入遊戲
-    openView?: { view: 'board' | 'notes'; bggName: string } | null
+    openView?: { view: 'board' | 'notes'; bggName: string | null; write?: boolean } | null
     isAdmin: boolean
     isVip: boolean
     todayPending: boolean
@@ -318,6 +319,8 @@ export default function MyList({
     onBrowse: () => void
     onOpenGame: (game: BoardGame, tab?: 'ratings' | 'discussion') => void
     onOpenLoyalty: () => void
+    // 從集點聚會頁的留言板「發表留言」跳到俱樂部的寫心得／留言（App 傳入）
+    onOpenWrite?: (bggName: string | null) => void
     // 從「我的投稿 → AI 回答」跳到規則助手（App 傳入；沒傳就不顯示按鈕）
     onOpenRules?: () => void
     renderCover: (game: BoardGame) => ReactNode
@@ -329,6 +332,10 @@ export default function MyList({
     const [ratingsFocus, setRatingsFocus] = useState<string | null>(openRatings)
     // 留言板預填、我的心得只看這款（回到首頁就清掉）
     const [viewFocus, setViewFocus] = useState<string | null>(openView?.bggName ?? null)
+    // 一進「我的心得」就打開寫作畫面：帶遊戲（遊戲視窗）或帶場次（我的場次），回首頁就清掉
+    const [writeReq, setWriteReq] = useState<{ bggName: string | null; gatheringId: string | null } | null>(
+        openView?.write ? { bggName: openView.bggName, gatheringId: null } : null,
+    )
     // 要直接打開的聚會詳情（從遊戲視窗或「我的心得」跳過來）
     const [gatheringTarget, setGatheringTarget] = useState<string | null>(openGatheringId ?? null)
     // 從「我的心得」進來選聚會寫心得；離開我的場次就自動關閉
@@ -369,7 +376,10 @@ export default function MyList({
 
     // 回到首頁就清掉「前往留言板／我的心得」帶來的遊戲
     useEffect(() => {
-        if (view === 'home') setViewFocus(null)
+        if (view === 'home') {
+            setViewFocus(null)
+            setWriteReq(null)
+        }
     }, [view])
 
     // 離開「我的場次」就關掉「選聚會寫心得」模式
@@ -431,6 +441,13 @@ export default function MyList({
         } catch {
             // 存不了就算了
         }
+    }
+
+    // 寫心得／留言：在俱樂部裡直接切到「我的心得」並打開寫作畫面
+    function openWrite(bggName: string | null, gatheringId: string | null = null) {
+        setViewFocus(bggName)
+        setWriteReq({ bggName, gatheringId })
+        setView('notes')
     }
 
     function openStats() {
@@ -639,13 +656,12 @@ export default function MyList({
                             <ClubBoard
                                 embedded
                                 boardGames={boardGames}
-                                personal={personal}
-                                ratings={ratings}
                                 isAdmin={isAdmin}
                                 isVip={isVip}
                                 onBack={() => setLoyaltyTab('card')}
                                 onClose={onClose}
                                 onOpenGame={onOpenGame}
+                                onWrite={() => onOpenWrite?.(null)}
                                 initialSearch={
                                     viewFocus ? (lookupGames.find((g) => g.bggName === viewFocus)?.name ?? '') : ''
                                 }
@@ -681,13 +697,12 @@ export default function MyList({
         return (
             <ClubBoard
                 boardGames={boardGames}
-                personal={personal}
-                ratings={ratings}
                 isAdmin={isAdmin}
                 isVip={isVip}
                 onBack={() => setView('home')}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
+                onWrite={() => openWrite(null)}
                 initialSearch={
                     viewFocus ? (lookupGames.find((g) => g.bggName === viewFocus)?.name ?? '') : ''
                 }
@@ -704,17 +719,8 @@ export default function MyList({
                 onBack={() => setView('home')}
                 onClose={onClose}
                 focusGame={viewFocus}
+                writeRequest={writeReq}
                 composer={{ personal, ratings, isAdmin, canPublic: isVip || isAdmin }}
-                onOpenAddPlay={() => setView('addplay')}
-                onOpenWriteGathering={() => {
-                    setGatheringTarget(null)
-                    setGatheringWrite(true)
-                    setView('gatherings')
-                }}
-                onOpenGathering={(id) => {
-                    setGatheringTarget(id)
-                    setView('gatherings')
-                }}
             />
         )
     }
@@ -730,6 +736,7 @@ export default function MyList({
                 isAdmin={isAdmin}
                 initialGatheringId={gatheringTarget}
                 writeMode={gatheringWrite}
+                onWriteGathering={(id) => openWrite(null, id)}
                 onBack={() => setView(gatheringWrite ? 'notes' : 'home')}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
@@ -1218,7 +1225,7 @@ export default function MyList({
                                     <span className="club-menu-icon" aria-hidden="true">📝</span>
                                     <span className="club-menu-text">
                                         <b>我的心得</b>
-                                        <span className="club-menu-sub">公開留言、私人心得、補記遊玩</span>
+                                        <span className="club-menu-sub">寫心得／留言、我寫過的紀錄</span>
                                     </span>
                                     <span className="club-menu-arrow" aria-hidden="true">›</span>
                                 </button>

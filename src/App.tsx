@@ -203,7 +203,7 @@ function Library({
   // 從遊戲視窗「前往我的評分」跳到俱樂部的我的評分頁
   const [jumpRatings, setJumpRatings] = useState<string | null>(null)
   // 從遊戲視窗「前往留言板／我的心得」跳到俱樂部對應子畫面（並帶入那款遊戲）
-  const [jumpView, setJumpView] = useState<{ view: 'board' | 'notes'; bggName: string } | null>(null)
+  const [jumpView, setJumpView] = useState<{ view: 'board' | 'notes'; bggName: string | null; write?: boolean } | null>(null)
   // 聚會報到後評分：遊戲視窗要顯示完整評分表單（集點必填）
   const [ratingFromCheckin, setRatingFromCheckin] = useState(false)
   const isMyListOpen = activePage === 'mylist' || activePage === 'loyalty'
@@ -346,8 +346,8 @@ function Library({
     setActivePage('mylist')
   }
 
-  // 遊戲視窗討論分頁「前往留言板」「前往我的心得」→ 關掉遊戲視窗，開在俱樂部對應子畫面
-  function openClubViewFromGame(view: 'board' | 'notes', bggName: string) {
+  // 遊戲視窗「寫心得／留言」、留言板「發表留言」→ 開在俱樂部「我的心得」的寫作畫面（bggName 有值就帶入那款遊戲）
+  function openWriteNotes(bggName: string | null) {
     setSelectedGame(null)
     setSelectedTab('overview')
     setRatingFromCheckin(false)
@@ -357,13 +357,7 @@ function Library({
     setMyListMode('list')
     setJumpGatheringId(null)
     setJumpRatings(null)
-    setJumpView({ view, bggName })
-    // 一般 VIP 的留言板在「集點聚會」第三分頁；管理者與其他人仍在俱樂部
-    if (view === 'board' && vip.isVip && !isAdmin) {
-      setMyListMode('loyalty')
-      setActivePage('loyalty')
-      return
-    }
+    setJumpView({ view: 'notes', bggName, write: true })
     setActivePage('mylist')
   }
 
@@ -1128,8 +1122,7 @@ function Library({
           }}
           fullRatingForm={ratingFromCheckin}
           onOpenMyRatings={() => openMyRatingsFromGame(selectedGame.bggName)}
-          onOpenBoard={() => openClubViewFromGame('board', selectedGame.bggName)}
-          onOpenMyNotes={() => openClubViewFromGame('notes', selectedGame.bggName)}
+          onOpenWrite={() => openWriteNotes(selectedGame.bggName)}
           initialTab={selectedTab}
           onOpenGathering={openGatheringFromGame}
           isAdmin={isAdmin}
@@ -1184,6 +1177,7 @@ function Library({
         notesUnseen={notesUnseen.count}
         onNotesSeen={notesUnseen.markSeen}
         onOpenLoyalty={openMyLoyalty}
+        onOpenWrite={openWriteNotes}
         onOpenRules={() => setActivePage('rules')}
         isAdmin={isAdmin}
         isVip={vip.isVip}
