@@ -45,7 +45,6 @@ export default function MyGatherings({
   ratings,
   isAdmin,
   initialGatheringId,
-  writeMode = false,
   onWriteGathering,
   onBack,
   onClose,
@@ -59,8 +58,6 @@ export default function MyGatherings({
   ratings?: RatingsApi
   isAdmin: boolean
   initialGatheringId?: string | null
-  // 從「我的心得」進來：只列聚會日已到的場次，點一場直接到心得區
-  writeMode?: boolean
   // 點整張場次卡片：到「我的心得」寫這場的心得（有傳才會用；沒傳就進聚會詳情）
   onWriteGathering?: (gatheringId: string) => void
   onBack: () => void
@@ -108,10 +105,7 @@ export default function MyGatherings({
   // 依月份分組：月份新到舊、月份內也是新到舊；沒有場次的月份不會出現
   const groups = useMemo(() => {
     const map = new Map<string, MyGathering[]>()
-    const rows0 = writeMode
-      ? list.rows.filter((row) => row.gatheredOn <= todayLocal())
-      : list.rows
-    for (const row of rows0) {
+    for (const row of list.rows) {
       const key = row.gatheredOn.slice(0, 7)
       const rows = map.get(key)
       if (rows) rows.push(row)
@@ -120,7 +114,7 @@ export default function MyGatherings({
     return Array.from(map, ([key, rows]) => ({ key, rows })).sort((a, b) =>
       b.key.localeCompare(a.key),
     )
-  }, [list.rows, writeMode])
+  }, [list.rows])
 
   const today = todayLocal()
   const currentMonth = today.slice(0, 7)
@@ -186,7 +180,7 @@ export default function MyGatherings({
       />
       <aside className="mylist-drawer" role="dialog" aria-label="我的場次">
         <div className="mylist-header">
-          <h2>{selectedId ? '聚會詳情' : writeMode ? '選擇聚會寫心得' : '我的場次'}</h2>
+          <h2>{selectedId ? '聚會詳情' : '我的場次'}</h2>
           <button
             className="mylist-close"
             type="button"
@@ -201,10 +195,7 @@ export default function MyGatherings({
           {/* ---------- 場次清單（依月份摺疊） ---------- */}
           {!selectedId && (
             <>
-              {writeMode && (
-                <p className="mg-muted">選一場你出席過的聚會，就能寫這場的心得。</p>
-              )}
-              {!writeMode && ratings && (
+              {ratings && (
                 <p className="mg-muted">封面變淡的遊戲，代表你還沒評分。</p>
               )}
               {list.loading ? (
@@ -222,11 +213,7 @@ export default function MyGatherings({
                 </div>
               ) : groups.length === 0 ? (
                 <p className="mylist-empty">
-                  {writeMode
-                    ? '還沒有可以寫心得的聚會（要出席過，而且聚會日已到）。'
-                    : isAdmin
-                      ? '還沒有任何聚會。'
-                      : '還沒有出席過的聚會。'}
+                  {isAdmin ? '還沒有任何聚會。' : '還沒有出席過的聚會。'}
                 </p>
               ) : (
                 <>
@@ -261,7 +248,7 @@ export default function MyGatherings({
                                         onWriteGathering(row.id)
                                         return
                                       }
-                                      if (canWrite || writeMode) setScrollToNotes(true)
+                                      if (canWrite) setScrollToNotes(true)
                                       setSelectedId(row.id)
                                     }}
                                   >

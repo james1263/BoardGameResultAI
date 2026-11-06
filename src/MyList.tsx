@@ -337,10 +337,6 @@ export default function MyList({
     )
     // 要直接打開的聚會詳情（從遊戲視窗或「我的心得」跳過來）
     const [gatheringTarget, setGatheringTarget] = useState<string | null>(openGatheringId ?? null)
-    // 從「我的心得」進來選聚會寫心得；離開我的場次就自動關閉
-    const [gatheringWrite, setGatheringWrite] = useState(false)
-    const gatheringWriteRef = useRef(false)
-    gatheringWriteRef.current = gatheringWrite
     const [statsTab, setStatsTab] = useState<StatsTab>('overview')
     // 集點聚會頁（VIP）的三個分頁：集點卡｜未來聚會｜留言板
     // 從遊戲視窗「前往留言板」進來開留言板；有新的未來聚會（且不是從報到連結進來）預設開未來聚會
@@ -363,12 +359,7 @@ export default function MyList({
     const [chartOpen, setChartOpen] = useState(false)
     // 分頁切換不另建瀏覽歷史：返回鍵與 ✕ 一律回「我的俱樂部」首頁
     useBackClose(
-        () =>
-            setView((current) =>
-                current === 'gatherings' && gatheringWriteRef.current
-                    ? 'notes'
-                    : 'home',
-            ),
+        () => setView('home'),
         isOpen && mode !== 'loyalty' && view !== 'home',
     )
 
@@ -378,11 +369,6 @@ export default function MyList({
             setViewFocus(null)
             setWriteReq(null)
         }
-    }, [view])
-
-    // 離開「我的場次」就關掉「選聚會寫心得」模式
-    useEffect(() => {
-        if (view !== 'gatherings') setGatheringWrite(false)
     }, [view])
 
     // 每次打開都回到首頁；統計預設「概況」、搜尋清空，排序沿用上次的選擇
@@ -733,9 +719,8 @@ export default function MyList({
                 ratings={ratings}
                 isAdmin={isAdmin}
                 initialGatheringId={gatheringTarget}
-                writeMode={gatheringWrite}
                 onWriteGathering={(id) => openWrite(null, id)}
-                onBack={() => setView(gatheringWrite ? 'notes' : 'home')}
+                onBack={() => setView('home')}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
                 renderCover={renderCover}
