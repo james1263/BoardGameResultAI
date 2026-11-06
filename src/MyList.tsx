@@ -355,7 +355,8 @@ export default function MyList({
     // 每次打開都回到首頁；統計預設「概況」、搜尋清空，排序沿用上次的選擇
     useEffect(() => {
         if (isOpen) {
-            setView('home')
+            // 從遊戲視窗「前往我的評分」進來時，開在我的評分頁；其他情況回首頁
+            setView(openRatings ? 'ratings' : 'home')
             setStatsTab('overview')
             setLoyaltyTab('card')
             setSearch('')
