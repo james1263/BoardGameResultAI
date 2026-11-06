@@ -164,3 +164,12 @@
     flex: none;
   }
 }
+
+/* 垃圾桶：名稱、日期、原因靠左（蓋掉其他檔案的置中） */
+.trash-section .trash-info,
+.trash-section .trash-name,
+.trash-section .trash-info small,
+.trash-section .trash-reason {
+  align-items: flex-start;
+  text-align: left !important;
+}

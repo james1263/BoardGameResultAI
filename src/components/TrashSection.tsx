@@ -25,6 +25,7 @@ export default function TrashSection({
   const [query, setQuery] = useState('')
   const [cleaning, setCleaning] = useState(false)
   const [cleanMsg, setCleanMsg] = useState('')
+  const [progress, setProgress] = useState(0)
 
   if (games.length === 0) return null
 
@@ -48,12 +49,14 @@ export default function TrashSection({
     if (!ok) return
     setCleaning(true)
     setCleanMsg('')
+    setProgress(0)
     const problems: string[] = []
     for (const game of games) {
       const result = await cleanupGameData(game.bggName)
       if (result.errors.length > 0 || result.warnings.length > 0) {
         problems.push(`${game.name}：` + [...result.errors, ...result.warnings].join('；'))
       }
+      setProgress((current) => current + 1)
     }
     setCleaning(false)
     setCleanMsg(
@@ -101,7 +104,9 @@ export default function TrashSection({
             disabled={cleaning}
             onClick={() => void cleanAll()}
           >
-            {cleaning ? '清理中…' : '清掉全部垃圾桶遊戲的附屬資料'}
+            {cleaning
+              ? `清理中 ${progress} / ${games.length}`
+              : '清掉全部垃圾桶遊戲的附屬資料'}
           </button>
           {cleanMsg && (
             <span style={{ display: 'block', whiteSpace: 'pre-wrap', marginTop: 4 }}>
@@ -175,8 +180,7 @@ export default function TrashSection({
             )
           })}
         </ul>
-      )
-      }
-    </section >
+      )}
+    </section>
   )
 }
