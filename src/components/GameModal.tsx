@@ -23,6 +23,7 @@ import GameErrata from './GameErrata'
 import GameExpansions from './GameExpansions'
 import GameBackground from './GameBackground'
 import { useVip } from '../lib/useVip'
+import { RATING_FIELDS } from '../lib/useGameRatings'
 import '../styles/overview.css'
 
 const TABS = [
@@ -54,6 +55,8 @@ export default function GameModal({
   initialTab,
   allGames,
   onSwitchGame,
+  fullRatingForm = false,
+  onOpenMyRatings,
   onClose,
 }: {
   game: LibraryGame
@@ -74,6 +77,10 @@ export default function GameModal({
   onOpenGathering?: (gatheringId: string) => void
   allGames?: LibraryGame[]
   onSwitchGame?: (game: LibraryGame) => void
+  // true＝一定要顯示完整評分表單（聚會報到後評分走這條）
+  fullRatingForm?: boolean
+  // 有傳才會把評分分頁換成「摘要＋前往我的評分」
+  onOpenMyRatings?: () => void
   onClose: () => void
 }) {
   const [tab, setTab] = useState<TabKey>(
@@ -428,6 +435,48 @@ export default function GameModal({
                   engine、適合留下來由分數排名換算；還沒玩過的遊戲（Ranking engine
                   以 .5 結尾）七項都不計入大家的評分。
                 </p>
+                <p className="rate-subtitle" style={{ marginTop: 14 }}>大家的評分</p>
+                <CommunitySummary
+                  bggName={game.bggName}
+                  api={ratings}
+                  detailed
+                />
+              </div>
+            ) : !fullRatingForm && onOpenMyRatings && personal.isLoggedIn ? (
+              <div className="modal-section">
+                <h3 className="modal-section-title">我的評分</h3>
+                {(() => {
+                  const mine = ratings.getMine(game.bggName)
+                  if (ratings.status !== 'ready') {
+                    return <p className="rate-note">讀取中…</p>
+                  }
+                  if (!mine) {
+                    return <p className="rate-note">你還沒有評分這款遊戲。</p>
+                  }
+                  const filled = RATING_FIELDS.filter((field) => mine[field.key] != null).length
+                  return (
+                    <div className="rate-grid" style={{ marginTop: 12 }}>
+                      <div className="rate-grid-item">
+                        <span>整體</span>
+                        <strong>{mine.overall} / 10</strong>
+                      </div>
+                      <div className="rate-grid-item">
+                        <span>細項</span>
+                        <strong>
+                          {filled} / {RATING_FIELDS.length}
+                        </strong>
+                      </div>
+                    </div>
+                  )
+                })()}
+                <button
+                  type="button"
+                  className="ma-btn"
+                  style={{ marginTop: 12 }}
+                  onClick={onOpenMyRatings}
+                >
+                  前往我的評分 ›
+                </button>
                 <p className="rate-subtitle" style={{ marginTop: 14 }}>大家的評分</p>
                 <CommunitySummary
                   bggName={game.bggName}

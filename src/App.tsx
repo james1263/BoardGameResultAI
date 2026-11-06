@@ -197,6 +197,10 @@ function Library({
   const [myListMode, setMyListMode] = useState<MyListMode>('list')
   // 從遊戲視窗跳到俱樂部「我的場次」的指定聚會（用完會在導覽時清掉）
   const [jumpGatheringId, setJumpGatheringId] = useState<string | null>(null)
+  // 從遊戲視窗「前往我的評分」跳到俱樂部的我的評分頁
+  const [jumpRatings, setJumpRatings] = useState<string | null>(null)
+  // 聚會報到後評分：遊戲視窗要顯示完整評分表單（集點必填）
+  const [ratingFromCheckin, setRatingFromCheckin] = useState(false)
   const isMyListOpen = activePage === 'mylist' || activePage === 'loyalty'
   const isLeaderboardOpen = activePage === 'leaderboard'
   const isRulesOpen = activePage === 'rules'
@@ -302,6 +306,7 @@ function Library({
   // 底部／頂端導覽：點另一顆直接取代目前的頁面，再點同一顆＝關閉
   function goHome() {
     setJumpGatheringId(null)
+    setJumpRatings(null)
     setSelectedGame(null)
     setIsFilterOpen(false)
     setActivePage(null)
@@ -319,9 +324,24 @@ function Library({
     setActivePage('mylist')
   }
 
+  // 遊戲視窗「前往我的評分」→ 關掉遊戲視窗，打開俱樂部的我的評分頁
+  function openMyRatingsFromGame(bggName: string) {
+    setSelectedGame(null)
+    setSelectedTab('overview')
+    setRatingFromCheckin(false)
+    setIsFilterOpen(false)
+    setInviteFocus(null)
+    setInviteKey((count) => count + 1)
+    setMyListMode('list')
+    setJumpGatheringId(null)
+    setJumpRatings(bggName)
+    setActivePage('mylist')
+  }
+
   function goPage(page: NavPage) {
     // 點導覽時，先關掉開著的詳細視窗與進階篩選，避免視窗疊在一起
     setJumpGatheringId(null)
+    setJumpRatings(null)
     setSelectedGame(null)
     setIsFilterOpen(false)
     if (activePage === page) {
@@ -881,6 +901,7 @@ function Library({
           ratings={ratings}
           onRate={(game) => {
             setCoverMessage('')
+            setRatingFromCheckin(true)
             setSelectedTab('ratings')
             setSelectedGame(game)
           }}
@@ -1075,6 +1096,8 @@ function Library({
             setCoverMessage('')
             setSelectedGame(next)
           }}
+          fullRatingForm={ratingFromCheckin}
+          onOpenMyRatings={() => openMyRatingsFromGame(selectedGame.bggName)}
           initialTab={selectedTab}
           onOpenGathering={openGatheringFromGame}
           isAdmin={isAdmin}
@@ -1112,6 +1135,7 @@ function Library({
           onClose={() => {
             setSelectedGame(null)
             setSelectedTab('overview')
+            setRatingFromCheckin(false)
           }}
         />
       )}
@@ -1139,6 +1163,7 @@ function Library({
         }}
         focusDate={inviteFocus}
         openGatheringId={jumpGatheringId}
+        openRatings={jumpRatings}
         boardGames={statGames}
         trashedGames={trashedGames}
         personal={personal}
@@ -1149,6 +1174,7 @@ function Library({
         onClose={() => setActivePage(null)}
         onOpenGame={(game, tab) => {
           setCoverMessage('')
+          setRatingFromCheckin(false)
           setSelectedTab(tab ?? 'overview')
           setSelectedGame(game)
         }}

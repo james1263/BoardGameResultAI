@@ -57,6 +57,7 @@ export default function MyRatingsHub({
     onClose,
     onOpenGame,
     renderCover,
+    focusName = null,
 }: {
     boardGames: BoardGame[]
     ratings: RatingsApi
@@ -65,14 +66,19 @@ export default function MyRatingsHub({
     onClose: () => void
     onOpenGame: (game: BoardGame, tab?: 'ratings' | 'discussion') => void
     renderCover: (game: BoardGame) => ReactNode
+    // 從遊戲視窗「前往我的評分」跳來：直接搜尋並展開這一款
+    focusName?: string | null
 }) {
-    const [scope, setScope] = useState<Scope>('played')
+    const focusGame = focusName ? boardGames.find((g) => g.bggName === focusName) : undefined
+    const [scope, setScope] = useState<Scope>(
+        focusGame && !isPlayed(focusGame.bggName) ? 'all' : 'played',
+    )
     const [filter, setFilter] = useState<Filter>('all')
-    const [search, setSearch] = useState('')
+    const [search, setSearch] = useState(focusGame ? focusGame.name : '')
     const [field, setField] = useState<SortField>('updated')
     const [reverse, setReverse] = useState(false)
     // 一次只展開一款
-    const [openName, setOpenName] = useState<string | null>(null)
+    const [openName, setOpenName] = useState<string | null>(focusGame ? focusGame.bggName : null)
 
     const ready = ratings.status === 'ready'
 

@@ -267,6 +267,7 @@ export default function MyList({
     mode,
     focusDate,
     openGatheringId,
+    openRatings = null,
     isAdmin,
     isVip,
     todayPending,
@@ -294,6 +295,8 @@ export default function MyList({
     mode: MyListMode
     focusDate?: string | null
     openGatheringId?: string | null
+    // 從遊戲視窗「前往我的評分」進來，直接開在我的評分頁
+    openRatings?: string | null
     isAdmin: boolean
     isVip: boolean
     todayPending: boolean
@@ -311,7 +314,9 @@ export default function MyList({
     onOpenRules?: () => void
     renderCover: (game: BoardGame) => ReactNode
 }) {
-    const [view, setView] = useState<View>(openGatheringId ? 'gatherings' : 'home')
+    const [view, setView] = useState<View>(openGatheringId ? 'gatherings' : openRatings ? 'ratings' : 'home')
+    // 從遊戲視窗跳來時，我的評分頁直接展開那一款（只用一次）
+    const [ratingsFocus, setRatingsFocus] = useState<string | null>(openRatings)
     // 要直接打開的聚會詳情（從遊戲視窗或「我的心得」跳過來）
     const [gatheringTarget, setGatheringTarget] = useState<string | null>(openGatheringId ?? null)
     // 從「我的心得」進來選聚會寫心得；離開我的場次就自動關閉
@@ -691,6 +696,7 @@ export default function MyList({
                 onClose={onClose}
                 onOpenGame={onOpenGame}
                 renderCover={renderCover}
+                focusName={ratingsFocus}
             />
         )
     }
@@ -1071,7 +1077,10 @@ export default function MyList({
                             <button
                                 type="button"
                                 className="club-menu-item club-menu-single"
-                                onClick={() => setView('ratings')}
+                                onClick={() => {
+                                    setRatingsFocus(null)
+                                    setView('ratings')
+                                }}
                             >
                                 <span className="club-menu-icon" aria-hidden="true">⭐</span>
                                 <span className="club-menu-text">
