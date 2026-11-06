@@ -132,3 +132,35 @@
   display: block;
   color: #8a6d3b;
 }
+
+/* 手機版：名稱欄不再被三顆按鈕擠成一條，按鈕換到下一行 */
+.trash-section .trash-item {
+  flex-wrap: wrap;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.trash-section .trash-info {
+  flex: 1 1 160px;
+}
+
+.trash-section .trash-name {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.trash-section .trash-info small {
+  overflow-wrap: anywhere;
+}
+
+.trash-section .trash-actions {
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+@media (min-width: 761px) {
+  .trash-section .trash-actions {
+    flex: none;
+  }
+}
