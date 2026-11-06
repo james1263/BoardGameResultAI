@@ -1,7 +1,7 @@
 # 桌遊規則助手（BoardGameResultAI）— 專案參考文件（去重精簡版）
 
 > 給接手 AI。**先讀 `QUICKSTART.md`（現況、待辦、合作規則、文件維護規則），再讀本檔（架構與功能規則），最後讀 `生成後.md`（這兩份之後的修改紀錄，衝突時以它為準）。**
-> 最後更新：2026-11-05 深夜（已併入上一版 `生成後.md`；**最新增補在第 26 節（熱搜與統計、規則助手畫面整理與放大、垃圾桶補清玩錯紀錄、漏底、ChatGPT 知識庫規格對照），其次第 25 節**（規則助手顯示改版、v6 排序加權、垃圾桶只留封面、規則書大小與項目符號、上傳空白頁提醒、背景上限調高），其次第 24 節（按讚、遊戲背景、規則助手 v5b、OCR 波蘭文／德文、去掉「(含擴)」），其次第 23、22、21 節（規則助手顯示改版、v6 排序加權、垃圾桶只留封面、規則書大小與項目符號、上傳空白頁提醒、背景上限調高），其次第 24 節（按讚、遊戲背景、規則助手 v5b、OCR 波蘭文／德文、去掉「(含擴)」），其次第 23、22、21 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
+> 最後更新：2026-11-06（已併入上一版 `生成後.md`；**最新增補在第 27 節（玩家 FAQ 階段 2 投稿與審核、待審清單修正與全部列表、管理者待審紅點、規則助手內投稿與 AI 好答案的設計），其次第 26、25 節**，與前面衝突時以較大的節號為準；規則助手 RAG 看第 20 節；`生成後.md` 已重置）。
 
 ## 1. 專案簡介與技術架構
 
@@ -764,3 +764,38 @@
 
 ### 26.6 下一個 AI 要避開的陷阱（補）
 54 覆蓋大檔案前先確認是從使用者目前版本改的：`GameModal.tsx` 曾是舊版，`git diff` 才發現會刪掉 `GameBackground` 與標題 BGG 連結，`git status` 若出現 AI 沒動過的 modified 檔要先 `git diff` 再決定；55 熱搜統計管理者不計入，測試要用一般 VIP 帳號，且每位 VIP 一天最多 30 次；56 新增以 `bgg_name` 為鍵的表（含統計表、日後的 FAQ 表）要同步考慮垃圾桶清理（`cleanupGameData`）；57 改 `search_rulebook_chunks` 前一定先匯出現有定義，用 `replace` 改函式要選不含空白換行的短字串；58 `ra-large.css` 要用 `body` 前綴蓋過 `vip.css`，且手機不可蓋住底部導覽列；59 熱搜與已審核 FAQ 要分開呈現，搜尋次數不代表答案正確；60 給使用者 commit 指令時用中文訊息、逐檔 `git add`、分批 commit，並叮嚀 build 通過再推。
+
+## 27. 2026-11-06 增補（覆蓋前面衝突的敘述）
+
+- 現況與使用者決定見 `QUICKSTART.md` 2.11、第 6 節。本節併入上一版 `生成後.md` 全部內容。**凡是我沒看到的細節都標［未驗證］。**
+
+### 27.1 玩家 FAQ 階段 2：VIP 投稿、管理者審核（`38a4c85`；`privacy.html` `4922883`）
+- **設計［使用者決定］**：擴充現有玩錯紀錄；VIP 可投稿；管理者審核後才公開；公開後標「玩家整理・已審核」；退回要有原因；未核對規則書標【未驗證】。階段 3（個人收藏、投票、公開問題清單）不做。
+- **資料庫 `public.game_errata`（使用者貼回欄位，已確認）**：`id uuid`、`bgg_name text`、`title text`、`content text`、`source_note text`、`created_at`、`updated_at`、`user_id uuid`（管理者記錄為 null）、`status text`（`pending`／`approved`／`rejected`）、`page_ref text`、`verified boolean`、`reject_reason text`、`reviewed_at timestamptz`。**目前沒有 `kind` 欄位。** `user_id` 外鍵 `ON DELETE CASCADE`（刪帳號一併刪除，含已核准）。
+- **函式（使用者貼回完整本文，皆 `plpgsql security definer`、`search_path=''`）**
+  - `get_game_errata(p_bgg_name)` → `id, title, content, source_note, updated_at, status, from_player, page_ref, verified, reject_reason, is_mine`；VIP 或管理者；回已核准＋自己的＋（管理者）全部；`reject_reason` 只給管理者與投稿者本人；`stable`。
+  - `search_game_errata(p_bgg_name, p_query)` → `id, title, content, source_note, updated_at, from_player, page_ref, verified`；**只搜已核准**；空白與標點切詞（≥ 2 字），標題＋內容子字串比對，詞命中數排序，前 5 筆；不扣每日次數。
+  - `submit_game_errata(p_id, p_bgg_name, p_title, p_content, p_source '', p_page '', p_verified false)` → uuid；需 VIP；標題 ≤ 60、內容 ≤ 1200、來源 ≤ 100、頁碼 ≤ 30；遊戲必須存在、不在垃圾桶、非僅供參考（`game not found`）；advisory lock；新增時每人每款待審 ≤ 3（`too many pending`）、總數 ≤ 10（`too many`）；修改只能改自己 `pending`／`rejected` 的，改完變回 `pending`、清退回原因（找不到丟 `not found`）。
+  - 其他已存在、**沒看到定義**：`delete_my_game_errata(p_id)`、`admin_review_game_errata(p_id, p_approve, p_reason)`、`admin_save_game_errata`、`admin_delete_game_errata`、`admin_count_game_errata`。
+- **前端 `GameErrata.tsx`（使用者 2026-11-06 上傳，已看過）**：可收合「玩錯紀錄（N）」（N＝已核准筆數），只有 VIP／管理者會掛。已核准清單（玩家投稿者標「玩家整理・已審核」，`verified` 為 false 加【未驗證】）；「我的投稿」區（只有 `is_mine` 且 `pending`／`rejected`，退回顯示原因、「修改後重新送審」、刪除用 `deleteMyErrata`）；**「＋ 我要投稿」按鈕與表單都有 `!isAdmin &&` 條件，管理者看不到是刻意設計**，管理者空清單時提示到管理中心「規則書」→「＋ 玩錯紀錄」新增。表單欄位：問題、答案、參考頁碼、來源說明、「我已對照規則書確認」勾選；用 `submitErrata`；常數 `ERRATA_MAX_*` 來自 `useGameErrata.ts`。
+- **`privacy.html`**：補投稿記錄的資料、三種狀態、每款最多 3 則待審與累計 10 則、可修改或刪除的範圍、公開時不顯示暱稱、刪帳號一併刪除；管理者審核時看得到暱稱與 LINE／FB。日期仍 2026-11-05。**新功能（好答案、連結與詞庫投稿）上線時要再更新。**
+- **資料表結構事實**：`player_profiles` 主鍵是 **`id`**（欄位 `id, nickname, public_id, created_at, hide_in_lists`），**沒有 `user_id`**；`player_contacts` 有 `contact_name`、`updated_at`，主鍵欄位名稱未確認（新函式用 `coalesce(to_jsonb(c)->>'user_id', to_jsonb(c)->>'id')::uuid` 繞過）。
+
+### 27.2 待審清單修正與全部玩錯紀錄（`27f3799`）
+- 原因：`admin_get_pending_errata` 用 `pp.user_id` 對 `player_profiles`，但那張表主鍵是 `id`；plpgsql 到執行時才驗欄位，build 與權限檢查都沒抓到，畫面顯示「讀取待審投稿失敗：column pp.user_id does not exist」。
+- 資料庫（使用者在 SQL Editor 執行，驗證 `anon_exec = false`、`auth_exec = true`）：`drop` 後重建 `admin_get_pending_errata()` → `id, bgg_name, game_name, title, content, source_note, page_ref, verified, nickname, contact_name, created_at`（`status = 'pending'`，依建立時間；暱稱用 `player_profiles.id = e.user_id`，LINE／FB 用 `player_contacts` lateral join）；新增 `admin_get_all_errata()` → `id, bgg_name, game_name, title, content, source_note, page_ref, verified, status, reject_reason, from_player, nickname, updated_at`（所有遊戲、所有狀態，依遊戲名與更新時間）。非管理者丟 `not admin`；`revoke ... from public, anon`、`grant execute ... to authenticated`。SQL 檔不在 repo。
+- 前端：`useGameErrata.ts` 新增型別 `AdminErrataRow`、hook `useAllErrata(enabled)`；`ErrataAdmin.tsx` 新增「全部玩錯紀錄（N）」（依遊戲分組、`<details className="ov-fold">` 預設收合；每筆顯示來源〔玩家投稿／管理者記錄〕、狀態〔待審核／已退回／已核准〕、退回原因、編輯與刪除；按編輯把該筆放進下方表單）。版面：遊戲搜尋框（`renderPicker`）移到說明文字正下方；「待審核的玩家投稿（N）」改成 `<details key={有/無待審} open={N>0}>`，沒投稿時收起、有投稿時展開。
+
+### 27.3 管理者待審紅點（`c72bc1a`）
+- 資料庫：`admin_pending_count()` → integer（非管理者回 0；目前只數 `game_errata` 的 `status = 'pending'`；`revoke ... from public, anon`、`grant ... to authenticated`；驗證 `anon_exec = false`、`auth_exec = true`）。**之後新增其他類型待審要把筆數加進這個函式。** SQL 檔不在 repo。
+- 前端新增：`src/lib/useAdminPending.ts`（`useAdminPending(enabled)` 回數字；掛載時讀、`focus`／`visibilitychange`／事件 `PENDING_CHANGED_EVENT` 時重讀、每 120 秒輪詢）、`src/components/PendingBadge.tsx`（小紅色數字，樣式在元件裡，0 不顯示）。
+- 前端修改：`TopBar.tsx`（`pendingCount = useAdminPending(isAdmin)` 傳給 `AdminCenter`）、`AdminCenter.tsx`（選填 prop `pendingCount`；「⚙ 管理」按鈕用既有 `sb-count`；「規則書」分頁標籤旁 `PendingBadge`；傳 `pendingErrata` 給 `RulebookBatchUpload`）、`RulebookBatchUpload.tsx`（選填 prop `pendingErrata`；「＋ 玩錯紀錄」按鈕旁 `PendingBadge`）、`ErrataAdmin.tsx`（核准、退回、刪除後 `window.dispatchEvent(new Event(PENDING_CHANGED_EVENT))`）。**`App.tsx` 沒改。**
+
+### 27.4 規則助手內投稿＋AI 好答案（使用者「照建議」，**尚未動工**；下一個動工項目）
+- **順序［使用者決定］**：紅點（已做）→ 規則助手內投稿與 AI 好答案 → 玩家投稿連結與詞庫 → PDF 投稿先不做。好答案與玩錯紀錄「分開標籤、同一個虛線框區」；規則助手也要有投稿入口。
+- **PDF 投稿不做的理由**：版權風險由管理者承擔、儲存額度（免費 1 GB、已用約 124 MB）、索引要靠管理者瀏覽器、惡意檔。若日後做：玩家傳到私有暫存區（單檔 ≤ 15 MB、每人待審 ≤ 2 份），管理者下載檢查後再走現有上傳流程。
+- **［AI 建議，方向已接受、細節動工前再列預設值］好答案**：沿用 `game_errata`，新增 `kind text not null default 'errata'`（`errata`｜`ai_answer`，加 check）；標題＝問題、內容＝答案、來源說明＝用哪個 AI 或出處；勾「已對照規則書」並填頁碼才免標【未驗證】；核准後標「玩家整理・AI 回答（已審核）」；管理者核准前要回規則書核對。要改的函式：`get_game_errata`、`search_game_errata`、`submit_game_errata`（加 `p_kind default 'errata'`）、`admin_get_pending_errata`、`admin_get_all_errata`（回傳多 `kind`，**先 drop 再建**，因為回傳型別變了）；`admin_review_game_errata` 不用動。前端：`useGameErrata.ts`、`GameErrata.tsx`、`RulebookAssistant.tsx`（結果頁加「＋ 投稿」並預填遊戲與搜尋詞；虛線框區不同標籤）、`ErrataAdmin.tsx`（顯示類型）。**動工前請使用者上傳目前的 `RulebookAssistant.tsx`。**
+- **［AI 建議］連結與詞庫投稿**：獨立表（例如 `rule_submissions`：類型 `link`／`glossary`、`bgg_name`、標題、網址或中文詞與對應詞、狀態、退回原因、`user_id`、時間），**不可直接放進 `game_documents`（任何人可讀）**；核准時管理者一鍵轉成正式 `game_documents`（`doc_type` 影片或其他）或 `game_glossary`；只有 VIP 可投稿，每人每款待審 ≤ 3、總數 ≤ 10；公開時不顯示暱稱；`admin_pending_count` 要加進這兩類；`privacy.html` 同步更新；RLS 開、`revoke` anon／authenticated、只走函式。
+
+### 27.5 下一個 AI 要避開的陷阱（補）
+61 plpgsql 函式建立成功不代表能執行（`pp.user_id`），改完一定要請使用者實測，欄位名稱先查 `information_schema.columns`；62 管理者與 VIP 看到的畫面不同（投稿表單只給非管理者），使用者說「找不到入口」先查是不是依身分隱藏，測玩家端要用另一個非管理者的 Google 帳號；63 `admin_get_pending_errata`、`admin_get_all_errata` 回傳型別改變要先 `drop` 再 `create`；64 新增待審類型要同步 `admin_pending_count()`、`PENDING_CHANGED_EVENT`、`privacy.html`；65 `player_profiles` 的主鍵是 `id` 不是 `user_id`；66 `delete_my_game_errata`、`admin_review_game_errata`、`admin_save_game_errata`、`admin_delete_game_errata`、`admin_count_game_errata` 定義沒看過，改之前先請使用者匯出。
