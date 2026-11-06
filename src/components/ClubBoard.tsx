@@ -3,13 +3,10 @@ import type { BoardGame } from '../data/boardGames.generated'
 import type { usePersonalCollection } from '../lib/usePersonalCollection'
 import type { RatingsApi } from '../lib/useGameRatings'
 import { supabase } from '../lib/supabase'
-import { MAX_NOTES_PER_GAME } from '../lib/useGameNotesBoard'
 import NoteListItem from './NoteListItem'
 import NoteLikersButton from './NoteLikersButton'
 import { likeErrorText, toggleNoteLike } from '../lib/noteLikes'
-import NotePointsFields from './NotePointsFields'
-import PublicNoteHint from './PublicNoteHint'
-import { confirmPublicPost } from '../lib/publicNoteNotice'
+import NoteForm from './NoteForm'
 import '../styles/club-board.css'
 import { askConfirm } from '../lib/askConfirm'
 
@@ -35,17 +32,6 @@ function normalizeText(text: string): string {
   return text.toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '')
 }
 
-function explain(message: string): string {
-  if (message.includes('not played')) return '請先標記已玩或評分這款，才能留言。'
-  if (message.includes('too long'))
-    return '留言最多 200 字，喜歡／不喜歡的點各最多 100 字。'
-  if (message.includes('too many'))
-    return `這款你最多只能留 ${MAX_NOTES_PER_GAME} 則，請先刪除舊的。`
-  if (message.includes('empty')) return '請先輸入留言內容。'
-  if (message.includes('not vip')) return '只有 VIP 可以留言。'
-  return '操作失敗：' + message
-}
-
 export default function ClubBoard({
   boardGames,
   personal,
@@ -56,6 +42,7 @@ export default function ClubBoard({
   onClose,
   onOpenGame,
   initialSearch = '',
+  embedded = false,
 }: {
   boardGames: ListedGame[]
   personal: PersonalApi
@@ -67,19 +54,15 @@ export default function ClubBoard({
   onOpenGame: (game: BoardGame, tab?: 'discussion') => void
   // 從遊戲視窗「前往留言板」進來時，預先填入遊戲名稱
   initialSearch?: string
+  // 放在集點聚會頁的分頁裡時只畫內容（不自己開抽屜與標題）
+  embedded?: boolean
 }) {
   const enabled = isVip || isAdmin
   const [rows, setRows] = useState<NoteRow[]>([])
   const [loading, setLoading] = useState(enabled)
   const [error, setError] = useState('')
   const [search, setSearch] = useState(initialSearch)
-  const [composeOpen, setComposeOpen] = useState(false)
-  const [pickSearch, setPickSearch] = useState('')
-  const [picked, setPicked] = useState<ListedGame | null>(null)
-  const [draft, setDraft] = useState('')
-  const [draftLike, setDraftLike] = useState('')
-  const [draftDislike, setDraftDislike] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [composeOpen, setComposeOpen] = useState(initialSearch !== '')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
@@ -120,48 +103,15 @@ export default function ClubBoard({
     )
   }, [rows, search])
 
-  // 可以留言的遊戲：管理者不限，其他人要已玩或評分過
-  const pickMatches = useMemo(() => {
-    const query = normalizeText(pickSearch)
-    if (!query) return []
-    return boardGames
-      .filter(
-        (game) =>
-          !game.removedAt &&
-          (isAdmin ||
-            personal.entries[game.bggName]?.played ||
-            ratings.getMine(game.bggName) !== null) &&
-          (normalizeText(game.name).includes(query) ||
-            normalizeText(game.bggName).includes(query)),
-      )
-      .slice(0, 8)
-  }, [boardGames, pickSearch, isAdmin, personal.entries, ratings])
-
-  async function publish() {
-    if (!picked) return
-    if (!(await confirmPublicPost())) return
-    setSaving(true)
-    setMessage('')
-    const { error: rpcError } = await supabase.rpc('add_game_note', {
-      p_bgg_name: picked.bggName,
-      p_content: draft,
-      p_like: draftLike,
-      p_dislike: draftDislike,
-    })
-    setSaving(false)
-    if (rpcError) {
-      setMessage(explain(rpcError.message))
-      return
-    }
-    setDraft('')
-    setDraftLike('')
-    setDraftDislike('')
-    setPicked(null)
-    setPickSearch('')
-    setComposeOpen(false)
-    setMessage('已發表。')
-    await load()
-  }
+  // 從遊戲視窗進來時，表單預先填好這款（要是可以留言的遊戲才填）
+  const initialGame = useMemo(() => {
+    if (!initialSearch) return null
+    const game = boardGames.find((item) => item.name === initialSearch || item.bggName === initialSearch)
+    if (!game || game.removedAt) return null
+    if (!isAdmin && !personal.entries[game.bggName]?.played && ratings.getMine(game.bggName) === null)
+      return null
+    return game
+  }, [boardGames, initialSearch, isAdmin, personal.entries, ratings])
 
   // 按讚／取消讚：先在畫面上更新，失敗再還原
   async function toggleLike(row: NoteRow) {
@@ -203,23 +153,8 @@ export default function ClubBoard({
     await load()
   }
 
-  return (
+  const body = (
     <>
-      <div className="mylist-backdrop" onClick={onClose} />
-      <aside className="mylist-drawer" role="dialog" aria-label="留言板">
-        <div className="mylist-header">
-          <h2>留言板</h2>
-          <button
-            className="mylist-close"
-            type="button"
-            aria-label="關閉"
-            onClick={onBack}
-          >
-            ×
-          </button>
-        </div>
-
-        <div className="mylist-body">
           {enabled && (
             <div className="cb-actions">
               <button
@@ -234,70 +169,18 @@ export default function ClubBoard({
           )}
 
           {composeOpen && enabled && (
-            <div className="cb-compose">
-              {picked ? (
-                <p className="cb-picked">
-                  <b>{picked.name}</b>
-                  <button
-                    type="button"
-                    className="cb-link"
-                    onClick={() => setPicked(null)}
-                  >
-                    換一款
-                  </button>
-                </p>
-              ) : (
-                <>
-                  <input
-                    type="search"
-                    className="cb-input"
-                    placeholder="輸入遊戲名稱（只能選你玩過或評分過的）"
-                    value={pickSearch}
-                    onChange={(event) => setPickSearch(event.target.value)}
-                  />
-                  {pickMatches.length > 0 && (
-                    <ul className="cb-pick-list">
-                      {pickMatches.map((game) => (
-                        <li key={game.bggName}>
-                          <button type="button" onClick={() => setPicked(game)}>
-                            {game.name}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {pickSearch.trim() && pickMatches.length === 0 && (
-                    <p className="gb-empty">找不到符合的遊戲（要標記已玩或評分過才能留言）。</p>
-                  )}
-                </>
-              )}
-              <textarea
-                className="gb-textarea nl-short"
-                maxLength={200}
-                rows={2}
-                value={draft}
-                placeholder="想跟大家說什麼？（公開給 VIP，最多 200 字）"
-                onChange={(event) => setDraft(event.target.value)}
-              />
-              <PublicNoteHint />
-              <NotePointsFields
-                like={draftLike}
-                dislike={draftDislike}
-                onLike={setDraftLike}
-                onDislike={setDraftDislike}
-              />
-              <div className="gb-mine-actions">
-                <span className="gb-count">{draft.length} / 200</span>
-                <button
-                  type="button"
-                  className="gb-save"
-                  disabled={saving || !picked || draft.trim() === ''}
-                  onClick={() => void publish()}
-                >
-                  {saving ? '發表中…' : '發表'}
-                </button>
-              </div>
-            </div>
+            <NoteForm
+              key={initialGame?.bggName ?? ''}
+              games={boardGames}
+              personal={personal}
+              ratings={ratings}
+              isAdmin={isAdmin}
+              canPublic={enabled}
+              initialGame={initialGame}
+              initialKind="public"
+              onSaved={() => void load()}
+              onCancel={() => setComposeOpen(false)}
+            />
           )}
 
           {message && <p className="gb-empty">{message}</p>}
@@ -380,6 +263,29 @@ export default function ClubBoard({
               )}
             </>
           )}
+    </>
+  )
+
+  if (embedded) return body
+
+  return (
+    <>
+      <div className="mylist-backdrop" onClick={onClose} />
+      <aside className="mylist-drawer" role="dialog" aria-label="留言板">
+        <div className="mylist-header">
+          <h2>留言板</h2>
+          <button
+            className="mylist-close"
+            type="button"
+            aria-label="關閉"
+            onClick={onBack}
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="mylist-body">
+          {body}
         </div>
       </aside>
     </>

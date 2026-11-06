@@ -277,6 +277,8 @@ export default function MyList({
     alertCount = 0,
     gameChanges = [],
     onAlertsSeen,
+    notesUnseen = 0,
+    onNotesSeen,
     onClose,
     onBrowse,
     onOpenGame,
@@ -309,6 +311,9 @@ export default function MyList({
     alertCount?: number
     gameChanges?: GameChange[]
     onAlertsSeen?: () => void
+    // 集點聚會頁「留言板」分頁上的新留言數（灰褐色小數字，不計入導覽列紅點）
+    notesUnseen?: number
+    onNotesSeen?: () => void
     onClose: () => void
     onBrowse: () => void
     onOpenGame: (game: BoardGame, tab?: 'ratings' | 'discussion') => void
@@ -331,8 +336,16 @@ export default function MyList({
     const gatheringWriteRef = useRef(false)
     gatheringWriteRef.current = gatheringWrite
     const [statsTab, setStatsTab] = useState<StatsTab>('overview')
-    // 集點卡頁（VIP）的兩個分頁：集點卡｜未來聚會
-    const [loyaltyTab, setLoyaltyTab] = useState<'card' | 'upcoming'>('card')
+    // 集點聚會頁（VIP）的三個分頁：集點卡｜未來聚會｜留言板
+    // 從遊戲視窗「前往留言板」進來開留言板；有新的未來聚會（且不是從報到連結進來）預設開未來聚會
+    function defaultLoyaltyTab(): 'card' | 'upcoming' | 'board' {
+        if (mode === 'loyalty' && openView?.view === 'board' && isVip && !isAdmin) return 'board'
+        if (mode === 'loyalty' && !focusDate && plannedUnseen > 0 && alertCount === 0 && isVip && !isAdmin) {
+            return 'upcoming'
+        }
+        return 'card'
+    }
+    const [loyaltyTab, setLoyaltyTab] = useState<'card' | 'upcoming' | 'board'>(defaultLoyaltyTab)
     const [search, setSearch] = useState('')
     // 想玩、已玩各自記住排序（也記在這個瀏覽器）；切換分頁只清空搜尋
     const [sortWant, setSortWant] = useState<SortKey>(() => loadStatsView().sortWant)
@@ -370,7 +383,7 @@ export default function MyList({
             // 從遊戲視窗「前往我的評分」進來時，開在我的評分頁；其他情況回首頁
             setView(openRatings ? 'ratings' : openView ? openView.view : 'home')
             setStatsTab('overview')
-            setLoyaltyTab('card')
+            setLoyaltyTab(defaultLoyaltyTab())
             setSearch('')
             setShowHoursNote(false)
             setChartOpen(false)
@@ -384,6 +397,16 @@ export default function MyList({
             onPlannedSeen?.()
         }
     }, [isOpen, mode, showUpcomingTab, loyaltyTab, onPlannedSeen])
+
+    // 看到留言板分頁就把新留言記成已看過；離開留言板分頁就清掉「前往留言板」帶來的遊戲名稱
+    useEffect(() => {
+        if (isOpen && mode === 'loyalty' && showUpcomingTab && loyaltyTab === 'board') {
+            onNotesSeen?.()
+        }
+    }, [isOpen, mode, showUpcomingTab, loyaltyTab, onNotesSeen])
+    useEffect(() => {
+        if (mode === 'loyalty' && loyaltyTab !== 'board') setViewFocus(null)
+    }, [mode, loyaltyTab])
 
     // 看到集點卡分頁就把新加入的聚會、被移除的指定遊戲通知記成已看過
     useEffect(() => {
@@ -587,10 +610,47 @@ export default function MyList({
                                     </span>
                                 )}
                             </button>
+                            <button
+                                type="button"
+                                className={`lb-tab ${loyaltyTab === 'board' ? 'active' : ''}`}
+                                onClick={() => setLoyaltyTab('board')}
+                            >
+                                留言板
+                                {notesUnseen > 0 && loyaltyTab !== 'board' && (
+                                    <span
+                                        style={{
+                                            marginLeft: 6,
+                                            background: '#a89478',
+                                            color: '#fff',
+                                            borderRadius: 999,
+                                            padding: '1px 7px',
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                        }}
+                                    >
+                                        {notesUnseen}
+                                    </span>
+                                )}
+                            </button>
                         </div>
                     )}
                     <div className="mylist-body">
-                        {showUpcomingTab && loyaltyTab === 'upcoming' ? (
+                        {showUpcomingTab && loyaltyTab === 'board' ? (
+                            <ClubBoard
+                                embedded
+                                boardGames={boardGames}
+                                personal={personal}
+                                ratings={ratings}
+                                isAdmin={isAdmin}
+                                isVip={isVip}
+                                onBack={() => setLoyaltyTab('card')}
+                                onClose={onClose}
+                                onOpenGame={onOpenGame}
+                                initialSearch={
+                                    viewFocus ? (lookupGames.find((g) => g.bggName === viewFocus)?.name ?? '') : ''
+                                }
+                            />
+                        ) : showUpcomingTab && loyaltyTab === 'upcoming' ? (
                             <UpcomingGatherings
                                 embedded
                                 boardGames={boardGames}
@@ -644,6 +704,7 @@ export default function MyList({
                 onBack={() => setView('home')}
                 onClose={onClose}
                 focusGame={viewFocus}
+                composer={{ personal, ratings, isAdmin, canPublic: isVip || isAdmin }}
                 onOpenAddPlay={() => setView('addplay')}
                 onOpenWriteGathering={() => {
                     setGatheringTarget(null)
@@ -1132,6 +1193,7 @@ export default function MyList({
                     )}
                     {personal.isLoggedIn && (
                         <>
+                            {isAdmin && (
                             <div className="club-list club-more">
                                 <button
                                     type="button"
@@ -1146,6 +1208,7 @@ export default function MyList({
                                     <span className="club-menu-arrow" aria-hidden="true">›</span>
                                 </button>
                             </div>
+                            )}
                             <div className="club-list club-more">
                                 <button
                                     type="button"

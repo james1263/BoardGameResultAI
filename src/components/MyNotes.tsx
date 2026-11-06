@@ -10,6 +10,9 @@ import NoteListItem from './NoteListItem'
 import NotePointsFields from './NotePointsFields'
 import '../styles/my-notes.css'
 import { askConfirm } from '../lib/askConfirm'
+import NoteForm from './NoteForm'
+import type { PersonalApi } from '../lib/personalApi'
+import type { RatingsApi } from '../lib/useGameRatings'
 
 type ListedGame = BoardGame & { removedAt?: string | null }
 
@@ -102,6 +105,7 @@ export default function MyNotes({
   onOpenAddPlay,
   onOpenWriteGathering,
   focusGame = null,
+  composer,
 }: {
   boardGames: ListedGame[]
   renderCover: (game: BoardGame) => ReactNode
@@ -112,6 +116,8 @@ export default function MyNotes({
   onOpenWriteGathering: () => void
   // 從遊戲視窗「前往我的心得」進來：只看這一款（可按 × 取消）
   focusGame?: string | null
+  // 給了才會出現「＋ 寫心得／留言」（統一表單）
+  composer?: { personal: PersonalApi; ratings: RatingsApi; isAdmin: boolean; canPublic: boolean }
 }) {
   const gatheringNotes = useAllMyNotes()
   const gameNotes = useMyAllGameNotes()
@@ -125,6 +131,7 @@ export default function MyNotes({
   const [draftDislike, setDraftDislike] = useState('')
   const [message, setMessage] = useState('')
   const [focus, setFocus] = useState<string | null>(focusGame)
+  const [composeOpen, setComposeOpen] = useState(false)
 
   const gameByName = useMemo(() => {
     const map = new Map<string, ListedGame>()
@@ -295,6 +302,16 @@ export default function MyNotes({
 
         <div className="mylist-body">
           <div className="mh-top">
+            {composer && (
+              <button
+                type="button"
+                className="mh-add"
+                aria-expanded={composeOpen}
+                onClick={() => setComposeOpen((value) => !value)}
+              >
+                {focus ? '＋ 寫這款的心得' : '＋ 寫心得／留言'}
+              </button>
+            )}
             <button type="button" className="mh-add" onClick={onOpenWriteGathering}>
               ＋ 寫聚會心得
             </button>
@@ -302,6 +319,21 @@ export default function MyNotes({
               ＋ 新增遊玩紀錄
             </button>
           </div>
+
+          {composer && composeOpen && (
+            <NoteForm
+              key={focus ?? ''}
+              games={boardGames}
+              personal={composer.personal}
+              ratings={composer.ratings}
+              isAdmin={composer.isAdmin}
+              canPublic={composer.canPublic}
+              initialGame={focus ? (gameByName.get(focus) ?? null) : null}
+              initialKind="private"
+              onSaved={reloadAll}
+              onCancel={() => setComposeOpen(false)}
+            />
+          )}
 
           {focus && (
             <p style={{ margin: '0 0 8px', fontSize: 13, color: '#34463c' }}>

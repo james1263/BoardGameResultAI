@@ -72,6 +72,7 @@ import { updateDescription } from './lib/saveDescription'
 import NotePrompt from './components/NotePrompt'
 import { usePlannedUnseen } from './lib/usePlannedUnseen'
 import { useLoyaltyAlerts } from './lib/useLoyaltyAlerts'
+import { useNotesUnseen } from './lib/useNotesUnseen'
 
 // 新遊戲置頂：上架 15 天內，而且還沒有排名（Ranking engine 空白或不是整數，例如 .5 結尾）
 // 兩個條件任一個先結束，就不再置頂
@@ -182,6 +183,8 @@ function Library({
   const planned = usePlannedUnseen(session?.user?.id ?? null, vip.isVip && !isAdmin)
   // 新加入的聚會、被移除的指定遊戲（也算在導覽列「集點聚會」的數字裡）
   const loyaltyAlerts = useLoyaltyAlerts(session?.user?.id ?? null, vip.isVip && !isAdmin)
+  // 新留言數：只顯示在集點聚會頁「留言板」分頁上，不計入導覽列紅點
+  const notesUnseen = useNotesUnseen(session?.user?.id ?? null, vip.isVip && !isAdmin)
   // 導覽列「俱樂部」的數字：想玩＋已玩的款數（跟「我的統計」那一列同一個算法）
   const clubCount = useMemo(() => {
     let total = 0
@@ -355,6 +358,12 @@ function Library({
     setJumpGatheringId(null)
     setJumpRatings(null)
     setJumpView({ view, bggName })
+    // 一般 VIP 的留言板在「集點聚會」第三分頁；管理者與其他人仍在俱樂部
+    if (view === 'board' && vip.isVip && !isAdmin) {
+      setMyListMode('loyalty')
+      setActivePage('loyalty')
+      return
+    }
     setActivePage('mylist')
   }
 
@@ -1172,6 +1181,8 @@ function Library({
         alertCount={loyaltyAlerts.count}
         gameChanges={loyaltyAlerts.changes}
         onAlertsSeen={loyaltyAlerts.markAllSeen}
+        notesUnseen={notesUnseen.count}
+        onNotesSeen={notesUnseen.markSeen}
         onOpenLoyalty={openMyLoyalty}
         onOpenRules={() => setActivePage('rules')}
         isAdmin={isAdmin}
