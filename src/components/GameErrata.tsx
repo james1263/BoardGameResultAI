@@ -20,11 +20,14 @@ export default function GameErrata({
   isAdmin,
   defaultOpen,
   bigSubmit,
+  hideSubmit,
 }: {
   bggName: string
   isAdmin: boolean
   defaultOpen?: boolean
   bigSubmit?: boolean
+  // 規則助手裡只看、不投稿（投稿統一在「俱樂部 → 我的投稿」）
+  hideSubmit?: boolean
 }) {
   const { items, loading, error, reload } = useGameErrata(bggName, true)
   const [formOpen, setFormOpen] = useState(false)
@@ -274,7 +277,7 @@ export default function GameErrata({
 
         {!bigSubmit && message && <p className="er-note">{message}</p>}
 
-        {!bigSubmit && !isAdmin && !formOpen && (
+        {!bigSubmit && !hideSubmit && !isAdmin && !formOpen && (
           <div className="rb-actions">
             <button
               type="button"
