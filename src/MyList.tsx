@@ -12,7 +12,6 @@ import { useMyLoyalty } from './lib/useLoyalty'
 import { PROFILE_SAVED_EVENT, signInWithGoogle } from './lib/googleLogin'
 import MyGatherings from './components/MyGatherings'
 import MyNotes from './components/MyNotes'
-import AddPlayLog from './components/AddPlayLog'
 import PlayedGameRecord from './components/PlayedGameRecord'
 import ClubBoard from './components/ClubBoard'
 import MySubmissions from './components/MySubmissions'
@@ -27,7 +26,7 @@ type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
-type View = 'home' | 'stats' | 'ratings' | 'gatherings' | 'addplay' | 'notes' | 'board' | 'submissions'
+type View = 'home' | 'stats' | 'ratings' | 'gatherings' | 'notes' | 'board' | 'submissions'
 type StatsTab = 'overview' | 'want' | 'played' | 'score' | 'chart'
 type SortKey =
     | 'added'
@@ -363,11 +362,10 @@ export default function MyList({
     // 分布圖用全螢幕頁面開啟
     const [chartOpen, setChartOpen] = useState(false)
     // 分頁切換不另建瀏覽歷史：返回鍵與 ✕ 一律回「我的俱樂部」首頁
-    // 「新增遊玩紀錄」從「我的心得」進去，返回先回我的心得
     useBackClose(
         () =>
             setView((current) =>
-                current === 'addplay' || (current === 'gatherings' && gatheringWriteRef.current)
+                current === 'gatherings' && gatheringWriteRef.current
                     ? 'notes'
                     : 'home',
             ),
@@ -741,20 +739,6 @@ export default function MyList({
                 onClose={onClose}
                 onOpenGame={onOpenGame}
                 renderCover={renderCover}
-            />
-        )
-    }
-
-    // ---------- 補記遊玩 ----------
-    if (view === 'addplay') {
-        return (
-            <AddPlayLog
-                boardGames={lookupGames}
-                personal={personal}
-                playSessions={playSessions}
-                canShare={isVip || isAdmin}
-                onBack={() => setView('notes')}
-                onClose={onClose}
             />
         )
     }
