@@ -138,6 +138,12 @@ function guessScope(fileName: string): DocScope {
   const lower = fileName.toLowerCase()
   if (lower.includes('faq') || lower.includes('errata') || fileName.includes('勘誤')) return 'faq'
   if (lower.includes('expansion') || fileName.includes('擴充')) return 'expansion'
+  // 玩家整理的檔案（非官方）：預設猜「玩家整理」，猜錯可在文件列改範圍
+  if (
+    /player|fan[-_ ]?made|cheat|summary|reference|one[-_ ]?pag|quick[-_ ]?(ref|guide)|teach/i.test(fileName) ||
+    /玩家整理|整理|懶人包|速查|摘要/.test(fileName)
+  )
+    return 'player_notes' as DocScope
   return 'main'
 }
 
@@ -400,8 +406,10 @@ export default function RulebookBatchUpload({
 }: {
   pendingErrata?: number
 }) {
-  const [mode, setMode] = useState<'pdf' | 'link' | 'errata' | 'glossary' | 'submissions' | null>(null)
+  const [mode, setMode] = useState<'pdf' | 'link' | 'errata' | 'glossary' | null>(null)
   const subs = useAdminSubmissions(true)
+  const linkPending = subs.rows.filter((row) => row.kind === 'link').length
+  const glossaryPending = subs.rows.filter((row) => row.kind === 'glossary').length
   // 從玩家投稿帶進「貼連結」表單時，記下投稿 id，新增成功後才標成已核准
   const [linkFromSub, setLinkFromSub] = useState<string | null>(null)
   const [usage, setUsage] = useState<StorageUsage | null>(null)
@@ -917,6 +925,7 @@ export default function RulebookBatchUpload({
           onClick={() => setMode(mode === 'link' ? null : 'link')}
         >
           ＋ 貼連結
+          <PendingBadge count={linkPending} />
         </button>
         <button
           type="button"
@@ -936,16 +945,7 @@ export default function RulebookBatchUpload({
           onClick={() => setMode(mode === 'glossary' ? null : 'glossary')}
         >
           ＋ 詞庫
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === 'submissions'}
-          className={mode === 'submissions' ? 'active' : ''}
-          disabled={running}
-          onClick={() => setMode(mode === 'submissions' ? null : 'submissions')}
-        >
-          ＋ 連結／詞庫投稿
-          <PendingBadge count={subs.rows.length} />
+          <PendingBadge count={glossaryPending} />
         </button>
       </div>
 
@@ -1098,6 +1098,21 @@ export default function RulebookBatchUpload({
             新增後會出現在下方文件列表。
           </p>
 
+          <SubmissionsAdmin
+            kind="link"
+            rows={subs.rows}
+            error={subs.error}
+            onChanged={() => void subs.reload()}
+            onUseLink={(row: AdminSubmission) => {
+              setLinkFromSub(row.id)
+              setLinkGame(row.bgg_name)
+              setLinkTitle(row.title)
+              setLinkUrl(row.value)
+              setLinkError('')
+              setLinkDone('')
+            }}
+          />
+
           <form className="rb-fields rb-linkform" onSubmit={submitLink}>
             <GamePicker
               games={activeGames}
@@ -1158,6 +1173,16 @@ export default function RulebookBatchUpload({
       )}
 
       {mode === 'glossary' && (
+        <SubmissionsAdmin
+          kind="glossary"
+          rows={subs.rows}
+          error={subs.error}
+          onChanged={() => void subs.reload()}
+          onUseLink={() => {}}
+        />
+      )}
+
+      {mode === 'glossary' && (
         <GlossaryAdmin
           renderPicker={(value, onChange) => (
             <GamePicker games={activeGames} value={value} onChange={onChange} />
@@ -1166,23 +1191,6 @@ export default function RulebookBatchUpload({
       )}
 
       {mode === 'glossary' && <GlossaryMisses />}
-
-      {mode === 'submissions' && (
-        <SubmissionsAdmin
-          rows={subs.rows}
-          error={subs.error}
-          onChanged={() => void subs.reload()}
-          onUseLink={(row: AdminSubmission) => {
-            setLinkFromSub(row.id)
-            setLinkGame(row.bgg_name)
-            setLinkTitle(row.title)
-            setLinkUrl(row.value)
-            setLinkError('')
-            setLinkDone('')
-            setMode('link')
-          }}
-        />
-      )}
 
       {mode === 'pdf' &&
         renderDocList('PDF', pdfDocs, (d) => d.source_type === 'upload')}
