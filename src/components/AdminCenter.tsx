@@ -4,6 +4,7 @@ import MemberAdmin from './MemberAdmin'
 import LoyaltyAdmin from '../LoyaltyAdmin'
 import RulebookBatchUpload from './RulebookBatchUpload'
 import { OPEN_CSV_IMPORT_EVENT } from '../lib/adminEvents'
+import PendingBadge from './PendingBadge'
 
 type Tab = 'members' | 'gatherings' | 'rulebooks' | 'data'
 
@@ -19,10 +20,12 @@ export default function AdminCenter({
   isOpen,
   onToggle,
   onClose,
+  pendingCount = 0,
 }: {
   isOpen: boolean
   onToggle: () => void
   onClose: () => void
+  pendingCount?: number
 }) {
   const [tab, setTab] = useState<Tab>('members')
 
@@ -42,6 +45,11 @@ export default function AdminCenter({
           ⚙
         </span>
         <span>管理</span>
+        {pendingCount > 0 && (
+          <span className="sb-count" aria-label={`${pendingCount} 筆待審核`}>
+            {pendingCount}
+          </span>
+        )}
       </button>
 
       {isOpen &&
@@ -74,7 +82,10 @@ export default function AdminCenter({
                     <span className="ac-tab-ico" aria-hidden="true">
                       {item.icon}
                     </span>
-                    <span className="ac-tab-label">{item.label}</span>
+                    <span className="ac-tab-label">
+                      {item.label}
+                      {item.key === 'rulebooks' && <PendingBadge count={pendingCount} />}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -82,7 +93,7 @@ export default function AdminCenter({
               <div className="ac-body">
                 {tab === 'members' && <MemberAdmin />}
                 {tab === 'gatherings' && <LoyaltyAdmin />}
-                {tab === 'rulebooks' && <RulebookBatchUpload />}
+                {tab === 'rulebooks' && <RulebookBatchUpload pendingErrata={pendingCount} />}
                 {tab === 'data' && (
                   <div className="ac-data">
                     <h3>匯入 CSV（Notion 匯出）</h3>

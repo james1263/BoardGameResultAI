@@ -15,6 +15,7 @@ import {
   type AdminErrataRow,
   type Errata,
 } from '../lib/useGameErrata'
+import { PENDING_CHANGED_EVENT } from '../lib/useAdminPending'
 import '../styles/errata.css'
 
 // 管理中心「規則書」分頁 →「＋ 玩錯紀錄」：直接打字，或讀入 .txt 後修改再儲存
@@ -132,6 +133,7 @@ export default function ErrataAdmin({
       return
     }
     setMessage(approve ? '已核准，之後會出現在規則助手與遊戲詳細資料。' : '已退回。')
+    window.dispatchEvent(new Event(PENDING_CHANGED_EVENT))
     onChanged?.()
     pending.reload()
     api.reload()
@@ -171,6 +173,7 @@ export default function ErrataAdmin({
       return
     }
     setMessage('已刪除。')
+    window.dispatchEvent(new Event(PENDING_CHANGED_EVENT))
     onChanged?.()
     pending.reload()
     api.reload()

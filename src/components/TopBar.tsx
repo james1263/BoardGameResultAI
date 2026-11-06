@@ -5,6 +5,7 @@ import VipJoinDialog from './VipJoinDialog'
 import { supabase } from '../lib/supabase'
 import { useIsAdmin } from '../lib/useIsAdmin'
 import { useVip } from '../lib/useVip'
+import { useAdminPending } from '../lib/useAdminPending'
 
 // 導覽列對應的頁面：一次只會開一個，點另一顆會直接取代，再點同一顆就關閉
 export type NavPage = 'leaderboard' | 'rules' | 'admin' | 'loyalty' | 'mylist'
@@ -32,6 +33,7 @@ export default function TopBar({
 }) {
   const isAdmin = useIsAdmin()
   const vip = useVip()
+  const pendingCount = useAdminPending(isAdmin)
   const [isVipDialogOpen, setIsVipDialogOpen] = useState(false)
 
   const showJoinVip = vip.loggedIn && vip.checked && !vip.isVip && !isAdmin
@@ -100,6 +102,7 @@ export default function TopBar({
               isOpen={activePage === 'admin'}
               onToggle={() => onGoPage('admin')}
               onClose={onCloseAdmin}
+              pendingCount={pendingCount}
             />
           ) : (
             <button

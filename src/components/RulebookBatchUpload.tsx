@@ -19,6 +19,7 @@ import '../styles/rb-docs-tidy.css'
 import ErrataAdmin from './ErrataAdmin'
 import GlossaryAdmin from './GlossaryAdmin'
 import GlossaryMisses from './GlossaryMisses'
+import PendingBadge from './PendingBadge'
 
 type GameOption = { bgg_name: string; name: string; removed_at?: string | null }
 type DocKind = 'rulebook' | 'faq' | 'errata'
@@ -392,7 +393,11 @@ function GameDocGroup({
 
 // ── 元件 ─────────────────────────────────────────────
 
-export default function RulebookBatchUpload() {
+export default function RulebookBatchUpload({
+  pendingErrata = 0,
+}: {
+  pendingErrata?: number
+}) {
   const [mode, setMode] = useState<'pdf' | 'link' | 'errata' | 'glossary' | null>(null)
   const [usage, setUsage] = useState<StorageUsage | null>(null)
   const [usageError, setUsageError] = useState('')
@@ -910,6 +915,7 @@ export default function RulebookBatchUpload() {
           onClick={() => setMode(mode === 'errata' ? null : 'errata')}
         >
           ＋ 玩錯紀錄
+          <PendingBadge count={pendingErrata} />
         </button>
         <button
           type="button"
