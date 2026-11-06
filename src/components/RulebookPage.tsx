@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { LibraryGame } from '../lib/libraryTypes'
 import RulebookAssistant from './RulebookAssistant'
+import ErrataBoard from './ErrataBoard'
 import { getIndexedGames } from '../lib/useRulebookSearch'
 import { useBackClose } from '../lib/useBackClose'
+import { useIsAdmin } from '../lib/useIsAdmin'
+import { useErrataUnseen } from '../lib/useErrataUnseen'
 import '../styles/ra-large.css'
 
 export default function RulebookPage({
@@ -19,6 +22,9 @@ export default function RulebookPage({
   const [indexed, setIndexed] = useState<string[] | null>(null)
   const [search, setSearch] = useState('')
   const [picked, setPicked] = useState<LibraryGame | null>(null)
+  const [tab, setTab] = useState<'assistant' | 'errata'>('assistant')
+  const isAdmin = useIsAdmin()
+  const unseen = useErrataUnseen(!isAdmin)
 
   useEffect(() => {
     let cancelled = false
@@ -54,19 +60,69 @@ export default function RulebookPage({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="ra-page-head">
-          {picked && (
+          {picked && tab === 'assistant' && (
             <button type="button" className="ra-back" onClick={() => setPicked(null)}>
               ‹ 換遊戲
             </button>
           )}
-          <h2>{picked ? picked.name : '規則助手'}</h2>
+          <h2>{tab === 'errata' ? '玩錯紀錄・投稿' : picked ? picked.name : '規則助手'}</h2>
           <button type="button" className="ra-x" aria-label="關閉" onClick={onClose}>
             ✕
           </button>
         </div>
 
+        <div
+          role="tablist"
+          style={{ display: 'flex', gap: 8, padding: '8px 16px', borderBottom: '1px solid #e3d9c4' }}
+        >
+          {([
+            ['assistant', '規則助手'],
+            ['errata', '玩錯紀錄・投稿'],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              style={{
+                flex: 1,
+                padding: '8px 10px',
+                borderRadius: 10,
+                border: '1px solid #456B50',
+                background: tab === key ? '#456B50' : 'transparent',
+                color: tab === key ? '#fff' : '#34463c',
+                fontWeight: 700,
+                fontSize: 15,
+              }}
+            >
+              {label}
+              {key === 'errata' && unseen > 0 && (
+                <span
+                  style={{
+                    marginLeft: 6,
+                    padding: '1px 7px',
+                    borderRadius: 999,
+                    background: '#c0392b',
+                    color: '#fff',
+                    fontSize: 12,
+                  }}
+                >
+                  {unseen}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
         <div className="ra-page-body">
-          {picked ? (
+          {tab === 'errata' ? (
+            <ErrataBoard
+              boardGames={boardGames}
+              isAdmin={isAdmin}
+              initialBggName={picked?.bggName ?? null}
+            />
+          ) : picked ? (
             <>
               <button
                 type="button"
@@ -79,6 +135,7 @@ export default function RulebookPage({
                 key={picked.bggName}
                 bggName={picked.bggName}
                 gameName={picked.name}
+                onGoSubmit={() => setTab('errata')}
               />
             </>
           ) : indexed === null ? (

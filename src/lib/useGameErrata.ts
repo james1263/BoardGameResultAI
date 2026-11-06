@@ -20,6 +20,8 @@ export type Errata = {
   verified?: boolean
   reject_reason?: string
   is_mine?: boolean
+  // 'errata'＝玩錯紀錄（預設）；'ai_answer'＝規則助手的 AI 回饋
+  kind?: string
 }
 
 export type PendingErrata = {
@@ -34,6 +36,7 @@ export type PendingErrata = {
   nickname: string
   contact_name: string
   created_at: string
+  kind?: string
 }
 
 // 讀取某款遊戲的玩錯紀錄（VIP／管理者）
@@ -126,6 +129,8 @@ function errataErrorText(text: string): string {
   if (text.includes('game not found')) return '找不到這款遊戲。'
   if (text.includes('not found')) return '找不到這筆投稿，可能已被審核或刪除。'
   if (text.includes('reason required')) return '退回時請寫原因。'
+  if (text.includes('page required')) return 'AI 回饋一定要有依據頁碼。'
+  if (text.includes('bad kind')) return '投稿類型不正確。'
   if (text.includes('not vip')) return '只有 VIP 可以投稿。'
   if (text.includes('not admin')) return '只有管理者可以審核。'
   return '失敗：' + text
@@ -140,6 +145,7 @@ export async function submitErrata(input: {
   sourceNote: string
   pageRef: string
   verified: boolean
+  kind?: 'errata' | 'ai_answer'
 }): Promise<string> {
   const { error } = await supabase.rpc('submit_game_errata', {
     p_id: input.id,
@@ -149,6 +155,7 @@ export async function submitErrata(input: {
     p_source: input.sourceNote,
     p_page: input.pageRef,
     p_verified: input.verified,
+    p_kind: input.kind ?? 'errata',
   })
   return error ? errataErrorText(error.message ?? '') : ''
 }
@@ -187,6 +194,7 @@ export type AdminErrataRow = {
   from_player: boolean
   nickname: string
   updated_at: string
+  kind?: string
 }
 
 // 管理者：所有遊戲、所有狀態的玩錯紀錄
@@ -249,4 +257,56 @@ export function usePendingErrata(enabled: boolean) {
 
   const reload = useCallback(() => setTick((n) => n + 1), [])
   return { items, loading, error, reload }
+}
+
+// 玩家整理的標籤文字（管理者記錄回傳空字串）
+export function errataTag(e: { from_player?: boolean; kind?: string; verified?: boolean }): string {
+  if (!e.from_player) return ''
+  const base = e.kind === 'ai_answer' ? '玩家整理・AI 回答（已審核）' : '玩家整理・已審核'
+  return e.verified ? base : base + '・【未驗證】'
+}
+
+export type ErrataFeedRow = {
+  id: string
+  bgg_name: string
+  game_name: string | null
+  title: string
+  content: string
+  source_note: string
+  page_ref: string
+  verified: boolean
+  kind: string
+  from_player: boolean
+  changed_at: string
+}
+
+// 所有遊戲最近核准或新增的玩錯紀錄／AI 回饋（VIP／管理者）
+export function useErrataFeed(enabled: boolean) {
+  const [items, setItems] = useState<ErrataFeedRow[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!enabled) return
+    let cancelled = false
+    setLoading(true)
+    supabase
+      .rpc('get_errata_feed', { p_bgg_name: null, p_limit: 30 })
+      .then(({ data, error: rpcError }) => {
+        if (cancelled) return
+        setLoading(false)
+        if (rpcError) {
+          setError('讀取最近更新失敗')
+          setItems([])
+          return
+        }
+        setError('')
+        setItems((data ?? []) as ErrataFeedRow[])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [enabled])
+
+  return { items, loading, error }
 }

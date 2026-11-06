@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { askConfirm } from '../lib/askConfirm'
 import {
   deleteMyErrata,
+  errataTag,
   ERRATA_MAX_CONTENT,
   ERRATA_MAX_PAGE,
   ERRATA_MAX_SOURCE,
@@ -17,9 +18,13 @@ import '../styles/errata.css'
 export default function GameErrata({
   bggName,
   isAdmin,
+  defaultOpen,
+  bigSubmit,
 }: {
   bggName: string
   isAdmin: boolean
+  defaultOpen?: boolean
+  bigSubmit?: boolean
 }) {
   const { items, loading, error, reload } = useGameErrata(bggName, true)
   const [formOpen, setFormOpen] = useState(false)
@@ -99,89 +104,8 @@ export default function GameErrata({
     reload()
   }
 
-  return (
-    <details className="ov-fold er-fold">
-      <summary>玩錯紀錄（{approved.length}）</summary>
-      <div className="ov-fold-body">
-        <p className="er-note">
-          管理者記錄或玩家整理（管理者審核後公開）的玩錯經驗，不是官方規則；與規則書衝突時，以規則書為準。
-        </p>
-        {loading && <p className="er-note">載入中…</p>}
-        {error && <p className="er-note">{error}</p>}
-        {!loading && !error && approved.length === 0 && (
-          <p className="er-note">
-            {isAdmin
-              ? '還沒有紀錄。到管理中心「規則書」→「＋ 玩錯紀錄」新增。'
-              : '這款還沒有玩錯紀錄。'}
-          </p>
-        )}
-        <ul className="er-list">
-          {approved.map((item) => (
-            <li key={item.id}>
-              <div className="er-title">
-                {item.title}
-                {item.from_player && (
-                  <small className="er-src"> ・玩家整理・已審核{item.verified ? '' : '・【未驗證】'}</small>
-                )}
-              </div>
-              <p className="er-body">{item.content}</p>
-              {item.page_ref && <small className="er-src">參考頁碼：{item.page_ref}　</small>}
-              {item.source_note && (
-                <small className="er-src">來源：{item.source_note}</small>
-              )}
-            </li>
-          ))}
-        </ul>
-
-        {mine.length > 0 && (
-          <>
-            <h4 className="er-list-title">我的投稿（只有你和管理者看得到）</h4>
-            <ul className="er-list">
-              {mine.map((item) => (
-                <li key={item.id}>
-                  <div className="er-title">
-                    {item.title}
-                    <small className="er-src">
-                      {' '}・{item.status === 'pending' ? '審核中' : '已退回'}
-                    </small>
-                  </div>
-                  <p className="er-body">{item.content}</p>
-                  {item.status === 'rejected' && item.reject_reason && (
-                    <small className="er-src">退回原因：{item.reject_reason}</small>
-                  )}
-                  <div className="rb-actions">
-                    <button type="button" className="admin-link" onClick={() => startEdit(item)}>
-                      {item.status === 'rejected' ? '修改後重新送審' : '修改'}
-                    </button>
-                    <button type="button" className="admin-link" onClick={() => void removeMine(item)}>
-                      刪除
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-
-        {message && <p className="er-note">{message}</p>}
-
-        {!isAdmin && !formOpen && (
-          <div className="rb-actions">
-            <button
-              type="button"
-              className="admin-link"
-              onClick={() => {
-                resetForm()
-                setMessage('')
-                setFormOpen(true)
-              }}
-            >
-              ＋ 我要投稿
-            </button>
-          </div>
-        )}
-
-        {!isAdmin && formOpen && (
+  const formBlock =
+    !isAdmin && formOpen ? (
           <div className="er-form">
             <p className="er-note">
               投稿要經管理者審核才會公開，公開時不顯示你的名字。請盡量對照規則書後再投稿。
@@ -251,7 +175,122 @@ export default function GameErrata({
               </button>
             </div>
           </div>
+    ) : null
+
+  return (
+    <details className="ov-fold er-fold" open={defaultOpen || undefined}>
+      <summary>玩錯紀錄・AI 回饋（{approved.length}）</summary>
+      <div className="ov-fold-body">
+        <p className="er-note">
+          管理者記錄或玩家整理（管理者審核後公開）的玩錯經驗，不是官方規則；與規則書衝突時，以規則書為準。
+        </p>
+        {bigSubmit && !isAdmin && !formOpen && (
+          <button
+            type="button"
+            className="er-submit-big"
+            style={{
+              display: 'block',
+              width: '100%',
+              margin: '4px 0 14px',
+              padding: '16px 12px',
+              border: 'none',
+              borderRadius: 12,
+              background: '#456b50',
+              color: '#fbf7ec',
+              fontSize: 18,
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(52,70,60,0.25)',
+            }}
+            onClick={() => {
+              resetForm()
+              setMessage('')
+              setFormOpen(true)
+            }}
+          >
+            ＋ 我要投稿玩錯紀錄
+          </button>
         )}
+
+        {bigSubmit && formBlock}
+        {bigSubmit && message && <p className="er-note">{message}</p>}
+
+        {loading && <p className="er-note">載入中…</p>}
+        {error && <p className="er-note">{error}</p>}
+        {!loading && !error && approved.length === 0 && (
+          <p className="er-note">
+            {isAdmin
+              ? '還沒有紀錄。到管理中心「規則書」→「＋ 玩錯紀錄」新增。'
+              : '這款還沒有玩錯紀錄。'}
+          </p>
+        )}
+        <ul className="er-list">
+          {approved.map((item) => (
+            <li key={item.id}>
+              <div className="er-title">
+                {item.title}
+                {item.from_player && (
+                  <small className="er-src"> ・{errataTag(item)}</small>
+                )}
+              </div>
+              <p className="er-body">{item.content}</p>
+              {item.page_ref && <small className="er-src">參考頁碼：{item.page_ref}　</small>}
+              {item.source_note && (
+                <small className="er-src">來源：{item.source_note}</small>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        {mine.length > 0 && (
+          <>
+            <h4 className="er-list-title">我的投稿（只有你和管理者看得到）</h4>
+            <ul className="er-list">
+              {mine.map((item) => (
+                <li key={item.id}>
+                  <div className="er-title">
+                    {item.title}
+                    <small className="er-src">
+                      {' '}・{item.status === 'pending' ? '審核中' : '已退回'}
+                    </small>
+                  </div>
+                  <p className="er-body">{item.content}</p>
+                  {item.status === 'rejected' && item.reject_reason && (
+                    <small className="er-src">退回原因：{item.reject_reason}</small>
+                  )}
+                  <div className="rb-actions">
+                    <button type="button" className="admin-link" onClick={() => startEdit(item)}>
+                      {item.status === 'rejected' ? '修改後重新送審' : '修改'}
+                    </button>
+                    <button type="button" className="admin-link" onClick={() => void removeMine(item)}>
+                      刪除
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {!bigSubmit && message && <p className="er-note">{message}</p>}
+
+        {!bigSubmit && !isAdmin && !formOpen && (
+          <div className="rb-actions">
+            <button
+              type="button"
+              className="admin-link"
+              onClick={() => {
+                resetForm()
+                setMessage('')
+                setFormOpen(true)
+              }}
+            >
+              ＋ 我要投稿
+            </button>
+          </div>
+        )}
+
+        {!bigSubmit && formBlock}
       </div>
     </details>
   )
