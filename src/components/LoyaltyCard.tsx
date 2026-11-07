@@ -13,6 +13,7 @@ import { RATING_FIELDS, type RatingsApi } from '../lib/useGameRatings'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import { useVip } from '../lib/useVip'
 import VipLock from './VipLock'
+import { TodayRatingModal } from './TodayRatingFlow'
 import type { GameChange } from '../lib/useLoyaltyAlerts'
 import '../styles/lc-months.css'
 
@@ -42,6 +43,7 @@ export default function LoyaltyCard({
   const loyalty = useMyLoyalty()
   const vip = useVip()
   const scrolledRef = useRef(false)
+  const [flowOpen, setFlowOpen] = useState(false)
   // 近期紀錄依月份摺疊：記下使用者手動展開／收合的月份
   const [monthToggles, setMonthToggles] = useState<Record<string, boolean>>({})
 
@@ -255,6 +257,15 @@ export default function LoyaltyCard({
     <div className="lc">
       {loyalty.error && <p className="lc-error">讀取失敗：{loyalty.error}</p>}
 
+      {flowOpen && (
+        <TodayRatingModal
+          games={todayGames}
+          boardGames={boardGames}
+          ratings={ratings}
+          onClose={() => setFlowOpen(false)}
+        />
+      )}
+
 
       <header className="lc-banner">
         <span className="lc-banner-kicker">BOARD GAME NIGHT</span>
@@ -303,27 +314,14 @@ export default function LoyaltyCard({
       {showTodayTask && (
         <section className="lc-today">
           <p className="lc-today-kicker">今天要做的事</p>
-          <h4 className="lc-today-title">評一款今天玩的遊戲，就能蓋章</h4>
-          <p className="lc-today-sub">七項評分填完整就得 1 點。</p>
-          <ul className="lc-games">
-            {todayGames.map((bggName) => {
-              const game = gameMap.get(bggName)
-              return (
-                <li className="lc-game" key={bggName}>
-                  <span className="lc-game-name">{game?.name ?? bggName}</span>
-                  {game && (
-                    <button
-                      type="button"
-                      className="lc-btn"
-                      onClick={() => onOpenGame(game, 'ratings')}
-                    >
-                      去評分
-                    </button>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
+          <h4 className="lc-today-title">今日遊玩紀錄</h4>
+          <p className="lc-today-sub">先勾選今天玩過的遊戲，再逐款評分，評完就蓋章得 1 點。</p>
+          <p className="lc-today-sub">
+            今天指定 {todayGames.length} 款・已完成評分 {todayGames.filter((name) => isComplete(name)).length} / {todayGames.length} 款
+          </p>
+          <button type="button" className="lc-btn" onClick={() => setFlowOpen(true)}>
+            選擇今天玩過的遊戲
+          </button>
         </section>
       )}
 

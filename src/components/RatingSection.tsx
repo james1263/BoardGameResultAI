@@ -182,6 +182,8 @@ export default function RatingSection({
     beforeSave,
     onReward,
     hideCommunity = false,
+    requireFull = false,
+    flow,
 }: {
     bggName: string
     api: RatingsApi
@@ -191,6 +193,15 @@ export default function RatingSection({
     onReward?: (lines: string[]) => void
     // 選填：不顯示「大家的評分」摘要（報到流程用）
     hideCommunity?: boolean
+    // 選填：不管有沒有集點，七項都必填（今日遊玩任務用）
+    requireFull?: boolean
+    // 選填：今日遊玩任務的底部按鈕（上一款／下一款）；有傳就取代「送出評分」「刪除」
+    flow?: {
+        nextLabel: string
+        prevLabel: string
+        onPrev: () => void
+        onNext: () => void
+    }
 }) {
     const mine = api.getMine(bggName)
     const [draft, setDraft] = useState<Draft>(() => toDraft(mine))
@@ -222,7 +233,9 @@ export default function RatingSection({
     const voucherDays = new Set(
         loyalty.redemptions.flatMap((item) => (item.usedOn ? [item.usedOn] : [])),
     )
-    const needFull = loyalty.gatherings.some(
+    const needFull =
+        requireFull ||
+        loyalty.gatherings.some(
         (item) =>
             item.date <= today &&
             item.games.includes(bggName) &&
@@ -252,10 +265,10 @@ export default function RatingSection({
         }))
     }
 
-    async function handleSave() {
-        if (draft.overall == null || draft.scores.keep == null) return
-        if (needFull && !complete) return
-        if (beforeSave && !(await beforeSave())) return
+    async function handleSave(): Promise<boolean> {
+        if (draft.overall == null || draft.scores.keep == null) return false
+        if (needFull && !complete) return false
+        if (beforeSave && !(await beforeSave())) return false
         const overall = draft.overall
         const userId = session?.user?.id ?? null
 
@@ -273,7 +286,7 @@ export default function RatingSection({
         }
 
         const ok = await api.saveRating(bggName, { overall, ...draft.scores })
-        if (!ok || !becomesComplete || !userId) return
+        if (!ok || !becomesComplete || !userId) return ok
 
         const [afterLoyalty, afterCount] = await Promise.all([
             readLoyalty(),
@@ -296,6 +309,14 @@ export default function RatingSection({
             if (onReward) onReward(lines)
             else setReward(lines)
         }
+        return true
+    }
+
+    // 今日遊玩任務：沒送出的先送出（成功才往下），已送出的直接往下
+    async function handleFlowNext() {
+        if (!flow || !complete) return
+        if (dirty && !(await handleSave())) return
+        flow.onNext()
     }
 
     async function handleDelete() {
@@ -403,31 +424,54 @@ export default function RatingSection({
                         </p>
                         {needFull && !complete && (
                             <p className="rate-note" style={{ color: '#b5483a', fontWeight: 700 }}>
-                                這款是你出席聚會的遊戲，七項都填完才能送出並得到點數。還沒填：
+                                {flow
+                                    ? '此項為必填，請完成評分。還沒填：'
+                                    : '這款是你出席聚會的遊戲，七項都填完才能送出並得到點數。還沒填：'}
                                 {missingLabels.join('、')}
                             </p>
                         )}
 
-                        <div className="rate-actions">
-                            <button
-                                type="button"
-                                className="rate-save"
-                                disabled={!canEdit || !requiredDone || !dirty || savingBlocked}
-                                onClick={handleSave}
-                            >
-                                {api.busy ? '處理中…' : mine ? '更新評分' : '送出評分'}
-                            </button>
-                            {mine && (
+                        {flow ? (
+                            <div className="tf-flow-actions">
                                 <button
                                     type="button"
-                                    className="rate-delete"
-                                    disabled={!canEdit}
-                                    onClick={handleDelete}
+                                    className="tf-prev"
+                                    disabled={api.busy}
+                                    onClick={flow.onPrev}
                                 >
-                                    刪除我的評分
+                                    {flow.prevLabel}
                                 </button>
-                            )}
-                        </div>
+                                <button
+                                    type="button"
+                                    className="tf-next"
+                                    disabled={!canEdit || !complete || savingBlocked}
+                                    onClick={() => void handleFlowNext()}
+                                >
+                                    {api.busy ? '處理中…' : flow.nextLabel}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="rate-actions">
+                                <button
+                                    type="button"
+                                    className="rate-save"
+                                    disabled={!canEdit || !requiredDone || !dirty || savingBlocked}
+                                    onClick={handleSave}
+                                >
+                                    {api.busy ? '處理中…' : mine ? '更新評分' : '送出評分'}
+                                </button>
+                                {mine && (
+                                    <button
+                                        type="button"
+                                        className="rate-delete"
+                                        disabled={!canEdit}
+                                        onClick={handleDelete}
+                                    >
+                                        刪除我的評分
+                                    </button>
+                                )}
+                            </div>
+                        )}
                         <p className="rate-note">
                             公開的只有彙總平均，你個別的評分只有你自己看得到。
                         </p>

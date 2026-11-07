@@ -1,0 +1,72 @@
+/* 今日遊玩任務：勾選遊戲 → 逐款評分 → 完成（元件自己 import；沿用 checkin-pick.css 的 cp-* 封面格子） */
+.tf { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.tf-title { margin: 0; font-size: 17px; font-weight: 700; color: #34463c; }
+.tf-sub { margin: 0; font-size: 13px; line-height: 1.6; color: #6b6a5c; }
+.tf-count { margin: 2px 0 0; font-size: 14px; font-weight: 700; text-align: center; color: #34463c; }
+
+.tf-primary {
+  height: 46px; font-size: 16px; font-weight: 700; color: #fff;
+  background: #456b50; border: 0; border-radius: 14px; cursor: pointer;
+}
+.tf-primary:disabled { color: #9a9a8a; background: #e4ddc9; cursor: default; }
+
+.tf-done-tag {
+  display: inline-block; align-self: center; padding: 1px 8px; font-size: 11px;
+  color: #2f5a3b; background: #e3efe4; border-radius: 999px;
+}
+
+.tf-head { display: flex; align-items: center; gap: 10px; }
+.tf-thumb {
+  flex: 0 0 52px; width: 52px; height: 52px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: #efe7d3; border-radius: 10px;
+}
+.tf-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.tf-head-text { display: flex; flex-direction: column; min-width: 0; }
+.tf-step { font-size: 12px; color: #7a6a4a; }
+.tf-gname { font-size: 17px; color: #34463c; overflow-wrap: anywhere; }
+.tf-progress { height: 8px; overflow: hidden; background: #e8dfc9; border-radius: 99px; }
+.tf-progress > span { display: block; height: 100%; background: #456b50; border-radius: 99px; transition: width 0.25s; }
+
+.tf-rate-box { max-height: 54vh; overflow-y: auto; padding-right: 2px; }
+
+/* 評分表單底部：上一款／下一款 */
+.tf-flow-actions {
+  position: sticky; bottom: 0; display: flex; gap: 10px; padding: 10px 0 2px;
+  background: linear-gradient(to bottom, rgba(251, 247, 236, 0), #fbf7ec 30%);
+}
+.tf-flow-actions .tf-prev {
+  flex: 0 0 auto; height: 46px; padding: 0 16px; font-size: 14px; color: #34463c;
+  background: #fbf7ec; border: 1px solid #d8c9a8; border-radius: 14px; cursor: pointer;
+}
+.tf-flow-actions .tf-next {
+  flex: 1 1 auto; height: 46px; font-size: 16px; font-weight: 700; color: #fff;
+  background: #456b50; border: 0; border-radius: 14px; cursor: pointer;
+}
+.tf-flow-actions .tf-next:disabled { color: #9a9a8a; background: #e4ddc9; cursor: default; }
+.tf-flow-hint { margin: 4px 0 0; font-size: 13px; font-weight: 700; color: #b5483a; }
+
+.tf-success { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px 0 4px; text-align: center; }
+.tf-success-ico { font-size: 40px; line-height: 1; }
+.tf-reward { margin: 0; font-size: 14px; line-height: 1.6; color: #34463c; }
+
+/* 從集點卡開啟的視窗（層級高於俱樂部抽屜 1200、遊戲視窗 1220） */
+.tf-backdrop {
+  position: fixed; inset: 0; z-index: 1245; display: flex;
+  align-items: center; justify-content: center; padding: 12px;
+  background: rgba(0, 0, 0, 0.45);
+}
+@media (max-width: 760px) {
+  .tf-backdrop { bottom: var(--nav-h, 64px); }
+}
+.tf-sheet {
+  display: flex; flex-direction: column; width: 100%; max-width: 480px; max-height: 100%;
+  background: #fbf7ec; border-radius: 18px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+.tf-sheet-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 8px; border-bottom: 1px solid #e3d9c4;
+}
+.tf-sheet-head h3 { margin: 0; font-size: 17px; color: #34463c; }
+.tf-x { width: 34px; height: 34px; font-size: 18px; color: #34463c; background: none; border: 0; cursor: pointer; }
+.tf-sheet-body { padding: 12px 16px 16px; overflow-y: auto; }
