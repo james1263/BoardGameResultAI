@@ -274,6 +274,9 @@ export default function MySubmissions({
 }) {
   const [tab, setTab] = useState<Tab>('errata')
   const [errataGame, setErrataGame] = useState('')
+  const [errataOpen, setErrataOpen] = useState(false)
+  // 按了「投稿」或點進某筆已投稿的遊戲，就進入選遊戲／填寫畫面
+  const showErrataForm = errataOpen || errataGame !== ''
   const { subs, errata, loading, error, reload } = useMySubmissions(true)
   const pendingOf = (kind: SubKind) => subs.filter((s) => s.kind === kind && s.status === 'pending').length
   const pendingErrata = errata.filter((e) => e.status === 'pending').length
@@ -317,13 +320,22 @@ export default function MySubmissions({
               <p className="er-note">
                 投稿經管理者審核才會公開（在「規則助手」可以看到），公開時不顯示你的名字。
               </p>
-              <GamePick games={boardGames} value={errataGame} onChange={setErrataGame} />
-              {errataGame ? (
-                <GameErrata key={errataGame} bggName={errataGame} isAdmin={false} defaultOpen bigSubmit />
-              ) : (
+              {!showErrataForm && (
+                <button
+                  type="button"
+                  className="ma-btn"
+                  style={{ width: '100%', padding: '12px', margin: '4px 0 12px' }}
+                  onClick={() => setErrataOpen(true)}
+                >
+                  ＋ 投稿玩錯紀錄
+                </button>
+              )}
+              {showErrataForm && <GamePick games={boardGames} value={errataGame} onChange={setErrataGame} />}
+              {errataGame && <GameErrata key={errataGame} bggName={errataGame} isAdmin={false} defaultOpen bigSubmit />}
+              {!showErrataForm && (
                 <>
                   <h4 className="er-list-title">我的玩錯紀錄投稿（{errata.length}）</h4>
-                  {errata.length === 0 && <p className="er-note">還沒有投稿。搜尋遊戲後就能投稿。</p>}
+                  {errata.length === 0 && <p className="er-note">還沒有投稿。</p>}
                   <ul className="er-list">
                     {errata.map((e) => (
                       <li key={e.id}>
@@ -343,12 +355,13 @@ export default function MySubmissions({
                   </ul>
                 </>
               )}
-              {errataGame && (
+              {showErrataForm && (
                 <button
                   type="button"
                   className="admin-link"
                   onClick={() => {
                     setErrataGame('')
+                    setErrataOpen(false)
                     void reload()
                   }}
                 >

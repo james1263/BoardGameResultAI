@@ -198,11 +198,20 @@ export function useGameExpansions(bggName: string) {
   }, [reload])
 
   // 回傳空字串＝成功，否則是錯誤訊息
-  async function add(name: string, file: File | null): Promise<string> {
+  async function add(
+    name: string,
+    file: File | null,
+    links: ExpansionLink[] = [],
+  ): Promise<string> {
     const next = rows.reduce((max, r) => Math.max(max, r.sortOrder), 0) + 1
     const { data, error: err } = await supabase
       .from('game_expansions')
-      .insert({ bgg_name: bggName, name, sort_order: next })
+      .insert({
+        bgg_name: bggName,
+        name,
+        sort_order: next,
+        links: toStoredLinks(links),
+      })
       .select('id')
       .single()
     if (err || !data) return '新增失敗：' + (err?.message ?? '')

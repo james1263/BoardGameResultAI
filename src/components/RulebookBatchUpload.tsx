@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { askConfirm, askInput } from '../lib/askConfirm'
 import { takeEmptyPageNote } from '../lib/extractPdfText'
@@ -23,7 +23,12 @@ import PendingBadge from './PendingBadge'
 import SubmissionsAdmin from './SubmissionsAdmin'
 import { reviewSubmission, useAdminSubmissions, type AdminSubmission } from '../lib/useRuleSubmissions'
 
-type GameOption = { bgg_name: string; name: string; removed_at?: string | null }
+type GameOption = {
+  bgg_name: string
+  name: string
+  removed_at?: string | null
+  reference_only?: boolean | null
+}
 type DocKind = 'rulebook' | 'faq' | 'errata'
 type Lang = 'zh' | 'en'
 type RowStatus = 'ready' | 'uploading' | 'done' | 'error'
@@ -51,6 +56,10 @@ type AllDoc = {
   title: string | null
   source_type: string
   storage_path: string | null
+  doc_type?: string | null
+  ai_indexed?: boolean | null
+  index_status?: string | null
+  page_count?: number | null
 }
 
 // 免費方案的檔案儲存額度。請對照 Supabase 後台 Usage，數字不對就改這裡
@@ -401,6 +410,152 @@ function GameDocGroup({
 
 // ── 元件 ─────────────────────────────────────────────
 
+// ── 規則書涵蓋狀況：哪些遊戲已上傳、哪些還沒 ─────────────────────
+
+type CoverStatus = 'indexed' | 'pending' | 'link' | 'none'
+type CoverFilter = 'all' | CoverStatus
+
+const COVER_TEXT: Record<CoverStatus, string> = {
+  indexed: '已有規則書',
+  pending: '索引未完成',
+  link: '只有連結',
+  none: '什麼都沒有',
+}
+const COVER_COLOR: Record<CoverStatus, string> = {
+  indexed: '#456b50',
+  pending: '#b4541a',
+  link: '#8a6a3e',
+  none: '#a03a3a',
+}
+const COVER_ORDER: Record<CoverStatus, number> = { none: 0, pending: 1, link: 2, indexed: 3 }
+
+function CoverageList({
+  games,
+  docs,
+  loaded,
+}: {
+  games: GameOption[]
+  docs: AllDoc[]
+  loaded: boolean
+}) {
+  const [filter, setFilter] = useState<CoverFilter>('none')
+  const [query, setQuery] = useState('')
+
+  const rows = useMemo(() => {
+    const byGame = new Map<string, AllDoc[]>()
+    for (const d of docs) {
+      const list = byGame.get(d.bgg_name)
+      if (list) list.push(d)
+      else byGame.set(d.bgg_name, [d])
+    }
+    return games
+      .map((game) => {
+        const list = byGame.get(game.bgg_name) ?? []
+        const uploads = list.filter((d) => d.source_type === 'upload')
+        const indexed = uploads.filter((d) => d.ai_indexed && d.index_status === 'completed')
+        const links = list.filter((d) => d.source_type !== 'upload')
+        const status: CoverStatus =
+          indexed.length > 0
+            ? 'indexed'
+            : uploads.length > 0
+              ? 'pending'
+              : links.length > 0
+                ? 'link'
+                : 'none'
+        const pages = indexed.reduce((sum, d) => sum + (d.page_count ?? 0), 0)
+        return { game, status, indexed: indexed.length, uploads: uploads.length, links: links.length, pages }
+      })
+      .sort(
+        (a, b) =>
+          COVER_ORDER[a.status] - COVER_ORDER[b.status] ||
+          (a.game.name || a.game.bgg_name).localeCompare(b.game.name || b.game.bgg_name, 'zh-Hant'),
+      )
+  }, [games, docs])
+
+  const count = (s: CoverStatus) => rows.filter((r) => r.status === s).length
+  const q = query.trim().toLocaleLowerCase()
+  const shown = rows.filter(
+    (r) =>
+      (filter === 'all' || r.status === filter) &&
+      (q === '' ||
+        r.game.name.toLocaleLowerCase().includes(q) ||
+        r.game.bgg_name.toLocaleLowerCase().includes(q)),
+  )
+
+  const filters: { key: CoverFilter; label: string; n: number }[] = [
+    { key: 'none', label: '什麼都沒有', n: count('none') },
+    { key: 'link', label: '只有連結', n: count('link') },
+    { key: 'pending', label: '索引未完成', n: count('pending') },
+    { key: 'indexed', label: '已有規則書', n: count('indexed') },
+    { key: 'all', label: '全部', n: rows.length },
+  ]
+
+  return (
+    <details className="rb-coverage" style={{ margin: '10px 0' }} open>
+      <summary style={{ cursor: 'pointer', fontWeight: 700 }}>
+        規則書涵蓋狀況：已有規則書 {count('indexed')}／{rows.length} 款
+        {count('none') > 0 ? `・還沒有 ${count('none')} 款` : ''}
+      </summary>
+      {!loaded ? (
+        <p className="rb-hint">讀取中…</p>
+      ) : (
+        <>
+          <p className="rb-hint">
+            「已有規則書」＝至少一份上傳的 PDF 已建立搜尋索引。「索引未完成」＝有上傳但索引沒成功，要重傳。
+            垃圾桶與「僅供參考」的遊戲不列入。
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '6px 0' }}>
+            {filters.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                aria-pressed={filter === f.key}
+                className={filter === f.key ? 'ma-btn' : 'admin-link'}
+                style={{ padding: '6px 10px' }}
+                onClick={() => setFilter(f.key)}
+              >
+                {f.label}（{f.n}）
+              </button>
+            ))}
+          </div>
+          <input
+            className="ra-search"
+            type="search"
+            placeholder="搜尋遊戲名稱"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0, maxHeight: 360, overflowY: 'auto' }}>
+            {shown.map((r) => (
+              <li
+                key={r.game.bgg_name}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  padding: '7px 2px',
+                  borderBottom: '1px solid #e3d9c4',
+                }}
+              >
+                <span>{r.game.name || r.game.bgg_name}</span>
+                <span style={{ color: COVER_COLOR[r.status], fontWeight: 600, textAlign: 'right', fontSize: 13 }}>
+                  {COVER_TEXT[r.status]}
+                  {r.status === 'indexed'
+                    ? `（${r.indexed} 份${r.pages > 0 ? `・${r.pages} 頁` : ''}）`
+                    : ''}
+                  {r.status !== 'indexed' && r.links > 0 && r.status !== 'link' ? `・連結 ${r.links}` : ''}
+                  {r.status === 'link' ? `（${r.links} 個）` : ''}
+                </span>
+              </li>
+            ))}
+            {shown.length === 0 && <li className="rb-hint">沒有符合的遊戲。</li>}
+          </ul>
+        </>
+      )}
+    </details>
+  )
+}
+
 export default function RulebookBatchUpload({
   pendingErrata = 0,
 }: {
@@ -415,6 +570,7 @@ export default function RulebookBatchUpload({
   const [usage, setUsage] = useState<StorageUsage | null>(null)
   const [usageError, setUsageError] = useState('')
   const [allDocs, setAllDocs] = useState<AllDoc[]>([])
+  const [docsLoaded, setDocsLoaded] = useState(false)
   const [listSearch, setListSearch] = useState('')
   const [openGames, setOpenGames] = useState<string[]>([])
   const [listTick, setListTick] = useState(0)
@@ -428,7 +584,7 @@ export default function RulebookBatchUpload({
       supabase.rpc('admin_rulebook_storage_usage'),
       supabase
         .from('game_documents')
-        .select('id, bgg_name, title, source_type, storage_path')
+        .select('id, bgg_name, title, source_type, storage_path, doc_type, ai_indexed, index_status, page_count')
         .order('created_at', { ascending: false }),
     ])
     if (usageResult.error) {
@@ -437,7 +593,10 @@ export default function RulebookBatchUpload({
       setUsageError('')
       setUsage(usageResult.data as StorageUsage)
     }
-    if (!docsResult.error) setAllDocs((docsResult.data ?? []) as AllDoc[])
+    if (!docsResult.error) {
+      setAllDocs((docsResult.data ?? []) as AllDoc[])
+      setDocsLoaded(true)
+    }
     const errataResult = await supabase.rpc('admin_count_game_errata')
     if (!errataResult.error) {
       setErrataCounts(
@@ -508,7 +667,7 @@ export default function RulebookBatchUpload({
     let cancelled = false
     supabase
       .from('board_games')
-      .select('bgg_name, name, removed_at')
+      .select('bgg_name, name, removed_at, reference_only')
       .order('bgg_name', { ascending: true })
       .then(({ data, error }) => {
         if (cancelled) return
@@ -907,6 +1066,11 @@ export default function RulebookBatchUpload({
   return (
     <div className="rb">
       <UsageBar usage={usage} error={usageError} />
+      <CoverageList
+        games={activeGames.filter((g) => !g.reference_only)}
+        docs={allDocs}
+        loaded={docsLoaded}
+      />
       <div className="rb-seg" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <button
           type="button"

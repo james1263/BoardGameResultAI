@@ -24,6 +24,7 @@ export default function GameExpansions({
   const api = useGameExpansions(bggName)
   const [newName, setNewName] = useState('')
   const [newFile, setNewFile] = useState<File | null>(null)
+  const [newLinks, setNewLinks] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [openLinksId, setOpenLinksId] = useState<string | null>(null)
@@ -57,10 +58,17 @@ export default function GameExpansions({
       setMessage(`名稱最多 ${MAX_NAME} 字。`)
       return
     }
+    // 連結選填：有填才檢查格式
+    const parsed = parseLinkLines(newLinks)
+    if (parsed.error) {
+      setMessage(parsed.error)
+      return
+    }
     await run(async () => {
-      const result = await api.add(name, newFile)
+      const result = await api.add(name, newFile, parsed.links)
       setNewName('')
       setNewFile(null)
+      setNewLinks('')
       if (newFileRef.current) newFileRef.current.value = ''
       return result
     })
@@ -316,6 +324,14 @@ export default function GameExpansions({
                   }
                 />
               </label>
+              <textarea
+                className="ge-input"
+                rows={3}
+                value={newLinks}
+                disabled={busy}
+                placeholder={`連結（選填，最多 ${MAX_LINKS} 個）\n每行「標籤 網址」，沒填標籤就直接顯示網址`}
+                onChange={(event) => setNewLinks(event.target.value)}
+              />
               <button
                 type="button"
                 className="ge-add"
