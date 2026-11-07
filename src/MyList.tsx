@@ -13,6 +13,7 @@ import { PROFILE_SAVED_EVENT, signInWithGoogle } from './lib/googleLogin'
 import MyGatherings from './components/MyGatherings'
 import MyNotes from './components/MyNotes'
 import PlayedGameRecord from './components/PlayedGameRecord'
+import PastPlayDates from './components/PastPlayDates'
 import ClubBoard from './components/ClubBoard'
 import MySubmissions from './components/MySubmissions'
 import MyRatingsPanel from './components/MyRatingsPanel'
@@ -1096,6 +1097,7 @@ export default function MyList({
                                                                         </p>
                                                                     )
                                                                 )}
+                                                                <PastPlayDates bggName={game.bggName} playSessions={playSessions} />
                                                                 {(
                                                                     <PlayedGameRecord
                                                                         bggName={game.bggName}
