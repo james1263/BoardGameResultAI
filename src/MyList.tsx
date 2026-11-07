@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { BoardGame } from './data/boardGames.generated'
 import { usePersonalCollection } from './lib/usePersonalCollection'
 import type { PlaySessionsApi } from './lib/useGamePlaySessions'
@@ -26,7 +26,9 @@ type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
-type View = 'home' | 'stats' | 'ratings' | 'gatherings' | 'notes' | 'board' | 'submissions'
+type View = 'home' | 'stats' | 'ratings' | 'gatherings' | 'notes' | 'board' | 'submissions' | 'card'
+// 「聚會．留言」頁的分頁按鈕：放大，才不容易沒注意到
+const BIG_TAB: CSSProperties = { flex: 1, fontSize: 17, padding: '14px 10px' }
 type StatsTab = 'overview' | 'want' | 'played' | 'score' | 'chart'
 type SortKey =
     | 'added'
@@ -171,6 +173,64 @@ function ClubPointsLine() {
     )
 }
 
+// 俱樂部最上面的大卡：免費券與本月點數（只有 VIP、非管理者）
+function ClubPointsCard({ onOpen }: { onOpen: () => void }) {
+    const loyalty = useMyLoyalty()
+    const summary = loyalty.summary
+    const held = summary?.availableVouchers ?? 0
+    const usable = summary?.usableVouchers ?? 0
+    const later = Math.max(held - usable, 0)
+    const month = summary?.monthPoints ?? 0
+    const loading = loyalty.loading && !summary
+
+    return (
+        <button
+            type="button"
+            onClick={onOpen}
+            aria-label="打開集點卡"
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                width: '100%',
+                margin: '12px 0 0',
+                padding: '14px 16px',
+                border: '1px solid #e3d9c4',
+                borderRadius: 14,
+                background: '#fbf7ec',
+                color: '#34463c',
+                textAlign: 'left',
+                cursor: 'pointer',
+            }}
+        >
+            {loading ? (
+                <span style={{ flex: 1, fontSize: 14 }}>集點資料讀取中…</span>
+            ) : (
+                <>
+                    <span style={{ flex: 1 }}>
+                        <span style={{ display: 'block', fontSize: 13, color: '#7a6a52' }}>免費券</span>
+                        <span style={{ display: 'block', fontSize: 22, fontWeight: 800, color: '#34463c' }}>
+                            🎟 {held} 張
+                        </span>
+                        {later > 0 && (
+                            <span style={{ display: 'block', fontSize: 12, color: '#7a6a52' }}>
+                                {later} 張明天起可用
+                            </span>
+                        )}
+                    </span>
+                    <span style={{ flex: 1 }}>
+                        <span style={{ display: 'block', fontSize: 13, color: '#7a6a52' }}>本月點數</span>
+                        <span style={{ display: 'block', fontSize: 22, fontWeight: 800, color: '#34463c' }}>
+                            {month} / 2
+                        </span>
+                    </span>
+                </>
+            )}
+            <span aria-hidden="true" style={{ fontSize: 22, color: '#a89478' }}>›</span>
+        </button>
+    )
+}
+
 function ClubHeader({
     isAdmin,
     isVip,
@@ -268,6 +328,7 @@ export default function MyList({
     openGatheringId,
     openRatings = null,
     openView = null,
+    openCard = false,
     isAdmin,
     isVip,
     todayPending,
@@ -302,6 +363,8 @@ export default function MyList({
     openRatings?: string | null
     // 從遊戲視窗「前往留言板／我的心得」進來：直接開在那個子畫面，並帶入遊戲
     openView?: { view: 'board' | 'notes'; bggName: string | null; write?: boolean } | null
+    // 從報到、集點卡連結、「去評分」進來：直接開在集點卡
+    openCard?: boolean
     isAdmin: boolean
     isVip: boolean
     todayPending: boolean
@@ -325,7 +388,7 @@ export default function MyList({
     renderCover: (game: BoardGame) => ReactNode
 }) {
     const [view, setView] = useState<View>(
-        openGatheringId ? 'gatherings' : openRatings ? 'ratings' : openView ? openView.view : 'home',
+        openCard ? 'card' : openGatheringId ? 'gatherings' : openRatings ? 'ratings' : openView ? openView.view : 'home',
     )
     // 從遊戲視窗跳來時，我的評分頁直接展開那一款（只用一次）
     const [ratingsFocus, setRatingsFocus] = useState<string | null>(openRatings)
@@ -338,16 +401,12 @@ export default function MyList({
     // 要直接打開的聚會詳情（從遊戲視窗或「我的心得」跳過來）
     const [gatheringTarget, setGatheringTarget] = useState<string | null>(openGatheringId ?? null)
     const [statsTab, setStatsTab] = useState<StatsTab>('overview')
-    // 集點聚會頁（VIP）的三個分頁：集點卡｜未來聚會｜留言板
-    // 從遊戲視窗「前往留言板」進來開留言板；有新的未來聚會（且不是從報到連結進來）預設開未來聚會
-    function defaultLoyaltyTab(): 'card' | 'upcoming' | 'board' {
+    // 「聚會．留言」頁（VIP）的兩個分頁：未來聚會｜留言板（集點卡已搬到俱樂部）
+    function defaultLoyaltyTab(): 'upcoming' | 'board' {
         if (mode === 'loyalty' && openView?.view === 'board' && isVip && !isAdmin) return 'board'
-        if (mode === 'loyalty' && !focusDate && plannedUnseen > 0 && alertCount === 0 && isVip && !isAdmin) {
-            return 'upcoming'
-        }
-        return 'card'
+        return 'upcoming'
     }
-    const [loyaltyTab, setLoyaltyTab] = useState<'card' | 'upcoming' | 'board'>(defaultLoyaltyTab)
+    const [loyaltyTab, setLoyaltyTab] = useState<'upcoming' | 'board'>(defaultLoyaltyTab)
     const [search, setSearch] = useState('')
     // 想玩、已玩各自記住排序（也記在這個瀏覽器）；切換分頁只清空搜尋
     const [sortWant, setSortWant] = useState<SortKey>(() => loadStatsView().sortWant)
@@ -375,7 +434,7 @@ export default function MyList({
     useEffect(() => {
         if (isOpen) {
             // 從遊戲視窗「前往我的評分」進來時，開在我的評分頁；其他情況回首頁
-            setView(openRatings ? 'ratings' : openView ? openView.view : 'home')
+            setView(openCard ? 'card' : openRatings ? 'ratings' : openView ? openView.view : 'home')
             setStatsTab('overview')
             setLoyaltyTab(defaultLoyaltyTab())
             setSearch('')
@@ -402,12 +461,12 @@ export default function MyList({
         if (mode === 'loyalty' && loyaltyTab !== 'board') setViewFocus(null)
     }, [mode, loyaltyTab])
 
-    // 看到集點卡分頁就把新加入的聚會、被移除的指定遊戲通知記成已看過
+    // 打開集點卡就把新加入的聚會、被移除的指定遊戲通知記成已看過
     useEffect(() => {
-        if (isOpen && mode === 'loyalty' && showUpcomingTab && loyaltyTab === 'card' && alertCount > 0) {
+        if (isOpen && mode !== 'loyalty' && view === 'card' && showUpcomingTab && alertCount > 0) {
             onAlertsSeen?.()
         }
-    }, [isOpen, mode, showUpcomingTab, loyaltyTab, alertCount, onAlertsSeen])
+    }, [isOpen, mode, view, showUpcomingTab, alertCount, onAlertsSeen])
 
     // 只記住排序
     useEffect(() => {
@@ -548,14 +607,14 @@ export default function MyList({
     const isLoading = personal.isLoggedIn && personal.status === 'loading'
     const sourceCount = tab === 'want' ? wantGames.length : playedGames.length
 
-    // ---------- 集點卡（維持原樣） ----------
+    // ---------- 聚會．留言（未來聚會、留言板） ----------
     if (isLoyalty) {
         return (
             <>
                 <div className="mylist-backdrop" onClick={onClose} />
-                <aside className="mylist-drawer" role="dialog" aria-label="集點聚會">
+                <aside className="mylist-drawer" role="dialog" aria-label="聚會．留言">
                     <div className="mylist-header">
-                        <h2>集點聚會</h2>
+                        <h2>聚會．留言</h2>
                         <button
                             className="mylist-close"
                             type="button"
@@ -569,29 +628,8 @@ export default function MyList({
                         <div className="lb-tabs">
                             <button
                                 type="button"
-                                className={`lb-tab ${loyaltyTab === 'card' ? 'active' : ''}`}
-                                onClick={() => setLoyaltyTab('card')}
-                            >
-                                集點卡
-                                {alertCount > 0 && loyaltyTab !== 'card' && (
-                                    <span
-                                        style={{
-                                            marginLeft: 6,
-                                            background: '#b5483a',
-                                            color: '#fff',
-                                            borderRadius: 999,
-                                            padding: '1px 7px',
-                                            fontSize: 12,
-                                            fontWeight: 700,
-                                        }}
-                                    >
-                                        {alertCount}
-                                    </span>
-                                )}
-                            </button>
-                            <button
-                                type="button"
                                 className={`lb-tab ${loyaltyTab === 'upcoming' ? 'active' : ''}`}
+                                style={BIG_TAB}
                                 onClick={() => setLoyaltyTab('upcoming')}
                             >
                                 未來聚會
@@ -614,6 +652,7 @@ export default function MyList({
                             <button
                                 type="button"
                                 className={`lb-tab ${loyaltyTab === 'board' ? 'active' : ''}`}
+                                style={BIG_TAB}
                                 onClick={() => setLoyaltyTab('board')}
                             >
                                 留言板
@@ -642,7 +681,7 @@ export default function MyList({
                                 boardGames={boardGames}
                                 isAdmin={isAdmin}
                                 isVip={isVip}
-                                onBack={() => setLoyaltyTab('card')}
+                                onBack={() => setLoyaltyTab('upcoming')}
                                 onClose={onClose}
                                 onOpenGame={onOpenGame}
                                 onWrite={() => onOpenWrite?.(null)}
@@ -660,16 +699,43 @@ export default function MyList({
                                 onOpenGame={onOpenGame}
                             />
                         ) : (
-                            <LoyaltyCard
-                                boardGames={boardGames}
-                                ratings={ratings}
-                                personal={personal}
-                                playSessions={playSessions}
-                                focusDate={focusDate}
-                                gameChanges={gameChanges}
-                                onOpenGame={onOpenGame}
-                            />
+                            <p className="club-note" style={{ margin: 16 }}>
+                                「未來聚會」和「留言板」是 VIP 專屬。向管理者索取通關密碼，或參加聚會報到就能成為 VIP。
+                            </p>
                         )}
+                    </div>
+                </aside>
+            </>
+        )
+    }
+
+    // ---------- 集點卡（俱樂部裡的子畫面） ----------
+    if (view === 'card') {
+        return (
+            <>
+                <div className="mylist-backdrop" onClick={onClose} />
+                <aside className="mylist-drawer" role="dialog" aria-label="集點卡">
+                    <div className="mylist-header">
+                        <h2>集點卡</h2>
+                        <button
+                            className="mylist-close"
+                            type="button"
+                            aria-label="回俱樂部"
+                            onClick={() => setView('home')}
+                        >
+                            ×
+                        </button>
+                    </div>
+                    <div className="mylist-body">
+                        <LoyaltyCard
+                            boardGames={boardGames}
+                            ratings={ratings}
+                            personal={personal}
+                            playSessions={playSessions}
+                            focusDate={focusDate}
+                            gameChanges={gameChanges}
+                            onOpenGame={onOpenGame}
+                        />
                     </div>
                 </aside>
             </>
@@ -1095,6 +1161,9 @@ export default function MyList({
             <aside className="mylist-drawer" role="dialog" aria-label="我的俱樂部">
                 <div className="mylist-body club-body">
                     <ClubHeader isAdmin={isAdmin} isVip={isVip} onClose={onClose} />
+                    {personal.isLoggedIn && isVip && !isAdmin && (
+                        <ClubPointsCard onOpen={() => setView('card')} />
+                    )}
                     {todayPending && (
                         <div className="club-today">
                             <div>
@@ -1212,6 +1281,34 @@ export default function MyList({
                                     <span className="club-menu-arrow" aria-hidden="true">›</span>
                                 </button>
                             </div>
+                            {!isAdmin && (
+                                <div className="club-list club-more">
+                                    <button
+                                        type="button"
+                                        className="club-menu-item club-menu-single"
+                                        onClick={() => setView('card')}
+                                    >
+                                        <span className="club-menu-icon" aria-hidden="true">🎟</span>
+                                        <span className="club-menu-text">
+                                            <b>集點卡</b>
+                                            <span className="club-menu-sub">點數、免費券、近期紀錄</span>
+                                        </span>
+                                        {todayPending && isVip && (
+                                            <span
+                                                aria-label="今天有遊戲要評分"
+                                                style={{
+                                                    width: 9,
+                                                    height: 9,
+                                                    borderRadius: 999,
+                                                    background: '#b5483a',
+                                                    marginRight: 6,
+                                                }}
+                                            />
+                                        )}
+                                        <span className="club-menu-arrow" aria-hidden="true">›</span>
+                                    </button>
+                                </div>
+                            )}
                         </>
                     )}
                 </div>

@@ -14,21 +14,25 @@ export type NavPage = 'leaderboard' | 'rules' | 'admin' | 'loyalty' | 'mylist'
 export default function TopBar({
   loyaltyBadge,
   clubCount = 0,
+  clubPoints = null,
   activePage,
   onGoPage,
   onGoHome,
-  loyaltyAlert,
+  clubAlert,
   canUseRules,
   onCloseAdmin,
 }: {
-  // 集點聚會圖示上的小數字：還沒看過的新預計聚會、新加入的聚會、被移除的指定遊戲（0 就不顯示）
+  // 「聚會．留言」圖示上的紅色數字：還沒看過的新未來聚會（0 就不顯示）
   loyaltyBadge: number
-  // 俱樂部圖示上的小數字：想玩＋已玩的款數（0 就不顯示）
+  // 俱樂部圖示上的小數字（管理者與非 VIP）：想玩＋已玩的款數（0 就不顯示）
   clubCount?: number
+  // 俱樂部圖示上的咖啡色數字（VIP）：本月點數 ＋ 2 × 免費券張數；null＝不是 VIP，改用 clubCount
+  clubPoints?: number | null
   activePage: NavPage | null
   onGoPage: (page: NavPage) => void
   onGoHome: () => void
-  loyaltyAlert: boolean
+  // 俱樂部紅點：今天有聚會、還沒評分
+  clubAlert: boolean
   canUseRules: boolean
   onCloseAdmin: () => void
 }) {
@@ -120,10 +124,7 @@ export default function TopBar({
               <span className="sb-ico" aria-hidden="true">
                 🎟
               </span>
-              <span>集點聚會</span>
-              {loyaltyAlert && (
-                <span className="sb-dot" aria-label="今天有遊戲要評分" />
-              )}
+              <span>聚會．留言</span>
               {loyaltyBadge > 0 && (
                 <span className="sb-count" aria-label={`${loyaltyBadge} 則新通知`}>
                   {loyaltyBadge}
@@ -140,10 +141,25 @@ export default function TopBar({
               ♥
             </span>
             <span>俱樂部</span>
-            {clubCount > 0 && (
-              <span className="sb-count" aria-label={`想玩與已玩共 ${clubCount} 款`}>
-                {clubCount}
-              </span>
+            {clubAlert && (
+              <span className="sb-dot" aria-label="今天有遊戲要評分" />
+            )}
+            {clubPoints !== null ? (
+              clubPoints > 0 && (
+                <span
+                  className="sb-count"
+                  aria-label={`本月點數與免費券共 ${clubPoints} 點`}
+                  style={{ background: '#a89478', color: '#fff', whiteSpace: 'nowrap' }}
+                >
+                  本月 {clubPoints}
+                </span>
+              )
+            ) : (
+              clubCount > 0 && (
+                <span className="sb-count" aria-label={`想玩與已玩共 ${clubCount} 款`}>
+                  {clubCount}
+                </span>
+              )
             )}
           </button>
           {showJoinVip && (

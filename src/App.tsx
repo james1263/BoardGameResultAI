@@ -204,11 +204,28 @@ function Library({
   const [jumpRatings, setJumpRatings] = useState<string | null>(null)
   // 從遊戲視窗「前往留言板／我的心得」跳到俱樂部對應子畫面（並帶入那款遊戲）
   const [jumpView, setJumpView] = useState<{ view: 'board' | 'notes'; bggName: string | null; write?: boolean } | null>(null)
+  // 從報到、集點卡連結、「去評分」進來：直接打開俱樂部裡的集點卡
+  const [jumpCard, setJumpCard] = useState(false)
   // 聚會報到後評分：遊戲視窗要顯示完整評分表單（集點必填）
   const [ratingFromCheckin, setRatingFromCheckin] = useState(false)
   const isMyListOpen = activePage === 'mylist' || activePage === 'loyalty'
   const isLeaderboardOpen = activePage === 'leaderboard'
   const isRulesOpen = activePage === 'rules'
+  // 俱樂部數字（VIP）：本月點數 ＋ 2 × 手上的免費券（月底點數歸零、券不會）
+  const clubPoints =
+    vip.isVip && !isAdmin && todayTask.summary
+      ? todayTask.summary.monthPoints + 2 * todayTask.summary.availableVouchers
+      : null
+  // 關掉頁面或遊戲視窗後重讀集點資料，導覽列數字才會跟上剛得到的點數
+  const reloadTask = todayTask.reload
+  const taskReloadReady = useRef(false)
+  useEffect(() => {
+    if (!taskReloadReady.current) {
+      taskReloadReady.current = true
+      return
+    }
+    reloadTask()
+  }, [activePage, selectedGame === null, reloadTask])
   // 管理者傳的集點卡連結：登入後自動打開自己的集點卡
   const {
     pending: invitePending,
@@ -224,8 +241,9 @@ function Library({
     if (!invitePending || !inviteLoggedIn) return
     setInviteFocus(inviteDate)
     setInviteKey((count) => count + 1)
-    setMyListMode('loyalty')
-    setActivePage('loyalty')
+    setMyListMode('list')
+    setJumpCard(true)
+    setActivePage('mylist')
     consumeInvite()
   }, [invitePending, inviteLoggedIn, inviteDate, consumeInvite])
 
@@ -242,8 +260,9 @@ function Library({
     if (!date) return
     setInviteFocus(date)
     setInviteKey((count) => count + 1)
-    setMyListMode('loyalty')
-    setActivePage('loyalty')
+    setMyListMode('list')
+    setJumpCard(true)
+    setActivePage('mylist')
   }
   const hadCheckinRef = useRef(false)
   useEffect(() => {
@@ -300,16 +319,27 @@ function Library({
     return () => window.removeEventListener(PLAYED_SYNC_EVENT, handlePlayedSync)
   }, [personal.status, personal.getEntry, personal.updateEntry])
 
-  // 頂端導覽「集點卡」：直接打開我的桌遊的集點卡分頁
-  function openMyLoyalty() {
+  // 頂端導覽「聚會．留言」：未來聚會、留言板兩個分頁
+  function openGatherings() {
     setInviteFocus(null)
     setInviteKey((count) => count + 1)
+    setJumpCard(false)
     setMyListMode('loyalty')
     setActivePage('loyalty')
   }
 
+  // 打開俱樂部裡的集點卡（報到完成、集點卡連結、「去評分」）
+  function openMyLoyalty() {
+    setInviteFocus(null)
+    setInviteKey((count) => count + 1)
+    setMyListMode('list')
+    setJumpCard(true)
+    setActivePage('mylist')
+  }
+
   // 底部／頂端導覽：點另一顆直接取代目前的頁面，再點同一顆＝關閉
   function goHome() {
+    setJumpCard(false)
     setJumpGatheringId(null)
     setJumpRatings(null)
     setJumpView(null)
@@ -326,6 +356,7 @@ function Library({
     setInviteFocus(null)
     setInviteKey((count) => count + 1)
     setMyListMode('list')
+    setJumpCard(false)
     setJumpView(null)
     setJumpGatheringId(gatheringId)
     setActivePage('mylist')
@@ -340,6 +371,7 @@ function Library({
     setInviteFocus(null)
     setInviteKey((count) => count + 1)
     setMyListMode('list')
+    setJumpCard(false)
     setJumpGatheringId(null)
     setJumpView(null)
     setJumpRatings(bggName)
@@ -355,6 +387,7 @@ function Library({
     setInviteFocus(null)
     setInviteKey((count) => count + 1)
     setMyListMode('list')
+    setJumpCard(false)
     setJumpGatheringId(null)
     setJumpRatings(null)
     setJumpView({ view: 'notes', bggName, write: true })
@@ -363,6 +396,7 @@ function Library({
 
   function goPage(page: NavPage) {
     // 點導覽時，先關掉開著的詳細視窗與進階篩選，避免視窗疊在一起
+    setJumpCard(false)
     setJumpGatheringId(null)
     setJumpRatings(null)
     setJumpView(null)
@@ -373,7 +407,7 @@ function Library({
       return
     }
     if (page === 'loyalty') {
-      openMyLoyalty()
+      openGatherings()
       return
     }
     if (page === 'mylist') {
@@ -935,12 +969,13 @@ function Library({
       )}
       <InAppBrowserNotice />
       <TopBar
-        loyaltyBadge={planned.unseenCount + loyaltyAlerts.count}
+        loyaltyBadge={planned.unseenCount}
         clubCount={clubCount}
+        clubPoints={clubPoints}
         activePage={activePage}
         onGoPage={goPage}
         onGoHome={goHome}
-        loyaltyAlert={todayTask.pending}
+        clubAlert={todayTask.pending && vip.isVip && !isAdmin}
         canUseRules={vip.isVip || isAdmin}
         onCloseAdmin={() => setActivePage(null)}
       />
@@ -1193,6 +1228,7 @@ function Library({
         openGatheringId={jumpGatheringId}
         openRatings={jumpRatings}
         openView={jumpView}
+        openCard={jumpCard}
         boardGames={statGames}
         trashedGames={trashedGames}
         personal={personal}

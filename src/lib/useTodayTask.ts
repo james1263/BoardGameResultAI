@@ -1,9 +1,14 @@
 import { useEffect, useMemo } from 'react'
-import { useMyLoyalty, todayLocal } from './useLoyalty'
+import { useMyLoyalty, todayLocal, type LoyaltySummary } from './useLoyalty'
 import { RATING_FIELDS, type RatingsApi } from './useGameRatings'
 
 // 今天有沒有「該去評分」的事：被列入今天的聚會、有指定遊戲、還沒得點
-export function useTodayTask(ratings: RatingsApi): { pending: boolean } {
+export function useTodayTask(ratings: RatingsApi): {
+  pending: boolean
+  // 導覽列「俱樂部」的點數數字用（跟集點卡同一份資料，不另外多讀）
+  summary: LoyaltySummary | null
+  reload: () => void
+} {
   const loyalty = useMyLoyalty()
   const { reload } = loyalty
 
@@ -48,5 +53,5 @@ export function useTodayTask(ratings: RatingsApi): { pending: boolean } {
     ratings.getMine,
   ])
 
-  return { pending }
+  return { pending, summary: loyalty.summary, reload }
 }
