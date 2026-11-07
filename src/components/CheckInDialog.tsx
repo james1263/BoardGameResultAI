@@ -269,6 +269,7 @@ export default function CheckInDialog({
                       {game ? (
                         <CoverImage
                           version={0}
+                          className="cp-cover-img"
                           slug={game.coverSlug}
                           alt={game.name}
                           fallback={<span aria-hidden="true">🎲</span>}
