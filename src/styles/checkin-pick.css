@@ -1,0 +1,48 @@
+/* 報到：勾選「今天玩了哪些遊戲」（CheckInDialog） */
+.cp-sub { font-size: 0.85em; color: #7a6a52; }
+.cp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+.cp-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #34463c;
+  text-align: center;
+  cursor: pointer;
+}
+.cp-cover {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 3px solid transparent;
+  border-radius: 12px;
+  background: #efe6d2;
+  font-size: 28px;
+}
+.cp-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cp-item.on .cp-cover { border-color: #b5483a; }
+.cp-check {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: #b5483a;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+}
+.cp-name { font-size: 12px; line-height: 1.3; color: #34463c; }
+.cp-rate-box { max-height: 52vh; margin-bottom: 12px; overflow-y: auto; }

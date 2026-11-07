@@ -180,11 +180,17 @@ export default function RatingSection({
     bggName,
     api,
     beforeSave,
+    onReward,
+    hideCommunity = false,
 }: {
     bggName: string
     api: RatingsApi
     // 選填：儲存前的確認（回傳 false 就不儲存），「我的評分」頁對還沒玩過的遊戲用
     beforeSave?: () => Promise<boolean>
+    // 選填：有傳的話，得點與自動 +1 已玩的說明交給外面顯示（報到流程用），不彈出這裡的視窗
+    onReward?: (lines: string[]) => void
+    // 選填：不顯示「大家的評分」摘要（報到流程用）
+    hideCommunity?: boolean
 }) {
     const mine = api.getMine(bggName)
     const [draft, setDraft] = useState<Draft>(() => toDraft(mine))
@@ -286,7 +292,10 @@ export default function RatingSection({
             announcePlayed([bggName])
         }
         loyalty.reload()
-        if (lines.length > 0) setReward(lines)
+        if (lines.length > 0) {
+            if (onReward) onReward(lines)
+            else setReward(lines)
+        }
     }
 
     async function handleDelete() {
@@ -306,10 +315,12 @@ export default function RatingSection({
 
     return (
         <div className="rate-section">
-            <div>
-                <p className="rate-subtitle">大家的評分</p>
-                <CommunitySummary bggName={bggName} api={api} detailed />
-            </div>
+            {!hideCommunity && (
+                <div>
+                    <p className="rate-subtitle">大家的評分</p>
+                    <CommunitySummary bggName={bggName} api={api} detailed />
+                </div>
+            )}
 
             <div>
                 <p className="rate-subtitle">我的評分</p>

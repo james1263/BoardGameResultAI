@@ -7,6 +7,9 @@ import { useSession } from '../lib/useSession'
 import { VIP_CHANGED_EVENT } from '../lib/useVip'
 import { RATING_FIELDS, type RatingsApi } from '../lib/useGameRatings'
 import { useBackClose } from '../lib/useBackClose'
+import CoverImage from './CoverImage'
+import RatingSection from './RatingSection'
+import '../styles/checkin-pick.css'
 
 type JoinRow = { result_status: string; result_date: string | null }
 type DayInfo = { exempt: boolean; games: string[]; error: string }
@@ -33,14 +36,12 @@ export default function CheckInDialog({
   token,
   boardGames,
   ratings,
-  onRate,
   onDone,
   onClose,
 }: {
   token: string
   boardGames: BoardGame[]
   ratings: RatingsApi
-  onRate: (game: BoardGame) => void
   onDone: (date: string | null) => void
   onClose: () => void
 }) {
@@ -56,6 +57,11 @@ export default function CheckInDialog({
   const [error, setError] = useState('')
   const [info, setInfo] = useState<DayInfo | null>(null)
   const [wasNeeded, setWasNeeded] = useState<boolean | null>(null)
+  // 評分流程：先勾今天玩了哪些 → 一款一款評 → 完成
+  const [phase, setPhase] = useState<'pick' | 'rate' | 'finish'>('pick')
+  const [picked, setPicked] = useState<string[]>([])
+  const [step, setStep] = useState(0)
+  const [rewardLines, setRewardLines] = useState<string[]>([])
   const statusRef = useRef<string | null>(null)
   const startedRef = useRef(false)
   const onDoneRef = useRef(onDone)
@@ -196,7 +202,21 @@ export default function CheckInDialog({
   }, [resolved, wasNeeded, date])
 
   const gameMap = new Map(boardGames.map((game) => [game.bggName, game]))
-  const canContinue = !!info && (info.exempt || doneCount > 0 || !!info.error)
+  // 勾選的遊戲，照指定遊戲原本的順序
+  const pickedGames = info ? info.games.filter((name) => picked.includes(name)) : []
+  const currentName = pickedGames[step] ?? null
+  const currentGame = currentName ? gameMap.get(currentName) : undefined
+  const isLastStep = step >= pickedGames.length - 1
+
+  function togglePick(bggName: string) {
+    setPicked((list) =>
+      list.includes(bggName) ? list.filter((name) => name !== bggName) : [...list, bggName],
+    )
+  }
+
+  function addRewardLines(lines: string[]) {
+    setRewardLines((prev) => [...prev, ...lines.filter((line) => !prev.includes(line))])
+  }
 
   return createPortal(
     <div className="modal-backdrop checkin-backdrop">
@@ -225,44 +245,126 @@ export default function CheckInDialog({
           <p className="pd-text">正在帶你到集點卡…</p>
         )}
 
-        {succeeded && showRate && (
+        {succeeded && showRate && phase === 'pick' && (
           <div className="ci-rate">
             <p className="pd-text">
-              <b>下一步：評分。</b>
-              從下面挑一款你今天玩過的遊戲，把七項評分都填完，評完就自動算你玩過，也才能蓋章。
+              <b>今天玩了哪些遊戲？</b>
+              <br />
+              <span className="cp-sub">至少選一款，點封面打勾</span>
             </p>
 
-            <ul className="ci-games">
+            <div className="cp-grid">
               {info!.games.map((bggName) => {
                 const game = gameMap.get(bggName)
-                const done = isComplete(bggName)
+                const on = picked.includes(bggName)
                 return (
-                  <li className="ci-game" key={bggName}>
-                    <span className="ci-game-name">{game?.name ?? bggName}</span>
-                    <span className={`ci-game-state ${done ? 'done' : ''}`}>
-                      {done ? '✓ 已評分' : '未評分'}
+                  <button
+                    key={bggName}
+                    type="button"
+                    className={`cp-item ${on ? 'on' : ''}`}
+                    aria-pressed={on}
+                    onClick={() => togglePick(bggName)}
+                  >
+                    <span className="cp-cover">
+                      {game ? (
+                        <CoverImage
+                          version={0}
+                          slug={game.coverSlug}
+                          alt={game.name}
+                          fallback={<span aria-hidden="true">🎲</span>}
+                        />
+                      ) : (
+                        <span aria-hidden="true">🎲</span>
+                      )}
+                      {on && (
+                        <span className="cp-check" aria-hidden="true">
+                          ☑
+                        </span>
+                      )}
                     </span>
-                    {game && (
-                      <button
-                        type="button"
-                        className="ma-btn"
-                        onClick={() => onRate(game)}
-                      >
-                        {done ? '查看／修改' : '去評分'}
-                      </button>
-                    )}
-                  </li>
+                    <span className="cp-name">{game?.name ?? bggName}</span>
+                  </button>
                 )
               })}
-            </ul>
+            </div>
 
             <button
               className="pd-save"
               type="button"
-              disabled={!canContinue}
-              onClick={() => onDone(date)}
+              disabled={picked.length === 0}
+              onClick={() => {
+                setStep(0)
+                setPhase('rate')
+              }}
             >
-              {canContinue ? '前往集點卡' : '至少評完一款才能繼續'}
+              {picked.length === 0 ? '至少選一款才能確認' : `確認（已選 ${picked.length} 款）`}
+            </button>
+          </div>
+        )}
+
+        {succeeded && showRate && phase === 'rate' && currentName && (
+          <div className="ci-rate">
+            <p className="pd-text">
+              <b>
+                第 {step + 1} / {pickedGames.length} 款：{currentGame?.name ?? currentName}
+              </b>
+              <br />
+              <span className="cp-sub">
+                七項評分都填完、按「送出評分」後，才能按「{isLastStep ? '完成' : '下一步'}」
+              </span>
+            </p>
+
+            <div className="cp-rate-box">
+              <RatingSection
+                key={currentName}
+                bggName={currentName}
+                api={ratings}
+                onReward={addRewardLines}
+                hideCommunity
+              />
+            </div>
+
+            <button
+              className="pd-save"
+              type="button"
+              disabled={!isComplete(currentName)}
+              onClick={() => {
+                if (isLastStep) setPhase('finish')
+                else setStep((value) => value + 1)
+              }}
+            >
+              {isComplete(currentName)
+                ? isLastStep
+                  ? '完成'
+                  : '下一步'
+                : '七項都送出後才能繼續'}
+            </button>
+            {step === 0 && (
+              <div className="pd-secondary">
+                <button type="button" onClick={() => setPhase('pick')}>
+                  ← 重新選遊戲
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {succeeded && showRate && phase === 'finish' && (
+          <div className="ci-rate">
+            <p className="pd-text pd-ok">
+              <b>全部評完了 🎉</b>
+            </p>
+            {rewardLines.length > 0 ? (
+              rewardLines.map((line) => (
+                <p className="pd-text" key={line}>
+                  {line}
+                </p>
+              ))
+            ) : (
+              <p className="pd-text">評分完成，點數已更新，到集點卡看看。</p>
+            )}
+            <button className="pd-save" type="button" onClick={() => onDone(date)}>
+              前往集點卡
             </button>
           </div>
         )}

@@ -957,12 +957,6 @@ function Library({
           token={checkinToken}
           boardGames={boardGames}
           ratings={ratings}
-          onRate={(game) => {
-            setCoverMessage('')
-            setRatingFromCheckin(true)
-            setSelectedTab('ratings')
-            setSelectedGame(game)
-          }}
           onDone={handleCheckedIn}
           onClose={clearCheckin}
         />
