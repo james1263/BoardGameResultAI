@@ -5,6 +5,7 @@ import LoyaltyAdmin from '../LoyaltyAdmin'
 import RulebookBatchUpload from './RulebookBatchUpload'
 import { OPEN_CSV_IMPORT_EVENT } from '../lib/adminEvents'
 import PendingBadge from './PendingBadge'
+import '../styles/rb-admin-v2.css'
 
 type Tab = 'members' | 'gatherings' | 'rulebooks' | 'data'
 
