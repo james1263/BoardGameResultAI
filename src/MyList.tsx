@@ -175,7 +175,7 @@ function ClubPointsLine() {
 }
 
 // 俱樂部最上面的大卡：免費券與本月點數（只有 VIP、非管理者）
-function ClubPointsCard({ onOpen }: { onOpen: () => void }) {
+function ClubPointsCard({ onOpen, alert = false }: { onOpen: () => void; alert?: boolean }) {
     const loyalty = useMyLoyalty()
     const summary = loyalty.summary
     const held = summary?.availableVouchers ?? 0
@@ -190,6 +190,7 @@ function ClubPointsCard({ onOpen }: { onOpen: () => void }) {
             onClick={onOpen}
             aria-label="打開集點卡"
             style={{
+                position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
@@ -228,6 +229,20 @@ function ClubPointsCard({ onOpen }: { onOpen: () => void }) {
                 </>
             )}
             <span aria-hidden="true" style={{ fontSize: 22, color: '#a89478' }}>›</span>
+            {alert && (
+                <span
+                    aria-label="今天有遊戲要評分"
+                    style={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        width: 10,
+                        height: 10,
+                        borderRadius: 999,
+                        background: '#b5483a',
+                    }}
+                />
+            )}
         </button>
     )
 }
@@ -1164,7 +1179,7 @@ export default function MyList({
                 <div className="mylist-body club-body">
                     <ClubHeader isAdmin={isAdmin} isVip={isVip} onClose={onClose} />
                     {personal.isLoggedIn && isVip && !isAdmin && (
-                        <ClubPointsCard onOpen={() => setView('card')} />
+                        <ClubPointsCard onOpen={() => setView('card')} alert={todayPending} />
                     )}
                     {todayPending && (
                         <div className="club-today">
@@ -1283,7 +1298,7 @@ export default function MyList({
                                     <span className="club-menu-arrow" aria-hidden="true">›</span>
                                 </button>
                             </div>
-                            {!isAdmin && (
+                            {!isAdmin && !isVip && (
                                 <div className="club-list club-more">
                                     <button
                                         type="button"
@@ -1295,18 +1310,6 @@ export default function MyList({
                                             <b>集點卡</b>
                                             <span className="club-menu-sub">點數、免費券、近期紀錄</span>
                                         </span>
-                                        {todayPending && isVip && (
-                                            <span
-                                                aria-label="今天有遊戲要評分"
-                                                style={{
-                                                    width: 9,
-                                                    height: 9,
-                                                    borderRadius: 999,
-                                                    background: '#b5483a',
-                                                    marginRight: 6,
-                                                }}
-                                            />
-                                        )}
                                         <span className="club-menu-arrow" aria-hidden="true">›</span>
                                     </button>
                                 </div>
