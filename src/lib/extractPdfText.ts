@@ -219,8 +219,12 @@ export async function extractPdfChunks(
     import.meta.url,
   ).toString()
 
+  // 簡體／舊編碼（如 GBK-EUC-H）的 PDF 沒有內建 Unicode 對照表，pdf.js 要靠 cmaps 才讀得出字
+  // cmaps 放在 public/cmaps/（從 node_modules/pdfjs-dist/cmaps 複製）
   const loadingTask = pdfjs.getDocument({
     data: new Uint8Array(buffer.slice(0)),
+    cMapUrl: `${import.meta.env.BASE_URL}cmaps/`,
+    cMapPacked: true,
   })
 
   const pdf = await loadingTask.promise.catch((error: unknown) => {
