@@ -573,6 +573,7 @@ function RulebookOverviewList({
   onDeleted: () => void
   onAddLink: (bggName: string) => void
 }) {
+  const [listOpen, setListOpen] = useState(false)
   const q = query.trim().toLocaleLowerCase()
   const shown = rows.filter((r) => {
     if (pdfFilter === 'yes' && r.uploads === 0) return false
@@ -592,11 +593,22 @@ function RulebookOverviewList({
 
   return (
     <section className="rbv-list">
-      <div className="rbv-list-head">
-        <h3>規則書清單</h3>
-        <small>{loaded ? `共 ${rows.length} 款遊戲` : '讀取中…'}</small>
-      </div>
+      <button
+        type="button"
+        className="rbv-list-head rbv-list-toggle"
+        aria-expanded={listOpen}
+        onClick={() => setListOpen((v) => !v)}
+      >
+        <h3>規則書清單 {listOpen ? '▾' : '▸'}</h3>
+        <small>
+          {loaded
+            ? `已上傳 ${upN}／${rows.length}・已連結 ${lkN}${pendingN > 0 ? `・索引未完成 ${pendingN}` : ''}`
+            : '讀取中…'}
+        </small>
+      </button>
 
+      {listOpen && (
+      <>
       <div className="rbv-filters">
         <FilterChips
           label="規則書"
@@ -728,6 +740,8 @@ function RulebookOverviewList({
             )
           })}
         </ul>
+      )}
+      </>
       )}
     </section>
   )

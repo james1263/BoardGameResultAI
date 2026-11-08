@@ -216,3 +216,16 @@
   cursor: pointer;
 }
 .rb .rbv-row-tip { font-size: 12px; color: #8a7a5a; }
+
+/* 規則書清單標題列可點（折疊） */
+.rb .rbv-list-toggle {
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+.rb .rbv-list-toggle h3 { margin: 0; }
