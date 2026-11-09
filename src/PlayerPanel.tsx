@@ -5,6 +5,8 @@ import { useSession } from './lib/useSession'
 import { PROFILE_SAVED_EVENT, signInWithGoogle } from './lib/googleLogin'
 import { useAdminCheck } from './lib/useIsAdmin'
 import { useBackClose } from './lib/useBackClose'
+import { hasWelcomeFlag } from './components/VipGate'
+import { VIP_BENEFITS } from './components/VipUpgradeDialog'
 
 type Profile = { nickname: string; public_id: string }
 
@@ -234,6 +236,19 @@ export default function PlayerPanel() {
               onSubmit={handleSave}
             >
               <h2>{profile ? '暱稱與聯絡方式' : '設定你的暱稱'}</h2>
+
+              {hasWelcomeFlag() && (
+                <div className="pd-hint">
+                  <p>填完後，可以輸入通關密碼升級 VIP，解鎖：</p>
+                  <ul style={{ margin: '4px 0 8px', paddingLeft: '18px' }}>
+                    {VIP_BENEFITS.map((item) => (
+                      <li key={item.text}>
+                        {item.icon} {item.text}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <label className="pd-field">
                 <span className="pd-label">暱稱（會公開顯示）</span>
