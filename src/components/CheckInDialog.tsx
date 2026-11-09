@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { PROFILE_SAVED_EVENT } from '../lib/googleLogin'
 import { useSession } from '../lib/useSession'
 import { VIP_CHANGED_EVENT } from '../lib/useVip'
-import { RATING_FIELDS, type RatingsApi } from '../lib/useGameRatings'
+import type { RatingsApi } from '../lib/useGameRatings'
 import { useBackClose } from '../lib/useBackClose'
 import { useIsAdmin } from '../lib/useIsAdmin'
 import TodayRatingFlow from './TodayRatingFlow'
@@ -227,15 +227,7 @@ export default function CheckInDialog({
 
   const ratingsReady = ratings.status === 'ready'
 
-  // 七項評分都填了才算完整（跟集點卡同一個標準）
-  function isComplete(bggName: string): boolean {
-    const mine = ratings.getMine(bggName)
-    if (!mine || !(mine.overall > 0)) return false
-    return RATING_FIELDS.every((field) => mine[field.key] != null)
-  }
-
   const resolved = info !== null && ratingsReady
-  const doneCount = info ? info.games.filter(isComplete).length : 0
   const needRating =
     info !== null &&
     !info.error &&
