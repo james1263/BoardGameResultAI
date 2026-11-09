@@ -279,3 +279,65 @@
 .fsp .sc-note {
   margin: 4px 2px 0;
 }
+
+/* 分布圖：名字與分數放在圖上方（不用往下捲），圖本身矮一點 */
+.sc-box .sc-pick {
+  margin: 0 0 4px;
+  padding: 6px 10px;
+  max-height: 116px;
+  overflow-y: auto;
+}
+.sc-box .sc-pick-empty {
+  color: #8a9a90;
+  font-size: 12px;
+  background: transparent;
+  border-style: dashed;
+}
+.sc-box .sc-pick h4 {
+  margin: 0 0 2px;
+  font-size: 13px;
+}
+.sc-box .sc-pick li {
+  padding: 2px 0;
+}
+.fsp .sc-svg {
+  max-height: 46vh;
+}
+
+/* 統計表：遊戲名稱欄固定寬度，只顯示前 4 個字，名稱上左右滑動看完整 */
+.st-table th.st-sticky,
+.st-table td.st-sticky {
+  width: 5em;
+  min-width: 5em;
+  max-width: 5em;
+  padding-left: 8px;
+  padding-right: 6px;
+}
+.st-table td.st-sticky .st-name {
+  width: 4.1em;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.st-table td.st-sticky .st-name::-webkit-scrollbar {
+  display: none;
+}
+
+/* 成員矩陣工具列：窄螢幕自動換行，搜尋框不被擠成一小格 */
+.st-matrix-tools {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.st-matrix-tools input[type='search'] {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+.st-matrix-tools select {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+.st-matrix-tools .st-check {
+  flex: 1 1 100%;
+  white-space: normal;
+}

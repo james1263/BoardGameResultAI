@@ -7,7 +7,7 @@ export type ScatterPoint = { x: number; y: number; game: BoardGame }
 type Domain = { x0: number; x1: number; y0: number; y1: number }
 
 const W = 360
-const H = 300
+const H = 250
 const LEFT = 44
 const RIGHT = 14
 const TOP = 12
@@ -242,6 +242,30 @@ export default function ScatterChart({
             重設範圍
           </button>
         </div>
+        <div className={`sc-pick ${pickedGroup ? '' : 'sc-pick-empty'}`}>
+          {pickedGroup ? (
+            <>
+              <h4>
+                {xLabel}：{formatValue(pickedGroup.x, xDecimals)}　{yLabel}：
+                {formatValue(pickedGroup.y, yDecimals)}
+              </h4>
+              <ul>
+                {pickedGroup.games.map((game) => (
+                  <li key={game.bggName}>
+                    <span>{game.name}</span>
+                    {onOpenGame && (
+                      <button type="button" onClick={() => onOpenGame(game)}>
+                        查看遊戲
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <span>點一個圓點，這裡會直接顯示遊戲名稱與分數</span>
+          )}
+        </div>
         <svg
           ref={svgRef}
           className="sc-svg sc-zoomable"
@@ -330,26 +354,6 @@ export default function ScatterChart({
         </p>
       </div>
 
-      {pickedGroup && (
-        <div className="sc-pick">
-          <h4>
-            {xLabel}：{formatValue(pickedGroup.x, xDecimals)}　{yLabel}：
-            {formatValue(pickedGroup.y, yDecimals)}
-          </h4>
-          <ul>
-            {pickedGroup.games.map((game) => (
-              <li key={game.bggName}>
-                <span>{game.name}</span>
-                {onOpenGame && (
-                  <button type="button" onClick={() => onOpenGame(game)}>
-                    查看遊戲
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </>
   )
 }
