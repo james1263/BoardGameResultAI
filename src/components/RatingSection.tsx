@@ -11,6 +11,7 @@ import {
     type RatingsApi,
 } from '../lib/useGameRatings'
 import { askConfirm } from '../lib/askConfirm'
+import { personLabel, type RatingPerson } from '../lib/useGamePeople'
 import { useMyLoyalty, todayLocal } from '../lib/useLoyalty'
 import { useSession } from '../lib/useSession'
 import { supabase } from '../lib/supabase'
@@ -122,17 +123,73 @@ function HintFor({ hintKey, expanded }: { hintKey: RatingKey; expanded: boolean 
     )
 }
 
+const RATER_COLUMNS: { label: string; field: keyof RatingPerson }[] = [
+    { label: '整體', field: 'o' },
+    { label: '喜歡', field: 'l' },
+    { label: '玩家影響', field: 'pi' },
+    { label: '溝通', field: 'cm' },
+    { label: '變化', field: 'ch' },
+    { label: '獨特', field: 'u' },
+    { label: '留下來', field: 'k' },
+]
+
+// 只有管理者：每個人各自給的分數
+function RaterList({ raters }: { raters: RatingPerson[] }) {
+    return (
+        <details style={{ marginTop: 10 }}>
+            <summary
+                style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#456b50' }}
+            >
+                每個人的評分（{raters.length} 人，只有管理者看得到）
+            </summary>
+            <ul style={{ listStyle: 'none', margin: '6px 0 0', padding: 0 }}>
+                {raters.map((person) => (
+                    <li
+                        key={person.n}
+                        style={{ padding: '6px 0', borderTop: '1px dashed #e3d9c4' }}
+                    >
+                        <strong style={{ fontSize: 14 }}>{personLabel(person, true)}</strong>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 4 }}>
+                            {RATER_COLUMNS.map((col) => {
+                                const value = person[col.field] as number | null
+                                return (
+                                    <span
+                                        key={col.field}
+                                        style={{
+                                            fontSize: 12,
+                                            padding: '2px 8px',
+                                            borderRadius: 999,
+                                            background: '#efe7d3',
+                                            color: '#34463c',
+                                        }}
+                                    >
+                                        {col.label} {value ?? '—'}
+                                    </span>
+                                )
+                            })}
+                        </div>
+                    </li>
+                ))}
+            </ul>
+        </details>
+    )
+}
+
 export function CommunitySummary({
     bggName,
     api,
     detailed,
+    raters,
 }: {
     bggName: string
     api: RatingsApi
     detailed: boolean
+    // 選填：只有管理者傳入，會多一個「每個人的評分」可展開
+    raters?: RatingPerson[]
 }) {
     const vip = useVip()
     const summary = api.getSummary(bggName)
+    const raterList = raters && raters.length > 0 ? <RaterList raters={raters} /> : null
 
     if (vip.checked && !vip.isVip) {
         return <VipLock compact feature="大家的評分" />
@@ -140,11 +197,14 @@ export function CommunitySummary({
 
     if (summary.overallAvg == null) {
         return (
-            <p className="rate-note">
-                {summary.count === 0
-                    ? '還沒有人評分'
-                    : `評分累積中（${summary.count} 人）`}
-            </p>
+            <div>
+                <p className="rate-note">
+                    {summary.count === 0
+                        ? '還沒有人評分'
+                        : `評分累積中（${summary.count} 人）`}
+                </p>
+                {raterList}
+            </div>
         )
     }
 
@@ -172,6 +232,7 @@ export function CommunitySummary({
                     })}
                 </div>
             )}
+            {raterList}
         </div>
     )
 }

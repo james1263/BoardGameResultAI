@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import ScatterChart, { type ScatterPoint } from './ScatterChart'
 import FullScreenPage from './FullScreenPage'
-import HelpFold from './HelpFold'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { CommunityStatsApi } from '../lib/useCommunityStats'
 import type { RatingsApi } from '../lib/useGameRatings'
@@ -110,9 +109,7 @@ function ScatterPanel({
 
     return (
         <>
-            <HelpFold>
-                <p className="hf-text">每個點是一款遊戲；點一下看遊戲名稱與數值。評分需滿 5 人才有平均，不足的遊戲不會畫出；還沒玩過的遊戲也不會畫出。</p>
-            </HelpFold>
+            <p className="st-tip">兩指縮放、拖曳移動；點圓點看數值，放大後會直接顯示遊戲名稱。評分需滿 5 人才有平均，未玩過的不畫。</p>
             <div className="sc-controls">
                 <label>
                     X 軸（橫軸）
@@ -412,12 +409,10 @@ export default function StatsTables({
                                 </button>
                             )}
                         </div>
-                        <HelpFold>
-                            <p className="hf-text">
+                        <p className="st-tip">
                                 點欄位標題可以排序。評分需滿 5 人才會顯示平均。
                                 {!isAdmin && '選擇不公開暱稱的玩家只算人數，不會列名。'}
                             </p>
-                        </HelpFold>
                         <div className="st-wrap">
                             <table className="st-table">
                                 <thead>
@@ -527,11 +522,9 @@ export default function StatsTables({
                                 匯出 CSV
                             </button>
                         </div>
-                        <HelpFold>
-                            <p className="hf-text">
+                        <p className="st-tip">
                                 ✓ 已玩　♥ 想玩　★ 整體評分。最下面是每位成員的合計。
                             </p>
-                        </HelpFold>
                         {matrix.members.length === 0 ? (
                             <p className="ma-note">目前還沒有任何玩家的紀錄。</p>
                         ) : (

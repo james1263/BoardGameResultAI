@@ -240,3 +240,42 @@
     padding: 6px 8px;
   }
 }
+
+/* 統計表：說明文字改成小字，版面更緊湊，分布圖上的點直接顯示遊戲名稱 */
+.st-tip {
+  margin: 2px 2px 6px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #8a9a90;
+}
+.sc-svg .sc-label {
+  font-size: 9.5px;
+  fill: #34463c;
+  stroke: #fbf7ec;
+  stroke-width: 3px;
+  paint-order: stroke;
+  pointer-events: none;
+}
+.fsp .st-modal .ac-tabs {
+  margin: 0 0 6px;
+  padding: 4px 6px;
+  gap: 6px;
+}
+.fsp .st-modal .ac-tabs .ac-tab {
+  height: auto;
+  min-height: 0;
+  padding: 7px 8px;
+}
+.fsp .sc-controls {
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
+.fsp .sc-box {
+  padding: 4px;
+}
+.fsp .sc-tools {
+  margin: 0 0 4px;
+}
+.fsp .sc-note {
+  margin: 4px 2px 0;
+}

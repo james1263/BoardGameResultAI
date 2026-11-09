@@ -803,6 +803,33 @@ export default function LoyaltyAdmin() {
         setBusy(false)
     }
 
+    // 把某一天改成「使用免費券」：這天原本的 1 點會被扣回（要先有可用的券）
+    async function applyVoucherToDay(userId: string, nickname: string, date: string) {
+        if (
+            !(await askConfirm(
+                `確定把「${nickname}」${formatDay(date)} 這天改成「使用免費券」嗎？\n這天的 1 點會被扣回，並用掉 1 張券。\n（要先有可用的券；沒有的話請先按「贈送」。）`,
+                { confirmText: '改用券', danger: true },
+            ))
+        )
+            return
+        setBusy(true)
+        setMessage('')
+        const { error } = await supabase.rpc('admin_use_voucher_on_day', {
+            p_user: userId,
+            p_day: date,
+        })
+        if (error) {
+            setMessage('改用券失敗：' + error.message)
+            setBusy(false)
+            return
+        }
+        await refreshOverview()
+        const row = overview.find((item) => item.userId === userId)
+        if (row) await showDetail(row)
+        setMessage(`已把「${nickname}」${formatDay(date)} 改成使用免費券。`)
+        setBusy(false)
+    }
+
     async function redeem(row: OverviewRow) {
         if (
             !(await askConfirm(
@@ -828,6 +855,11 @@ export default function LoyaltyAdmin() {
     }
 
     const selected = gatherings.find((g) => g.id === selectedId) ?? null
+    // 明細裡用：這位玩家的贈送紀錄與補登紀錄（可以撤銷）
+    const detailGrants = detail ? grants.filter((item) => item.userId === detail.userId) : []
+    const detailManual = detail
+        ? voucherUses.filter((item) => item.userId === detail.userId && !item.usedOn)
+        : []
     // 尚未結束：今天或未來的聚會；其餘是歷史
     const isOpenGathering = (g: Gathering) => g.gatheredOn >= todayLocal()
     const openList = gatherings
@@ -1629,6 +1661,26 @@ export default function LoyaltyAdmin() {
                                                     : !day.hasSession
                                                         ? '還沒有標記玩過的遊戲（或沒有當天遊玩紀錄）'
                                                         : `評分完整 ${day.ratedCount} / ${day.gameCount} 款`}
+                                            {day.qualified &&
+                                                !detail.redemptions.some(
+                                                    (item) => item.usedOn === day.date,
+                                                ) && (
+                                                    <button
+                                                        type="button"
+                                                        className="admin-link"
+                                                        style={{ marginLeft: 8 }}
+                                                        disabled={busy}
+                                                        onClick={() =>
+                                                            applyVoucherToDay(
+                                                                detail.userId,
+                                                                detail.nickname,
+                                                                day.date,
+                                                            )
+                                                        }
+                                                    >
+                                                        改用券（扣回這 1 點）
+                                                    </button>
+                                                )}
                                         </li>
                                     ))}
                                 </ul>
@@ -1645,6 +1697,46 @@ export default function LoyaltyAdmin() {
                                         )
                                         .join('、')}
                             </p>
+                            <p>管理者贈送紀錄：{detailGrants.length === 0 ? '無' : ''}</p>
+                            {detailGrants.length > 0 && (
+                                <ul>
+                                    {detailGrants.map((item) => (
+                                        <li key={item.id}>
+                                            {formatDateTime(item.grantedAt)} 贈送 {item.quantity} 張
+                                            <button
+                                                type="button"
+                                                className="admin-link"
+                                                style={{ marginLeft: 8 }}
+                                                disabled={busy}
+                                                onClick={() => revokeGrant(item, detail.nickname)}
+                                            >
+                                                撤銷
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                            {detailManual.length > 0 && (
+                                <>
+                                    <p>補登紀錄：</p>
+                                    <ul>
+                                        {detailManual.map((item) => (
+                                            <li key={item.id}>
+                                                {formatDateTime(item.redeemedAt)}
+                                                <button
+                                                    type="button"
+                                                    className="admin-link"
+                                                    style={{ marginLeft: 8 }}
+                                                    disabled={busy}
+                                                    onClick={() => revokeRedemption(item, detail.nickname)}
+                                                >
+                                                    撤銷
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
                             <p>
                                 自動記錄的遊玩：
                                 {detail.autoSessions === null

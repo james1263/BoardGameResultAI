@@ -220,6 +220,13 @@ export default function ScatterChart({
   const shownCount = groups
     .filter((g) => g.x >= domain.x0 && g.x <= domain.x1 && g.y >= domain.y0 && g.y <= domain.y1)
     .reduce((sum, g) => sum + g.games.length, 0)
+  // 範圍內的點不多時，直接在點旁邊寫遊戲名稱（不用再往下捲動找名字）
+  const showLabels = shownCount <= 14
+  function labelOf(games: BoardGame[]): string {
+    const first = games[0].name
+    const text = first.length > 8 ? first.slice(0, 8) + '…' : first
+    return games.length > 1 ? `${text} 等${games.length}款` : text
+  }
 
   return (
     <>
@@ -234,7 +241,6 @@ export default function ScatterChart({
           <button type="button" onClick={reset} disabled={view === null && picked === ''}>
             重設範圍
           </button>
-          <span className="sc-hint">兩指縮放、拖曳移動（電腦：滾輪縮放、按住拖曳）</span>
         </div>
         <svg
           ref={svgRef}
@@ -302,6 +308,16 @@ export default function ScatterChart({
                   cy={py(group.y)}
                   r={group.games.length > 1 ? 8 : 6}
                 />
+                {(showLabels || picked === group.key) && (
+                  <text
+                    className="sc-label"
+                    x={px(group.x) > W - 90 ? px(group.x) - 10 : px(group.x) + 10}
+                    y={py(group.y) + 3}
+                    textAnchor={px(group.x) > W - 90 ? 'end' : 'start'}
+                  >
+                    {labelOf(group.games)}
+                  </text>
+                )}
               </g>
             ))}
           </g>

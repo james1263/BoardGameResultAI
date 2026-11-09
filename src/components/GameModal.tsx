@@ -24,6 +24,7 @@ import GameErrata from './GameErrata'
 import GameExpansions from './GameExpansions'
 import GameBackground from './GameBackground'
 import { useVip } from '../lib/useVip'
+import { useAdminRatings } from '../lib/useGamePeople'
 import { RATING_FIELDS } from '../lib/useGameRatings'
 import '../styles/overview.css'
 
@@ -99,6 +100,8 @@ export default function GameModal({
   const [showAllWall, setShowAllWall] = useState(false)
   const docsApi = useGameDocuments(game.bggName)
   const vip = useVip()
+  // 只有管理者會讀：每個人各自的評分
+  const adminRatings = useAdminRatings(isAdmin)
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const lastGameRef = useRef(game.bggName)
   useBackClose(onClose)
@@ -444,6 +447,7 @@ export default function GameModal({
                   bggName={game.bggName}
                   api={ratings}
                   detailed
+                  raters={adminRatings.get(game.bggName)}
                 />
               </div>
             ) : !fullRatingForm && onOpenMyRatings && personal.isLoggedIn ? (
