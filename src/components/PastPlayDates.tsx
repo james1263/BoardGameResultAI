@@ -1,7 +1,19 @@
 import { useState } from 'react'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 
-// 「我的統計」清單裡，一款遊戲的過去遊玩日期（預設摺疊、只看不改；要新增或刪除請按「補日期」）
+// 「我的統計」清單裡，一款遊戲的過去遊玩日期（預設摺疊）
+// 自己記的（manual）可以刪除，避免填錯；系統自動記的不能刪（刪了評分時又會長回來）
+const SMALL_BTN = {
+  padding: '2px 10px',
+  font: 'inherit',
+  fontSize: 12,
+  color: '#6b6a5c',
+  background: '#fffefa',
+  border: '1px solid #d9d6c9',
+  borderRadius: 999,
+  cursor: 'pointer',
+} as const
+
 export default function PastPlayDates({
   bggName,
   playSessions,
@@ -10,6 +22,8 @@ export default function PastPlayDates({
   playSessions: PlaySessionsApi
 }) {
   const [open, setOpen] = useState(false)
+  // 點「刪除」後先變成「確定？」，避免誤觸
+  const [confirmId, setConfirmId] = useState<string | null>(null)
   const list = [...playSessions.getSessions(bggName)].sort((a, b) =>
     a.playedOn < b.playedOn ? 1 : a.playedOn > b.playedOn ? -1 : 0,
   )
@@ -63,6 +77,35 @@ export default function PastPlayDates({
                   自動
                 </span>
               )}
+              {item.source === 'manual' &&
+                (confirmId === item.id ? (
+                  <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6 }}>
+                    <button
+                      type="button"
+                      disabled={playSessions.busy}
+                      style={{ ...SMALL_BTN, color: '#fff', background: '#b5483a', borderColor: '#b5483a' }}
+                      onClick={async () => {
+                        await playSessions.deleteSession(item.id)
+                        setConfirmId(null)
+                      }}
+                    >
+                      確定刪除
+                    </button>
+                    <button type="button" style={SMALL_BTN} onClick={() => setConfirmId(null)}>
+                      取消
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    aria-label={`刪除 ${item.playedOn} 的紀錄`}
+                    disabled={playSessions.busy}
+                    style={{ ...SMALL_BTN, marginLeft: 'auto', color: '#b5483a' }}
+                    onClick={() => setConfirmId(item.id)}
+                  >
+                    刪除
+                  </button>
+                ))}
             </li>
           ))}
         </ul>

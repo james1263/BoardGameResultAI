@@ -6,6 +6,7 @@ import type { CommunityStatsApi } from '../lib/useCommunityStats'
 import type { RatingsApi } from '../lib/useGameRatings'
 import '../styles/stats-chart.css'
 import { isUnplayedGame } from '../lib/playedStatus'
+import { RATING_FIELDS } from '../lib/useGameRatings'
 import {
     personLabel,
     type AdminRatingsApi,
@@ -60,13 +61,14 @@ function cellCsv(cell: Cell | undefined): string {
     return parts.join(' ')
 }
 
-type Metric = 'want' | 'played' | 'overall' | 'keep' | 'count'
+type Metric = 'want' | 'played' | 'overall' | 'keep' | 'combo' | 'count'
 
 const METRICS: { key: Metric; label: string; decimals: number }[] = [
     { key: 'want', label: '想玩人數', decimals: 0 },
     { key: 'played', label: '已玩人數', decimals: 0 },
     { key: 'overall', label: '整體評分', decimals: 1 },
     { key: 'keep', label: '留下來評分', decimals: 1 },
+    { key: 'combo', label: '綜合分數', decimals: 1 },
     { key: 'count', label: '評分人數', decimals: 0 },
 ]
 
@@ -76,6 +78,7 @@ type ChartRow = {
     played: number
     overall: number | null
     keep: number | null
+    combo: number | null
     count: number
 }
 
@@ -109,7 +112,7 @@ function ScatterPanel({
 
     return (
         <>
-            <p className="st-tip">兩指縮放、拖曳移動；點圓點看數值，放大後會直接顯示遊戲名稱。評分需滿 5 人才有平均，未玩過的不畫。</p>
+            <p className="st-tip">兩指縮放、拖曳移動；點圓點或下方名單看遊戲名稱與數值。評分需滿 5 人才有平均，未玩過的不畫。</p>
             <div className="sc-controls">
                 <label>
                     X 軸（橫軸）
@@ -186,12 +189,19 @@ export default function StatsTables({
                 const stats = communityStats.getStats(game.bggName)
                 const summary = ratings.getSummary(game.bggName)
                 const p = people.get(game.bggName)
+                // 綜合分數＝六項社群平均加總（最高 30）；滿 5 人、六項都有平均才有
+                const parts = RATING_FIELDS.map((field) => summary.avgs[field.key])
+                const combo =
+                    summary.overallAvg != null && parts.every((part) => part != null)
+                        ? Math.round((parts as number[]).reduce((sum, part) => sum + part, 0) * 10) / 10
+                        : null
                 return {
                     game,
                     want: stats.wantCount,
                     played: stats.playedCount,
                     overall: summary.overallAvg,
                     keep: summary.avgs.keep,
+                    combo,
                     count: summary.count,
                     wantNames: p.want.map((x) => personLabel(x, isAdmin)).join('、'),
                     playedNames: p.played.map((x) => personLabel(x, isAdmin)).join('、'),

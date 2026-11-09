@@ -8,6 +8,7 @@ import StatusButtons from './StatusButtons'
 import '../styles/card-compact.css'
 import '../styles/card-icons.css'
 import '../styles/game-expansions.css'
+import '../styles/card-row.css'
 import { useHasExpansion } from '../lib/useGameExpansions'
 
 function stop(event: MouseEvent | KeyboardEvent) {
@@ -53,7 +54,7 @@ export default function GameCard({
 
   return (
     <article
-      className={`game-card ${isNew ? 'is-new' : ''}`}
+      className={`game-card ${isNew ? 'is-new' : ''} ${showInfo ? '' : 'no-info'}`}
       role="button"
       tabIndex={0}
       aria-label={`開啟 ${game.name} 的詳細資料`}
@@ -93,6 +94,33 @@ export default function GameCard({
           {game.category.length > 0 ? game.category.join('、') : '尚未分類'}
         </span>
       </div>
+
+      {!showInfo && (
+        <div className="game-row">
+          <div className="game-row-main">
+            <h3>
+              {game.name}
+              {game.referenceOnly && <span className="game-row-tag">僅供參考</span>}
+              {!game.referenceOnly && isNew && <span className="game-row-tag new">NEW</span>}
+            </h3>
+            <p className="game-row-facts">
+              <span><PairIcon /> {shortPlayers(game.bestPlayers)}</span>
+              <span><PersonIcon /> {shortPlayers(game.recommendPlayers)}</span>
+              <span>◷ {timeText}</span>
+              <span><BrainIcon /> {difficultyText}</span>
+            </p>
+          </div>
+          {!game.referenceOnly && (
+            <span
+              style={{ display: 'contents' }}
+              onClick={stop}
+              onKeyDown={stop}
+            >
+              <StatusButtons bggName={game.bggName} personal={personal} />
+            </span>
+          )}
+        </div>
+      )}
 
       {showInfo && (
         <div className="game-info">

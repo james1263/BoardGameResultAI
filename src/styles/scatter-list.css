@@ -1,0 +1,70 @@
+/* 分布圖：點上只有編號，名稱統一列在圖下方 */
+.sc-num {
+  fill: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.sc-names {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 10px;
+  margin: 8px 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.sc-names-scroll {
+  max-height: 11.5em;
+  overflow-y: auto;
+}
+
+.sc-names li {
+  min-width: 0;
+}
+
+.sc-names button {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #34463c;
+  font-size: 12.5px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sc-names button b {
+  flex: none;
+  min-width: 1.4em;
+  color: #4a6b57;
+  font-size: 12px;
+}
+
+.sc-names button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-names button.on {
+  background: #e3ecdf;
+  font-weight: 700;
+}
+
+.sc-names button.out {
+  opacity: 0.4;
+}
+
+@media (max-width: 360px) {
+  .sc-names {
+    grid-template-columns: 1fr;
+  }
+}

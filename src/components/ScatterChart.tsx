@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import '../styles/stats-chart.css'
+import '../styles/scatter-list.css'
 
 export type ScatterPoint = { x: number; y: number; game: BoardGame }
 type Domain = { x0: number; x1: number; y0: number; y1: number }
@@ -91,7 +92,10 @@ export default function ScatterChart({
       if (found) found.games.push(p.game)
       else byPos.set(key, { key, x: p.x, y: p.y, games: [p.game] })
     }
+    // 編號：由右到左、由上到下，圖上的點和下方清單用同一組編號
     return [...byPos.values()]
+      .sort((a, b) => b.x - a.x || b.y - a.y)
+      .map((g, index) => ({ ...g, no: index + 1 }))
   }, [points])
 
   const auto = useMemo(() => autoDomain(points), [points])
@@ -220,12 +224,8 @@ export default function ScatterChart({
   const shownCount = groups
     .filter((g) => g.x >= domain.x0 && g.x <= domain.x1 && g.y >= domain.y0 && g.y <= domain.y1)
     .reduce((sum, g) => sum + g.games.length, 0)
-  // 範圍內的點不多時，直接在點旁邊寫遊戲名稱（不用再往下捲動找名字）
-  const showLabels = shownCount <= 14
-  function labelOf(games: BoardGame[]): string {
-    const first = games[0].name
-    const text = first.length > 8 ? first.slice(0, 8) + '…' : first
-    return games.length > 1 ? `${text} 等${games.length}款` : text
+  function inView(g: { x: number; y: number }): boolean {
+    return g.x >= domain.x0 && g.x <= domain.x1 && g.y >= domain.y0 && g.y <= domain.y1
   }
 
   return (
@@ -263,7 +263,7 @@ export default function ScatterChart({
               </ul>
             </>
           ) : (
-            <span>點一個圓點，這裡會直接顯示遊戲名稱與分數</span>
+            <span>點圓點或下方名單，這裡會顯示遊戲名稱與分數</span>
           )}
         </div>
         <svg
@@ -330,23 +330,39 @@ export default function ScatterChart({
                   className="sc-vis"
                   cx={px(group.x)}
                   cy={py(group.y)}
-                  r={group.games.length > 1 ? 8 : 6}
+                  r={group.games.length > 1 ? 9 : 8}
                 />
-                {(showLabels || picked === group.key) && (
-                  <text
-                    className="sc-label"
-                    x={px(group.x) > W - 90 ? px(group.x) - 10 : px(group.x) + 10}
-                    y={py(group.y) + 3}
-                    textAnchor={px(group.x) > W - 90 ? 'end' : 'start'}
-                  >
-                    {labelOf(group.games)}
-                  </text>
-                )}
+                <text
+                  className="sc-num"
+                  x={px(group.x)}
+                  y={py(group.y) + 3}
+                  textAnchor="middle"
+                >
+                  {group.no}
+                </text>
               </g>
             ))}
           </g>
         </svg>
         {groups.length === 0 && <p className="sc-note">沒有同時有這兩項資料的遊戲。</p>}
+        {groups.length > 0 && (
+          <ol className={`sc-names ${groups.length > 24 ? 'sc-names-scroll' : ''}`}>
+            {[...groups]
+              .sort((a, b) => a.no - b.no)
+              .map((group) => (
+                <li key={group.key}>
+                  <button
+                    type="button"
+                    className={`${picked === group.key ? 'on' : ''} ${inView(group) ? '' : 'out'}`}
+                    onClick={() => setPicked(picked === group.key ? '' : group.key)}
+                  >
+                    <b>{group.no}</b>
+                    <span>{group.games.map((game) => game.name).join('、')}</span>
+                  </button>
+                </li>
+              ))}
+          </ol>
+        )}
         <p className="sc-note">
           共 {points.length} 款
           {view && `，目前範圍內 ${shownCount} 款`}

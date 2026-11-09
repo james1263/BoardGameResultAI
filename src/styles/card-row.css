@@ -1,0 +1,105 @@
+/* 清單檢視＋關閉卡片下方文字：變成「資料夾」式的一行（超小縮圖＋名稱＋一行小字＋想玩／已玩靠右）
+   其他檢視（4 欄、9 欄）不受影響：這段只在 .view-list 的 .no-info 卡片生效 */
+
+.game-row {
+  display: none;
+}
+
+.game-grid.view-list .game-card.no-info {
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px 5px 6px;
+}
+
+.game-grid.view-list .game-card.no-info .game-art {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+.game-grid.view-list .game-card.no-info .game-emoji {
+  font-size: 20px;
+}
+
+/* 縮圖太小：封面上的標籤與按鈕都移到右邊那一排 */
+.game-grid.view-list .game-card.no-info .game-art .new-badge,
+.game-grid.view-list .game-card.no-info .game-art .game-category,
+.game-grid.view-list .game-card.no-info .game-art .status-buttons {
+  display: none;
+}
+
+.game-grid.view-list .game-card.no-info .game-row {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.game-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.game-row-main h3 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-row-tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #7a7f75;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.game-row-tag.new {
+  background: #f0a22e;
+}
+
+.game-row-facts {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: #72786d;
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.game-row .status-buttons.overlay {
+  position: static;
+  flex: none;
+  gap: 6px;
+}
+
+.game-grid.view-list .game-card.no-info:hover {
+  transform: none;
+}
+
+@media (max-width: 520px) {
+  .game-grid.view-list .game-card.no-info {
+    gap: 8px;
+    padding-right: 8px;
+  }
+
+  .game-grid.view-list .game-card.no-info .game-art {
+    width: 36px;
+    height: 36px;
+  }
+
+  .game-row-facts {
+    gap: 8px;
+    font-size: 10.5px;
+  }
+}
