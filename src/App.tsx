@@ -1135,7 +1135,7 @@ function Library({
       </main>
 
       <footer className="footer">
-        <span>桌遊規則助手</span>
+        <span>玩桌遊｜BoardGame</span>
         <span>讓每一場遊戲，都玩得更盡興。</span>
         <AdminPanel />
       </footer>

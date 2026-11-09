@@ -1113,7 +1113,7 @@ export default function MyList({
                                                                     )
                                                                 )}
                                                                 <PastPlayDates bggName={game.bggName} playSessions={playSessions} />
-                                                                {(
+                                                                {tab === 'played' && (
                                                                     <PlayedGameRecord
                                                                         bggName={game.bggName}
                                                                         gameName={game.name}

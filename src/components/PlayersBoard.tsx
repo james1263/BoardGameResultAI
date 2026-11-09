@@ -4,6 +4,7 @@ import type { PlayerStat } from '../lib/usePlayerStats'
 import { rankGames } from '../lib/leaderboards'
 import { isUnplayedGame } from '../lib/playedStatus'
 import InfoHint from './InfoHint'
+import '../styles/players-board-games.css'
 
 type Tab = 'played' | 'rated' | 'score' | 'combo'
 
@@ -15,7 +16,6 @@ const TABS: { key: Tab; label: string }[] = [
 ]
 
 const TOP_COUNT = 10 // 款數榜：前 10 名（同分並列）
-const TOP_ROWS = 20 // 評分榜：最多顯示 20 筆
 
 type Props = {
   players: PlayerStat[]
@@ -71,41 +71,48 @@ export default function PlayersBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, visible, keyword, isAdmin])
 
-  // 評分榜（評分、綜合分數）：每一筆是「玩家給某款遊戲的分數」
+  // 評分榜（評分、綜合分數）：以玩家為主、不排名；每位玩家列出他分數最高（或最低）的遊戲，同分就列多款
   const scoreRows = useMemo(() => {
-    if (tab !== 'score' && tab !== 'combo') return { rows: [], total: 0 }
-    const all: { label: string; game: BoardGame; value: number }[] = []
+    if (tab !== 'score' && tab !== 'combo') return []
+    const result: { label: string; value: number; games: BoardGame[] }[] = []
     for (const player of visible) {
+      let best: number | null = null
+      let games: BoardGame[] = []
       for (const rating of player.ratings) {
         const value = tab === 'score' ? rating.o : rating.s
         const game = gameByName.get(rating.g)
         if (value == null || !game || isUnplayedGame(game)) continue
-        all.push({ label: labelOf(player), game, value })
+        if (best == null || (highest ? value > best : value < best)) {
+          best = value
+          games = [game]
+        } else if (value === best) {
+          games.push(game)
+        }
       }
+      if (best == null) continue
+      games.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
+      result.push({ label: labelOf(player), value: best, games })
     }
     const matched = keyword
-      ? all.filter(
+      ? result.filter(
           (row) =>
             row.label.toLowerCase().includes(keyword) ||
-            row.game.name.toLowerCase().includes(keyword) ||
-            row.game.bggName.toLowerCase().includes(keyword),
+            row.games.some(
+              (game) =>
+                game.name.toLowerCase().includes(keyword) ||
+                game.bggName.toLowerCase().includes(keyword),
+            ),
         )
-      : all
-    const direction = highest ? -1 : 1
-    matched.sort(
-      (a, b) =>
-        (a.value - b.value) * direction ||
-        a.game.name.localeCompare(b.game.name, 'zh-Hant') ||
-        a.label.localeCompare(b.label, 'zh-Hant'),
-    )
-    let rank = 0
-    const ranked = matched.map((row, index) => {
-      if (index === 0 || row.value !== matched[index - 1].value) rank = index + 1
-      return { ...row, rank }
-    })
-    return { rows: ranked.slice(0, TOP_ROWS), total: ranked.length }
+      : result
+    return matched.sort((a, b) => a.label.localeCompare(b.label, 'zh-Hant'))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, visible, keyword, highest, gameByName, isAdmin])
+
+  // 名稱太長只顯示前 5 個字，完整名稱放在 title
+  const shortName = (name: string) => {
+    const chars = Array.from(name)
+    return chars.length > 5 ? chars.slice(0, 5).join('') + '…' : name
+  }
 
   const isCount = tab === 'played' || tab === 'rated'
 
@@ -115,8 +122,8 @@ export default function PlayersBoard({
       : tab === 'rated'
         ? '依評過分的遊戲款數排名。管理者的分數是從 CSV 換算，算法和一般玩家的評分一樣。'
         : tab === 'score'
-          ? '每一筆是一位玩家給某款遊戲的整體分數（1～10）。同分並列，同分時依遊戲名稱排序。還沒玩過的遊戲不列入。'
-          : '綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來這六項（各 1～5）加起來，最高 30 分，不含整體分數。六項沒有填完整的評分、還沒玩過的遊戲都不列入。'
+          ? '以玩家為主，不排名。每位玩家顯示他給過整體分數（1～10）最高的遊戲，同分就列出多款；切到「最低」顯示他給最低分的遊戲。還沒玩過的遊戲不列入。'
+          : '以玩家為主，不排名。綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來這六項（各 1～5）加起來，最高 30 分，不含整體分數。每位玩家顯示最高（或最低）的遊戲，同分列多款；六項沒填完整的評分、還沒玩過的遊戲不列入。'
 
   if (status === 'loading' || status === 'idle') return <p className="mylist-empty">讀取中…</p>
   if (status === 'error') {
@@ -214,36 +221,39 @@ export default function PlayersBoard({
             ))}
           </ul>
         )
-      ) : scoreRows.rows.length === 0 ? (
+      ) : scoreRows.length === 0 ? (
         <p className="mylist-empty">
           {keyword ? `找不到「${query.trim()}」。` : '還沒有資料。'}
         </p>
       ) : (
         <>
-          <ul className="mylist-list">
-            {scoreRows.rows.map((row, index) => (
-              <li className="mylist-item" key={`${row.label}-${row.game.bggName}-${index}`}>
-                <span className={`lb-rank ${row.rank <= 3 ? 'top' : ''}`}>{row.rank}</span>
-                <div className="mylist-thumb">{renderCover(row.game)}</div>
-                <div className="mylist-info">
-                  <button
-                    type="button"
-                    className="mylist-name"
-                    onClick={() => onOpenGame(row.game)}
-                  >
-                    {row.game.name}
-                  </button>
-                  <span className="pb-who">{row.label}</span>
+          <ul className="mylist-list pbg-list">
+            {scoreRows.map((row) => (
+              <li className="pbg-row" key={row.label}>
+                <div className="pbg-head">
+                  <span className="pbg-who">{row.label}</span>
+                  <strong className="pbg-score">
+                    {tab === 'combo' ? `${row.value}／30` : `${row.value} 分`}
+                  </strong>
                 </div>
-                <div className="lb-value">
-                  <strong>{tab === 'combo' ? `${row.value}／30` : `${row.value} 分`}</strong>
+                <div className="pbg-games">
+                  {row.games.map((game) => (
+                    <button
+                      type="button"
+                      className="pbg-game"
+                      key={game.bggName}
+                      title={game.name}
+                      onClick={() => onOpenGame(game)}
+                    >
+                      <span className="pbg-thumb">{renderCover(game)}</span>
+                      <span className="pbg-name">{shortName(game.name)}</span>
+                    </button>
+                  ))}
                 </div>
               </li>
             ))}
           </ul>
-          {scoreRows.total > TOP_ROWS && (
-            <p className="sc-note">共 {scoreRows.total} 筆，只顯示前 {TOP_ROWS} 筆。</p>
-          )}
+          <p className="sc-note">共 {scoreRows.length} 位玩家，依暱稱排序。</p>
         </>
       )}
     </>

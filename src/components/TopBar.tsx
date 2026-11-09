@@ -2,6 +2,7 @@ import { useState } from 'react'
 import PlayerPanel from '../PlayerPanel'
 import AdminCenter from './AdminCenter'
 import VipJoinDialog from './VipJoinDialog'
+import WelcomeDialog from './WelcomeDialog'
 import { supabase } from '../lib/supabase'
 import { useIsAdmin } from '../lib/useIsAdmin'
 import { useVip } from '../lib/useVip'
@@ -55,7 +56,7 @@ export default function TopBar({
         <a
           className="sb-brand"
           href="#"
-          aria-label="桌遊規則助手首頁"
+          aria-label="玩桌遊首頁"
           onClick={(event) => {
             event.preventDefault()
             onGoHome()
@@ -66,7 +67,7 @@ export default function TopBar({
             🎲
           </span>
           <span className="sb-brand-text">
-            <strong>桌遊規則助手</strong>
+            <strong>玩桌遊</strong>
           </span>
         </a>
 
@@ -194,6 +195,7 @@ export default function TopBar({
       {isVipDialogOpen && (
         <VipJoinDialog onClose={() => setIsVipDialogOpen(false)} />
       )}
+      <WelcomeDialog />
     </header>
   )
 }

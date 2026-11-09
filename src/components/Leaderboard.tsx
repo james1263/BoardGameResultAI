@@ -9,6 +9,7 @@ import {
 } from '../lib/useGamePeople'
 import { rankGames } from '../lib/leaderboards'
 import { isUnplayedGame } from '../lib/playedStatus'
+import { RATING_FIELDS } from '../lib/useGameRatings'
 import {
   DIFFICULTY_LEVELS,
   DIFFICULTY_LEVEL_INFO,
@@ -24,7 +25,7 @@ import InfoHint from './InfoHint'
 import '../styles/leaderboard-filter.css'
 import '../styles/leaderboard-search.css'
 
-type BoardKey = 'want' | 'played' | 'overall' | 'keep'
+type BoardKey = 'want' | 'played' | 'overall' | 'keep' | 'combo'
 type Period = 'all' | 'month' | 'quarter' | 'year'
 
 const BOARDS: { key: BoardKey; label: string }[] = [
@@ -32,7 +33,28 @@ const BOARDS: { key: BoardKey; label: string }[] = [
   { key: 'played', label: '已玩' },
   { key: 'overall', label: '整體評分' },
   { key: 'keep', label: '留下來' },
+  { key: 'combo', label: '綜合分數' },
 ]
+
+// 評分榜（整體評分、留下來、綜合分數）預設顯示前 30 款
+const RATING_TOP = 30
+
+// 評分榜自己排名：最高＝分數大的在前；最低＝分數小的在前。同分並列，同分依遊戲名稱排序
+// 名次永遠是「全部遊戲」裡的名次（搜尋只是在排好的結果裡找，不會重新排名）
+function rankByDirection<T extends { name: string; value: number }>(
+  items: T[],
+  low: boolean,
+): (T & { rank: number })[] {
+  const sign = low ? 1 : -1
+  const sorted = [...items].sort(
+    (a, b) => (a.value - b.value) * sign || a.name.localeCompare(b.name, 'zh-Hant'),
+  )
+  let rank = 0
+  return sorted.map((item, index) => {
+    if (index === 0 || item.value !== sorted[index - 1].value) rank = index + 1
+    return { ...item, rank }
+  })
+}
 
 
 
@@ -150,6 +172,8 @@ export default function Leaderboard({
   const [filterOpen, setFilterOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc')
+  // 評分榜的最高／最低（對全部遊戲排名）
+  const [ratingLow, setRatingLow] = useState(false)
 
   // 排行榜自己讀一份人數：打開時才讀、每次打開都重讀，不影響主畫面
   const communityStats = useCommunityStats(isOpen)
@@ -165,6 +189,7 @@ export default function Leaderboard({
 
   // 期間只對想玩、已玩有意義
   const periodApplies = board === 'want' || board === 'played'
+  const isRatingBoard = board === 'overall' || board === 'keep' || board === 'combo'
 
   // 資料篩選（類型、人數、時間、難度）的數量；空結果的提示文字用
   const dataFilterCount =
@@ -207,13 +232,16 @@ export default function Leaderboard({
   }, [isOpen, canSeePeople, isAdmin, reloadPeople, reloadAdminRatings])
 
   const isCountBoard = board === 'want' || board === 'played'
-  const canExpand = isCountBoard ? canSeePeople : isAdmin
+  const canExpand = isCountBoard ? canSeePeople : isAdmin && board !== 'combo'
   const boards = BOARDS
   // 玩家榜資料：切到玩家榜才讀（資料庫函式會再驗證 VIP／管理者）
   const playerStats = usePlayerStats(isOpen && (canSeePeople || isAdmin) && page === 'players')
 
   const rankedAll = useMemo(() => {
-    const pool = boardGames.filter((game) => matchesFilters(game, filters))
+    // 評分榜不套用類型、人數等篩選：一律是全部遊戲的排名
+    const pool = isRatingBoard
+      ? boardGames
+      : boardGames.filter((game) => matchesFilters(game, filters))
     const entries = pool.flatMap((game) => {
       if (board === 'want' || board === 'played') {
         const s = communityStats.getStats(game.bggName)
@@ -254,8 +282,17 @@ export default function Leaderboard({
       if (isUnplayedGame(game)) return []
 
       const summary = ratings.getSummary(game.bggName)
-      const average =
-        board === 'overall' ? summary.overallAvg : summary.avgs.keep
+      let average: number | null
+      if (board === 'combo') {
+        // 綜合分數＝六項社群平均加總（最高 30）；需滿 5 人評分，六項都要有平均
+        const parts = RATING_FIELDS.map((field) => summary.avgs[field.key])
+        average =
+          summary.overallAvg != null && parts.every((part) => part != null)
+            ? (parts as number[]).reduce((sum, part) => sum + part, 0)
+            : null
+      } else {
+        average = board === 'overall' ? summary.overallAvg : summary.avgs.keep
+      }
       if (average == null) return []
       const value = Math.round(average * 10) / 10
       return [
@@ -263,14 +300,14 @@ export default function Leaderboard({
           game,
           name: game.name,
           value,
-          display: value.toFixed(1),
+          display: board === 'combo' ? `${value.toFixed(1)}／30` : value.toFixed(1),
           extra: `${summary.count} 人評分`,
         },
       ]
     })
 
-    return rankGames(entries)
-  }, [boardGames, board, period, communityStats, ratings, filters])
+    return isRatingBoard ? rankByDirection(entries, ratingLow) : rankGames(entries)
+  }, [boardGames, board, period, communityStats, ratings, filters, isRatingBoard, ratingLow])
 
   // 搜尋：只留下符合的，名次維持原樣；排序方向只翻轉顯示順序
   const ranked = useMemo(() => {
@@ -282,8 +319,10 @@ export default function Leaderboard({
             entry.game.bggName.toLowerCase().includes(keyword),
         )
       : rankedAll
+    // 評分榜：沒搜尋只顯示前 30 款；有搜尋就列出符合的遊戲和它在全部遊戲裡的名次（可能在 30 名之外）
+    if (isRatingBoard) return keyword ? matched : matched.slice(0, RATING_TOP)
     return sortDir === 'asc' ? [...matched].reverse() : matched
-  }, [rankedAll, query, sortDir])
+  }, [rankedAll, query, sortDir, isRatingBoard])
 
   if (!isOpen) return null
 
@@ -345,7 +384,11 @@ export default function Leaderboard({
     ? period === 'all'
       ? '依目前的總人數排名，只統計 VIP 玩家。'
       : '依該期間「新增」的人數排名（下方小字是目前總人數），只統計 VIP 玩家。'
-    : '每款遊戲需滿 5 位玩家評分才會上榜；還沒玩過的遊戲不列入。'
+    : `每款遊戲需滿 5 位玩家評分才會上榜；還沒玩過的遊戲不列入。${
+        board === 'combo'
+          ? '綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來六項的玩家平均加起來，最高 30 分。'
+          : ''
+      }預設只顯示前 ${RATING_TOP} 款；搜尋遊戲名稱可以看到它在全部遊戲裡的名次。最高／最低都是對全部遊戲排名。`
   function renderEmpty(): ReactNode {
     if (query.trim() && rankedAll.length > 0) {
       return (
@@ -358,7 +401,7 @@ export default function Leaderboard({
         </div>
       )
     }
-    if (dataFilterCount > 0) {
+    if (dataFilterCount > 0 && !isRatingBoard) {
       return (
         <div className="lb-empty">
           <span className="lb-empty-icon" aria-hidden="true">🔍</span>
@@ -529,20 +572,22 @@ export default function Leaderboard({
                     ×
                   </button>
                 )}
-                <button
-                  type="button"
-                  className={`lbs-filter ${filterOpen || activeFilterCount > 0 ? 'on' : ''}`}
-                  aria-expanded={filterOpen}
-                  onClick={() => setFilterOpen((value) => !value)}
-                >
-                  篩選
-                  {activeFilterCount > 0 && (
-                    <span className="lbs-badge">{activeFilterCount}</span>
-                  )}
-                </button>
+                {!isRatingBoard && (
+                  <button
+                    type="button"
+                    className={`lbs-filter ${filterOpen || activeFilterCount > 0 ? 'on' : ''}`}
+                    aria-expanded={filterOpen}
+                    onClick={() => setFilterOpen((value) => !value)}
+                  >
+                    篩選
+                    {activeFilterCount > 0 && (
+                      <span className="lbs-badge">{activeFilterCount}</span>
+                    )}
+                  </button>
+                )}
               </div>
 
-              {filterOpen && (
+              {filterOpen && !isRatingBoard && (
                 <div className="lbs-panel">
                   {periodApplies && (
                     <div className="lbs-group">
@@ -658,6 +703,24 @@ export default function Leaderboard({
             <div className="mylist-body">
               <div className="lb-hintrow">
                 <InfoHint text={note} />
+                {isRatingBoard && (
+                  <span className="lb-pages pb-toggle" style={{ marginLeft: 'auto' }}>
+                    <button
+                      type="button"
+                      className={!ratingLow ? 'active' : ''}
+                      onClick={() => setRatingLow(false)}
+                    >
+                      最高
+                    </button>
+                    <button
+                      type="button"
+                      className={ratingLow ? 'active' : ''}
+                      onClick={() => setRatingLow(true)}
+                    >
+                      最低
+                    </button>
+                  </span>
+                )}
               </div>
 
               {ranked.length === 0 ? (
