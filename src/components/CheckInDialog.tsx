@@ -12,9 +12,11 @@ import TodayRatingFlow from './TodayRatingFlow'
 import VipUpgradeDialog from './VipUpgradeDialog'
 import RewardDialog from './RewardDialog'
 import {
+  fetchLoyaltySnap,
   isRewardOff,
   markRewardSeen,
   wasRewardSeen,
+  type LoyaltySnap,
   type RewardKind,
 } from '../lib/rewardNotice'
 
@@ -73,6 +75,9 @@ export default function CheckInDialog({
   // 報到當下系統自動用了免費券：跳「已使用免費券」視窗
   const [reward, setReward] = useState<RewardKind | null>(null)
   const [rewardChecked, setRewardChecked] = useState(false)
+  const snapRef = useRef<Promise<LoyaltySnap | null> | null>(null)
+  // 評分流程已走完（按完「前往集點卡」前先擋住『已使用免費券』視窗）
+  const [finishing, setFinishing] = useState(false)
   const statusRef = useRef<string | null>(null)
   const startedRef = useRef(false)
   const onDoneRef = useRef(onDone)
@@ -85,6 +90,9 @@ export default function CheckInDialog({
     if (wasVipRef.current === null) {
       const pre = await supabase.rpc('is_vip')
       wasVipRef.current = pre.error ? true : pre.data === true
+      // 報到前的集點狀態：報到當下就可能拿到點／券，之後才抓就比對不出來
+      snapRef.current = fetchLoyaltySnap()
+      await snapRef.current
     }
     const { data, error: rpcError } = await supabase.rpc('join_gathering', {
       p_token: token,
@@ -233,7 +241,7 @@ export default function CheckInDialog({
     !info.error &&
     !info.exempt &&
     info.games.length > 0 &&
-    doneCount === 0
+    !(userId && date && wasRewardSeen(userId, `flowdone|${date}`))
 
   // 第一次算出結果時記住「一開始需不需要評分」
   useEffect(() => {
@@ -283,7 +291,12 @@ export default function CheckInDialog({
             boardGames={boardGames}
             ratings={ratings}
             finishLabel="前往集點卡"
-            onFinish={() => onDone(date)}
+            beforeSnap={snapRef.current ?? undefined}
+            onFinish={() => {
+              if (userId && date) markRewardSeen(userId, `flowdone|${date}`)
+              if (reward) setFinishing(true)
+              else onDone(date)
+            }}
           />
         )}
 
@@ -317,8 +330,15 @@ export default function CheckInDialog({
           onClose={() => setShowUpgrade(false)}
         />
       )}
-      {reward && userId && (
-        <RewardDialog kind={reward} userId={userId} onClose={() => setReward(null)} />
+      {reward && userId && (!showRate || finishing) && (
+        <RewardDialog
+          kind={reward}
+          userId={userId}
+          onClose={() => {
+            setReward(null)
+            if (finishing) onDone(date)
+          }}
+        />
       )}
     </div>,
     document.body,

@@ -492,6 +492,12 @@ export default function RatingSection({
                             </p>
                         )}
 
+                        {flow && mine && complete && !dirty && (
+                            <p className="rate-note">
+                                這是你之前的評分，沒問題可以直接按「{flow.nextLabel}」，想調整也可以改完再按。
+                            </p>
+                        )}
+
                         {flow ? (
                             <div className="tf-flow-actions">
                                 <button

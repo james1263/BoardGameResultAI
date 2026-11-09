@@ -27,10 +27,12 @@ type Props = {
   ratings: RatingsApi
   finishLabel: string
   onFinish: () => void
+  // 報到前先查好的集點狀態（報到當下可能就已經拿到點或券）
+  beforeSnap?: Promise<LoyaltySnap | null>
 }
 
 // 今日遊玩任務：①勾選今天玩了哪些 → ②逐款評分（七項必填）→ ③完成、領集點
-export default function TodayRatingFlow({ games, boardGames, ratings, finishLabel, onFinish }: Props) {
+export default function TodayRatingFlow({ games, boardGames, ratings, finishLabel, onFinish, beforeSnap }: Props) {
   const [phase, setPhase] = useState<'pick' | 'rate' | 'finish'>('pick')
   const [picked, setPicked] = useState<string[]>([])
   const [step, setStep] = useState(0)
@@ -142,7 +144,7 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
           className="tf-primary"
           disabled={picked.length === 0}
           onClick={() => {
-            if (!beforeRef.current) beforeRef.current = fetchLoyaltySnap()
+            if (!beforeRef.current) beforeRef.current = beforeSnap ?? fetchLoyaltySnap()
             setStep(0)
             setMaxStep(0)
             setPhase('rate')
