@@ -59,3 +59,13 @@
 .ngw-primary:disabled, .ngw-cancel:disabled { opacity: .5; }
 .ngw-title-ok { margin: 0 0 8px; font-weight: 700; color: #34463c; }
 .ngw-warn { margin: 0 0 10px; padding-left: 18px; font-size: 14px; color: #8a2f20; }
+
+.ngw-header h2 { flex: 1; }
+.ngw-testbox { display: flex; align-items: center; gap: 6px; margin-right: 8px; font-size: 14px; font-weight: 600; color: #34463c; cursor: pointer; white-space: nowrap; }
+.ngw-testbox input { width: 20px; height: 20px; accent-color: #456b50; }
+.ngw-test-hint { color: #8a5a1f; }
+/* iPhone 的日期欄會比其他欄位寬、超出卡片 */
+.ngw-field input[type='date'] {
+  display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
+  -webkit-appearance: none; appearance: none; text-align: left; min-height: 40px;
+}

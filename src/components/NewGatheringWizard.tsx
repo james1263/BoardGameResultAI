@@ -174,6 +174,16 @@ export default function NewGatheringWizard({
   }, [date, title, games, linkOn, capacity, capValueNow, picked.length])
 
   // 有填過任何東西才算「有內容」；管理者預設勾選不算
+  // 測試場：場次名稱以「測試」開頭（資料庫依這個規則略過已玩次數與遊戲紀錄）
+  const isTest = title.trim().startsWith('測試')
+  function toggleTest(checked: boolean) {
+    if (checked) {
+      setTitle((prev) => (prev.trim().startsWith('測試') ? prev : `測試${prev.trim()}`.slice(0, 20)))
+    } else {
+      setTitle((prev) => prev.trim().replace(/^測試\s*/, ''))
+    }
+  }
+
   const dirty =
     title.trim() !== '' ||
     note.trim() !== '' ||
@@ -302,6 +312,14 @@ export default function NewGatheringWizard({
       <div className="ngw-panel">
         <div className="ngw-header">
           <h2>新增聚會</h2>
+          <label className="ngw-testbox">
+            <input
+              type="checkbox"
+              checked={isTest}
+              onChange={(event) => toggleTest(event.target.checked)}
+            />
+            測試場
+          </label>
           <button
             type="button"
             className="ngw-close"
@@ -346,6 +364,11 @@ export default function NewGatheringWizard({
                     onChange={(event) => setTitle(event.target.value)}
                   />
                 </label>
+                {isTest && (
+                  <p className="ngw-hint ngw-test-hint">
+                    測試場：不增加任何人的已玩次數，也不會出現在遊戲詳細資料的「紀錄」。名稱需以「測試」開頭。測完請記得刪除這一場。
+                  </p>
+                )}
                 <label className="ngw-field">
                   <span>備註（選填，200 字內）</span>
                   <input
