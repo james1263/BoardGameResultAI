@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { currentShareLink, isInAppBrowser, signInWithGoogle } from '../lib/googleLogin'
 import { showNotice } from '../lib/askConfirm'
+import { FROM_WELCOME_KEY } from './VipGate'
 import '../styles/welcome.css'
 
 // 「先逛逛」按過就記住（同一個瀏覽器不再跳）；登出後清掉，下次會再問
@@ -55,9 +56,20 @@ export default function WelcomeDialog() {
   const hasCheckin = readFlag(CHECKIN_KEY) !== null
   const inApp = isInAppBrowser()
 
+  function loginWithGoogle() {
+    // 登入會整頁跳轉，先記下「是從歡迎視窗登入的」，回來後才知道要不要問升級 VIP
+    try {
+      localStorage.setItem(FROM_WELCOME_KEY, '1')
+    } catch {
+      // 存不了就不會跳升級視窗
+    }
+    void signInWithGoogle()
+  }
+
   function browse() {
     try {
       localStorage.setItem(SKIP_KEY, '1')
+      localStorage.removeItem(FROM_WELCOME_KEY)
     } catch {
       // 存不了就只在這次有效
     }
@@ -102,7 +114,7 @@ export default function WelcomeDialog() {
           </div>
         )}
 
-        <button type="button" className="wd-primary" onClick={() => void signInWithGoogle()}>
+        <button type="button" className="wd-primary" onClick={loginWithGoogle}>
           用 Google 登入
         </button>
         {!hasCheckin && (

@@ -3,6 +3,7 @@ import PlayerPanel from '../PlayerPanel'
 import AdminCenter from './AdminCenter'
 import VipJoinDialog from './VipJoinDialog'
 import WelcomeDialog from './WelcomeDialog'
+import VipGate from './VipGate'
 import { supabase } from '../lib/supabase'
 import { useIsAdmin } from '../lib/useIsAdmin'
 import { useVip } from '../lib/useVip'
@@ -196,6 +197,7 @@ export default function TopBar({
         <VipJoinDialog onClose={() => setIsVipDialogOpen(false)} />
       )}
       <WelcomeDialog />
+      <VipGate />
     </header>
   )
 }

@@ -7,7 +7,9 @@ import { useSession } from '../lib/useSession'
 import { VIP_CHANGED_EVENT } from '../lib/useVip'
 import { RATING_FIELDS, type RatingsApi } from '../lib/useGameRatings'
 import { useBackClose } from '../lib/useBackClose'
+import { useIsAdmin } from '../lib/useIsAdmin'
 import TodayRatingFlow from './TodayRatingFlow'
+import VipUpgradeDialog from './VipUpgradeDialog'
 
 type JoinRow = { result_status: string; result_date: string | null }
 type DayInfo = { exempt: boolean; games: string[]; error: string }
@@ -55,6 +57,12 @@ export default function CheckInDialog({
   const [error, setError] = useState('')
   const [info, setInfo] = useState<DayInfo | null>(null)
   const [wasNeeded, setWasNeeded] = useState<boolean | null>(null)
+  // 報到前不是 VIP、報到後變成 VIP：跳出「已升級 VIP」視窗（本來就是 VIP 的人不跳）
+  const isAdmin = useIsAdmin()
+  const isAdminRef = useRef(isAdmin)
+  isAdminRef.current = isAdmin
+  const wasVipRef = useRef<boolean | null>(null)
+  const [showUpgrade, setShowUpgrade] = useState(false)
   const statusRef = useRef<string | null>(null)
   const startedRef = useRef(false)
   const onDoneRef = useRef(onDone)
@@ -63,6 +71,11 @@ export default function CheckInDialog({
   const handleJoin = useCallback(async () => {
     setBusy(true)
     setError('')
+    // 第一次報到前先記下「原本是不是 VIP」；查不到就當作已是 VIP（寧可不跳通知）
+    if (wasVipRef.current === null) {
+      const pre = await supabase.rpc('is_vip')
+      wasVipRef.current = pre.error ? true : pre.data === true
+    }
     const { data, error: rpcError } = await supabase.rpc('join_gathering', {
       p_token: token,
     })
@@ -80,6 +93,9 @@ export default function CheckInDialog({
     statusRef.current = row.result_status
     setStatus(row.result_status)
     setDate(row.result_date)
+    if (row.result_status === 'joined' && wasVipRef.current === false && !isAdminRef.current) {
+      setShowUpgrade(true)
+    }
     if (row.result_status === 'joined' || row.result_status === 'already') {
       // 報到後資料庫已自動升成 VIP，通知畫面重新檢查
       window.dispatchEvent(new Event(VIP_CHANGED_EVENT))
@@ -189,10 +205,11 @@ export default function CheckInDialog({
 
   // 一開始就不用評分（免評分、以前評過、沒有指定遊戲）：稍等一下直接到集點卡
   useEffect(() => {
-    if (!resolved || wasNeeded !== false) return
+    // 「已升級 VIP」視窗還開著時先不跳走
+    if (!resolved || wasNeeded !== false || showUpgrade) return
     const timer = window.setTimeout(() => onDoneRef.current(date), 1200)
     return () => window.clearTimeout(timer)
-  }, [resolved, wasNeeded, date])
+  }, [resolved, wasNeeded, date, showUpgrade])
 
   return createPortal(
     <div className="modal-backdrop checkin-backdrop">
@@ -254,6 +271,13 @@ export default function CheckInDialog({
             </button>
           ))}
       </div>
+      {showUpgrade && (
+        <VipUpgradeDialog
+          mode="granted"
+          actionLabel={showRate ? '開始評分' : '我知道了'}
+          onClose={() => setShowUpgrade(false)}
+        />
+      )}
     </div>,
     document.body,
   )
