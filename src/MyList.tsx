@@ -8,7 +8,8 @@ import LoyaltyCard from './components/LoyaltyCard'
 import type { GameChange } from './lib/useLoyaltyAlerts'
 import { supabase } from './lib/supabase'
 import { useSession } from './lib/useSession'
-import { useMyLoyalty } from './lib/useLoyalty'
+import { useMyLoyalty, todayLocal } from './lib/useLoyalty'
+import { TodayRatingModal } from './components/TodayRatingFlow'
 import { PROFILE_SAVED_EVENT, signInWithGoogle } from './lib/googleLogin'
 import MyGatherings from './components/MyGatherings'
 import MyNotes from './components/MyNotes'
@@ -152,30 +153,19 @@ function useMyNickname(userId: string | null): string {
     return result && result.id === userId ? result.name : ''
 }
 
-// 暱稱旁的集點小字（只有 VIP、且不是管理者才會顯示這個元件，所以只有他們會讀取集點資料）
-function ClubPointsLine() {
-    const loyalty = useMyLoyalty()
-    const summary = loyalty.summary
-
-    if (loyalty.loading && !summary) {
-        return <p className="club-pts-line">集點資料讀取中…</p>
-    }
-
-    const total = summary?.totalPoints ?? 0
-    const held = summary?.availableVouchers ?? 0
-    const usable = summary?.usableVouchers ?? 0
-    const later = Math.max(held - usable, 0)
-
-    return (
-        <p className="club-pts-line">
-            累計 {total} 點・免費券 {held} 張
-            {later > 0 ? `（${later} 張明天起可用）` : ''}
-        </p>
-    )
-}
-
 // 俱樂部最上面的大卡：免費券與本月點數（只有 VIP、非管理者）
-function ClubPointsCard({ onOpen, alert = false }: { onOpen: () => void; alert?: boolean }) {
+// 今天有聚會待確認時：整張卡直接開「今日遊戲評分」視窗，不用再進集點卡
+function ClubPointsCard({
+    onOpen,
+    pending = false,
+    boardGames,
+    ratings,
+}: {
+    onOpen: () => void
+    pending?: boolean
+    boardGames: BoardGame[]
+    ratings: RatingsApi
+}) {
     const loyalty = useMyLoyalty()
     const summary = loyalty.summary
     const held = summary?.availableVouchers ?? 0
@@ -183,67 +173,116 @@ function ClubPointsCard({ onOpen, alert = false }: { onOpen: () => void; alert?:
     const later = Math.max(held - usable, 0)
     const month = summary?.monthPoints ?? 0
     const loading = loyalty.loading && !summary
+    const [flowOpen, setFlowOpen] = useState(false)
+    const today = todayLocal()
+    const todayGames = useMemo(
+        () =>
+            Array.from(
+                new Set(
+                    loyalty.gatherings
+                        .filter((item) => item.date === today)
+                        .flatMap((item) => item.games),
+                ),
+            ),
+        [loyalty.gatherings, today],
+    )
+    // 評分流程走完後 pending 會變 false，但視窗要留到使用者自己關掉
+    const canFlow = pending && todayGames.length > 0
 
     return (
-        <button
-            type="button"
-            onClick={onOpen}
-            aria-label="打開集點卡"
-            style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                width: '100%',
-                margin: '12px 0 0',
-                padding: '14px 16px',
-                border: '1px solid #e3d9c4',
-                borderRadius: 14,
-                background: '#fbf7ec',
-                color: '#34463c',
-                textAlign: 'left',
-                cursor: 'pointer',
-            }}
-        >
-            {loading ? (
-                <span style={{ flex: 1, fontSize: 14 }}>集點資料讀取中…</span>
-            ) : (
-                <>
-                    <span style={{ flex: 1 }}>
-                        <span style={{ display: 'block', fontSize: 13, color: '#7a6a52' }}>免費券</span>
-                        <span style={{ display: 'block', fontSize: 22, fontWeight: 800, color: '#34463c' }}>
-                            🎟 {held} 張
-                        </span>
-                        {later > 0 && (
-                            <span style={{ display: 'block', fontSize: 12, color: '#7a6a52' }}>
-                                {later} 張明天起可用
+        <>
+            <button
+                type="button"
+                onClick={() => (canFlow ? setFlowOpen(true) : onOpen())}
+                aria-label={canFlow ? '開始今日遊戲評分' : '打開集點卡'}
+                style={{
+                    position: 'relative',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: 12,
+                    width: '100%',
+                    margin: '12px 0 0',
+                    padding: '14px 16px',
+                    border: '1px solid #e3d9c4',
+                    borderRadius: 14,
+                    background: '#fbf7ec',
+                    color: '#34463c',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                }}
+            >
+                {loading ? (
+                    <span style={{ flex: 1, fontSize: 14 }}>集點資料讀取中…</span>
+                ) : (
+                    <>
+                        <span style={{ flex: 1 }}>
+                            <span style={{ display: 'block', fontSize: 13, color: '#7a6a52' }}>免費券</span>
+                            <span style={{ display: 'block', fontSize: 22, fontWeight: 800, color: '#34463c' }}>
+                                🎟 {held} 張
                             </span>
-                        )}
-                    </span>
-                    <span style={{ flex: 1 }}>
-                        <span style={{ display: 'block', fontSize: 13, color: '#7a6a52' }}>本月點數</span>
-                        <span style={{ display: 'block', fontSize: 22, fontWeight: 800, color: '#34463c' }}>
-                            {month} / 2
+                            {later > 0 && (
+                                <span style={{ display: 'block', fontSize: 12, color: '#7a6a52' }}>
+                                    {later} 張明天起可用
+                                </span>
+                            )}
                         </span>
+                        <span style={{ flex: 1 }}>
+                            <span style={{ display: 'block', fontSize: 13, color: '#7a6a52' }}>本月點數</span>
+                            <span style={{ display: 'block', fontSize: 22, fontWeight: 800, color: '#34463c' }}>
+                                {month} / 2
+                            </span>
+                        </span>
+                    </>
+                )}
+                {canFlow ? (
+                    <span
+                        aria-hidden="true"
+                        style={{
+                            position: 'relative',
+                            padding: '8px 16px',
+                            borderRadius: 999,
+                            background: '#4a6b57',
+                            color: '#fff',
+                            fontSize: 15,
+                            fontWeight: 700,
+                        }}
+                    >
+                        去評分
+                        <span
+                            style={{
+                                position: 'absolute',
+                                top: -3,
+                                right: -3,
+                                width: 12,
+                                height: 12,
+                                borderRadius: 999,
+                                background: '#d64545',
+                                border: '2px solid #fbf7ec',
+                            }}
+                        />
                     </span>
-                </>
-            )}
-            <span aria-hidden="true" style={{ fontSize: 22, color: '#a89478' }}>›</span>
-            {alert && (
-                <span
-                    aria-label="今天有遊戲要評分"
-                    style={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        width: 10,
-                        height: 10,
-                        borderRadius: 999,
-                        background: '#b5483a',
+                ) : (
+                    <span aria-hidden="true" style={{ fontSize: 22, color: '#a89478' }}>›</span>
+                )}
+                {pending && (
+                    <span style={{ flexBasis: '100%', fontSize: 12, fontWeight: 700, color: '#b5483a' }}>
+                        今天的聚會待確認：評分流程走完前不會得點，也不會使用免費券
+                    </span>
+                )}
+            </button>
+            {flowOpen && (
+                <TodayRatingModal
+                    games={todayGames}
+                    boardGames={boardGames}
+                    ratings={ratings}
+                    onClose={() => {
+                        setFlowOpen(false)
+                        loyalty.reload()
                     }}
                 />
             )}
-        </button>
+        </>
     )
 }
 
@@ -269,7 +308,6 @@ function ClubHeader({
             : loggedIn
                 ? '一般會員'
                 : '尚未登入'
-    const showPoints = loggedIn && isVip && !isAdmin
 
     return (
         <div className="club-card">
@@ -302,7 +340,6 @@ function ClubHeader({
                 <div>
                     <p className="club-name">{name}</p>
                     <p className={`club-badge ${isVip || isAdmin ? 'vip' : ''}`}>{badge}</p>
-                    {showPoints && <ClubPointsLine />}
                 </div>
             </div>
 
@@ -358,7 +395,6 @@ export default function MyList({
     onClose,
     onBrowse,
     onOpenGame,
-    onOpenLoyalty,
     onOpenWrite,
     onOpenRules,
     renderCover,
@@ -1179,18 +1215,12 @@ export default function MyList({
                 <div className="mylist-body club-body">
                     <ClubHeader isAdmin={isAdmin} isVip={isVip} onClose={onClose} />
                     {personal.isLoggedIn && isVip && !isAdmin && (
-                        <ClubPointsCard onOpen={() => setView('card')} alert={todayPending} />
-                    )}
-                    {todayPending && (
-                        <div className="club-today">
-                            <div>
-                                <b>今天有聚會，還沒評分</b>
-                                <p>評完當天遊戲就能得 1 點</p>
-                            </div>
-                            <button type="button" onClick={onOpenLoyalty}>
-                                去評分
-                            </button>
-                        </div>
+                        <ClubPointsCard
+                            onOpen={() => setView('card')}
+                            pending={todayPending}
+                            boardGames={boardGames}
+                            ratings={ratings}
+                        />
                     )}
                     <div className="club-list club-more">
                         <button

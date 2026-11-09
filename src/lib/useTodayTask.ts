@@ -1,8 +1,14 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMyLoyalty, todayLocal, type LoyaltySummary } from './useLoyalty'
 import { RATING_FIELDS, type RatingsApi } from './useGameRatings'
+import { supabase } from './supabase'
 
-// 今天有沒有「該去評分」的事：被列入今天的聚會、有指定遊戲、還沒得點
+// 玩家跑完評分流程、已向資料庫確認出席後送出，讓紅點與集點資料立刻更新
+export const ATTENDANCE_CONFIRMED_EVENT = 'boardgame-attendance-confirmed'
+
+// 今天有沒有「該去評分」的事：
+// ①被列入今天的聚會、有指定遊戲、還沒得點
+// ②被管理者手動加入今天的聚會、還沒跑完評分流程（就算以前評過分也一樣）
 export function useTodayTask(ratings: RatingsApi): {
   pending: boolean
   // 導覽列「俱樂部」的點數數字用（跟集點卡同一份資料，不另外多讀）
@@ -11,17 +17,40 @@ export function useTodayTask(ratings: RatingsApi): {
 } {
   const loyalty = useMyLoyalty()
   const { reload } = loyalty
+  const isLoggedIn = loyalty.isLoggedIn
+  const [needConfirm, setNeedConfirm] = useState(false)
 
-  // 切回網頁時重新讀一次（管理者可能剛把你加進名單）
+  const loadConfirm = useCallback(async () => {
+    if (!isLoggedIn) {
+      setNeedConfirm(false)
+      return
+    }
+    const { data, error } = await supabase.rpc('get_my_pending_confirm')
+    setNeedConfirm(!error && data === true)
+  }, [isLoggedIn])
+
+  // 切回網頁時重新讀一次（管理者可能剛把你加進名單）；評分流程確認後也重讀
   useEffect(() => {
+    void loadConfirm()
     function handleVisible() {
-      if (document.visibilityState === 'visible') reload()
+      if (document.visibilityState === 'visible') {
+        reload()
+        void loadConfirm()
+      }
+    }
+    function handleConfirmed() {
+      reload()
+      void loadConfirm()
     }
     document.addEventListener('visibilitychange', handleVisible)
-    return () => document.removeEventListener('visibilitychange', handleVisible)
-  }, [reload])
+    window.addEventListener(ATTENDANCE_CONFIRMED_EVENT, handleConfirmed)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisible)
+      window.removeEventListener(ATTENDANCE_CONFIRMED_EVENT, handleConfirmed)
+    }
+  }, [reload, loadConfirm])
 
-  const pending = useMemo(() => {
+  const basePending = useMemo(() => {
     if (!loyalty.isLoggedIn || loyalty.loading || ratings.status !== 'ready') {
       return false
     }
@@ -53,5 +82,5 @@ export function useTodayTask(ratings: RatingsApi): {
     ratings.getMine,
   ])
 
-  return { pending, summary: loyalty.summary, reload }
+  return { pending: basePending || needConfirm, summary: loyalty.summary, reload }
 }

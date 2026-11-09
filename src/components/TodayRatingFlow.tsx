@@ -7,6 +7,8 @@ import CoverImage from './CoverImage'
 import RatingSection from './RatingSection'
 import RewardDialog from './RewardDialog'
 import { useSession } from '../lib/useSession'
+import { supabase } from '../lib/supabase'
+import { ATTENDANCE_CONFIRMED_EVENT } from '../lib/useTodayTask'
 import { todayLocal } from '../lib/useLoyalty'
 import {
   detectReward,
@@ -45,6 +47,9 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
   const beforeRef = useRef<Promise<LoyaltySnap | null> | null>(null)
   const checkedRef = useRef(false)
   const [reward, setReward] = useState<RewardKind | null>(null)
+  // 走完流程就向資料庫確認出席（管理者手動加入的人要確認後才得點、才會用免費券）
+  const confirmRef = useRef<Promise<void> | null>(null)
+  const [confirmError, setConfirmError] = useState('')
 
   const gameMap = new Map(boardGames.map((game) => [game.bggName, game]))
 
@@ -68,6 +73,18 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
   }, [phase, step])
 
   useEffect(() => {
+    if (phase !== 'finish' || confirmRef.current) return
+    confirmRef.current = (async () => {
+      const { error } = await supabase.rpc('confirm_my_attendance')
+      if (error) {
+        setConfirmError(error.message)
+        return
+      }
+      window.dispatchEvent(new Event(ATTENDANCE_CONFIRMED_EVENT))
+    })()
+  }, [phase])
+
+  useEffect(() => {
     if (phase !== 'finish' || !userId || checkedRef.current) return
     const beforePromise = beforeRef.current
     if (!beforePromise) return
@@ -75,9 +92,21 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
     const uid = userId
     void (async () => {
       const before = await beforePromise
+      // 先等「確認出席」寫完，點數或免費券才會出現
+      await confirmRef.current
       const after = await fetchLoyaltySnap()
-      if (!before || !after) return
-      const kind = detectReward(before, after)
+      if (!after) return
+      let kind: RewardKind | null = before ? detectReward(before, after) : null
+      if (!kind) {
+        // 沒有新增點數或券：看看今天是不是剛好自動用掉免費券
+        const used = await supabase
+          .from('loyalty_redemptions')
+          .select('id')
+          .eq('user_id', uid)
+          .eq('used_on', todayLocal())
+          .limit(1)
+        if (!used.error && (used.data ?? []).length > 0) kind = 'used'
+      }
       if (!kind || isRewardOff(uid)) return
       const key = `${kind}|${todayLocal()}`
       if (wasRewardSeen(uid, key)) return
@@ -240,6 +269,11 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
           ))
         ) : (
           <p className="tf-reward">評分完成，點數已更新，到集點卡看看。</p>
+        )}
+        {confirmError && (
+          <p className="tf-reward" style={{ color: '#b5483a' }}>
+            出席確認失敗：{confirmError}。請關閉後重新操作一次，或找管理者。
+          </p>
         )}
       </div>
       <button type="button" className="tf-primary" onClick={onFinish}>

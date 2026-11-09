@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { usePersonalCollection } from '../lib/usePersonalCollection'
 import {
@@ -12,6 +12,8 @@ import {
 import { RATING_FIELDS, type RatingsApi } from '../lib/useGameRatings'
 import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 import { useVip } from '../lib/useVip'
+import { supabase } from '../lib/supabase'
+import { ATTENDANCE_CONFIRMED_EVENT } from '../lib/useTodayTask'
 import VipLock from './VipLock'
 import { TodayRatingModal } from './TodayRatingFlow'
 import type { GameChange } from '../lib/useLoyaltyAlerts'
@@ -46,6 +48,32 @@ export default function LoyaltyCard({
   const [flowOpen, setFlowOpen] = useState(false)
   // 近期紀錄依月份摺疊：記下使用者手動展開／收合的月份
   const [monthToggles, setMonthToggles] = useState<Record<string, boolean>>({})
+  // 被管理者手動加入的人：今天還沒跑完評分流程（就算已經評過分也要走一次才得點）
+  const [needConfirm, setNeedConfirm] = useState(false)
+  const loggedIn = loyalty.isLoggedIn
+  useEffect(() => {
+    if (!loggedIn) {
+      setNeedConfirm(false)
+      return
+    }
+    let cancelled = false
+    function loadConfirm() {
+      void supabase.rpc('get_my_pending_confirm').then(({ data, error }) => {
+        if (!cancelled) setNeedConfirm(!error && data === true)
+      })
+    }
+    function handleVisible() {
+      if (document.visibilityState === 'visible') loadConfirm()
+    }
+    loadConfirm()
+    document.addEventListener('visibilitychange', handleVisible)
+    window.addEventListener(ATTENDANCE_CONFIRMED_EVENT, loadConfirm)
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', handleVisible)
+      window.removeEventListener(ATTENDANCE_CONFIRMED_EVENT, loadConfirm)
+    }
+  }, [loggedIn])
 
   const gameMap = useMemo(
     () => new Map(boardGames.map((game) => [game.bggName, game])),
@@ -136,11 +164,17 @@ export default function LoyaltyCard({
     const completeCount = sessions
       .flatMap((session) => session.games)
       .filter((name) => isComplete(name)).length
-    const qualified = day.qualified || (ratingsReady && completeCount > 0)
+    // 還沒跑完評分流程的那一天：不能因為「以前評過分」就先蓋章
+    const waitingConfirm = needConfirm && day.date === todayLocal()
+    const qualified = waitingConfirm
+      ? false
+      : day.qualified || (ratingsReady && completeCount > 0)
 
     let text: string
     if (!ratingsReady) {
       text = '評分讀取中…'
+    } else if (waitingConfirm) {
+      text = '還沒完成評分流程：按上面的「選擇今天玩過的遊戲」走完流程就會蓋章'
     } else if (usedDates.has(day.date)) {
       text = '這天使用了 1 張免費券，不集點'
     } else if (qualified) {
@@ -218,9 +252,10 @@ export default function LoyaltyCard({
     ),
   )
   const attendingToday = loyalty.days.some((day) => day.date === todayDate)
-  const todayQualified =
-    loyalty.days.some((day) => day.date === todayDate && day.qualified) ||
-    todayGames.some((name) => isComplete(name))
+  const todayQualified = needConfirm
+    ? false
+    : loyalty.days.some((day) => day.date === todayDate && day.qualified) ||
+      todayGames.some((name) => isComplete(name))
   const showTodayTask =
     ratingsReady && attendingToday && todayGames.length > 0 && !todayQualified
   const monthPoints = summary?.monthPoints ?? 0
@@ -262,7 +297,10 @@ export default function LoyaltyCard({
           games={todayGames}
           boardGames={boardGames}
           ratings={ratings}
-          onClose={() => setFlowOpen(false)}
+          onClose={() => {
+            setFlowOpen(false)
+            loyalty.reload()
+          }}
         />
       )}
 
