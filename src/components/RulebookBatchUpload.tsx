@@ -61,6 +61,8 @@ type AllDoc = {
   source_type: string
   storage_path: string | null
   doc_type?: string | null
+  content_scope?: string | null
+  language?: string | null
   ai_indexed?: boolean | null
   index_status?: string | null
   page_count?: number | null
@@ -781,13 +783,16 @@ export default function RulebookBatchUpload({
   const [clearingGame, setClearingGame] = useState('')
   const [orphanMsg, setOrphanMsg] = useState('')
   const [errataCounts, setErrataCounts] = useState<Map<string, number>>(new Map())
+  // 已上傳的 PDF 清單：依範圍／語言篩選
+  const [scopeFilter, setScopeFilter] = useState<string>('all')
+  const [docLangFilter, setDocLangFilter] = useState<string>('all')
 
   const loadUsage = useCallback(async () => {
     const [usageResult, docsResult] = await Promise.all([
       supabase.rpc('admin_rulebook_storage_usage'),
       supabase
         .from('game_documents')
-        .select('id, bgg_name, title, source_type, storage_path, doc_type, ai_indexed, index_status, page_count')
+        .select('id, bgg_name, title, source_type, storage_path, doc_type, content_scope, language, ai_indexed, index_status, page_count')
         .order('created_at', { ascending: false }),
     ])
     if (usageResult.error) {
@@ -1196,7 +1201,16 @@ export default function RulebookBatchUpload({
     docs: AllDoc[],
     filter: (doc: GameDocument) => boolean,
   ) {
-    const groups = buildGroups(docs)
+    const isPdf = label === 'PDF'
+    const matchesFilter = (d: { content_scope?: string | null; language?: string | null }) =>
+      !isPdf ||
+      ((scopeFilter === 'all' || (d.content_scope ?? 'main') === scopeFilter) &&
+        (docLangFilter === 'all' || d.language === docLangFilter))
+    const shownDocs = docs.filter(matchesFilter)
+    const scopeKeys = Object.keys(SCOPE_LABELS) as DocScope[]
+    const scopeCount = (key: string) => docs.filter((d) => (d.content_scope ?? 'main') === key).length
+    const langCount = (key: string) => docs.filter((d) => d.language === key).length
+    const groups = buildGroups(shownDocs)
     const trashedGroups = buildGroups(docs).filter((g) => g.trashed && g.bytes > 0)
     const trashedBytes = trashedGroups.reduce((sum, g) => sum + g.bytes, 0)
     const trashedGroupCount = trashedGroups.length
@@ -1204,8 +1218,69 @@ export default function RulebookBatchUpload({
       <>
         <div className="rbd-title">
           <h3>已上傳的{label}</h3>
-          <small>共 {docs.length} 份</small>
+          <small>
+            共 {docs.length} 份
+            {isPdf && shownDocs.length !== docs.length ? `（目前顯示 ${shownDocs.length} 份）` : ''}
+          </small>
         </div>
+        {isPdf && docs.length > 0 && (
+          <div className="rbv-filters">
+            <div className="rbv-filter">
+              <span className="rbv-filter-label">範圍</span>
+              <div className="rbv-chips" role="group" aria-label="依範圍篩選">
+                <button
+                  type="button"
+                  aria-pressed={scopeFilter === 'all'}
+                  className={`rbv-chip ${scopeFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => setScopeFilter('all')}
+                >
+                  全部<small>{docs.length}</small>
+                </button>
+                {scopeKeys
+                  .filter((key) => scopeCount(key) > 0 || scopeFilter === key)
+                  .map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      aria-pressed={scopeFilter === key}
+                      className={`rbv-chip ${scopeFilter === key ? 'active' : ''}`}
+                      onClick={() => setScopeFilter(scopeFilter === key ? 'all' : key)}
+                    >
+                      {SCOPE_LABELS[key]}
+                      <small>{scopeCount(key)}</small>
+                    </button>
+                  ))}
+              </div>
+            </div>
+            <div className="rbv-filter">
+              <span className="rbv-filter-label">語言</span>
+              <div className="rbv-chips" role="group" aria-label="依語言篩選">
+                <button
+                  type="button"
+                  aria-pressed={docLangFilter === 'all'}
+                  className={`rbv-chip ${docLangFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => setDocLangFilter('all')}
+                >
+                  全部<small>{docs.length}</small>
+                </button>
+                {(['zh', 'en', 'other'] as const)
+                  .filter((key) => langCount(key) > 0 || docLangFilter === key)
+                  .map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      aria-pressed={docLangFilter === key}
+                      className={`rbv-chip ${docLangFilter === key ? 'active' : ''}`}
+                      onClick={() => setDocLangFilter(docLangFilter === key ? 'all' : key)}
+                    >
+                      {langText(key)}
+                      <small>{langCount(key)}</small>
+                    </button>
+                  ))}
+              </div>
+            </div>
+          </div>
+        )}
         <input
           type="search"
           className="rb-search"
@@ -1285,7 +1360,7 @@ export default function RulebookBatchUpload({
                       key={`${group.bggName}-${listTick}`}
                       bggName={group.bggName}
                       sizeByName={sizeByName}
-                      filter={filter}
+                      filter={(d) => filter(d) && matchesFilter(d)}
                       onChanged={() => setListTick((n) => n + 1)}
                       onDeleted={() => void loadUsage()}
                     />
