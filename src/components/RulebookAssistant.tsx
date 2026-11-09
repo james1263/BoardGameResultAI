@@ -19,6 +19,7 @@ import { scopeLabel } from '../lib/docLabels'
 import { cleanOcrText } from '../lib/cleanOcrText'
 import { useHotKeywords } from '../lib/useRuleSearchStats'
 import { useBackClose } from '../lib/useBackClose'
+import { toSimplified } from '../lib/toSimplified'
 import '../styles/errata.css'
 import '../styles/ra-compact.css'
 
@@ -412,8 +413,11 @@ export default function RulebookAssistant({
             setError('請先輸入要查的內容。')
             return
         }
+        // 繁體問句同時轉成簡體一起查（找簡體規則書）；轉換失敗就只查原問句
+        const simp = await toSimplified(q)
+        const alt = simp !== q ? simp : undefined
         setActiveLabel(label)
-        setSearchTerms(buildTerms(q, label === '全部輸入內容' ? suggestions : []))
+        setSearchTerms(buildTerms(alt ? `${q} ${alt}` : q, label === '全部輸入內容' ? suggestions : []))
         if (label === '全部輸入內容') setFullQuery(q)
         const key = q.toLowerCase()
         const cached = cache.current.get(key)
@@ -424,7 +428,7 @@ export default function RulebookAssistant({
             return
         }
         setBusy(true)
-        const result = await searchRulebook(bggName, q)
+        const result = await searchRulebook(bggName, q, alt)
         setBusy(false)
         if (result.error) {
             setError(result.error)

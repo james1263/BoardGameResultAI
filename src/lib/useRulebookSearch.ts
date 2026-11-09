@@ -31,10 +31,12 @@ export async function getRulebookRemaining(): Promise<number | null | undefined>
 export async function searchRulebook(
   bggName: string,
   query: string,
+  alt?: string,
 ): Promise<{ chunks: RulebookChunk[]; error: string }> {
   const { data, error } = await supabase.rpc('search_rulebook_chunks', {
     p_bgg_name: bggName,
     p_query: query,
+    p_alt: alt ?? null,
   })
   if (error) {
     const text = error.message ?? ''
