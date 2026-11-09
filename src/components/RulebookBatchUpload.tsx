@@ -144,6 +144,12 @@ function guessLanguage(fileName: string): Lang {
   return 'en'
 }
 
+function langText(lang: string): string {
+  if (lang === 'zh') return '中文'
+  if (lang === 'en') return '英文'
+  return '其他語言'
+}
+
 function guessScope(fileName: string): DocScope {
   const lower = fileName.toLowerCase()
   if (lower.includes('faq') || lower.includes('errata') || fileName.includes('勘誤')) return 'faq'
@@ -464,6 +470,9 @@ function GameDocGroup({
                 <span className="rbd-docname">
                   {docIcon(doc)} {docLabel(doc)}
                   {indexSuffix(doc)}
+                  {doc.source_type === 'upload' && (
+                    <span className="rbd-size">　{langText(doc.language)}</span>
+                  )}
                   {size != null && <span className="rbd-size">　{formatMb(size)}</span>}
                 </span>
               )}
@@ -986,9 +995,21 @@ export default function RulebookBatchUpload({
           updateRow(row.id, { status: 'error', message })
         } else {
           const note = takeEmptyPageNote()
+          // 依實際內容校正語言（簡體、波蘭文等，檔名猜不準）；失敗不影響上傳結果
+          let detected = ''
+          try {
+            const res = await supabase.rpc('admin_auto_doc_language', {
+              p_bgg_name: row.bggName,
+              p_title: defaultDocTitle(row.file),
+            })
+            if (!res.error && typeof res.data === 'string') detected = res.data
+          } catch {
+            /* ignore */
+          }
+          const langNote = detected ? `偵測語言：${langText(detected)}。` : ''
           updateRow(row.id, {
             status: 'done',
-            message: note ? `已上傳並建立索引。${note}` : '已上傳並建立索引',
+            message: `已上傳並建立索引。${langNote}${note}`,
           })
         }
       } catch (error) {
@@ -1380,6 +1401,9 @@ export default function RulebookBatchUpload({
                           {row.guessed && row.bggName && (
                             <small className="rb-guess">遊戲是從檔名猜的，請確認</small>
                           )}
+                          <small className="rb-guess">
+                            語言：依檔名先猜是「{langText(row.language)}」，上傳後會依內容重新判斷並顯示
+                          </small>
                           <select
                             value={row.scope}
                             disabled={locked}
