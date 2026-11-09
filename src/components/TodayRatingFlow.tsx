@@ -5,6 +5,18 @@ import { RATING_FIELDS, type RatingsApi } from '../lib/useGameRatings'
 import { useBackClose } from '../lib/useBackClose'
 import CoverImage from './CoverImage'
 import RatingSection from './RatingSection'
+import RewardDialog from './RewardDialog'
+import { useSession } from '../lib/useSession'
+import { todayLocal } from '../lib/useLoyalty'
+import {
+  detectReward,
+  fetchLoyaltySnap,
+  isRewardOff,
+  markRewardSeen,
+  wasRewardSeen,
+  type LoyaltySnap,
+  type RewardKind,
+} from '../lib/rewardNotice'
 import '../styles/checkin-pick.css'
 import '../styles/today-flow.css'
 
@@ -25,6 +37,12 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
   const [maxStep, setMaxStep] = useState(0)
   const [rewardLines, setRewardLines] = useState<string[]>([])
   const boxRef = useRef<HTMLDivElement | null>(null)
+  const session = useSession()
+  const userId = session?.user?.id ?? null
+  // 開始評分前先記下集點狀態，評完再比對才知道有沒有新的點或券
+  const beforeRef = useRef<Promise<LoyaltySnap | null> | null>(null)
+  const checkedRef = useRef(false)
+  const [reward, setReward] = useState<RewardKind | null>(null)
 
   const gameMap = new Map(boardGames.map((game) => [game.bggName, game]))
 
@@ -46,6 +64,25 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
   useEffect(() => {
     if (phase === 'rate' && boxRef.current) boxRef.current.scrollTop = 0
   }, [phase, step])
+
+  useEffect(() => {
+    if (phase !== 'finish' || !userId || checkedRef.current) return
+    const beforePromise = beforeRef.current
+    if (!beforePromise) return
+    checkedRef.current = true
+    const uid = userId
+    void (async () => {
+      const before = await beforePromise
+      const after = await fetchLoyaltySnap()
+      if (!before || !after) return
+      const kind = detectReward(before, after)
+      if (!kind || isRewardOff(uid)) return
+      const key = `${kind}|${todayLocal()}`
+      if (wasRewardSeen(uid, key)) return
+      markRewardSeen(uid, key)
+      setReward(kind)
+    })()
+  }, [phase, userId])
 
   function togglePick(bggName: string) {
     setPicked((list) =>
@@ -105,6 +142,7 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
           className="tf-primary"
           disabled={picked.length === 0}
           onClick={() => {
+            if (!beforeRef.current) beforeRef.current = fetchLoyaltySnap()
             setStep(0)
             setMaxStep(0)
             setPhase('rate')
@@ -205,6 +243,9 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
       <button type="button" className="tf-primary" onClick={onFinish}>
         {finishLabel}
       </button>
+      {reward && userId && (
+        <RewardDialog kind={reward} userId={userId} onClose={() => setReward(null)} />
+      )}
     </div>
   )
 }

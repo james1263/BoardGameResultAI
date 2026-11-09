@@ -10,6 +10,13 @@ import { useBackClose } from '../lib/useBackClose'
 import { useIsAdmin } from '../lib/useIsAdmin'
 import TodayRatingFlow from './TodayRatingFlow'
 import VipUpgradeDialog from './VipUpgradeDialog'
+import RewardDialog from './RewardDialog'
+import {
+  isRewardOff,
+  markRewardSeen,
+  wasRewardSeen,
+  type RewardKind,
+} from '../lib/rewardNotice'
 
 type JoinRow = { result_status: string; result_date: string | null }
 type DayInfo = { exempt: boolean; games: string[]; error: string }
@@ -63,6 +70,9 @@ export default function CheckInDialog({
   isAdminRef.current = isAdmin
   const wasVipRef = useRef<boolean | null>(null)
   const [showUpgrade, setShowUpgrade] = useState(false)
+  // 報到當下系統自動用了免費券：跳「已使用免費券」視窗
+  const [reward, setReward] = useState<RewardKind | null>(null)
+  const [rewardChecked, setRewardChecked] = useState(false)
   const statusRef = useRef<string | null>(null)
   const startedRef = useRef(false)
   const onDoneRef = useRef(onDone)
@@ -178,6 +188,35 @@ export default function CheckInDialog({
     }
   }, [succeeded, date, userId])
 
+  useEffect(() => {
+    if (!succeeded || !date || !userId) return
+    const uid = userId
+    const day = date
+    let cancelled = false
+    void (async () => {
+      const key = `used|${day}`
+      if (isRewardOff(uid) || wasRewardSeen(uid, key)) {
+        if (!cancelled) setRewardChecked(true)
+        return
+      }
+      const res = await supabase
+        .from('loyalty_redemptions')
+        .select('id')
+        .eq('user_id', uid)
+        .eq('used_on', day)
+        .limit(1)
+      if (cancelled) return
+      if (!res.error && (res.data ?? []).length > 0) {
+        markRewardSeen(uid, key)
+        setReward('used')
+      }
+      setRewardChecked(true)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [succeeded, date, userId])
+
   const ratingsReady = ratings.status === 'ready'
 
   // 七項評分都填了才算完整（跟集點卡同一個標準）
@@ -206,10 +245,10 @@ export default function CheckInDialog({
   // 一開始就不用評分（免評分、以前評過、沒有指定遊戲）：稍等一下直接到集點卡
   useEffect(() => {
     // 「已升級 VIP」視窗還開著時先不跳走
-    if (!resolved || wasNeeded !== false || showUpgrade) return
+    if (!resolved || wasNeeded !== false || showUpgrade || !rewardChecked || reward) return
     const timer = window.setTimeout(() => onDoneRef.current(date), 1200)
     return () => window.clearTimeout(timer)
-  }, [resolved, wasNeeded, date, showUpgrade])
+  }, [resolved, wasNeeded, date, showUpgrade, rewardChecked, reward])
 
   return createPortal(
     <div className="modal-backdrop checkin-backdrop">
@@ -277,6 +316,9 @@ export default function CheckInDialog({
           actionLabel={showRate ? '開始評分' : '我知道了'}
           onClose={() => setShowUpgrade(false)}
         />
+      )}
+      {reward && userId && (
+        <RewardDialog kind={reward} userId={userId} onClose={() => setReward(null)} />
       )}
     </div>,
     document.body,
