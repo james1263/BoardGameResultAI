@@ -282,3 +282,61 @@ export async function extractPdfChunks(
   lastEmptyPages = emptyPages
   return { pageCount: totalPages, chunks, fileHash }
 }
+
+// ── 上傳前先看內容判斷語言（只讀前幾頁，不建索引、不上傳）─────────────
+export type SniffedLanguage = {
+  // null＝讀不到足夠的文字（掃描檔、讀取失敗），呼叫端要退回用檔名猜
+  lang: 'zh' | 'en' | 'other' | null
+  letters: number
+}
+
+const SNIFF_MAX_PAGES = 12
+const SNIFF_ENOUGH_CHARS = 6000
+const SNIFF_MIN_LETTERS = 50
+
+export async function sniffPdfLanguage(file: File): Promise<SniffedLanguage> {
+  let loadingTask: { promise: Promise<any>; destroy: () => Promise<void> } | null = null
+  try {
+    const buffer = await file.arrayBuffer()
+    const pdfjs = await import('pdfjs-dist')
+    pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.mjs',
+      import.meta.url,
+    ).toString()
+    loadingTask = pdfjs.getDocument({
+      data: new Uint8Array(buffer),
+      cMapUrl: `${import.meta.env.BASE_URL}cmaps/`,
+      cMapPacked: true,
+    })
+    const pdf = await loadingTask.promise
+    let text = ''
+    const last = Math.min(pdf.numPages, SNIFF_MAX_PAGES)
+    for (let pageNo = 1; pageNo <= last && text.length < SNIFF_ENOUGH_CHARS; pageNo += 1) {
+      const page = await pdf.getPage(pageNo)
+      const content = await page.getTextContent()
+      text +=
+        (content.items as Array<{ str?: string }>)
+          .map((item) => (typeof item.str === 'string' ? item.str : ''))
+          .join(' ') + '\n'
+      page.cleanup()
+    }
+    const cjk = (text.match(/[\u4e00-\u9fff]/g) ?? []).length
+    const latin = (text.match(/[A-Za-z\u00C0-\u024F]/g) ?? []).length
+    const ext = (text.match(/[\u00C0-\u024F]/g) ?? []).length
+    const letters = cjk + latin
+    if (letters < SNIFF_MIN_LETTERS) return { lang: null, letters }
+    // 中文字少量出現在英文書（浮水印、書名）不算中文：要占字母 20% 以上
+    if (cjk / letters >= 0.2) return { lang: 'zh', letters }
+    // 帶重音的拉丁字母（波蘭文、德文、法文…）占 1.5% 以上 → 其他語言
+    if (latin > 0 && ext / latin >= 0.015) return { lang: 'other', letters }
+    return { lang: 'en', letters }
+  } catch {
+    return { lang: null, letters: 0 }
+  } finally {
+    try {
+      await loadingTask?.destroy()
+    } catch {
+      /* ignore */
+    }
+  }
+}

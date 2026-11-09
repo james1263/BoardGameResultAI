@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { askConfirm, askInput } from '../lib/askConfirm'
-import { takeEmptyPageNote } from '../lib/extractPdfText'
+import { sniffPdfLanguage, takeEmptyPageNote } from '../lib/extractPdfText'
 import {
   defaultDocTitle,
   isSafeUrl,
@@ -31,7 +31,8 @@ type GameOption = {
   reference_only?: boolean | null
 }
 type DocKind = 'rulebook' | 'faq' | 'errata'
-type Lang = 'zh' | 'en'
+type Lang = 'zh' | 'en' | 'other'
+type LangStatus = 'detecting' | 'detected' | 'unknown' | 'manual'
 type RowStatus = 'ready' | 'uploading' | 'done' | 'error'
 
 type Row = {
@@ -40,6 +41,8 @@ type Row = {
   bggName: string
   docType: DocKind
   language: Lang
+  langStatus: LangStatus
+  langManual: boolean
   status: RowStatus
   message: string
   guessed: boolean
@@ -898,6 +901,21 @@ export default function RulebookBatchUpload({
     setRows((current) => current.filter((row) => row.id !== id))
   }
 
+  // 讀 PDF 前幾頁的文字判斷語言；使用者手動改過的列不覆蓋
+  async function detectLanguages(list: Row[]) {
+    for (const item of list) {
+      const result = await sniffPdfLanguage(item.file)
+      setRows((current) =>
+        current.map((row) => {
+          if (row.id !== item.id || row.langManual) return row
+          return result.lang
+            ? { ...row, language: result.lang, langStatus: 'detected' }
+            : { ...row, langStatus: 'unknown' }
+        }),
+      )
+    }
+  }
+
   function addFiles(fileList: FileList | null) {
     if (!fileList) return
     setNotice('')
@@ -922,6 +940,8 @@ export default function RulebookBatchUpload({
         bggName: guess,
         docType: guessDocType(file.name),
         language: guessLanguage(file.name),
+        langStatus: 'detecting',
+        langManual: false,
         status: 'ready',
         message: '',
         guessed: guess !== '',
@@ -930,7 +950,10 @@ export default function RulebookBatchUpload({
       })
     }
 
-    if (added.length > 0) setRows((current) => [...added, ...current])
+    if (added.length > 0) {
+      setRows((current) => [...added, ...current])
+      void detectLanguages(added)
+    }
     if (skipped.length > 0) {
       setNotice('已略過（不是 PDF 或已在清單中）：' + skipped.join('、'))
     }
@@ -995,18 +1018,20 @@ export default function RulebookBatchUpload({
           updateRow(row.id, { status: 'error', message })
         } else {
           const note = takeEmptyPageNote()
-          // 依實際內容校正語言（簡體、波蘭文等，檔名猜不準）；失敗不影響上傳結果
-          let detected = ''
-          try {
-            const res = await supabase.rpc('admin_auto_doc_language', {
-              p_bgg_name: row.bggName,
-              p_title: defaultDocTitle(row.file),
-            })
-            if (!res.error && typeof res.data === 'string') detected = res.data
-          } catch {
-            /* ignore */
+          // 沒手動指定語言的，上傳後再依索引內容校正一次（失敗不影響上傳結果）
+          let detected = row.language as string
+          if (!row.langManual) {
+            try {
+              const res = await supabase.rpc('admin_auto_doc_language', {
+                p_bgg_name: row.bggName,
+                p_title: defaultDocTitle(row.file),
+              })
+              if (!res.error && typeof res.data === 'string') detected = res.data
+            } catch {
+              /* ignore */
+            }
           }
-          const langNote = detected ? `偵測語言：${langText(detected)}。` : ''
+          const langNote = `語言：${langText(detected)}${row.langManual ? '（手動指定）' : ''}。`
           updateRow(row.id, {
             status: 'done',
             message: `已上傳並建立索引。${langNote}${note}`,
@@ -1401,8 +1426,27 @@ export default function RulebookBatchUpload({
                           {row.guessed && row.bggName && (
                             <small className="rb-guess">遊戲是從檔名猜的，請確認</small>
                           )}
+                          <select
+                            value={row.language}
+                            disabled={locked}
+                            onChange={(event) =>
+                              updateRow(row.id, {
+                                language: event.target.value as Lang,
+                                langStatus: 'manual',
+                                langManual: true,
+                              })
+                            }
+                          >
+                            <option value="zh">語言：中文（繁體／簡體）</option>
+                            <option value="en">語言：英文</option>
+                            <option value="other">語言：其他（德文、波蘭文…）</option>
+                          </select>
                           <small className="rb-guess">
-                            語言：依檔名先猜是「{langText(row.language)}」，上傳後會依內容重新判斷並顯示
+                            {row.langStatus === 'detecting' && '正在讀 PDF 內容判斷語言…'}
+                            {row.langStatus === 'detected' && '語言是依 PDF 內容判斷的，不對可以直接改'}
+                            {row.langStatus === 'unknown' &&
+                              '讀不到足夠的文字（可能是掃描檔），語言先依檔名猜，請自己確認'}
+                            {row.langStatus === 'manual' && '語言已手動指定'}
                           </small>
                           <select
                             value={row.scope}
@@ -1458,7 +1502,12 @@ export default function RulebookBatchUpload({
                 <button
                   type="button"
                   className="ma-btn"
-                  disabled={running || pending.length === 0 || missingGame > 0}
+                  disabled={
+                    running ||
+                    pending.length === 0 ||
+                    missingGame > 0 ||
+                    rows.some((r) => r.langStatus === 'detecting')
+                  }
                   onClick={uploadAll}
                 >
                   {running
