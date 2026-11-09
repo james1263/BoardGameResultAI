@@ -83,6 +83,23 @@
   gap: 6px;
 }
 
+/* 清單一行式：名稱靠左；資訊小字裡的圖示固定大小，圖示與數字排在同一條線上 */
+.game-grid.view-list .game-card.no-info .game-row-main {
+  text-align: left;
+}
+
+.game-grid.view-list .game-card.no-info .game-row-facts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.game-grid.view-list .game-card.no-info .game-row-facts svg {
+  flex: none;
+  width: 13px;
+  height: 13px;
+}
+
 .game-grid.view-list .game-card.no-info:hover {
   transform: none;
 }
