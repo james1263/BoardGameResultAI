@@ -88,6 +88,14 @@ function flush() {
     if (pendingBack > 0) {
         const steps = pendingBack
         pendingBack = 0
+        // 保險：只有「目前這一筆歷史真的是我們記的、而且夠多筆」才往回退。
+        // 否則（例如 Google 登入回來後歷史狀態被改寫）退回去會直接離開網站、
+        // 跳回 Google，寧可多留一筆歷史也不要退錯。
+        const raw = (window.history.state as { backDepth?: number } | null)?.backDepth
+        if (typeof raw !== 'number' || raw < steps) {
+            depth = 0
+            return
+        }
         depth -= steps
         expectedPops += 1
         guard = window.setTimeout(() => {
