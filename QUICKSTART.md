@@ -1,6 +1,6 @@
 # 玩桌遊｜BoardGame（桌遊規則助手）— 懶人包（給下一個 AI）
 
-> 最後更新：2026-11-10（**第三次精簡合併版**：併入集點狀況四顆按鈕、「我的評分」清單化、「我的心得」兩分頁與發表紀錄刪除、聚會評分後的詢問卡＋選擇視窗等舊 `生成後.md` 3.1～3.6 與本次集點改版；對照 `未來目標.md` 逐節檢查，**沒有刪掉任何還沒做的待辦**）。程式最新已知 commit：`c3cea07`（集點四顆按鈕，已 push）、`8b721ed`（聚會評分後詢問卡與選擇視窗）、`0db3ee0`（我的心得改版）；其餘 3.1、3.2、3.4、3.6 的 hash 未知，**請下次 `git log --oneline -8` 確認**；`32869ae`、`878956a`、`87b3ff5` 的內容只取自 commit 訊息，AI 沒看過程式［未驗證］。
+> 最後更新：2026-11-10（**第四次合併版**：併入舊 `生成後.md` 3.1～3.11——測試場資料連動、已玩歸 0 取消已玩、卡頓處理、補日期改版與日期心得、已得點券不可消失、聚會勾選記日期設計；對照 `未來目標.md` 逐節檢查，**沒有刪掉任何還沒做的待辦**）。程式最新已知 commit：`72af680`（補日期改版，已 push）、`7feba87`、`973aba8`、`409f45e`、`abb3440`、`c3cea07`、`8b721ed`、`0db3ee0`；其餘 hash 未知，**請下次 `git log --oneline -8` 確認**；`32869ae`、`878956a`、`87b3ff5` 的內容只取自 commit 訊息，AI 沒看過程式［未驗證］。
 > **分工**：本檔＝現況、待辦、使用者決定、合作規則；`PROJECT_CONTEXT.md`＝架構、資料庫、功能規則、規則助手設計、陷阱；`生成後.md`＝這兩份之後的修改紀錄與維護計數。**開工前三份都讀，衝突時以 `生成後.md` 為準。**
 > **精簡原則（使用者 2026-11-09 明確要求）：縮小文件時，「以前說要做但還沒做」的項目一律不可刪**；只能刪已完成的過程敘述、重複的測試清單、舊 commit 流水帳。
 > 標記：**［使用者決定］**＝使用者明確說了；**［AI 建議］**＝AI 提的、使用者未回「照建議」；**［未驗證］**＝沒實測或沒查證。
@@ -14,9 +14,9 @@
 ## 2. 目前狀態（2026-11-10）
 
 ### 2.1 git 與工作習慣
-- 最近的程式 commit（新→舊）：`87b3ff5` 已上傳 PDF 依範圍與語言分類顯示、清單一行式排版修正；`878956a` 清單一行式：名稱靠左、圖示固定大小與數字對齊；`32869ae` 上傳規則書前依 PDF 內容判斷語言、可手動調整；`3c11ca6` 上傳規則書後依實際內容判斷語言並顯示；`640838e` 繁體關鍵字同時以簡體搜尋；`42971d3` 管理者手動加入的玩家要跑完評分流程才得點或用券；`18286be` 分布圖改編號加下方名單、統計表加綜合分數、清單檢視關閉文字改一行式、可刪除手動過去紀錄；`74e0d82` 更新三份.md；更早：`01a09c0` 修正報到視窗建置失敗；`8c6ffa4`、`51cc90f`、`fa47c6b` 報到流程評分預填、`c3721cd` 登入後先設暱稱再問升級 VIP、`2716f5e` 集點獎勵視窗、`be2ef1e` VIP 升級視窗、`39e3563` 改名「玩桌遊｜BoardGame」、`30c7235` 歡迎視窗、`66f088d` 新增聚會加測試場勾選、`e687344`、`25e0bc7`。`09b20d8`、`8e20575`、`846cbf9`、`0736a48`、`7de3138` 等只動文件，不計 push 次數。
+- 最近的程式 commit（新→舊）：`72af680` 補日期不增加總次數、補完詢問是否寫當天心得；`7feba87` 我的心得：補日期的心得顯示在發表紀錄與遊戲管理；`973aba8` 卡片減少重畫、已玩歸零前先確認；`409f45e` 刪除 NotePrompt.tsx；`abb3440` 集點狀況拿掉舊贈送；`c3cea07` 集點四顆按鈕；`8b721ed` 聚會評分後詢問卡與選擇視窗；`0db3ee0` 我的心得改版；`87b3ff5` 已上傳 PDF 依範圍與語言分類顯示、清單一行式排版修正；`878956a` 清單一行式：名稱靠左、圖示固定大小與數字對齊；`32869ae` 上傳規則書前依 PDF 內容判斷語言、可手動調整；`3c11ca6` 上傳規則書後依實際內容判斷語言並顯示；`640838e` 繁體關鍵字同時以簡體搜尋；`42971d3` 管理者手動加入的玩家要跑完評分流程才得點或用券；`18286be` 分布圖改編號加下方名單、統計表加綜合分數、清單檢視關閉文字改一行式、可刪除手動過去紀錄；`74e0d82` 更新三份.md；更早：`01a09c0` 修正報到視窗建置失敗；`8c6ffa4`、`51cc90f`、`fa47c6b` 報到流程評分預填、`c3721cd` 登入後先設暱稱再問升級 VIP、`2716f5e` 集點獎勵視窗、`be2ef1e` VIP 升級視窗、`39e3563` 改名「玩桌遊｜BoardGame」、`30c7235` 歡迎視窗、`66f088d` 新增聚會加測試場勾選、`e687344`、`25e0bc7`。`09b20d8`、`8e20575`、`846cbf9`、`0736a48`、`7de3138` 等只動文件，不計 push 次數。
 - 家裡電腦 `git stash@{0}`「這台電腦pull前備份」留著未還原（出門前沒 push 的舊版 8 檔：`LoyaltyAdmin.tsx`、`GameModal.tsx`、`InfoHint.tsx`、`RatingSection.tsx`、`ScatterChart.tsx`、`StatsTables.tsx`、`stats-chart.css`、舊 `生成後.md`）；**不要 `git stash pop`**（會把舊版蓋在新版上）。
-- **不在 repo 的 SQL（Supabase 已執行）**：`search_rulebook_chunks_v9.sql`、`admin_auto_doc_language.sql`、手動加入玩家確認流程那批（`gathering_attendees.confirmed_at`、`loyalty_day_status` 改版、`confirm_my_attendance()`、`get_my_pending_confirm()`）、`admin_use_voucher_on_day`、`loyalty_adjustments.sql`（2026-11-10 集點四顆按鈕）等；改之前一律請使用者貼線上定義。
+- **不在 repo 的 SQL（Supabase 已執行）**：`test_gathering_cleanup.sql`、`legacy_cleanup_50aj3g4.sql`（一次性）、`unplay_when_empty`＋`played_default_count` 修正、補日期三函式（`add_play_date`／`delete_play_date`／`set_play_date_note`）、點券保留那批（`loyalty_earned_days` 與 `bk_loyalty_keep_*` 觸發器）、`loyalty_migrate_old_grants.sql`、`search_rulebook_chunks_v9.sql`、`admin_auto_doc_language.sql`、手動加入玩家確認流程那批（`gathering_attendees.confirmed_at`、`loyalty_day_status` 改版、`confirm_my_attendance()`、`get_my_pending_confirm()`）、`admin_use_voucher_on_day`、`loyalty_adjustments.sql`（2026-11-10 集點四顆按鈕）等；改之前一律請使用者貼線上定義。
 - 使用者習慣：先在 `http://localhost:5173/`（`npm.cmd run dev`）測再 push；**他曾拿 Vercel 舊版當新版看，截圖不對勁先問「是 localhost 還是網站」、截圖時間是否早於上次部署**；他也曾回報「沒改到」，結果是檔案沒存或放錯資料夾，所以給修改要附 `Select-String` 驗證。
 - **測試結果他多半先跳過（「最後一起測」「有問題再來用」）：不要每次開場逐項追問，他提起再處理**；但 push 後他常沒回報，重大批次可順口問一次。
 
@@ -39,7 +39,15 @@
 - 2026-11-09～10（使用者回報／commit）：`18286be` 統計中心改版全部完成、拿掉首頁集點卡入口；`42971d3` 手動加入玩家確認流程（**使用者實測通過**）；`640838e` 繁體搜簡體規則書（**線上實測通過**）；`3c11ca6` 上傳後判斷語言（**沒回報上傳實測［未驗證］**）；`32869ae`／`878956a`／`87b3ff5`（上傳前依內容判斷語言＋可手動調整、已上傳 PDF 依範圍與語言分類顯示、清單一行式排版；**只知 commit 訊息、沒實測回報［未驗證］**）。
 - 2026-11-10 已 push、使用者回報沒問題：「我的評分」頁（說明鈕、縮小留白、清單化）、「我的心得」兩分頁（`0db3ee0`）、發表紀錄「🗑 刪除」、聚會評分後詢問卡＋選擇視窗（每場只問一次，`localStorage` 鍵 `boardgame-note-ask:<uid>`；`NotePrompt` 已換成 `PostGatheringNotes`）、寫作畫面 ✕ 回選擇視窗。細節在 `PROJECT_CONTEXT.md` 第 5、7 節；待確認小項見 `未來目標.md` 第 1 節。
 - 集點狀況改版（2026-11-10，**已測試通過（使用者回報「測試完都沒有問題」）並已 push，commit `c3cea07`**）：管理者「集點狀況」改成四顆按鈕「贈送券／扣除券／贈送點／扣除點」，**「改用券」「補登」已拿掉**；數量 1～50，先問數量再跳確認視窗（寫出玩家與目前點數、券數）；每次留下調整紀錄，在「明細」與「免費券紀錄」都看得到，只剩「撤銷」；舊的贈送紀錄標「（舊）」且仍可撤銷。SQL `loyalty_adjustments.sql`（**不在 repo，使用者已在 Supabase 執行**）：改寫 `loyalty_totals`／`settle_vouchers`／`admin_get_loyalty_overview`，並新增：表 `loyalty_adjustments`（`user_id`、`kind`＝point／voucher、`delta`＝±1～50、`adj_month`、`created_at`、`created_by`；RLS 開、anon／authenticated 全 revoke）；新函式 `admin_adjust_loyalty(p_user, p_kind, p_delta)`、`admin_revoke_adjustment(p_id)`、`admin_get_adjustments()`（最近 500 筆）與內部 `loyalty_adjust_vouchers(uuid)`；SQL 全文使用者已貼給 AI 看過。錯誤訊息：「可用券不足」「本月點數不足」「這筆調整的券已經被使用，不能撤銷」等。`privacy.html` 加上管理者調整紀錄說明、拿掉「管理者補登」字樣、日期改 11 月 10 日。規則［AI 建議，使用者測試後說沒問題，視為接受；不合要說］：贈送點算「當月」、不限哪一天，同月湊 2 點自動變 1 張券；扣除點只能扣到當月累積點數為 0（若會讓某張已換成的券消失，而那張券已被用掉，系統擋下）；扣除券只能扣到可用券為 0（超過顯示「可用券不足」）；撤銷若會讓已使用的券不夠，系統拒絕。
-- **尚未確認（開工先問一次）**：①`c3721cd`／`8c6ffa4`／`01a09c0` 之後，「暱稱視窗、升級視窗按稍後再說」是否還會跳回 Google 選帳號頁（最重要；若還會，查 `useBackClose.ts` 的 `flush`／`expectedPops`／`pendingBack`，先問發生在哪一步）；②`fa47c6b` 與三種獎勵視窗實測；③4.14.2 兩支 SQL 是否已執行；④卓爾金曆 cMap 修法在網站上重傳是否成功；⑤文件清單折疊與 cMap 兩個 commit 是否已 push（使用者貼的 log 範圍沒包含）；⑥旭日新 Paddle 版是否已上傳、網站上舊的旭日 `_OCR.pdf` 是否已刪；⑦`3c11ca6`／`32869ae`／`87b3ff5` 的語言判斷（上傳前、上傳後）與清單分類顯示實測（若文件列表每份都標「其他語言」，代表 `useGameDocuments.ts` 查詢沒帶 `language` 欄位［未驗證］）。使用者說測試先跳過，不要逐項追。
+- **尚未確認（開工先問一次）**：①`c3721cd`／`8c6ffa4`／`01a09c0` 之後，「暱稱視窗、升級視窗按稍後再說」是否還會跳回 Google 選帳號頁（最重要；若還會，查 `useBackClose.ts` 的 `flush`／`expectedPops`／`pendingBack`，先問發生在哪一步）；②`fa47c6b` 與三種獎勵視窗實測；③4.14.2 兩支 SQL 是否已執行；④卓爾金曆 cMap 修法在網站上重傳是否成功；⑤文件清單折疊與 cMap 兩個 commit 是否已 push（使用者貼的 log 範圍沒包含）；⑥旭日新 Paddle 版是否已上傳、網站上舊的旭日 `_OCR.pdf` 是否已刪；⑦`3c11ca6`／`32869ae`／`87b3ff5` 的語言判斷（上傳前、上傳後）與清單分類顯示實測（若文件列表每份都標「其他語言」，代表 `useGameDocuments.ts` 查詢沒帶 `language` 欄位［未驗證］）。使用者說測試先跳過，不要逐項追。；⑧手機卡頓最後測試（`973aba8` 的 `GameCard` memo 只是推測性第一步，若仍卡請他說最卡的動作再追）；⑨3.10 點券保留實測（見 2.3a）；⑩補日期補完選「好」切到「我的心得」時手機返回鍵是否多退一層。
+
+### 2.3a 2026-11-10 下午～晚間新增（舊 `生成後.md` 3.3～3.11；SQL 皆已在 Supabase 執行、不在 repo；細節與資料庫在 PROJECT_CONTEXT）
+- **測試場資料連動**（只動資料庫）：「測試」開頭聚會當天評分不標已玩；測試場內新建評分記在 `test_gathering_ratings`；刪「測試」聚會時自動刪該場遊玩紀錄與新建評分（只刪測試場新建的）；主畫面手動勾已玩且次數 0 → 自動 1 次。實測通過。`test_gathering_ratings` 的欄位／RLS／`revoke` 沒看過，改前請使用者匯出並確認 `anon` 無權限［未驗證］。**重要結論**：評分完整會自動標已玩（`mark_played_from_activity`），所以**不可用「已玩次數 0」判斷孤兒已玩標記**；任何自動取消已玩都必須同時檢查沒有評分。
+- **已玩次數歸 0 取消已玩**（只動資料庫，已實測）：觸發器 `zz_unplay_when_empty`（`unplay_when_empty()`）＝`play_count` 由 >0 變 0、`played` 仍 true、無 `game_play_sessions`、無 `game_ratings` → `played := false`。**陷阱**：前端 `upsert` 會讓 Postgres 先對「整列新增」跑 BEFORE INSERT 觸發器，`played_default_count` 曾把次數彈回 1，已加「該列已存在就不補 1」條件修掉。
+- **前端「−」與卡頓**（`973aba8`，使用者測過）：`GameCard` 改 `memo`；`MyList.decrementPlayed()`：還有日期紀錄就直接減；總次數會變 0 時先查評分與公開留言，**都沒有 → 確認視窗後取消已玩；有評分或公開留言 → 暫時只跳「暫時不能歸零」**（等 4.B-12 決定）。**已玩最低次數＝日期紀錄筆數**（「−」只動 `play_count`，紀錄不刪）。
+- **補日期改版**（`7feba87`＋`72af680`，已 push）［使用者決定］：補日期**不增加總次數**（把一次「無日期」換成「有日期」，總次數＝`play_count`＋日期筆數不變）；無日期次數 0 時「補一個日期」灰掉並提示先按「＋」；補日期視窗只填日期，補完問「要不要寫這天的心得」；手動日期可當「自己記錄用」的場次，**日期的私人心得存在 `game_play_sessions.note`（≤200 字、一日一則、只有本人看得到、刪日期一併消失）**［AI 建議，使用者回「照建議」］；公開留言場次不變（只能選出席過、當天指定這款的聚會）；聚會自動日期（非 `manual`）前端不給刪；舊的手動日期被刪後變回無日期次數（行為改變）。發表紀錄標「補日期 MM/DD」；遊戲管理「心得 ✓」算進日期心得。已知限制：一個手動日期一則心得；「來自聚會」篩選不含日期心得。
+- **已得點數與免費券不可被其他行為消失**（3.10，只動資料庫）［使用者原則，高優先］：查證結論——舊文件寫的「事後刪評分不退點數」**不成立**（點數原本由 `loyalty_day_status` 讀取時重算）。做法：新表 `loyalty_earned_days`（只有函式能寫）＋`loyalty_qualified_days(uuid)`（已記下 ∪ 現在合格）；`loyalty_point_days`、`settle_vouchers` 改用它；觸發器 `bk_loyalty_keep_rating`／`_attendee`／`_game`／`_gathering`／`_date`：刪或改到不完整評分、移出出席名單、刪指定遊戲、刪正式聚會前先結算保留；改聚會日期→已得的點搬到新日期；**刪「測試」開頭聚會→該場得的點一起刪**；隔月點數歸零、券保留（原規則不動）。驗證：13 人快照比對 `changed = 0`，`loyalty_earned_days` 15 列，快照表已 drop。**尚未實測**：管理者建「測試」場＋連結→非管理者報到評完整得點→SQL 刪評分點數仍在→移出名單仍在→刪測試聚會點數消失（只有管理者能建立聚會）。**未處理**：管理中心「明細」與集點卡「近期紀錄」（`get_my_loyalty_days`、`admin_get_loyalty_days`，AI 沒看過定義）可能不顯示已保留的日子；`privacy.html` 要補「系統會記錄你得過點的日期」；觸發器順序與效能、`aa_cleanup_test_gathering` 與 `bk_loyalty_keep_gathering` 先後［未驗證］；已消失過的點救不回來，只能用「贈送點」補。
+- **聚會勾選記日期、次數 +1（3.11，尚未動工）**：`add_session_from_rating` 實際行為——玩家把一款遊戲七項評分「第一次存成完整」才產生日期（UPDATE 時舊值已完整就跳過），條件：出席、聚會日 ≤ 今天（台北）、當天指定且未移除、非「測試」開頭、同人同款同日沒紀錄；管理者指定 3 款、玩家只評完整 2 款就只有 2 筆；管理者本人另走 `admin_gathering`。缺口：先前已評完整的遊戲聚會再勾選不會產生；在聚會流程外（「我的評分」頁）評完整也會產生。［使用者決定］先前已評完整的遊戲在聚會勾選後也要產生日期且次數 +1。［AI 建議，使用者未回「照建議」］新增 `record_gathering_play(p_bgg_name)`（只認「今天」這場非測試、出席、這款指定未移除，插入 `source='rating'` 並帶 `gathering_id`，同人同款同日已有就不重複），由 `TodayRatingFlow.tsx` 每款評分存檔成功後（`RatingSection` 的 `flow.onNext`）呼叫；停用 `add_session_from_rating` 的插入（想記日期用「補日期」）；舊自動日期不動；集點不受影響。動工前先請使用者貼 `unplay_when_empty`、`played_default_count` 若有改動；實測要含：已評完整遊戲勾選後次數 +1、勾了沒存不記、測試場不記、「我的評分」頁評完整不再產生。
 
 ### 2.4 已知限制與沒處理的事
 - `gathering_games` 在資料庫層不擋「僅供參考」四款（只在前端選擇清單過濾）；規則助手與概覽的規則連結沒對「僅供參考」關閉。
@@ -54,6 +62,8 @@
 - 簡繁用字差異（例如「裡／里」）不一定轉得準，結果仍要回原頁核對；詞庫的中文同義詞不會自動轉簡體（簡體規則書要靠詞庫命中時，要另外在詞庫加簡體詞）。
 - 手動加入玩家的確認流程只針對聚會當天，事後沒有補走入口（見 4.B-11）。
 - 上傳前的語言判斷（`32869ae`）細節未驗證；上傳後仍會依內容重新判斷（`3c11ca6`）。
+- `loyalty_grants` 表現在是空的、仍被 `loyalty_totals`／`settle_vouchers` 引用，保留，之後再決定要不要清。
+- 「已玩歸零／移除／主畫面取消已玩」三個入口規則尚未一致（歸零有前端暫行版，其他兩個沒做，見 4.B-12）。
 
 ## 3. 開工前先問
 
@@ -68,7 +78,7 @@
 
 ### 4.A 立刻收尾
 - 舊函式與舊贈送清理［已完成，2026-11-10，`abb3440` 已 push］：已刪 `admin_grant_voucher`、`admin_redeem_voucher`、`admin_revoke_redemption`、`admin_use_voucher_on_day`；5 筆舊贈送（Walter 2 張、凱薩、50aj3g4、111 各 1 張，使用者說都已用完）原樣搬進 `loyalty_adjustments`（張數、日期不變），搬後券數 111＝1、50aj3g4＝1、Walter＝2、凱薩＝1（搬前數字沒存圖，無法逐人對照［未驗證］），`loyalty_grants` 已清空；前端 `LoyaltyAdmin.tsx` 拿掉舊贈送顯示與 `revokeGrant`；`admin_revoke_grant` 使用者回報已 drop。**`loyalty_grants` 表與 `loyalty_totals`／`settle_vouchers` 裡對它的引用沒動、保留**（表現在是空的，之後再決定要不要清）。SQL 搬資料檔 `loyalty_migrate_old_grants.sql` 不在 repo。
-- `NotePrompt.tsx`、`NotePrompt_1.tsx` 已沒人用，可刪（先 `Select-String` 掃引用；`openGatheringFromGame` 仍被別處使用，不要刪）。
+- ［已完成，`409f45e`］`NotePrompt.tsx` 已刪（`NotePrompt_1.tsx` 不存在）；`openGatheringFromGame` 仍被別處使用，不要刪。
 - 2.3 的「尚未確認」各項（含新增的 ⑦）。
 - 4.14.2 SQL（`get_game_play_history`、`add_session_from_rating` 排除「測試」開頭場次）若沒執行：先跑 SQL 再測；實測＝建「測試3」指定一款，用非管理者帳號出席並評完整，已玩次數不應 +1、「紀錄」分頁不出現該場。AI 預設（使用者未回覆）：測試場照樣算集點與免費券；參加者在測試場評完整後該款「已玩」打勾仍會被標起來（只有次數與日期不增加）。
 - 規則書頁檔案設定（2026-11-10 使用者貼 38 份清單後的狀態）：德文兩份已刪；`Player_Aid_Exp` 與重複的 One-Pager 已不在清單；Taiwan Night Market、Keyflower The Farmers 已是「擴充」；A Feast for Odin 三份、Keyflower 簡體小檔、Clans of Caledonia、Darwin's Journey 等標「玩家整理」；Undaunted 2200 Callisto 的 refpage 已是「玩家整理」；Pax Pamir 兩份＝主遊戲 15 頁＋玩家整理 5 頁，不算重複。**小事（使用者沒決定要不要處理）**：Taiwan Night Market、Keyflower The Farmers、`Heaven & Ale` 的 `expansion_name` 是空的（搜尋結果只顯示「擴充」、不顯示哪個擴充）；`Heaven & Ale`（檔名亂碼）只有 1 頁、標「擴充」，是否正確未確認。
@@ -87,6 +97,11 @@
 9. 垃圾桶遊戲在聚會詳情／心得頁的封面（`af8c15e`）待實測；垃圾桶遊戲在 `GameModal` 是否正常未驗證。
 10. 規則助手手機版（`ra-large.css` 第二版）、單頁手機版未回報（使用者說先跳過）。
 11. **手動加入玩家的事後補走流程**（`42971d3` 已知限制）：目前只針對聚會當天，玩家當天沒走流程、事後沒有補走入口，要靠管理者在集點狀況用「贈送點」處理（「補登」已拿掉）。［使用者尚未決定要不要做］
+
+12. **已玩與評分綁定的「清除」規則**（`未來目標.md` 第 1 節 19 項）：目標＝已玩歸零、「移除」、主畫面取消已玩三個入口一致，都先提醒；有評分或公開留言→提醒後清評分與公開留言（含聚會心得公開欄與喜歡／不喜歡的點），**私人心得與整體心得保留**；有日期紀錄就不能取消已玩。［使用者 2026-11-10 說「不能歸零不能消失點數」，**歸零時要不要清評分尚未重新決定**］點數保護已由 3.10 解決、不再是阻礙。AI 建議做法：新資料庫函式 `unplay_game(p_bgg_name)`，前端三入口都呼叫；開工前請使用者匯出 `user_game_status`、`game_notes`、`gathering_notes` 相關觸發器與 `get_my_game_notes` 定義，先列預設值等「照建議」。
+13. **聚會勾選記日期、次數 +1**（見 2.3a 3.11 與 `未來目標.md` 20 項）：使用者已確認要做，AI 建議方案等「照建議」。
+14. 管理中心「明細」與集點卡「近期紀錄」要顯示 `loyalty_earned_days` 已保留的日子（先看 `get_my_loyalty_days`、`admin_get_loyalty_days` 定義）；`privacy.html` 補「系統會記錄你得過點的日期」（只動 `public/privacy.html` 的 push 照常計次）。
+15. 補日期補完選「好」切到「我的心得」的手機返回鍵實測；日期心得要不要進「來自聚會」篩選（使用者未要求）；公開留言場次不變。
 
 ### 4.C 規則助手／RAG（使用者的最終目標：玩到一半用中文問、網站內直接得到答案、只根據他提供的規則書／FAQ／玩錯紀錄、不知道就說不知道、不從影片找答案）
 現況：檢索＋詞庫＋玩錯紀錄＋複製提示詞給自己的 AI；**尚未啟用任何生成式 AI**；零 API 費用是偏好、品質為準。
@@ -144,6 +159,10 @@
 - 「測試」開頭的場次不替管理者自動記已玩次數；正式場次名稱不要以「測試」開頭；新增聚會有「測試場」勾選。
 - **管理者手動加入的玩家要跑完評分流程才得點或用券**（使用者決定，`42971d3`）：不管是不是測試場、對方是否已評分過；玩家要在俱樂部看到提醒（紅點＋註記）；有免費券的人也要跑完流程才會用掉券（與聚會連結報到者一致）。
 
+- **補日期與已玩次數**（2026-11-10，使用者決定，取代前面舊說法「遊玩次數只在『補日期』調整」「移除不清 `play_count`」）：補日期不增加總次數；總次數＝無日期次數＋日期筆數；有日期紀錄就不能取消已玩、最低次數＝日期筆數；手動日期可寫私人心得（存 `game_play_sessions.note`）。
+- **已得的點數與免費券，除了管理者自己在管理中心刪，任何其他行為都不能讓它消失**（使用者原則，2026-11-10，已由 3.10 實現）；刪評分、評分改不完整、管理者刪聚會、移出出席名單都不影響已得的點；管理者改聚會日期→已得的點跟著搬；刪「測試」開頭聚會→該場得的點一起刪；隔月點數歸零、券保留；自己補日期補到聚會日不加點。**取代前面免費券 v2 那條的「事後修改評分不退點數不退券」說法（舊說法依據「讀取時算」，已不成立）。**
+- 測試場資料連動：測試場當天評分不標已玩、刪測試聚會時自動清該場遊玩紀錄與新建評分、手動勾已玩且次數 0 自動 1 次、次數歸 0 且無紀錄無評分自動取消已玩。
+
 **評分、留言、心得**
 - 公開評分整體 1～10＋適合留下來 1～5 必填；未滿 5 人顯示「評分累積中」；統計只算已玩、「移除」不清 `play_count`；詳細視窗**沒有想玩／已玩按鈕與計數器**，遊玩次數只在俱樂部「我的統計→已玩→補日期」調整。
 - 留言一律自願公開、可刪除自己的；討論一人可留多則（≤10，隱藏的也算）；留言一律**清單式**（名字、日期、遊戲、內容 2 行省略，點開看全文）；確認視窗一律用頁面內 `askConfirm`；公開心得第一次發布前提醒（同瀏覽器只問第一次）；留言可附「喜歡的點／不喜歡的點」（各 ≤100 字，公開範圍同留言）。
@@ -177,6 +196,8 @@
 - 他說「測試先跳過」就不要每次開場追問；使用者截圖時間戳早於上次部署，先問是不是部署前舊畫面。
 - 「找不到功能入口」先查程式是否依身分隱藏（投稿表單只給非管理者 VIP；隱藏留言鈕在遊戲視窗討論分頁），測玩家端要用另一個非管理者的 Google 帳號（管理者 Gmail 登入會對到管理者帳號）。
 
+- **2026-11-10 新增教訓**：①檢查換行格式要用 Python 讀位元組判斷（`grep $'\r'` 在這個容器不可靠），網站程式檔幾乎都是 CRLF，交付前轉回（上傳的 .md 是 LF）；②使用者先覆蓋新檔才 commit 時，`git status` 要核對「每個交付檔是否都在該次 commit」，不要假設；③點數一類「讀取時算出來」的資料，使用者的原則（不得消失）要先查實際函式定義再下結論，不能引用舊文件；④AI 看不到使用者上傳的檔案內容時，要用 `bash`／`view` 讀 `/mnt/user-data/uploads/` 確認，不要假設沒收到；⑤容器被限流時不憑記憶寫檔，工作到一半額度用完要分清「已交付／未交付」，並請使用者 `Select-String` 驗證檔案是新版。
+
 ## 7. 技術提醒與陷阱（去重合併）
 
 1. **plpgsql 函式建立成功不代表能執行**（型別、欄位、`GROUP BY` 到執行時才檢查；`pp.user_id` 事故、`search_rulebook_chunks` v5 的 `must appear in the GROUP BY` 事故）：改完一定請他實測；欄位名稱先查 `information_schema.columns`；搜尋失敗排查＝F12 → Console 看 400 → Network → Response 的 `message／code／details／hint`。`player_profiles` 主鍵是 `id` 不是 `user_id`。
@@ -201,6 +222,11 @@
 20. 簡體搜尋前端：`src/lib/toSimplified.ts`（動態 `import('opencc-js')`，`Converter({ from: 'tw', to: 'cn' })`，失敗回傳原文）、**`src/lib/opencc-js.d.ts`（型別宣告，放 `src\lib\`，不是 `src\`）**、`useRulebookSearch.ts`（`searchRulebook(bggName, query, alt?)`）、`RulebookAssistant.tsx`（CRLF；`buildTerms` 吃繁簡兩份，簡體結果也標黃底）。`game_glossary_misses`、熱搜統計、詞庫比對都只用原問句。
 21. 手動加入玩家確認流程的前端：`TodayRatingFlow.tsx` 到完成畫面呼叫 `confirm_my_attendance`、成功後送事件 `boardgame-attendance-confirmed`（常數 `ATTENDANCE_CONFIRMED_EVENT` 在 `lib/useTodayTask.ts`）；`useTodayTask.ts` 的 `pending` ＝原條件 或 `get_my_pending_confirm`；`LoyaltyCard.tsx` 待確認時不把「評過分」當已得點、關閉流程視窗時 `loyalty.reload()`；`MyList.tsx` 的 `ClubPointsCard` 待確認時整張卡開 `TodayRatingModal`，`onOpenLoyalty` 還在 props 型別但不再解構。
 
+22. **前端 `upsert` 會先跑 BEFORE INSERT 觸發器**（`user_game_status`）：任何「INSERT 時補值」的觸發器都要排除該列已存在的情況（`played_default_count` 已修）；新增 `user_game_status` 相關觸發器要同時想 INSERT 與 UPDATE 兩條路。
+23. **評分完整會自動標已玩**（`mark_played_from_activity`、`trg_ratings_mark_played`）：不可用「已玩次數 0」判斷孤兒已玩標記；任何自動取消已玩都要同時檢查沒有評分、沒有日期紀錄（`unplay_when_empty` 已照辦）。所有新觸發器都不得因評分或紀錄變動而減少已玩次數。
+24. **點數與券的資料來源**：點數＝`loyalty_qualified_days`（`loyalty_earned_days` ∪ 現在合格）；改評分、出席、指定遊戲、聚會的資料前，想過 `bk_loyalty_keep_*` 觸發器是否要先結算；新刪除路徑（例如永久刪遊戲、刪帳號以外的新功能）都要確認不會讓已得點消失。
+25. `GameCard` 是 `memo`：新增影響卡片顯示的 props／狀態，要同步 `MyList`／`App` 傳入與 memo 比較函式（`game`／`isNew`／`coverVersion`／`isAdmin`／`showInfo`／`countsKey`／`personal.canEdit`／該款 `getEntry`）；專案把 TS6133 當 build 錯誤。
+
 ## 8. 開場前先確認
 
 1. 使用者在哪台電腦；`git pull`、`git status`、`git log --oneline -8`。
@@ -214,4 +240,4 @@
 - AI 只在對話中、使用者回報 push 成功時處理：每次 push → `生成後.md` 的 push 次數 +1；滿 2 → 更新 `生成後.md`（push 次數歸零、更新次數 +1）；更新次數滿 3 → 重新產生兩份主文件（以**合併改寫**、不是再疊一層增補）並重置 `生成後.md`；使用者說「更新文件」「更新生成後.md」可提前（視同一次更新）；換聊天室先問「上次產生後 push 了幾次」。三份 .md 只在使用者要求時才 commit；重新產生那次 push、只更新 `生成後.md` 的 push 都不計入。
 - 計數教訓：更新 `生成後.md` 的那一刻 push 次數就歸零，之後第一次 push 是 1；一次 push 帶兩個 commit 只算 1 次。
 - **使用者要求文件要短、重點與待改程式分開、不要疊太多層（2026-11-02、2026-11-09 兩次）；縮小時不可刪「以前說要做但還沒做」的項目（2026-11-09）。**
-- 最近一次重新產生：2026-11-10（第三次精簡合併版，同時更新 `未來目標.md`；併入舊 `生成後.md` 3.1～3.6 與集點四顆按鈕）；`生成後.md` 已重置、兩個計數歸零；使用者需 commit／push 這四份 .md，**該次 push 不計入次數**。（前兩次：2026-11-10 第二次，2026-11-09 `74e0d82`。）
+- 最近一次重新產生：2026-11-10（**第四次合併版**，併入舊 `生成後.md` 3.1～3.11，同時更新 `未來目標.md`）；`生成後.md` 已重置、兩個計數歸零；使用者需 commit／push 這四份 .md，**該次 push 不計入次數**。（前三次：2026-11-10 第三次、第二次，2026-11-09 `74e0d82`。）
