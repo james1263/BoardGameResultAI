@@ -1,0 +1,277 @@
+/* 我的心得：遊戲管理分頁 */
+.mg-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  margin: 0 0 10px;
+  background: #efe6d2;
+  border-radius: 12px;
+}
+.mg-tabs button {
+  border: 0;
+  background: transparent;
+  color: #34463c;
+  border-radius: 9px;
+  padding: 8px 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mg-tabs button.on {
+  background: #456b50;
+  color: #fbf7ec;
+}
+
+.mg-search {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 16px;
+  padding: 10px 14px;
+  margin: 0 0 8px;
+  border: 1px solid #d8cdb5;
+  border-radius: 12px;
+  background: #fffdf7;
+  color: #34463c;
+}
+.mg-chips {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  margin: 0 0 8px;
+}
+.mg-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  padding: 5px 2px;
+  border: 1px solid #d8cdb5;
+  border-radius: 12px;
+  background: #fbf7ec;
+  color: #34463c;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mg-chip small {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+.mg-chip.on {
+  background: #34463c;
+  border-color: #34463c;
+  color: #fbf7ec;
+}
+.mg-scope {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  color: #6b6455;
+}
+.mg-scope-btns { display: inline-flex; gap: 4px; }
+.mg-scope-btns button {
+  border: 1px solid #e3d9c4;
+  background: #fbf7ec;
+  color: #6b6455;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.mg-scope-btns button.on {
+  background: #efe6d2;
+  color: #34463c;
+  font-weight: 700;
+}
+
+.mg-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: #fffdf7;
+  border: 1px solid #e3d9c4;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.mg-list li + li { border-top: 1px solid #efe6d2; }
+.mg-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.mg-row:active { background: #fbf7ec; }
+.mg-thumb {
+  flex: none;
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fbf7ec;
+}
+.mg-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mg-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mg-name {
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #34463c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mg-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.mg-tag {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.mg-tag.ok { background: #dcebdc; color: #2f5a3a; }
+.mg-tag.todo { background: #f1e3d3; color: #8a4b2a; }
+.mg-tag.off { background: #ece8dc; color: #6b6455; }
+.mg-go {
+  flex: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #8a8270;
+}
+.mg-hint {
+  margin: 8px 2px 0;
+  font-size: 0.78rem;
+  color: #8a8270;
+}
+
+/* 標題列：「＋ 寫心得／留言」與標題、關閉鈕同一排 */
+.mn-header { display: flex; align-items: center; gap: 8px; }
+.mn-header h2 { flex: none; margin: 0; }
+.mn-header .mh-add-head {
+  margin: 0 0 0 auto;
+  padding: 6px 12px;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+.mn-header .mylist-close { margin-left: 0; flex: none; }
+
+/* 發表紀錄：搜尋＋篩選＋排序 */
+.mr-bar { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; }
+.mr-search {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  border: 1px solid #d8cdb5;
+  border-radius: 12px;
+  background: #fffdf7;
+  overflow: hidden;
+}
+.mr-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 16px;
+  padding: 9px 10px;
+  color: #34463c;
+}
+.mr-filterbtn {
+  flex: none;
+  border: 0;
+  border-left: 1px solid #e3d9c4;
+  background: transparent;
+  color: #34463c;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0 10px;
+  align-self: stretch;
+  cursor: pointer;
+}
+.mr-filterbtn.on { background: #efe6d2; }
+.mr-filterbtn b {
+  display: inline-block;
+  margin-left: 4px;
+  min-width: 16px;
+  border-radius: 999px;
+  background: #456b50;
+  color: #fbf7ec;
+  font-size: 0.72rem;
+  line-height: 16px;
+  text-align: center;
+}
+.mr-sort {
+  flex: none;
+  border: 1px solid #d8cdb5;
+  border-radius: 12px;
+  background: #fbf7ec;
+  color: #34463c;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 9px 10px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mr-panel {
+  margin: 0 0 8px;
+  padding: 8px 10px 10px;
+  background: #fffdf7;
+  border: 1px solid #e3d9c4;
+  border-radius: 12px;
+}
+.mr-panel-title { margin: 6px 0 4px; font-size: 0.78rem; color: #6b6455; font-weight: 700; }
+.mr-panel-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mr-panel-empty { font-size: 0.8rem; color: #8a8270; }
+.mr-pchip {
+  border: 1px solid #d8cdb5;
+  border-radius: 999px;
+  background: #fbf7ec;
+  color: #34463c;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.mr-pchip.on { background: #34463c; border-color: #34463c; color: #fbf7ec; }
+.mr-active { margin: 0 0 6px; font-size: 0.8rem; color: #6b6455; }
+.mr-active button {
+  border: 0;
+  background: #efe6d2;
+  border-radius: 999px;
+  width: 20px;
+  height: 20px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+/* 表單：清空後的「刪除」鈕 */
+.nf-save.danger { background: #a24a3a; border-color: #a24a3a; color: #fff; }

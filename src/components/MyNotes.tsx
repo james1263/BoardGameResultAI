@@ -1,30 +1,38 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
-import { saveGatheringNote, useAllMyNotes } from '../lib/useGatheringNotes'
+import { useAllMyNotes } from '../lib/useGatheringNotes'
 import { useMyGatherings } from '../lib/useMyGatherings'
 import { supabase } from '../lib/supabase'
 import NoteListItem from './NoteListItem'
-import NotePointsFields from './NotePointsFields'
 import '../styles/my-notes.css'
-import { askConfirm } from '../lib/askConfirm'
-import NoteForm, { type NoteKind } from './NoteForm'
+import '../styles/my-notes-manage.css'
+import NoteForm, { type MyGameNote, type NoteKind } from './NoteForm'
 import type { PersonalApi } from '../lib/personalApi'
 import type { RatingsApi } from '../lib/useGameRatings'
 
 type ListedGame = BoardGame & { removedAt?: string | null }
 
-type GameNoteRow = {
-  id: string
-  bgg_name: string
-  content: string | null
+type GameNoteRow = MyGameNote & {
   status: string | null
-  created_at: string
-  like_point: string | null
-  dislike_point: string | null
   like_count?: number | null
 }
 
 type Filter = 'all' | 'public' | 'private' | 'gathering'
+type Tab = 'games' | 'records'
+type GFilter = 'all' | 'noteDone' | 'noteTodo' | 'pubDone' | 'pubTodo'
+type GScope = 'played' | 'all'
+
+const G_FILTERS: { id: GFilter; label: string }[] = [
+  { id: 'all', label: '全部' },
+  { id: 'noteDone', label: '已寫心得' },
+  { id: 'noteTodo', label: '未寫心得' },
+  { id: 'pubDone', label: '已留言' },
+  { id: 'pubTodo', label: '未留言' },
+]
+
+function normalizeName(text: string): string {
+  return text.toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '')
+}
 
 // game：遊戲公開留言（沒標場次）；gathering：某場聚會的心得（私人＋公開兩欄合成一列）；
 // overall：這款的整體心得（沒標場次的私人心得）
@@ -33,6 +41,7 @@ type Item = {
   kind: 'game' | 'gathering' | 'overall'
   bggName: string
   date: string // YYYY-MM-DD，沒有日期是空字串
+  sortKey: string // 排序用的時間（越新越大）；沒有時間是空字串
   pubText: string
   privText: string
   hidden: boolean
@@ -51,7 +60,14 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'gathering', label: '來自聚會' },
 ]
 
-type ComposeState = { game: string | null; gid: string | null; kind: NoteKind; nonce: number }
+type ComposeState = {
+  game: string | null
+  gid: string | null
+  kind: NoteKind
+  noteId: string | null
+  overall: boolean
+  nonce: number
+}
 
 function taipeiDate(iso: string): string {
   const time = new Date(iso)
@@ -89,14 +105,35 @@ function useMyAllGameNotes() {
   }
 }
 
-function explain(message: string): string {
-  if (message.includes('too long')) return '留言最多 200 字，喜歡／不喜歡的點各最多 100 字。'
-  if (message.includes('empty')) return '請先輸入留言內容。'
-  if (message.includes('not found')) return '找不到這則留言，可能已被刪除。'
-  return '操作失敗：' + message
+// 每款遊戲「我的整體心得」的最後更新時間（排序用；user_game_status 只讀得到自己的列）
+function useStatusTimes() {
+  const [map, setMap] = useState<Record<string, string>>({})
+  const [reloadKey, setReloadKey] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    supabase
+      .from('user_game_status')
+      .select('bgg_name, updated_at')
+      .then(({ data, error }) => {
+        if (cancelled || error) return
+        const next: Record<string, string> = {}
+        for (const row of (data ?? []) as { bgg_name: string; updated_at: string | null }[]) {
+          if (row.updated_at) next[row.bgg_name] = row.updated_at
+        }
+        setMap(next)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [reloadKey])
+
+  const reload = useCallback(() => setReloadKey((key) => key + 1), [])
+  return { map, reload }
 }
 
-// 俱樂部「我的心得」：寫心得／留言的唯一入口，下面列出我寫過的留言與心得
+// 俱樂部「我的心得」：寫心得／留言的唯一入口。
+// 兩個分頁：遊戲管理（每款遊戲一列，看哪些還沒寫）、發表紀錄（我寫過的，點一則回到寫作畫面修改）
 export default function MyNotes({
   boardGames,
   renderCover,
@@ -118,15 +155,17 @@ export default function MyNotes({
 }) {
   const gatheringNotes = useAllMyNotes()
   const gameNotes = useMyAllGameNotes()
+  const statusTimes = useStatusTimes()
   const gatherings = useMyGatherings()
   const [filter, setFilter] = useState<Filter>('all')
-  const [busyKey, setBusyKey] = useState<string | null>(null)
-  const [editKey, setEditKey] = useState<string | null>(null)
-  const [openKey, setOpenKey] = useState<string | null>(null)
-  const [draft, setDraft] = useState('')
-  const [draftLike, setDraftLike] = useState('')
-  const [draftDislike, setDraftDislike] = useState('')
-  const [message, setMessage] = useState('')
+  // 有 composer 才有「遊戲管理」；從遊戲視窗或我的場次進來時先看「發表紀錄」
+  const [tab, setTab] = useState<Tab>(composer && !focusGame && !writeRequest ? 'games' : 'records')
+  const [gFilter, setGFilter] = useState<GFilter>('all')
+  const [gScope, setGScope] = useState<GScope>('played')
+  const [gSearch, setGSearch] = useState('')
+  const [rSearch, setRSearch] = useState('')
+  const [newestFirst, setNewestFirst] = useState(true)
+  const [filterOpen, setFilterOpen] = useState(false)
   const [focus, setFocus] = useState<string | null>(focusGame)
   const [compose, setCompose] = useState<ComposeState | null>(
     writeRequest
@@ -134,6 +173,8 @@ export default function MyNotes({
           game: writeRequest.bggName,
           gid: writeRequest.gatheringId,
           kind: 'private',
+          noteId: null,
+          overall: false,
           nonce: 0,
         }
       : null,
@@ -160,6 +201,7 @@ export default function MyNotes({
         kind: 'game',
         bggName: row.bgg_name,
         date: taipeiDate(row.created_at),
+        sortKey: row.created_at ?? '',
         pubText: row.content ?? '',
         privText: '',
         hidden: row.status === 'hidden',
@@ -175,11 +217,13 @@ export default function MyNotes({
       const privText = row.privateNote.trim() !== '' ? row.privateNote : ''
       if (!pubText && !privText) continue
       const gathering = gatheringById.get(row.gatheringId)
+      const gDate = gathering?.gatheredOn ?? ''
       list.push({
         key: `gathering|${row.gatheringId}|${row.bggName}`,
         kind: 'gathering',
         bggName: row.bggName,
-        date: gathering?.gatheredOn ?? '',
+        date: gDate,
+        sortKey: row.updatedAt || (gDate ? `${gDate}T00:00:00` : ''),
         gatheringId: row.gatheringId,
         gatheringTitle: gathering?.title ?? '聚會',
         pubText,
@@ -199,6 +243,7 @@ export default function MyNotes({
           kind: 'overall',
           bggName,
           date: '',
+          sortKey: statusTimes.map[bggName] ?? '',
           pubText: '',
           privText: entry?.note ?? '',
           hidden: false,
@@ -206,22 +251,101 @@ export default function MyNotes({
       }
     }
 
-    // 日期新到舊；沒有日期的（整體心得）排最後
-    return list.sort((a, b) => {
-      if (a.date === b.date) return 0
-      if (!a.date) return 1
-      if (!b.date) return -1
-      return b.date.localeCompare(a.date)
-    })
-  }, [gameNotes.rows, gatheringNotes.rows, gatherings.rows, personalEntries])
+    return list
+  }, [gameNotes.rows, gatheringNotes.rows, gatherings.rows, personalEntries, statusTimes.map])
 
+  // 發表紀錄：搜尋遊戲、類型、指定遊戲，最後依時間排序（預設新到舊）
   const shown = useMemo(() => {
-    const base = focus ? items.filter((i) => i.bggName === focus) : items
-    if (filter === 'public') return base.filter((i) => i.pubText !== '')
-    if (filter === 'private') return base.filter((i) => i.privText !== '')
-    if (filter === 'gathering') return base.filter((i) => i.kind === 'gathering')
-    return base
-  }, [items, filter, focus])
+    const query = normalizeName(rSearch)
+    let list = focus ? items.filter((i) => i.bggName === focus) : items
+    if (filter === 'public') list = list.filter((i) => i.pubText !== '')
+    if (filter === 'private') list = list.filter((i) => i.privText !== '')
+    if (filter === 'gathering') list = list.filter((i) => i.kind === 'gathering')
+    if (query) {
+      list = list.filter(
+        (i) =>
+          normalizeName(gameByName.get(i.bggName)?.name ?? '').includes(query) ||
+          normalizeName(i.bggName).includes(query),
+      )
+    }
+    return [...list].sort((a, b) => {
+      if (a.sortKey === b.sortKey) return 0
+      if (!a.sortKey) return 1
+      if (!b.sortKey) return -1
+      return newestFirst ? b.sortKey.localeCompare(a.sortKey) : a.sortKey.localeCompare(b.sortKey)
+    })
+  }, [items, filter, focus, rSearch, newestFirst, gameByName])
+
+  // 篩選面板裡「有寫過心得／留言的遊戲」
+  const recordGames = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const item of items) counts.set(item.bggName, (counts.get(item.bggName) ?? 0) + 1)
+    return Array.from(counts.entries())
+      .map(([bggName, count]) => ({
+        bggName,
+        count,
+        name: gameByName.get(bggName)?.name ?? bggName,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
+  }, [items, gameByName])
+
+  const activeFilterCount = (filter !== 'all' ? 1 : 0) + (focus ? 1 : 0)
+
+  // 遊戲管理：每款遊戲一列。心得 ✓＝有整體心得或任一場聚會的私人心得；
+  // 留言 ✓＝有任何公開留言（標不標場次都算）；沒玩過、沒評分過的遊戲不能留言（管理者例外）
+  const gameRows = useMemo(() => {
+    if (!composer) return []
+    const hasPriv = new Set<string>()
+    const hasPub = new Set<string>()
+    for (const item of items) {
+      if (item.privText !== '') hasPriv.add(item.bggName)
+      if (item.pubText !== '') hasPub.add(item.bggName)
+    }
+    return boardGames
+      .filter((game) => !game.removedAt && !(game as { referenceOnly?: boolean }).referenceOnly)
+      .map((game) => {
+        const played =
+          composer.personal.getEntry(game.bggName).played ||
+          composer.ratings.getMine(game.bggName) !== null
+        const note = hasPriv.has(game.bggName)
+        const pub = hasPub.has(game.bggName)
+        const canPub = played || composer.isAdmin
+        return { game, played, note, pub, canPub, touched: note || pub }
+      })
+      .sort((a, b) => a.game.name.localeCompare(b.game.name, 'zh-Hant'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [composer, items, boardGames, composer?.personal.entries, composer?.ratings])
+
+  const scopedGameRows = useMemo(
+    () => (gScope === 'played' ? gameRows.filter((row) => row.played || row.touched) : gameRows),
+    [gameRows, gScope],
+  )
+
+  const gCounts = useMemo(
+    () => ({
+      all: scopedGameRows.length,
+      noteDone: scopedGameRows.filter((row) => row.note).length,
+      noteTodo: scopedGameRows.filter((row) => !row.note).length,
+      pubDone: scopedGameRows.filter((row) => row.pub).length,
+      pubTodo: scopedGameRows.filter((row) => !row.pub && row.canPub).length,
+    }),
+    [scopedGameRows],
+  )
+
+  const shownGameRows = useMemo(() => {
+    const query = normalizeName(gSearch)
+    return scopedGameRows.filter((row) => {
+      if (gFilter === 'noteDone' && !row.note) return false
+      if (gFilter === 'noteTodo' && row.note) return false
+      if (gFilter === 'pubDone' && !row.pub) return false
+      if (gFilter === 'pubTodo' && (row.pub || !row.canPub)) return false
+      if (!query) return true
+      return (
+        normalizeName(row.game.name).includes(query) ||
+        normalizeName(row.game.bggName).includes(query)
+      )
+    })
+  }, [scopedGameRows, gFilter, gSearch])
 
   const loading = gatheringNotes.loading || gameNotes.loading || gatherings.loading
   const failed = gatheringNotes.error || gameNotes.error || gatherings.error
@@ -230,6 +354,7 @@ export default function MyNotes({
     gatheringNotes.reload()
     gameNotes.reload()
     gatherings.reload()
+    statusTimes.reload()
   }
 
   function openCompose(next: Omit<ComposeState, 'nonce'>) {
@@ -237,121 +362,43 @@ export default function MyNotes({
     window.setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0)
   }
 
-  async function removeItem(item: Item, part: 'pub' | 'priv') {
-    const question =
-      part === 'priv' ? '要刪除這則私人心得嗎？' : '要刪除這則公開留言嗎？刪除後無法復原。'
-    if (!(await askConfirm(question))) return
-    setBusyKey(item.key)
-    setMessage('')
-
-    if (item.kind === 'game') {
-      const { error } = await supabase.rpc('delete_my_public_note', { p_note: item.noteId })
-      setBusyKey(null)
-      if (error) {
-        setMessage(explain(error.message))
-        return
-      }
-      gameNotes.reload()
-      return
-    }
-
-    if (item.kind === 'overall') {
-      if (!composer?.personal.canEdit) {
-        setBusyKey(null)
-        setMessage('目前無法刪除，請稍後再試。')
-        return
-      }
-      composer.personal.updateEntry(item.bggName, { note: '' })
-      setBusyKey(null)
-      return
-    }
-
-    // 場次心得：只清掉這一欄，另一欄原樣傳回；兩欄都空會整則刪除
-    const row = gatheringNotes.rows.find(
-      (r) => r.gatheringId === item.gatheringId && r.bggName === item.bggName,
-    )
-    if (!row || !item.gatheringId) {
-      setBusyKey(null)
-      setMessage('找不到這則心得，請重新讀取。')
-      return
-    }
-    const result = await saveGatheringNote(
-      item.gatheringId,
-      item.bggName,
-      part === 'priv' ? '' : row.privateNote,
-      part === 'pub' ? '' : row.publicNote,
-      part === 'pub' ? '' : row.likePoint,
-      part === 'pub' ? '' : row.dislikePoint,
-    )
-    setBusyKey(null)
-    if (!result.ok) {
-      setMessage(result.message)
-      return
-    }
-    gatheringNotes.reload()
-  }
-
-  async function saveEdit(item: Item) {
-    if (item.kind !== 'game') return
-    const text = draft.trim()
-    if (!text) {
-      setMessage('請先輸入留言內容。')
-      return
-    }
-    setBusyKey(item.key)
-    setMessage('')
-    const { error } = await supabase.rpc('update_my_game_note', {
-      p_note: item.noteId,
-      p_content: text,
-      p_like: draftLike.trim(),
-      p_dislike: draftDislike.trim(),
-    })
-    setBusyKey(null)
-    if (error) {
-      setMessage(explain(error.message))
-      return
-    }
-    setEditKey(null)
-    gameNotes.reload()
-  }
-
   return (
     <>
       <div className="mylist-backdrop" onClick={onClose} />
       <aside className="mylist-drawer" role="dialog" aria-label="我的心得">
-        <div className="mylist-header">
+        <div className="mylist-header mn-header">
           <h2>我的心得</h2>
-          <button
-            className="mylist-close"
-            type="button"
-            aria-label="關閉"
-            onClick={onBack}
-          >
+          {composer && (
+            <button
+              type="button"
+              className="mh-add mh-add-head"
+              aria-expanded={compose !== null}
+              onClick={() =>
+                compose
+                  ? setCompose(null)
+                  : openCompose({
+                      game: focus,
+                      gid: null,
+                      kind: 'private',
+                      noteId: null,
+                      overall: false,
+                    })
+              }
+            >
+              ＋ 寫心得／留言
+            </button>
+          )}
+          <button className="mylist-close" type="button" aria-label="關閉" onClick={onBack}>
             ×
           </button>
         </div>
 
         <div className="mylist-body">
-          <div className="mh-top" ref={topRef}>
-            {composer && (
-              <button
-                type="button"
-                className="mh-add"
-                aria-expanded={compose !== null}
-                onClick={() =>
-                  compose
-                    ? setCompose(null)
-                    : openCompose({ game: focus, gid: null, kind: 'private' })
-                }
-              >
-                ＋ 寫心得／留言
-              </button>
-            )}
-          </div>
+          <div ref={topRef} />
 
           {composer && compose && (
             <NoteForm
-              key={`${compose.game ?? ''}|${compose.gid ?? ''}|${compose.nonce}`}
+              key={`${compose.game ?? ''}|${compose.gid ?? ''}|${compose.noteId ?? ''}|${compose.overall ? 1 : 0}|${compose.nonce}`}
               games={boardGames}
               personal={composer.personal}
               ratings={composer.ratings}
@@ -360,220 +407,284 @@ export default function MyNotes({
               initialGame={compose.game ? (gameByName.get(compose.game) ?? null) : null}
               initialGatheringId={compose.gid}
               initialKind={compose.kind}
+              initialNoteId={compose.noteId}
+              initialOverall={compose.overall}
+              myGameNotes={{ loading: gameNotes.loading, rows: gameNotes.rows }}
               renderCover={renderCover}
               onSaved={reloadAll}
               onCancel={() => setCompose(null)}
             />
           )}
 
-          {focus && (
-            <p style={{ margin: '0 0 8px', fontSize: 13, color: '#34463c' }}>
-              只看《{gameByName.get(focus)?.name ?? focus}》的心得{' '}
+          {composer && (
+            <div className="mg-tabs" role="tablist" aria-label="我的心得分頁">
               <button
-                type="button"
-                aria-label="看全部心得"
-                style={{
-                  border: '1px solid #cdbf9f',
-                  borderRadius: 999,
-                  background: '#fbf7ec',
-                  color: '#34463c',
-                  padding: '0 8px',
-                  cursor: 'pointer',
-                }}
-                onClick={() => setFocus(null)}
-              >
-                ×
-              </button>
-            </p>
-          )}
-          <div className="mh-filters" role="tablist" aria-label="心得分類">
-            {FILTERS.map((item) => (
-              <button
-                key={item.id}
                 type="button"
                 role="tab"
-                aria-selected={filter === item.id}
-                className={`mh-chip ${filter === item.id ? 'on' : ''}`}
-                onClick={() => {
-                  setFilter(item.id)
-                  setEditKey(null)
-                  setMessage('')
-                }}
+                aria-selected={tab === 'games'}
+                className={tab === 'games' ? 'on' : ''}
+                onClick={() => setTab('games')}
               >
-                {item.label}
+                遊戲管理
               </button>
-            ))}
-          </div>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === 'records'}
+                className={tab === 'records' ? 'on' : ''}
+                onClick={() => setTab('records')}
+              >
+                發表紀錄
+              </button>
+            </div>
+          )}
 
-          {message && <p className="mh-error">{message}</p>}
+          {composer && tab === 'games' && (
+            <div className="mg-games">
+              {loading ? (
+                <p className="mylist-empty">讀取中…</p>
+              ) : (
+                <>
+                  <input
+                    type="search"
+                    className="mg-search"
+                    placeholder="搜尋遊戲名稱（中文或英文）"
+                    value={gSearch}
+                    onChange={(event) => setGSearch(event.target.value)}
+                  />
+                  <div className="mg-chips" role="tablist" aria-label="遊戲篩選">
+                    {G_FILTERS.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={gFilter === item.id}
+                        className={`mg-chip ${gFilter === item.id ? 'on' : ''}`}
+                        onClick={() => setGFilter(item.id)}
+                      >
+                        <span>{item.label}</span>
+                        <small>{gCounts[item.id]}</small>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mg-scope">
+                    <span>顯示 {shownGameRows.length} 款</span>
+                    <span className="mg-scope-btns">
+                      <button
+                        type="button"
+                        className={gScope === 'played' ? 'on' : ''}
+                        onClick={() => setGScope('played')}
+                      >
+                        已玩的遊戲
+                      </button>
+                      <button
+                        type="button"
+                        className={gScope === 'all' ? 'on' : ''}
+                        onClick={() => setGScope('all')}
+                      >
+                        全部桌遊
+                      </button>
+                    </span>
+                  </div>
+                  {shownGameRows.length === 0 ? (
+                    <p className="mylist-empty">
+                      {gScope === 'played' && gameRows.length > 0 && scopedGameRows.length === 0
+                        ? '還沒有標為已玩的遊戲。切到「全部桌遊」就能直接寫心得。'
+                        : '這個分類沒有符合的遊戲。'}
+                    </p>
+                  ) : (
+                    <ul className="mg-list">
+                      {shownGameRows.map((row) => (
+                        <li key={row.game.bggName}>
+                          <button
+                            type="button"
+                            className="mg-row"
+                            onClick={() =>
+                              openCompose({
+                                game: row.game.bggName,
+                                gid: null,
+                                kind: 'private',
+                                noteId: null,
+                                overall: false,
+                              })
+                            }
+                          >
+                            <span className="mg-thumb">{renderCover(row.game)}</span>
+                            <span className="mg-main">
+                              <span className="mg-name">{row.game.name}</span>
+                              <span className="mg-tags">
+                                <span className={`mg-tag ${row.note ? 'ok' : 'todo'}`}>
+                                  {row.note ? '心得 ✓' : '心得未填'}
+                                </span>
+                                <span
+                                  className={`mg-tag ${row.pub ? 'ok' : row.canPub ? 'todo' : 'off'}`}
+                                >
+                                  {row.pub ? '留言 ✓' : row.canPub ? '留言未填' : '不可留言'}
+                                </span>
+                              </span>
+                            </span>
+                            <span className="mg-go" aria-hidden="true">
+                              ›
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="mg-hint">
+                    點一款遊戲就能寫新的心得或留言；要看或修改以前寫的，請到「發表紀錄」。沒玩過的遊戲只能寫私人心得。
+                  </p>
+                </>
+              )}
+            </div>
+          )}
 
-          {loading ? (
-            <p className="mylist-empty">讀取中…</p>
-          ) : (
+          {(!composer || tab === 'records') && (
             <>
-              {failed && (
-                <div className="mh-fail">
-                  <p>有部分心得讀取失敗，下面的清單可能不完整。</p>
-                  <button type="button" className="mylist-browse" onClick={reloadAll}>
-                    重新讀取
+              <div className="mr-bar">
+                <div className="mr-search">
+                  <input
+                    type="search"
+                    placeholder="搜尋遊戲名稱"
+                    value={rSearch}
+                    onChange={(event) => setRSearch(event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className={`mr-filterbtn ${filterOpen ? 'on' : ''}`}
+                    aria-expanded={filterOpen}
+                    onClick={() => setFilterOpen((value) => !value)}
+                  >
+                    ☰ 篩選{activeFilterCount > 0 && <b>{activeFilterCount}</b>}
                   </button>
                 </div>
-              )}
-              {shown.length === 0 ? (
-                <p className="mylist-empty">
-                  {items.length === 0
-                    ? '還沒有心得。按上面的「寫心得／留言」開始寫。'
-                    : focus && !items.some((i) => i.bggName === focus)
-                      ? '這款還沒有心得。按上面的「寫心得／留言」來寫。'
-                      : '這個分類還沒有內容。'}
-                </p>
-              ) : (
-                <ul className="nl-list">
-                  {shown.map((item) => {
-                    const game = gameByName.get(item.bggName) ?? null
-                    const editing = editKey === item.key
-                    const busy = busyKey === item.key
-                    const both = item.pubText !== '' && item.privText !== ''
-                    const primary = item.pubText !== '' ? item.pubText : item.privText
-                    const dateText =
-                      item.kind === 'overall'
-                        ? '整體心得'
-                        : item.date
-                          ? item.date.replace(/-/g, '/')
-                          : '日期不明'
-                    return (
-                      <NoteListItem
-                        key={item.key}
-                        name={`《${game?.name ?? item.bggName}》`}
-                        date={dateText}
-                        badge={
-                          <>
-                            {item.pubText !== '' && <span className="mh-badge pub">留言</span>}
-                            {item.privText !== '' && <span className="mh-badge pri">心得</span>}
-                          </>
-                        }
-                        thumb={game ? renderCover(game) : <span aria-hidden="true">🎲</span>}
-                        content={primary}
-                        hideText={editing}
-                        like={item.pubText !== '' ? item.like : undefined}
-                        dislike={item.pubText !== '' ? item.dislike : undefined}
-                        likeCount={
-                          item.kind === 'game' && !item.hidden ? item.likeCount : undefined
-                        }
-                        open={editing || openKey === item.key}
-                        onToggle={() => {
-                          if (editing) return
-                          setOpenKey(openKey === item.key ? null : item.key)
-                        }}
+                <button
+                  type="button"
+                  className="mr-sort"
+                  onClick={() => setNewestFirst((value) => !value)}
+                >
+                  {newestFirst ? '新→舊' : '舊→新'}
+                </button>
+              </div>
+
+              {filterOpen && (
+                <div className="mr-panel">
+                  <p className="mr-panel-title">類型</p>
+                  <div className="mr-panel-chips" role="tablist" aria-label="心得分類">
+                    {FILTERS.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={filter === item.id}
+                        className={`mr-pchip ${filter === item.id ? 'on' : ''}`}
+                        onClick={() => setFilter(item.id)}
                       >
-                        {editing ? (
-                          <>
-                            <textarea
-                              className="mh-textarea"
-                              rows={3}
-                              maxLength={200}
-                              value={draft}
-                              onChange={(event) => setDraft(event.target.value)}
-                            />
-                            <NotePointsFields
-                              like={draftLike}
-                              dislike={draftDislike}
-                              onLike={setDraftLike}
-                              onDislike={setDraftDislike}
-                            />
-                            <div className="mh-actions">
-                              <span className="mh-count">{draft.length} / 200</span>
-                              <button
-                                type="button"
-                                className="mh-link"
-                                disabled={busy}
-                                onClick={() => setEditKey(null)}
-                              >
-                                取消
-                              </button>
-                              <button
-                                type="button"
-                                className="mh-save"
-                                disabled={busy || draft.trim() === ''}
-                                onClick={() => void saveEdit(item)}
-                              >
-                                {busy ? '儲存中…' : '儲存'}
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            {item.hidden && (
-                              <p className="mh-hidden">
-                                這則留言已被管理者隱藏，只有你和管理者看得到。
-                              </p>
-                            )}
-                            {both && (
-                              <p className="mh-source">🔒 私人心得：{item.privText}</p>
-                            )}
-                            <p className="mh-source">
-                              {item.kind === 'game' && '一般留言（沒有標場次）'}
-                              {item.kind === 'gathering' && `🏷 場次：${item.gatheringTitle}`}
-                              {item.kind === 'overall' && '這款的整體心得（沒有標場次）'}
-                            </p>
-                            <div className="mh-actions">
-                              {item.kind === 'game' ? (
-                                <button
-                                  type="button"
-                                  className="mh-link"
-                                  disabled={busy}
-                                  onClick={() => {
-                                    setMessage('')
-                                    setDraft(item.pubText)
-                                    setDraftLike(item.like ?? '')
-                                    setDraftDislike(item.dislike ?? '')
-                                    setEditKey(item.key)
-                                  }}
-                                >
-                                  編輯
-                                </button>
-                              ) : composer ? (
-                                <button
-                                  type="button"
-                                  className="mh-link"
-                                  onClick={() =>
-                                    openCompose({
-                                      game: item.bggName,
-                                      gid: item.gatheringId ?? null,
-                                      kind: item.pubText !== '' ? 'public' : 'private',
-                                    })
-                                  }
-                                >
-                                  編輯
-                                </button>
-                              ) : null}
-                              {item.pubText !== '' && (
-                                <button
-                                  type="button"
-                                  className="mh-link mh-danger"
-                                  disabled={busy}
-                                  onClick={() => void removeItem(item, 'pub')}
-                                >
-                                  {busy ? '處理中…' : both ? '刪除留言' : '刪除'}
-                                </button>
-                              )}
-                              {item.privText !== '' && (
-                                <button
-                                  type="button"
-                                  className="mh-link mh-danger"
-                                  disabled={busy}
-                                  onClick={() => void removeItem(item, 'priv')}
-                                >
-                                  {busy ? '處理中…' : both ? '刪除心得' : '刪除'}
-                                </button>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </NoteListItem>
-                    )
-                  })}
-                </ul>
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mr-panel-title">遊戲（寫過心得或留言的）</p>
+                  <div className="mr-panel-chips">
+                    {recordGames.length === 0 ? (
+                      <span className="mr-panel-empty">還沒有紀錄</span>
+                    ) : (
+                      recordGames.map((item) => (
+                        <button
+                          key={item.bggName}
+                          type="button"
+                          className={`mr-pchip ${focus === item.bggName ? 'on' : ''}`}
+                          onClick={() => setFocus(focus === item.bggName ? null : item.bggName)}
+                        >
+                          {item.name} {item.count}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {focus && (
+                <p className="mr-active">
+                  只看《{gameByName.get(focus)?.name ?? focus}》的紀錄{' '}
+                  <button type="button" aria-label="看全部紀錄" onClick={() => setFocus(null)}>
+                    ×
+                  </button>
+                </p>
+              )}
+
+              {loading ? (
+                <p className="mylist-empty">讀取中…</p>
+              ) : (
+                <>
+                  {failed && (
+                    <div className="mh-fail">
+                      <p>有部分心得讀取失敗，下面的清單可能不完整。</p>
+                      <button type="button" className="mylist-browse" onClick={reloadAll}>
+                        重新讀取
+                      </button>
+                    </div>
+                  )}
+                  {shown.length === 0 ? (
+                    <p className="mylist-empty">
+                      {items.length === 0
+                        ? '還沒有紀錄。按右上角的「寫心得／留言」開始寫。'
+                        : '沒有符合的紀錄。'}
+                    </p>
+                  ) : (
+                    <ul className="nl-list">
+                      {shown.map((item) => {
+                        const game = gameByName.get(item.bggName) ?? null
+                        const primary = item.pubText !== '' ? item.pubText : item.privText
+                        const thisYear = String(new Date().getFullYear())
+                        const gatheringLabel = item.date
+                          ? `聚會 ${item.date.startsWith(thisYear) ? item.date.slice(5) : item.date}`.replace(
+                              /-/g,
+                              '/',
+                            )
+                          : '聚會'
+                        return (
+                          <NoteListItem
+                            key={item.key}
+                            name={`《${game?.name ?? item.bggName}》`}
+                            date={item.kind === 'gathering' ? gatheringLabel : '整體'}
+                            badge={
+                              <>
+                                {item.pubText !== '' && <span className="mh-badge pub">留言</span>}
+                                {item.privText !== '' && <span className="mh-badge pri">心得</span>}
+                                {item.hidden && <span className="mh-badge pri">已隱藏</span>}
+                              </>
+                            }
+                            thumb={game ? renderCover(game) : <span aria-hidden="true">🎲</span>}
+                            content={primary}
+                            hideText={false}
+                            like={item.pubText !== '' ? item.like : undefined}
+                            dislike={item.pubText !== '' ? item.dislike : undefined}
+                            likeCount={
+                              item.kind === 'game' && !item.hidden ? item.likeCount : undefined
+                            }
+                            open={false}
+                            onToggle={() => {
+                              if (!composer) return
+                              openCompose({
+                                game: item.bggName,
+                                gid: item.gatheringId ?? null,
+                                kind: item.pubText !== '' ? 'public' : 'private',
+                                noteId: item.noteId ?? null,
+                                overall: item.kind === 'overall',
+                              })
+                            }}
+                          >
+                            {null}
+                          </NoteListItem>
+                        )
+                      })}
+                    </ul>
+                  )}
+                  <p className="mg-hint">
+                    點一則紀錄，會載入當時的遊戲、場次和內容，可以修改；內容清空後按「刪除」就能刪掉。
+                  </p>
+                </>
               )}
             </>
           )}

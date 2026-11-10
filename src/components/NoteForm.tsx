@@ -17,6 +17,16 @@ import '../styles/note-form-b2.css'
 type ListedGame = BoardGame & { removedAt?: string | null }
 export type NoteKind = 'public' | 'private'
 
+// 我自己的遊戲公開留言（沒標場次的那種）；從發表紀錄點進來時，用 id 找出要修改的那一則
+export type MyGameNote = {
+  id: string
+  bgg_name: string
+  content: string | null
+  created_at: string
+  like_point: string | null
+  dislike_point: string | null
+}
+
 function normalize(text: string): string {
   return text.toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '')
 }
@@ -32,10 +42,12 @@ function explainAdd(message: string): string {
 
 // 統一表單：留言（公開）＝別人看得到；心得（私人）＝只有自己看得到。
 // 「這是哪一場？」場次標籤（選填，單選）。存放位置（沿用現有的表）：
-//   公開、沒選場次 → 遊戲留言（game_notes，新增一則）
+//   公開、沒選場次 → 遊戲留言（game_notes，每次新增一則，每款最多 10 則）
 //   公開、選場次   → 該場聚會的公開欄（同人同場同款只有一則，會更新原留言）
 //   私人、選場次   → 該場聚會的私人欄
-//   私人、沒選場次 → 我的整體心得（每款一則）
+//   私人、沒選場次 → 我的整體心得（每款一則，再存會取代）
+// 文字框預設是空的；只有「選了場次且那場已有紀錄」或「從發表紀錄點進來」才會載入舊內容。
+// 可以先寫字、再選遊戲；要選好遊戲才能儲存。
 // 沒玩過、沒評分過的遊戲：只能寫私人心得，公開留言上鎖（管理者不受限）。
 export default function NoteForm({
   games,
@@ -46,6 +58,9 @@ export default function NoteForm({
   initialGame = null,
   initialGatheringId = null,
   initialKind = 'private',
+  initialNoteId = null,
+  initialOverall = false,
+  myGameNotes,
   renderCover,
   onSaved,
   onCancel,
@@ -59,6 +74,10 @@ export default function NoteForm({
   // 從「我的場次」進來：上方列出這場玩過的遊戲封面，點封面代入遊戲，場次標籤自動選好
   initialGatheringId?: string | null
   initialKind?: NoteKind
+  // 從發表紀錄點進來：指定要編輯哪一則一般留言／這款的整體心得
+  initialNoteId?: string | null
+  initialOverall?: boolean
+  myGameNotes?: { loading: boolean; rows: MyGameNote[] }
   renderCover?: (game: BoardGame) => ReactNode
   onSaved: () => void
   onCancel?: () => void
@@ -75,7 +94,7 @@ export default function NoteForm({
   const [gid, setGid] = useState(startGame && lockedGid ? lockedGid : '')
   const [pub, setPub] = useState('')
   const [priv, setPriv] = useState(() =>
-    startGame && !lockedGid ? (personal.getEntry(startGame.bggName).note ?? '') : '',
+    startGame && !lockedGid && initialOverall ? (personal.getEntry(startGame.bggName).note ?? '') : '',
   )
   const [like, setLike] = useState('')
   const [dislike, setDislike] = useState('')
@@ -83,6 +102,20 @@ export default function NoteForm({
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const hydrated = useRef(false)
+  // 正在修改的那則一般公開留言（從發表紀錄點進來才有）
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const noteLoaded = useRef(false)
+  // 正在修改這款的整體心得（從發表紀錄點進來，或剛存過）
+  const [editOverall, setEditOverall] = useState(
+    () =>
+      !!startGame &&
+      !lockedGid &&
+      initialOverall &&
+      (personal.getEntry(startGame.bggName).note ?? '').trim() !== '',
+  )
+  // 目前文字框的內容是不是從舊紀錄載入的（換場次時才知道要不要清掉）
+  const textLoaded = useRef(!!startGame && !lockedGid && initialOverall)
+  const gameNoteRows = myGameNotes?.rows
 
   const noteMap = useMemo(() => {
     const map = new Map<string, (typeof allNotes.rows)[number]>()
@@ -102,6 +135,7 @@ export default function NoteForm({
     if (hydrated.current) return
     if (!picked || !gid || allNotes.loading) return
     hydrated.current = true
+    textLoaded.current = true
     const note = noteMap.get(`${gid}|${picked.bggName}`)
     setPub(note?.publicNote ?? '')
     setPriv(note?.privateNote ?? '')
@@ -151,16 +185,46 @@ export default function NoteForm({
   const maxLen = overallNote ? 500 : 200
   const text = kind === 'public' ? pub : priv
 
+  // 從發表紀錄點進來的一般公開留言：等留言清單讀好，把那一則的內容放進文字框（只做一次）
+  useEffect(() => {
+    if (noteLoaded.current || !initialNoteId || !picked) return
+    const row = (gameNoteRows ?? []).find((item) => item.id === initialNoteId)
+    if (!row) return
+    noteLoaded.current = true
+    textLoaded.current = true
+    setEditingId(row.id)
+    setPub(row.content ?? '')
+    setLike(row.like_point ?? '')
+    setDislike(row.dislike_point ?? '')
+  }, [initialNoteId, picked, gameNoteRows])
+
+  // 目前這個欄位有沒有「已存在、正在修改」的內容（有的話，清空後按鈕會變成「刪除」）
+  const hasExisting =
+    !!picked &&
+    (kind === 'public'
+      ? gid !== ''
+        ? (existing?.publicNote ?? '').trim() !== ''
+        : editingId !== null
+      : gid !== ''
+        ? (existing?.privateNote ?? '').trim() !== ''
+        : editOverall)
+  const deleting = text.trim() === '' && hasExisting
+
+  // 換場次或換遊戲時：那場已有紀錄就載入；沒有紀錄就保留已經打的字（只清掉從舊紀錄載入的）
   function loadFor(game: ListedGame, target: string) {
-    if (target) {
-      const note = noteMap.get(`${target}|${game.bggName}`)
-      setPub(note?.publicNote ?? '')
-      setPriv(note?.privateNote ?? '')
-      setLike(note?.likePoint ?? '')
-      setDislike(note?.dislikePoint ?? '')
-    } else {
+    setEditingId(null)
+    setEditOverall(false)
+    const note = target ? noteMap.get(`${target}|${game.bggName}`) : undefined
+    if (note) {
+      textLoaded.current = true
+      setPub(note.publicNote)
+      setPriv(note.privateNote)
+      setLike(note.likePoint)
+      setDislike(note.dislikePoint)
+    } else if (textLoaded.current) {
+      textLoaded.current = false
       setPub('')
-      setPriv(personal.getEntry(game.bggName).note ?? '')
+      setPriv('')
       setLike('')
       setDislike('')
     }
@@ -206,18 +270,85 @@ export default function NoteForm({
     setInfo(`已複製到${fromPublic ? '心得（私人）' : '留言（公開）'}，檢查後按儲存。`)
   }
 
-  async function save() {
-    if (!picked) return
+  // 內容清空後按「刪除」：只刪目前這個欄位（留言或心得）
+  async function remove() {
+    if (!picked || !hasExisting) return
+    const label = kind === 'public' ? '留言' : '心得'
+    if (!(await askConfirm(`要刪除這則${label}嗎？刪除後無法復原。`))) return
+    setSaving(true)
     setError('')
     setInfo('')
+    try {
+      if (kind === 'public') {
+        if (gid) {
+          const result = await saveGatheringNote(gid, picked.bggName, existing?.privateNote ?? '', '', '', '')
+          if (!result.ok) {
+            setError(result.message)
+            return
+          }
+        } else if (editingId) {
+          const { error: rpcError } = await supabase.rpc('delete_my_public_note', {
+            p_note: editingId,
+          })
+          if (rpcError) {
+            setError('刪除失敗：' + rpcError.message)
+            return
+          }
+          setEditingId(null)
+        }
+        setPub('')
+        setLike('')
+        setDislike('')
+      } else if (gid) {
+        const result = await saveGatheringNote(
+          gid,
+          picked.bggName,
+          '',
+          existing?.publicNote ?? '',
+          existing?.likePoint ?? '',
+          existing?.dislikePoint ?? '',
+        )
+        if (!result.ok) {
+          setError(result.message)
+          return
+        }
+        setPriv('')
+      } else {
+        if (!personal.canEdit) {
+          setError('目前無法刪除，請稍後再試。')
+          return
+        }
+        personal.updateEntry(picked.bggName, { note: '' })
+        setPriv('')
+        setEditOverall(false)
+      }
+      setInfo(`已刪除這則${label}。`)
+      allNotes.reload()
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function save() {
+    setError('')
+    setInfo('')
+    if (!picked) {
+      setError('請先選擇遊戲，才能儲存。')
+      return
+    }
     if (text.trim() === '') {
+      if (hasExisting) {
+        await remove()
+        return
+      }
       setError(kind === 'public' ? '請先輸入留言內容。' : '請先輸入心得內容。')
       return
     }
     setSaving(true)
     try {
       if (kind === 'public') {
-        const firstPublic = gid === '' || (existing?.publicNote ?? '').trim() === ''
+        const firstPublic = gid === '' ? editingId === null : (existing?.publicNote ?? '').trim() === ''
         if (firstPublic && !(await confirmPublicPost())) return
         if (gid) {
           const result = await saveGatheringNote(
@@ -232,6 +363,17 @@ export default function NoteForm({
             setError(result.message)
             return
           }
+        } else if (editingId) {
+          const { error: rpcError } = await supabase.rpc('update_my_game_note', {
+            p_note: editingId,
+            p_content: pub,
+            p_like: like,
+            p_dislike: dislike,
+          })
+          if (rpcError) {
+            setError(explainAdd(rpcError.message))
+            return
+          }
         } else {
           const { error: rpcError } = await supabase.rpc('add_game_note', {
             p_bgg_name: picked.bggName,
@@ -243,11 +385,20 @@ export default function NoteForm({
             setError(explainAdd(rpcError.message))
             return
           }
+          // 發表完清空文字框，下一次儲存會再新增一則（每款最多 10 則）
           setPub('')
           setLike('')
           setDislike('')
         }
-        setInfo(willUpdatePublic ? '已更新這場的公開留言。' : '已發表。')
+        setInfo(
+          gid
+            ? willUpdatePublic
+              ? '已更新這場的公開留言。'
+              : '已發表。'
+            : editingId
+              ? '已更新這則公開留言。'
+              : '已發表。',
+        )
       } else if (gid) {
         const result = await saveGatheringNote(
           gid,
@@ -267,7 +418,16 @@ export default function NoteForm({
           setError('目前無法儲存，請稍後再試。')
           return
         }
+        if (!editOverall && (personal.getEntry(picked.bggName).note ?? '').trim() !== '') {
+          if (
+            !(await askConfirm('這款已經有整體心得（每款一則），儲存後會取代原本的內容。要繼續嗎？', {
+              danger: false,
+            }))
+          )
+            return
+        }
         personal.updateEntry(picked.bggName, { note: priv.trim() })
+        setEditOverall(true)
         setInfo('已儲存為這款的整體心得。')
       }
       allNotes.reload()
@@ -316,6 +476,8 @@ export default function NoteForm({
               className="nf-link"
               onClick={() => {
                 setPicked(null)
+                setEditingId(null)
+                setEditOverall(false)
                 setGid('')
                 setError('')
                 setInfo('')
@@ -430,6 +592,9 @@ export default function NoteForm({
       {kind === 'public' ? (
         <>
           <PublicNoteHint />
+          {gid === '' && editingId === null && (
+            <p className="nf-hint">每款遊戲最多可以發表 10 則公開留言；要修改舊的，請到「發表紀錄」點那一則。</p>
+          )}
           <NotePointsFields
             key={`${picked?.bggName ?? ''}:${gid}`}
             like={like}
@@ -441,11 +606,14 @@ export default function NoteForm({
       ) : (
         <p className="nf-hint">
           {overallNote
-            ? '只有你看得到。沒有選場次時，會存成這款遊戲的「整體心得」（每款一則，再寫會取代）。'
+            ? '只有你看得到。沒有選場次時，會存成這款遊戲的「整體心得」（每款一則，再存會取代原本的）。要修改舊的，請到「發表紀錄」點那一則。'
             : '只有你看得到，管理者在網站上也看不到。'}
         </p>
       )}
 
+      {!picked && !lockedGid && text.trim() !== '' && (
+        <p className="nf-hint">已經先寫了也沒關係，記得在上面選好遊戲再按儲存。</p>
+      )}
       {error && <p className="nf-error">{error}</p>}
       {info && <p className="nf-info">{info}</p>}
 
@@ -471,11 +639,11 @@ export default function NoteForm({
           )}
           <button
             type="button"
-            className="nf-save"
-            disabled={saving || !picked || text.trim() === ''}
+            className={`nf-save${deleting ? ' danger' : ''}`}
+            disabled={saving || (text.trim() === '' && !hasExisting)}
             onClick={() => void save()}
           >
-            {saving ? '儲存中…' : '儲存'}
+            {saving ? (deleting ? '刪除中…' : '儲存中…') : deleting ? '刪除' : '儲存'}
           </button>
         </div>
       </div>

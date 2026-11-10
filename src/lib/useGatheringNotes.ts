@@ -17,6 +17,8 @@ type NoteRow = {
   public_status: string | null
   like_point?: string | null
   dislike_point?: string | null
+  updated_at?: string | null
+  created_at?: string | null
 }
 
 // 某一場聚會中，我自己寫的心得（含私人留言），以遊戲 bgg_name 對應
@@ -198,7 +200,8 @@ export function useMyGameNotes(bggName: string) {
   }
 }
 
-export type MyNoteRow = MyNote & { gatheringId: string; bggName: string }
+// updatedAt：這則心得最後更新時間（資料庫函式有回傳才有，沒有就是空字串）
+export type MyNoteRow = MyNote & { gatheringId: string; bggName: string; updatedAt: string }
 
 // 我全部的場次心得（所有聚會、所有遊戲；含私人欄，只有本人讀得到）
 export function useAllMyNotes() {
@@ -217,6 +220,7 @@ export function useAllMyNotes() {
       const rows = ((data ?? []) as NoteRow[]).map((row) => ({
         gatheringId: row.gathering_id,
         bggName: row.bgg_name,
+        updatedAt: row.updated_at ?? row.created_at ?? '',
         privateNote: row.private_note ?? '',
         publicNote: row.public_note ?? '',
         publicStatus: (row.public_status === 'hidden' ? 'hidden' : 'visible') as
