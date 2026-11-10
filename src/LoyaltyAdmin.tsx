@@ -45,12 +45,6 @@ type VoucherUse = {
     usedOn: string | null
     redeemedAt: string
 }
-type GrantRow = {
-    id: string
-    userId: string
-    quantity: number
-    grantedAt: string
-}
 type AdjustRow = {
     id: string
     userId: string
@@ -139,7 +133,6 @@ export default function LoyaltyAdmin() {
     const [voucherUses, setVoucherUses] = useState<VoucherUse[]>([])
     const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
     const [historyOpen, setHistoryOpen] = useState(false)
-    const [grants, setGrants] = useState<GrantRow[]>([])
     const [adjusts, setAdjusts] = useState<AdjustRow[]>([])
     // 管理者專用：每位 VIP／管理者想玩的遊戲（user_id -> 遊戲 bgg_name 集合）
     const [wantMap, setWantMap] = useState<Map<string, Set<string>> | null>(null)
@@ -171,21 +164,15 @@ export default function LoyaltyAdmin() {
     )
 
     async function loadVoucherUses(): Promise<string> {
-        const [u, gr, ad] = await Promise.all([
+        const [u, ad] = await Promise.all([
             supabase
                 .from('loyalty_redemptions')
                 .select('id, user_id, used_on, redeemed_at')
                 .order('redeemed_at', { ascending: false })
                 .limit(300),
-            supabase
-                .from('loyalty_grants')
-                .select('id, user_id, quantity, granted_at')
-                .order('granted_at', { ascending: false })
-                .limit(300),
             supabase.rpc('admin_get_adjustments'),
         ])
         if (u.error) return u.error.message
-        if (gr.error) return gr.error.message
         if (ad.error) return ad.error.message
         setAdjusts(
             (
@@ -219,21 +206,7 @@ export default function LoyaltyAdmin() {
                 redeemedAt: row.redeemed_at,
             })),
         )
-        setGrants(
-            (
-                (gr.data ?? []) as {
-                    id: string
-                    user_id: string
-                    quantity: number
-                    granted_at: string
-                }[]
-            ).map((row) => ({
-                id: row.id,
-                userId: row.user_id,
-                quantity: row.quantity,
-                grantedAt: row.granted_at,
-            })),
-        )
+
         return ''
     }
 
@@ -832,34 +805,8 @@ export default function LoyaltyAdmin() {
         setBusy(false)
     }
 
-    async function revokeGrant(item: GrantRow, nickname: string) {
-        if (
-            !(await askConfirm(
-                `確定撤銷這筆贈送嗎？\n玩家：${nickname}\n張數：${item.quantity} 張\n時間：${formatDateTime(item.grantedAt)}\n（如果這張券已經被使用，系統會拒絕撤銷。）`,
-                { confirmText: '撤銷', danger: true },
-            ))
-        )
-            return
-        setBusy(true)
-        setMessage('')
-        const { error } = await supabase.rpc('admin_revoke_grant', { p_grant: item.id })
-        if (error) {
-            setMessage(
-                error.message.includes('already used')
-                    ? '撤銷失敗：這張券已經被使用了。'
-                    : '撤銷失敗：' + error.message,
-            )
-        } else {
-            setMessage(`已撤銷「${nickname}」的 ${item.quantity} 張贈送。`)
-            await loadVoucherUses()
-            await refreshOverview()
-        }
-        setBusy(false)
-    }
-
     const selected = gatherings.find((g) => g.id === selectedId) ?? null
-    // 明細裡用：這位玩家的贈送紀錄與補登紀錄（可以撤銷）
-    const detailGrants = detail ? grants.filter((item) => item.userId === detail.userId) : []
+    // 明細裡用：這位玩家的調整紀錄（可以撤銷）
     const detailAdjusts = detail ? adjusts.filter((item) => item.userId === detail.userId) : []
     // 尚未結束：今天或未來的聚會；其餘是歷史
     const isOpenGathering = (g: Gathering) => g.gatheredOn >= todayLocal()
@@ -1713,25 +1660,6 @@ export default function LoyaltyAdmin() {
                                     ))}
                                 </ul>
                             )}
-                            <p>管理者贈送紀錄（舊）：{detailGrants.length === 0 ? '無' : ''}</p>
-                            {detailGrants.length > 0 && (
-                                <ul>
-                                    {detailGrants.map((item) => (
-                                        <li key={item.id}>
-                                            {formatDateTime(item.grantedAt)} 贈送 {item.quantity} 張
-                                            <button
-                                                type="button"
-                                                className="admin-link"
-                                                style={{ marginLeft: 8 }}
-                                                disabled={busy}
-                                                onClick={() => revokeGrant(item, detail.nickname)}
-                                            >
-                                                撤銷
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
                             <p>
                                 自動記錄的遊玩：
                                 {detail.autoSessions === null
@@ -1863,54 +1791,6 @@ export default function LoyaltyAdmin() {
                                             </tr>
                                         )
                                     })}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-
-                    <h3 className="lga-step" style={{ marginTop: 18 }}>
-                        <span>🎁</span>管理者贈送紀錄（舊）
-                    </h3>
-                    {grants.length === 0 ? (
-                        <p className="loy-admin-note">還沒有贈送過免費券。</p>
-                    ) : (
-                        <div className="loy-admin-tablewrap">
-                            <table className="loy-admin-table">
-                                <thead>
-                                    <tr>
-                                        <th>玩家</th>
-                                        <th>張數</th>
-                                        <th>贈送時間</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {grants.map((item) => (
-                                        <tr key={item.id}>
-                                            <td>
-                                                {players.find((p) => p.id === item.userId)
-                                                    ?.nickname ?? '（未知）'}
-                                            </td>
-                                            <td>{item.quantity}</td>
-                                            <td>{formatDateTime(item.grantedAt)}</td>
-                                            <td>
-                                                <button
-                                                    type="button"
-                                                    className="admin-link"
-                                                    disabled={busy}
-                                                    onClick={() =>
-                                                        revokeGrant(
-                                                            item,
-                                                            players.find((p) => p.id === item.userId)
-                                                                ?.nickname ?? '（未知）',
-                                                        )
-                                                    }
-                                                >
-                                                    撤銷
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
                                 </tbody>
                             </table>
                         </div>
