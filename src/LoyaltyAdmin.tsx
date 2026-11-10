@@ -51,6 +51,13 @@ type GrantRow = {
     quantity: number
     grantedAt: string
 }
+type AdjustRow = {
+    id: string
+    userId: string
+    kind: 'point' | 'voucher'
+    delta: number
+    createdAt: string
+}
 type AdminTab = 'setup' | 'status' | 'vouchers'
 
 type OverviewRaw = {
@@ -85,6 +92,12 @@ function dayStatus(date: string): string {
     const today = todayLocal()
     if (date === today) return '進行中'
     return date > today ? '尚未開始' : '已結束'
+}
+
+function adjustText(item: { kind: 'point' | 'voucher'; delta: number }): string {
+    const verb = item.delta > 0 ? '贈送' : '扣除'
+    const amount = Math.abs(item.delta)
+    return item.kind === 'voucher' ? `${verb}免費券 ${amount} 張` : `${verb}點數 ${amount} 點`
 }
 
 function gatheringName(g: Gathering): string {
@@ -127,6 +140,7 @@ export default function LoyaltyAdmin() {
     const [openMonths, setOpenMonths] = useState<Record<string, boolean>>({})
     const [historyOpen, setHistoryOpen] = useState(false)
     const [grants, setGrants] = useState<GrantRow[]>([])
+    const [adjusts, setAdjusts] = useState<AdjustRow[]>([])
     // 管理者專用：每位 VIP／管理者想玩的遊戲（user_id -> 遊戲 bgg_name 集合）
     const [wantMap, setWantMap] = useState<Map<string, Set<string>> | null>(null)
     const [expandedWant, setExpandedWant] = useState<string | null>(null)
@@ -157,7 +171,7 @@ export default function LoyaltyAdmin() {
     )
 
     async function loadVoucherUses(): Promise<string> {
-        const [u, gr] = await Promise.all([
+        const [u, gr, ad] = await Promise.all([
             supabase
                 .from('loyalty_redemptions')
                 .select('id, user_id, used_on, redeemed_at')
@@ -168,9 +182,28 @@ export default function LoyaltyAdmin() {
                 .select('id, user_id, quantity, granted_at')
                 .order('granted_at', { ascending: false })
                 .limit(300),
+            supabase.rpc('admin_get_adjustments'),
         ])
         if (u.error) return u.error.message
         if (gr.error) return gr.error.message
+        if (ad.error) return ad.error.message
+        setAdjusts(
+            (
+                (ad.data ?? []) as {
+                    id: string
+                    user_id: string
+                    kind: string
+                    delta: number
+                    created_at: string
+                }[]
+            ).map((row) => ({
+                id: row.id,
+                userId: row.user_id,
+                kind: row.kind === 'point' ? 'point' : 'voucher',
+                delta: row.delta,
+                createdAt: row.created_at,
+            })),
+        )
         setVoucherUses(
             (
                 (u.data ?? []) as {
@@ -730,31 +763,75 @@ export default function LoyaltyAdmin() {
         setBusy(false)
     }
 
-    async function grantVoucher(row: OverviewRow) {
+    // 贈送／扣除 券或點數：先問數量，再確認，最後寫入（每次都留紀錄）
+    async function adjustLoyalty(
+        row: OverviewRow,
+        kind: 'point' | 'voucher',
+        sign: 1 | -1,
+    ) {
+        const unit = kind === 'voucher' ? '張免費券' : '點'
+        const verb = sign > 0 ? '贈送' : '扣除'
         const input = await askInput(
-            `要贈送幾張免費券給「${row.nickname}」？（1～5 張）`,
-            { defaultValue: '1', placeholder: '1～5' },
+            `要${verb}幾${unit}${sign > 0 ? '給' : '：'}「${row.nickname}」？（1～50）`,
+            { defaultValue: '1', placeholder: '1～50' },
         )
         if (input === null) return
         const qty = Number(input)
-        if (!Number.isInteger(qty) || qty < 1 || qty > 5) {
-            setMessage('張數請填 1～5 的整數。')
+        if (!Number.isInteger(qty) || qty < 1 || qty > 50) {
+            setMessage('數量請填 1～50 的整數。')
             return
         }
+        const now =
+            kind === 'voucher'
+                ? `目前可用 ${row.availableVouchers} 張`
+                : `目前本月 ${row.monthPoints}/2、總 ${row.totalPoints} 點`
+        if (
+            !(await askConfirm(
+                `確定${verb} ${qty} ${unit}嗎？\n玩家：${row.nickname}\n${now}\n（會留下紀錄，之後可以撤銷。）`,
+                { confirmText: verb, danger: sign < 0 },
+            ))
+        )
+            return
         setBusy(true)
         setMessage('')
-        const { error } = await supabase.rpc('admin_grant_voucher', {
+        const { error } = await supabase.rpc('admin_adjust_loyalty', {
             p_user: row.userId,
-            p_qty: qty,
+            p_kind: kind,
+            p_delta: sign * qty,
         })
         if (error) {
-            setMessage('贈送失敗：' + error.message)
+            setMessage(`${verb}失敗：` + error.message)
         } else {
-            setMessage(`已贈送 ${qty} 張免費券給「${row.nickname}」。`)
+            setMessage(`已${verb}「${row.nickname}」${qty} ${unit}。`)
+            await refreshOverview()
+            if (detail?.userId === row.userId) await showDetail(row)
+        }
+        setBusy(false)
+    }
+
+    async function revokeAdjust(item: AdjustRow, nickname: string) {
+        if (
+            !(await askConfirm(
+                `確定撤銷這筆調整嗎？\n玩家：${nickname}\n內容：${adjustText(item)}\n時間：${formatDateTime(item.createdAt)}\n（如果撤銷會讓已使用的券變成不夠，系統會拒絕。）`,
+                { confirmText: '撤銷', danger: true },
+            ))
+        )
+            return
+        setBusy(true)
+        setMessage('')
+        const { error } = await supabase.rpc('admin_revoke_adjustment', {
+            p_id: item.id,
+        })
+        if (error) {
+            setMessage('撤銷失敗：' + error.message)
+        } else {
+            setMessage(`已撤銷「${nickname}」的調整（${adjustText(item)}）。`)
+            await loadVoucherUses()
             await refreshOverview()
         }
         setBusy(false)
     }
+
     async function revokeGrant(item: GrantRow, nickname: string) {
         if (
             !(await askConfirm(
@@ -780,86 +857,10 @@ export default function LoyaltyAdmin() {
         setBusy(false)
     }
 
-    async function revokeRedemption(item: VoucherUse, nickname: string) {
-        if (
-            !(await askConfirm(
-                `確定撤銷這筆補登嗎？\n玩家：${nickname}\n時間：${formatDateTime(item.redeemedAt)}\n撤銷後這張券會回到「可用」。`,
-                { confirmText: '撤銷', danger: true },
-            ))
-        )
-            return
-        setBusy(true)
-        setMessage('')
-        const { error } = await supabase.rpc('admin_revoke_redemption', {
-            p_redemption: item.id,
-        })
-        if (error) {
-            setMessage('撤銷失敗：' + error.message)
-        } else {
-            setMessage(`已撤銷「${nickname}」的補登。`)
-            await loadVoucherUses()
-            await refreshOverview()
-        }
-        setBusy(false)
-    }
-
-    // 把某一天改成「使用免費券」：這天原本的 1 點會被扣回（要先有可用的券）
-    async function applyVoucherToDay(userId: string, nickname: string, date: string) {
-        if (
-            !(await askConfirm(
-                `確定把「${nickname}」${formatDay(date)} 這天改成「使用免費券」嗎？\n這天的 1 點會被扣回，並用掉 1 張券。\n（要先有可用的券；沒有的話請先按「贈送」。）`,
-                { confirmText: '改用券', danger: true },
-            ))
-        )
-            return
-        setBusy(true)
-        setMessage('')
-        const { error } = await supabase.rpc('admin_use_voucher_on_day', {
-            p_user: userId,
-            p_day: date,
-        })
-        if (error) {
-            setMessage('改用券失敗：' + error.message)
-            setBusy(false)
-            return
-        }
-        await refreshOverview()
-        const row = overview.find((item) => item.userId === userId)
-        if (row) await showDetail(row)
-        setMessage(`已把「${nickname}」${formatDay(date)} 改成使用免費券。`)
-        setBusy(false)
-    }
-
-    async function redeem(row: OverviewRow) {
-        if (
-            !(await askConfirm(
-                `確定為「${row.nickname}」補登 1 張免費券使用嗎？\n（有券又有來的人系統會自動用券，這個按鈕只用來補登現場已經給過的券。）\n目前累積可用 ${row.availableVouchers} 張，補登後無法復原。`,
-            ))
-        )
-            return
-
-        setBusy(true)
-        setMessage('')
-        const { data, error } = await supabase.rpc('admin_redeem_voucher', {
-            p_user: row.userId,
-        })
-
-        if (error) {
-            setMessage('兌換失敗：' + error.message)
-        } else {
-            setMessage(`已為「${row.nickname}」補登 1 張，剩下 ${data ?? 0} 張可用。`)
-            await refreshOverview()
-            if (detail?.userId === row.userId) await showDetail(row)
-        }
-        setBusy(false)
-    }
-
     const selected = gatherings.find((g) => g.id === selectedId) ?? null
     // 明細裡用：這位玩家的贈送紀錄與補登紀錄（可以撤銷）
     const detailGrants = detail ? grants.filter((item) => item.userId === detail.userId) : []
-    const detailManual = detail
-        ? voucherUses.filter((item) => item.userId === detail.userId && !item.usedOn)
-        : []
+    const detailAdjusts = detail ? adjusts.filter((item) => item.userId === detail.userId) : []
     // 尚未結束：今天或未來的聚會；其餘是歷史
     const isOpenGathering = (g: Gathering) => g.gatheredOn >= todayLocal()
     const openList = gatherings
@@ -1628,18 +1629,34 @@ export default function LoyaltyAdmin() {
                                                     <button
                                                         type="button"
                                                         className="admin-link"
-                                                        disabled={busy || row.availableVouchers < 1}
-                                                        onClick={() => redeem(row)}
+                                                        disabled={busy}
+                                                        onClick={() => adjustLoyalty(row, 'voucher', 1)}
                                                     >
-                                                        補登
+                                                        贈送券
                                                     </button>
                                                     <button
                                                         type="button"
                                                         className="admin-link"
                                                         disabled={busy}
-                                                        onClick={() => grantVoucher(row)}
+                                                        onClick={() => adjustLoyalty(row, 'voucher', -1)}
                                                     >
-                                                        贈送
+                                                        扣除券
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="admin-link"
+                                                        disabled={busy}
+                                                        onClick={() => adjustLoyalty(row, 'point', 1)}
+                                                    >
+                                                        贈送點
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="admin-link"
+                                                        disabled={busy}
+                                                        onClick={() => adjustLoyalty(row, 'point', -1)}
+                                                    >
+                                                        扣除點
                                                     </button>
                                                 </div>
                                                 {detail?.userId === row.userId && (
@@ -1661,26 +1678,6 @@ export default function LoyaltyAdmin() {
                                                     : !day.hasSession
                                                         ? '還沒有標記玩過的遊戲（或沒有當天遊玩紀錄）'
                                                         : `評分完整 ${day.ratedCount} / ${day.gameCount} 款`}
-                                            {day.qualified &&
-                                                !detail.redemptions.some(
-                                                    (item) => item.usedOn === day.date,
-                                                ) && (
-                                                    <button
-                                                        type="button"
-                                                        className="admin-link"
-                                                        style={{ marginLeft: 8 }}
-                                                        disabled={busy}
-                                                        onClick={() =>
-                                                            applyVoucherToDay(
-                                                                detail.userId,
-                                                                detail.nickname,
-                                                                day.date,
-                                                            )
-                                                        }
-                                                    >
-                                                        改用券（扣回這 1 點）
-                                                    </button>
-                                                )}
                                         </li>
                                     ))}
                                 </ul>
@@ -1697,7 +1694,26 @@ export default function LoyaltyAdmin() {
                                         )
                                         .join('、')}
                             </p>
-                            <p>管理者贈送紀錄：{detailGrants.length === 0 ? '無' : ''}</p>
+                            <p>管理者調整紀錄（點數／券）：{detailAdjusts.length === 0 ? '無' : ''}</p>
+                            {detailAdjusts.length > 0 && (
+                                <ul>
+                                    {detailAdjusts.map((item) => (
+                                        <li key={item.id}>
+                                            {formatDateTime(item.createdAt)} {adjustText(item)}
+                                            <button
+                                                type="button"
+                                                className="admin-link"
+                                                style={{ marginLeft: 8 }}
+                                                disabled={busy}
+                                                onClick={() => revokeAdjust(item, detail.nickname)}
+                                            >
+                                                撤銷
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                            <p>管理者贈送紀錄（舊）：{detailGrants.length === 0 ? '無' : ''}</p>
                             {detailGrants.length > 0 && (
                                 <ul>
                                     {detailGrants.map((item) => (
@@ -1715,27 +1731,6 @@ export default function LoyaltyAdmin() {
                                         </li>
                                     ))}
                                 </ul>
-                            )}
-                            {detailManual.length > 0 && (
-                                <>
-                                    <p>補登紀錄：</p>
-                                    <ul>
-                                        {detailManual.map((item) => (
-                                            <li key={item.id}>
-                                                {formatDateTime(item.redeemedAt)}
-                                                <button
-                                                    type="button"
-                                                    className="admin-link"
-                                                    style={{ marginLeft: 8 }}
-                                                    disabled={busy}
-                                                    onClick={() => revokeRedemption(item, detail.nickname)}
-                                                >
-                                                    撤銷
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </>
                             )}
                             <p>
                                 自動記錄的遊玩：
@@ -1803,7 +1798,6 @@ export default function LoyaltyAdmin() {
                                         <th>用在哪一天</th>
                                         <th>使用時間</th>
                                         <th>來源</th>
-                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1823,24 +1817,6 @@ export default function LoyaltyAdmin() {
                                             <td>
                                                 {item.usedOn ? '系統自動使用' : '管理者補登'}
                                             </td>
-                                            <td>
-                                                {!item.usedOn && (
-                                                    <button
-                                                        type="button"
-                                                        className="admin-link"
-                                                        disabled={busy}
-                                                        onClick={() =>
-                                                            revokeRedemption(
-                                                                item,
-                                                                players.find((p) => p.id === item.userId)
-                                                                    ?.nickname ?? '（未知）',
-                                                            )
-                                                        }
-                                                    >
-                                                        撤銷
-                                                    </button>
-                                                )}
-                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -1849,7 +1825,51 @@ export default function LoyaltyAdmin() {
                     )}
 
                     <h3 className="lga-step" style={{ marginTop: 18 }}>
-                        <span>🎁</span>管理者贈送紀錄
+                        <span>🛠</span>管理者調整紀錄（點數／券）
+                    </h3>
+                    {adjusts.length === 0 ? (
+                        <p className="loy-admin-note">還沒有調整過點數或免費券。</p>
+                    ) : (
+                        <div className="loy-admin-tablewrap">
+                            <table className="loy-admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>玩家</th>
+                                        <th>內容</th>
+                                        <th>時間</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {adjusts.map((item) => {
+                                        const nick =
+                                            players.find((p) => p.id === item.userId)?.nickname ??
+                                            '（未知）'
+                                        return (
+                                            <tr key={item.id}>
+                                                <td>{nick}</td>
+                                                <td>{adjustText(item)}</td>
+                                                <td>{formatDateTime(item.createdAt)}</td>
+                                                <td>
+                                                    <button
+                                                        type="button"
+                                                        className="admin-link"
+                                                        disabled={busy}
+                                                        onClick={() => revokeAdjust(item, nick)}
+                                                    >
+                                                        撤銷
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    <h3 className="lga-step" style={{ marginTop: 18 }}>
+                        <span>🎁</span>管理者贈送紀錄（舊）
                     </h3>
                     {grants.length === 0 ? (
                         <p className="loy-admin-note">還沒有贈送過免費券。</p>
