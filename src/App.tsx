@@ -1103,6 +1103,7 @@ function Library({
                     isAdmin={isAdmin}
                     showInfo={showCardInfo}
                     onOpen={openGame}
+                    countsKey={countsMe && personal.isLoggedIn}
                   />
                 )
               })}

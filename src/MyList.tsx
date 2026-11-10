@@ -7,6 +7,7 @@ import type { AdminScores } from './lib/libraryTypes'
 import LoyaltyCard from './components/LoyaltyCard'
 import type { GameChange } from './lib/useLoyaltyAlerts'
 import { supabase } from './lib/supabase'
+import { askConfirm, showNotice } from './lib/askConfirm'
 import { useSession } from './lib/useSession'
 import { useMyLoyalty, todayLocal } from './lib/useLoyalty'
 import { TodayRatingModal } from './components/TodayRatingFlow'
@@ -653,6 +654,48 @@ export default function MyList({
         }
     }, [boardGames, personal.entries, playSessions])
 
+    // 已玩次數按「−」：總次數會變 0 時，先查評分與公開留言，再問清楚才從已玩移除
+    async function decrementPlayed(bggName: string) {
+        const entry = personal.entries[bggName]
+        const count = entry?.playCount ?? 0
+        if (count <= 0) return
+        const sessionCount = playSessions.getSummary(bggName).count
+        if (count - 1 + sessionCount > 0) {
+            personal.updateEntry(bggName, { playCount: count - 1 }, { skipPlayedRule: true })
+            return
+        }
+        if ((ratings.status as string) === 'loading') {
+            await showNotice('評分資料還在讀取，請稍後再試。')
+            return
+        }
+        const hasRating = ratings.getMine(bggName) !== null
+        const [mine, gathering] = await Promise.all([
+            supabase.rpc('get_my_game_notes', { p_bgg_name: bggName }),
+            supabase.rpc('get_my_gathering_notes'),
+        ])
+        if (mine.error || gathering.error) {
+            await showNotice('讀取你的留言失敗，請稍後再試。')
+            return
+        }
+        const hasPublic =
+            ((mine.data ?? []) as unknown[]).length > 0 ||
+            ((gathering.data ?? []) as { bgg_name: string; public_note: string | null }[]).some(
+                (row) => row.bgg_name === bggName && (row.public_note ?? '').trim() !== '',
+            )
+        if (hasRating || hasPublic) {
+            await showNotice(
+                '這款有你的評分或公開留言。\n已玩歸零時會一併清除它們（私人心得會保留），這個功能還在準備中，暫時不能歸零。',
+            )
+            return
+        }
+        const ok = await askConfirm(
+            '這款沒有評分，也沒有公開留言。\n歸零會把它從「已玩」移除，主畫面的打勾也會取消。私人心得不受影響。確定嗎？',
+            { confirmText: '移除已玩' },
+        )
+        if (!ok) return
+        personal.updateEntry(bggName, { playCount: 0, played: false }, { skipPlayedRule: true })
+    }
+
     if (!isOpen) return null
 
     const isLoyalty = mode === 'loyalty'
@@ -1107,13 +1150,7 @@ export default function MyList({
                                                                                     : undefined
                                                                             }
                                                                             disabled={!personal.canEdit || (entry?.playCount ?? 0) <= 0}
-                                                                            onClick={() =>
-                                                                                personal.updateEntry(
-                                                                                    game.bggName,
-                                                                                    { playCount: (entry?.playCount ?? 0) - 1 },
-                                                                                    { skipPlayedRule: true },
-                                                                                )
-                                                                            }
+                                                                            onClick={() => void decrementPlayed(game.bggName)}
                                                                         >
                                                                             −
                                                                         </button>

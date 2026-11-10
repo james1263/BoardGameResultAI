@@ -1,4 +1,4 @@
-import type { KeyboardEvent, MouseEvent } from 'react'
+import { memo, type KeyboardEvent, type MouseEvent } from 'react'
 import type { PersonalApi } from '../lib/personalApi'
 import { getDisplayScore, type LibraryGame } from '../lib/libraryTypes'
 import { formatNumber, formatPlayers } from '../lib/gameFormat'
@@ -21,7 +21,7 @@ function shortPlayers(players: number[]): string {
   return text.includes('未') || text === '' ? '—' : text
 }
 
-export default function GameCard({
+function GameCard({
   game,
   isNew,
   coverVersion,
@@ -37,6 +37,8 @@ export default function GameCard({
   isAdmin?: boolean
   showInfo?: boolean
   onOpen: (game: LibraryGame) => void
+  // 只用來讓卡片在「想玩／已玩人數要不要同步」改變時重畫
+  countsKey?: boolean
 }) {
   const hasExpansion = useHasExpansion(game.bggName)
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
@@ -158,3 +160,14 @@ export default function GameCard({
   )
 }
 
+// 打勾一款遊戲時，只重畫那一張卡片，其他卡片不動
+export default memo(GameCard, (prev, next) =>
+  prev.game === next.game &&
+  prev.isNew === next.isNew &&
+  prev.coverVersion === next.coverVersion &&
+  prev.isAdmin === next.isAdmin &&
+  prev.showInfo === next.showInfo &&
+  prev.countsKey === next.countsKey &&
+  prev.personal.canEdit === next.personal.canEdit &&
+  prev.personal.getEntry(prev.game.bggName) === next.personal.getEntry(next.game.bggName),
+)
