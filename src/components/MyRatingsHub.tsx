@@ -191,7 +191,7 @@ export default function MyRatingsHub({
                                 </div>
                             </div>
                             <details className="mrh-helpfold">
-                                <summary aria-label="評分說明" title="評分說明" />
+                                <summary>ⓘ 評分說明</summary>
                                 <p className="mrh-help">
                                     完整評分＝整體與六項（喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來）都填。點一款遊戲就能直接評分。
                                 </p>
@@ -311,10 +311,8 @@ export default function MyRatingsHub({
                                                             {!row.played && !row.mine && (
                                                                 <span className="mrh-unplayed">還沒玩過</span>
                                                             )}
+                                                            {date && <span className="mrh-date">{date}</span>}
                                                         </span>
-                                                        {date && (
-                                                            <span className="mrh-date">上次修改 {date}</span>
-                                                        )}
                                                     </span>
                                                     <span className="mrh-chev" aria-hidden="true">
                                                         {open ? '▲' : '▼'}

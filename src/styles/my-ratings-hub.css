@@ -5,19 +5,19 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin: 4px 0 10px;
+  margin: 0 0 8px;
 }
 .mrh-summary > div {
   background: #fbf7ec;
   border: 1px solid #e3d9c4;
   border-radius: 12px;
-  padding: 10px 6px;
+  padding: 6px 6px;
   text-align: center;
 }
 .mrh-summary strong {
   display: block;
-  font-size: 1.5rem;
-  line-height: 1.2;
+  font-size: 1.35rem;
+  line-height: 1.15;
   color: #34463c;
 }
 .mrh-summary span {
@@ -37,16 +37,16 @@
   grid-template-columns: 1fr 1fr;
   background: #efe6d2;
   border-radius: 12px;
-  padding: 4px;
-  gap: 4px;
-  margin-bottom: 12px;
+  padding: 3px;
+  gap: 3px;
+  margin-bottom: 8px;
 }
 .mrh-seg button {
   border: 0;
   background: transparent;
   color: #34463c;
   border-radius: 9px;
-  padding: 10px 6px;
+  padding: 7px 6px;
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
@@ -60,7 +60,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .mrh-filter {
   box-sizing: border-box;
@@ -91,8 +91,8 @@
 .mrh-tools {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 .mrh-search {
   width: 100%;
@@ -245,32 +245,60 @@
   cursor: pointer;
 }
 
-/* 評分說明：只有三角形，靠左，可收合 */
+/* 評分說明：一行淡色文字鈕，點開才顯示說明 */
 .mrh-helpfold {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   text-align: left;
 }
 .mrh-helpfold summary {
-  display: block;
+  display: inline-flex;
+  align-items: center;
   width: fit-content;
-  padding: 4px 8px 4px 0;
+  padding: 3px 10px;
+  border: 1px solid #e3d9c4;
+  border-radius: 999px;
+  background: #fbf7ec;
   color: #6b6455;
-  font-size: 0.85rem;
-  line-height: 1;
+  font-size: 0.8rem;
+  line-height: 1.4;
   list-style: none;
   cursor: pointer;
-  text-align: left;
 }
 .mrh-helpfold summary::-webkit-details-marker {
   display: none;
 }
-.mrh-helpfold summary::before {
-  content: "\25B8";
-}
-.mrh-helpfold[open] summary::before {
-  content: "\25BE";
+.mrh-helpfold[open] summary {
+  background: #efe6d2;
+  color: #34463c;
 }
 .mrh-helpfold .mrh-help {
   margin: 6px 0 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fbf7ec;
   text-align: left;
 }
+
+/* 清單化：緊湊列表（參考主畫面清單檢視） */
+.mrh-list { gap: 6px; }
+.mrh-list .mrh-item { border-radius: 12px; }
+.mrh-list .mrh-head { gap: 10px; padding: 6px 10px; }
+.mrh-list .mrh-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.mrh-list .mrh-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mrh-list .mrh-main { gap: 2px; }
+.mrh-list .mrh-name { font-size: 0.98rem; line-height: 1.25; }
+.mrh-list .mrh-meta { gap: 6px; }
+.mrh-list .mrh-badge { padding: 1px 8px; font-size: 0.76rem; }
+.mrh-list .mrh-score { font-size: 0.82rem; }
+.mrh-list .mrh-date { font-size: 0.76rem; }
+.mrh-list .mrh-chev { font-size: 0.7rem; padding-left: 0; }
+.mrh-list .mrh-detail { padding: 8px 10px 10px; }
