@@ -193,15 +193,92 @@ export function useGamePlaySessions() {
     [userId],
   )
 
+  // 補日期：資料庫一次做完「新增手動日期＋無日期次數 −1」，總次數不變
+  const addPlayDate = useCallback(
+    async (
+      bggName: string,
+      playedOn: string,
+    ): Promise<{ id: string; playCount: number } | null> => {
+      if (!userId || status !== 'ready') return null
+      setBusy(true)
+      const { data, error } = await supabase.rpc('add_play_date', {
+        p_bgg_name: bggName,
+        p_date: playedOn,
+      })
+      setBusy(false)
+      if (error || !data) {
+        const msg = error?.message ?? ''
+        window.alert(
+          msg.includes('no undated plays')
+            ? '沒有可補日期的次數了。請先按「＋」增加次數，再補日期。'
+            : '儲存失敗：' + (msg || '請稍後再試。'),
+        )
+        return null
+      }
+      const result = data as { id: string; play_count: number }
+      const created: PlaySession = {
+        id: result.id,
+        bggName,
+        playedOn,
+        playerCount: null,
+        note: '',
+        source: 'manual',
+      }
+      setSessions((current) =>
+        [created, ...current].sort((a, b) => b.playedOn.localeCompare(a.playedOn)),
+      )
+      return { id: result.id, playCount: result.play_count }
+    },
+    [userId, status],
+  )
+
+  // 刪除手動日期：變回無日期次數，總次數不變（聚會自動日期不能刪）
+  const deletePlayDate = useCallback(
+    async (id: string): Promise<number | null> => {
+      if (!userId) return null
+      setBusy(true)
+      const { data, error } = await supabase.rpc('delete_play_date', { p_id: id })
+      setBusy(false)
+      if (error || !data) {
+        window.alert('刪除失敗：' + (error?.message ?? '找不到這筆紀錄。'))
+        return null
+      }
+      setSessions((current) => current.filter((item) => item.id !== id))
+      return (data as { play_count: number }).play_count
+    },
+    [userId],
+  )
+
+  // 這天的私人心得（存在日期紀錄的 note，≤200 字）
+  const setPlayDateNote = useCallback(
+    async (id: string, note: string): Promise<boolean> => {
+      if (!userId) return false
+      const { error } = await supabase.rpc('set_play_date_note', {
+        p_id: id,
+        p_note: note,
+      })
+      if (error) return false
+      setSessions((current) =>
+        current.map((item) => (item.id === id ? { ...item, note } : item)),
+      )
+      return true
+    },
+    [userId],
+  )
+
   const reload = useCallback(() => setReloadKey((current) => current + 1), [])
 
   return {
     status,
     busy,
+    sessions,
     getSessions,
     getSummary,
     addSession,
     deleteSession,
+    addPlayDate,
+    deletePlayDate,
+    setPlayDateNote,
     reload,
   }
 }

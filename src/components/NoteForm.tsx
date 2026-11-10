@@ -3,7 +3,7 @@ import type { BoardGame } from '../data/boardGames.generated'
 import type { PersonalApi } from '../lib/personalApi'
 import type { RatingsApi } from '../lib/useGameRatings'
 import { supabase } from '../lib/supabase'
-import { todayLocal } from '../lib/useGamePlaySessions'
+import { todayLocal, type PlaySessionsApi } from '../lib/useGamePlaySessions'
 import { saveGatheringNote, useAllMyNotes } from '../lib/useGatheringNotes'
 import { useMyGatherings } from '../lib/useMyGatherings'
 import { useMyGatheringGames } from '../lib/useMyGatheringGames'
@@ -60,6 +60,8 @@ export default function NoteForm({
   initialKind = 'private',
   initialNoteId = null,
   initialOverall = false,
+  initialSessionId = null,
+  playSessions,
   compact = false,
   myGameNotes,
   renderCover,
@@ -78,6 +80,9 @@ export default function NoteForm({
   // 從發表紀錄點進來：指定要編輯哪一則一般留言／這款的整體心得
   initialNoteId?: string | null
   initialOverall?: boolean
+  // 補完日期後進來：選好那一天（只給私人心得，存在那筆日期紀錄的 note）
+  initialSessionId?: string | null
+  playSessions?: PlaySessionsApi
   // 聚會後的寫心得視窗：場次與遊戲都已固定，不顯示場次封面列、場次標籤和遊戲名稱（外面自己放標題）
   compact?: boolean
   myGameNotes?: { loading: boolean; rows: MyGameNote[] }
@@ -95,9 +100,20 @@ export default function NoteForm({
   const [picked, setPicked] = useState<ListedGame | null>(startGame)
   const [kindState, setKindState] = useState<NoteKind>(canPublic ? initialKind : 'private')
   const [gid, setGid] = useState(startGame && lockedGid ? lockedGid : '')
+  // 選了自己補的日期（手動日期）當場次：只給私人心得，和聚會場次二選一
+  const [sid, setSid] = useState(startGame && initialSessionId ? initialSessionId : '')
   const [pub, setPub] = useState('')
+  // 從發表紀錄點「這天的心得」進來：先把那天已存的心得放進文字框
+  const initialDateNote =
+    startGame && initialSessionId && !lockedGid
+      ? (playSessions?.getSessions(startGame.bggName).find((item) => item.id === initialSessionId)?.note ?? '')
+      : ''
   const [priv, setPriv] = useState(() =>
-    startGame && !lockedGid && initialOverall ? (personal.getEntry(startGame.bggName).note ?? '') : '',
+    initialDateNote !== ''
+      ? initialDateNote
+      : startGame && !lockedGid && initialOverall
+        ? (personal.getEntry(startGame.bggName).note ?? '')
+        : '',
   )
   const [like, setLike] = useState('')
   const [dislike, setDislike] = useState('')
@@ -117,7 +133,7 @@ export default function NoteForm({
       (personal.getEntry(startGame.bggName).note ?? '').trim() !== '',
   )
   // 目前文字框的內容是不是從舊紀錄載入的（換場次時才知道要不要清掉）
-  const textLoaded = useRef(!!startGame && !lockedGid && initialOverall)
+  const textLoaded = useRef((!!startGame && !lockedGid && initialOverall) || initialDateNote !== '')
   const gameNoteRows = myGameNotes?.rows
 
   const noteMap = useMemo(() => {
@@ -132,6 +148,13 @@ export default function NoteForm({
     : true
   const publicLocked = canPublic && !!picked && !isAdmin && !isPlayed
   const kind: NoteKind = publicLocked || !canPublic ? 'private' : kindState
+
+  // 這款我自己補的日期（聚會自動日期不算）
+  const manualDates = picked && playSessions
+    ? playSessions.getSessions(picked.bggName).filter((item) => item.source === 'manual')
+    : []
+  const dateId = kind === 'private' && gid === '' && manualDates.some((item) => item.id === sid) ? sid : ''
+  const dateRow = manualDates.find((item) => item.id === dateId)
 
   // 一開始就帶著場次進來：等心得讀好再把那場的內容填進去（只做一次）
   useEffect(() => {
@@ -184,7 +207,7 @@ export default function NoteForm({
 
   const existing = picked && gid ? noteMap.get(`${gid}|${picked.bggName}`) : undefined
   const willUpdatePublic = kind === 'public' && gid !== '' && (existing?.publicNote ?? '').trim() !== ''
-  const overallNote = kind === 'private' && gid === ''
+  const overallNote = kind === 'private' && gid === '' && dateId === ''
   const maxLen = overallNote ? 500 : 200
   const text = kind === 'public' ? pub : priv
 
@@ -210,7 +233,9 @@ export default function NoteForm({
         : editingId !== null
       : gid !== ''
         ? (existing?.privateNote ?? '').trim() !== ''
-        : editOverall)
+        : dateId !== ''
+          ? (dateRow?.note ?? '').trim() !== ''
+          : editOverall)
   const deleting = text.trim() === '' && hasExisting
 
   // 換場次或換遊戲時：那場已有紀錄就載入；沒有紀錄就保留已經打的字（只清掉從舊紀錄載入的）
@@ -240,6 +265,7 @@ export default function NoteForm({
     setPicked(game)
     setPickSearch('')
     setGid(target)
+    setSid('')
     loadFor(game, target)
     setError('')
     setInfo('')
@@ -249,9 +275,38 @@ export default function NoteForm({
     if (!picked) return
     hydrated.current = true
     setGid(next)
+    setSid('')
     setError('')
     setInfo('')
     loadFor(picked, next)
+  }
+
+  // 選／取消自己補的日期：那天已有心得就載入；沒有就保留已打的字
+  function changeDate(next: string) {
+    if (!picked) return
+    hydrated.current = true
+    setError('')
+    setInfo('')
+    if (!next) {
+      setSid('')
+      loadFor(picked, '')
+      return
+    }
+    setSid(next)
+    setGid('')
+    setEditingId(null)
+    setEditOverall(false)
+    const saved = manualDates.find((item) => item.id === next)?.note ?? ''
+    if (saved.trim() !== '') {
+      textLoaded.current = true
+      setPriv(saved)
+    } else if (textLoaded.current) {
+      textLoaded.current = false
+      setPub('')
+      setPriv('')
+      setLike('')
+      setDislike('')
+    }
   }
 
   // 複製到另一個編輯框（還不會儲存）
@@ -313,6 +368,12 @@ export default function NoteForm({
         )
         if (!result.ok) {
           setError(result.message)
+          return
+        }
+        setPriv('')
+      } else if (dateId && playSessions) {
+        if (!(await playSessions.setPlayDateNote(dateId, ''))) {
+          setError('刪除失敗，請稍後再試。')
           return
         }
         setPriv('')
@@ -416,6 +477,12 @@ export default function NoteForm({
           return
         }
         setInfo('已儲存這場的私人心得。')
+      } else if (dateId && playSessions) {
+        if (!(await playSessions.setPlayDateNote(dateId, priv.trim()))) {
+          setError('儲存失敗，請稍後再試。')
+          return
+        }
+        setInfo('已儲存這天的私人心得。')
       } else {
         if (!personal.canEdit) {
           setError('目前無法儲存，請稍後再試。')
@@ -565,7 +632,25 @@ export default function NoteForm({
           </div>
         </div>
       )}
-      {picked && gatheringOptions.length === 0 && !gatherings.loading && !lockedGid && (
+      {picked && !compact && kind === 'private' && manualDates.length > 0 && (
+        <div className="nf-tagbox">
+          <p className="nf-taglabel">或選你自己補的日期（只給私人心得，只有你看得到）</p>
+          <div className="nf-chips">
+            {manualDates.map((row) => (
+              <button
+                type="button"
+                key={row.id}
+                aria-pressed={dateId === row.id}
+                className={`nf-chip${dateId === row.id ? ' on' : ''}`}
+                onClick={() => changeDate(dateId === row.id ? '' : row.id)}
+              >
+                📅 {row.playedOn.replaceAll('-', '/')}　自己補的
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {picked && gatheringOptions.length === 0 && manualDates.length === 0 && !gatherings.loading && !lockedGid && (
         <p className="nf-hint">這款沒有你出席過、而且指定了它的聚會，所以沒有場次標籤可選。</p>
       )}
 
@@ -583,7 +668,9 @@ export default function NoteForm({
             ? '想跟大家說什麼？（公開給 VIP，最多 200 字）'
             : overallNote
               ? '這款遊戲的整體心得（只有你看得到，最多 500 字）'
-              : '這場的心得（只有你看得到，最多 200 字）'
+              : dateId
+                ? '這天的心得（只有你看得到，最多 200 字）'
+                : '這場的心得（只有你看得到，最多 200 字）'
         }
         value={text}
         disabled={saving}

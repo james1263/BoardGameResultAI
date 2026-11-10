@@ -10,6 +10,7 @@ import '../styles/my-notes-manage.css'
 import NoteForm, { type MyGameNote, type NoteKind } from './NoteForm'
 import type { PersonalApi } from '../lib/personalApi'
 import type { RatingsApi } from '../lib/useGameRatings'
+import type { PlaySessionsApi } from '../lib/useGamePlaySessions'
 
 type ListedGame = BoardGame & { removedAt?: string | null }
 
@@ -39,7 +40,7 @@ function normalizeName(text: string): string {
 // overall：這款的整體心得（沒標場次的私人心得）
 type Item = {
   key: string
-  kind: 'game' | 'gathering' | 'overall'
+  kind: 'game' | 'gathering' | 'overall' | 'date'
   bggName: string
   date: string // YYYY-MM-DD，沒有日期是空字串
   sortKey: string // 排序用的時間（越新越大）；沒有時間是空字串
@@ -52,6 +53,7 @@ type Item = {
   likeCount?: number
   gatheringId?: string
   gatheringTitle?: string
+  sessionId?: string // 補日期心得：那筆日期紀錄的 id
 }
 
 const FILTERS: { id: Filter; label: string }[] = [
@@ -67,6 +69,8 @@ type ComposeState = {
   kind: NoteKind
   noteId: string | null
   overall: boolean
+  // 補完日期後進來：選好那天（手動日期紀錄的 id）
+  sessionId?: string | null
   nonce: number
 }
 
@@ -151,8 +155,14 @@ export default function MyNotes({
   // 從遊戲視窗進來：只看這一款（可按 × 取消）
   focusGame?: string | null
   // 一進來就打開寫作畫面：帶遊戲（遊戲視窗）或帶場次（我的場次）
-  writeRequest?: { bggName: string | null; gatheringId: string | null } | null
-  composer?: { personal: PersonalApi; ratings: RatingsApi; isAdmin: boolean; canPublic: boolean }
+  writeRequest?: { bggName: string | null; gatheringId: string | null; sessionId?: string | null } | null
+  composer?: {
+    personal: PersonalApi
+    ratings: RatingsApi
+    isAdmin: boolean
+    canPublic: boolean
+    playSessions?: PlaySessionsApi
+  }
 }) {
   const gatheringNotes = useAllMyNotes()
   const gameNotes = useMyAllGameNotes()
@@ -176,6 +186,7 @@ export default function MyNotes({
           kind: 'private',
           noteId: null,
           overall: false,
+          sessionId: writeRequest.sessionId ?? null,
           nonce: 0,
         }
       : null,
@@ -191,6 +202,7 @@ export default function MyNotes({
   }, [boardGames])
 
   const personalEntries = composer?.personal.entries
+  const dateSessions = composer?.playSessions?.sessions
 
   const items = useMemo(() => {
     const gatheringById = new Map(gatherings.rows.map((row) => [row.id, row]))
@@ -254,8 +266,26 @@ export default function MyNotes({
       }
     }
 
+    // 自己補的日期上的私人心得
+    for (const row of dateSessions ?? []) {
+      if (row.source !== 'manual') continue
+      const note = (row.note ?? '').trim()
+      if (!note) continue
+      list.push({
+        key: `date|${row.id}`,
+        kind: 'date',
+        bggName: row.bggName,
+        date: row.playedOn,
+        sortKey: `${row.playedOn}T00:00:00`,
+        pubText: '',
+        privText: row.note,
+        hidden: false,
+        sessionId: row.id,
+      })
+    }
+
     return list
-  }, [gameNotes.rows, gatheringNotes.rows, gatherings.rows, personalEntries, statusTimes.map])
+  }, [gameNotes.rows, gatheringNotes.rows, gatherings.rows, personalEntries, statusTimes.map, dateSessions])
 
   // 發表紀錄：搜尋遊戲、類型、指定遊戲，最後依時間排序（預設新到舊）
   const shown = useMemo(() => {
@@ -294,7 +324,7 @@ export default function MyNotes({
 
   const activeFilterCount = (filter !== 'all' ? 1 : 0) + (focus ? 1 : 0)
 
-  // 遊戲管理：每款遊戲一列。心得 ✓＝有整體心得或任一場聚會的私人心得；
+  // 遊戲管理：每款遊戲一列。心得 ✓＝有整體心得、任一場聚會的私人心得，或自己補的日期上的心得；
   // 留言 ✓＝有任何公開留言（標不標場次都算）；沒玩過、沒評分過的遊戲不能留言（管理者例外）
   const gameRows = useMemo(() => {
     if (!composer) return []
@@ -369,7 +399,9 @@ export default function MyNotes({
         ? '要刪除這場聚會的留言和心得嗎？兩則都會刪除，無法復原。'
         : item.kind === 'overall'
           ? '要刪除這款的整體心得嗎？刪除後無法復原。'
-          : item.pubText !== ''
+          : item.kind === 'date'
+            ? '要刪除這天的心得嗎？日期紀錄會保留，只刪心得，無法復原。'
+            : item.pubText !== ''
             ? '要刪除這則公開留言嗎？刪除後無法復原。'
             : '要刪除這則心得嗎？刪除後無法復原。'
     if (!(await askConfirm(message))) return
@@ -388,6 +420,11 @@ export default function MyNotes({
           setDeleteError(result.message)
           return
         }
+      } else if (item.kind === 'date' && item.sessionId) {
+        if (!composer.playSessions || !(await composer.playSessions.setPlayDateNote(item.sessionId, ''))) {
+          setDeleteError('刪除失敗，請稍後再試。')
+          return
+        }
       } else if (item.kind === 'overall') {
         if (!composer.personal.canEdit) {
           setDeleteError('目前無法刪除，請稍後再試。')
@@ -399,7 +436,9 @@ export default function MyNotes({
       setCompose((current) =>
         current &&
         current.game === item.bggName &&
-        (current.noteId === (item.noteId ?? null) || current.gid === (item.gatheringId ?? null))
+        (item.kind === 'date'
+          ? current.sessionId === (item.sessionId ?? null)
+          : current.noteId === (item.noteId ?? null) || current.gid === (item.gatheringId ?? null))
           ? null
           : current,
       )
@@ -450,7 +489,7 @@ export default function MyNotes({
 
           {composer && compose && (
             <NoteForm
-              key={`${compose.game ?? ''}|${compose.gid ?? ''}|${compose.noteId ?? ''}|${compose.overall ? 1 : 0}|${compose.nonce}`}
+              key={`${compose.game ?? ''}|${compose.gid ?? ''}|${compose.noteId ?? ''}|${compose.overall ? 1 : 0}|${compose.sessionId ?? ''}|${compose.nonce}`}
               games={boardGames}
               personal={composer.personal}
               ratings={composer.ratings}
@@ -461,6 +500,8 @@ export default function MyNotes({
               initialKind={compose.kind}
               initialNoteId={compose.noteId}
               initialOverall={compose.overall}
+              initialSessionId={compose.sessionId ?? null}
+              playSessions={composer.playSessions}
               myGameNotes={{ loading: gameNotes.loading, rows: gameNotes.rows }}
               renderCover={renderCover}
               onSaved={reloadAll}
@@ -700,7 +741,13 @@ export default function MyNotes({
                           <NoteListItem
                             key={item.key}
                             name={`《${game?.name ?? item.bggName}》`}
-                            date={item.kind === 'gathering' ? gatheringLabel : '整體'}
+                            date={
+                              item.kind === 'gathering'
+                                ? gatheringLabel
+                                : item.kind === 'date'
+                                  ? `補日期 ${item.date.startsWith(thisYear) ? item.date.slice(5) : item.date}`.replace(/-/g, '/')
+                                  : '整體'
+                            }
                             badge={
                               <>
                                 {item.pubText !== '' && <span className="mh-badge pub">留言</span>}
@@ -727,6 +774,7 @@ export default function MyNotes({
                                 kind: item.pubText !== '' ? 'public' : 'private',
                                 noteId: item.noteId ?? null,
                                 overall: item.kind === 'overall',
+                                sessionId: item.sessionId ?? null,
                               })
                             }}
                           >
