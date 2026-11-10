@@ -12,6 +12,8 @@ type Props = {
   gameName: string
   personal: PersonalProp
   playSessions: SessionsProp
+  // 補完日期後選「好」：帶著遊戲、日期、日期紀錄 id 去寫這天的心得
+  onWriteNote?: (info: { bggName: string; playedOn: string; sessionId: string }) => void
 }
 
 // 一款遊戲的「補日期」視窗：只管遊玩次數與日期（心得統一在俱樂部「我的心得」）
@@ -20,6 +22,7 @@ function RecordSheet({
   gameName,
   personal,
   playSessions,
+  onWriteNote,
   onClose,
 }: Props & { onClose: () => void }) {
   useBackClose(onClose)
@@ -51,7 +54,20 @@ function RecordSheet({
         <p className="pgr-total">目前累計 {total} 次</p>
 
         <div className="pgr-section">
-          <PlaySessions key={bggName} bggName={bggName} personal={personal} api={playSessions} />
+          <PlaySessions
+            key={bggName}
+            bggName={bggName}
+            personal={personal}
+            api={playSessions}
+            onWriteNote={
+              onWriteNote
+                ? (info) => {
+                    onClose()
+                    onWriteNote(info)
+                  }
+                : undefined
+            }
+          />
         </div>
       </section>
     </div>,

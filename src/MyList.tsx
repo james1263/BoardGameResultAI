@@ -448,7 +448,7 @@ export default function MyList({
     // 留言板預填、我的心得只看這款（回到首頁就清掉）
     const [viewFocus, setViewFocus] = useState<string | null>(openView?.bggName ?? null)
     // 一進「我的心得」就打開寫作畫面：帶遊戲（遊戲視窗）或帶場次（我的場次），回首頁就清掉
-    const [writeReq, setWriteReq] = useState<{ bggName: string | null; gatheringId: string | null } | null>(
+    const [writeReq, setWriteReq] = useState<{ bggName: string | null; gatheringId: string | null; sessionId?: string | null } | null>(
         openView?.write ? { bggName: openView.bggName, gatheringId: null } : null,
     )
     // 要直接打開的聚會詳情（從遊戲視窗或「我的心得」跳過來）
@@ -540,9 +540,9 @@ export default function MyList({
     }
 
     // 寫心得／留言：在俱樂部裡直接切到「我的心得」並打開寫作畫面
-    function openWrite(bggName: string | null, gatheringId: string | null = null) {
+    function openWrite(bggName: string | null, gatheringId: string | null = null, sessionId: string | null = null) {
         setViewFocus(bggName)
-        setWriteReq({ bggName, gatheringId })
+        setWriteReq({ bggName, gatheringId, sessionId })
         setView('notes')
     }
 
@@ -865,7 +865,7 @@ export default function MyList({
                 onClose={onClose}
                 focusGame={viewFocus}
                 writeRequest={writeReq}
-                composer={{ personal, ratings, isAdmin, canPublic: isVip || isAdmin }}
+                composer={{ personal, ratings, isAdmin, canPublic: isVip || isAdmin, playSessions }}
             />
         )
     }
@@ -1192,6 +1192,9 @@ export default function MyList({
                                                                         gameName={game.name}
                                                                         personal={personal}
                                                                         playSessions={playSessions}
+                                                                        onWriteNote={(info) =>
+                                                                            openWrite(info.bggName, null, info.sessionId)
+                                                                        }
                                                                     />
                                                                 )}
                                                                 {entry?.note && (

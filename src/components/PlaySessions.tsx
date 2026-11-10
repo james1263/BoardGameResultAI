@@ -7,77 +7,83 @@ export default function PlaySessions({
   bggName,
   personal,
   api,
+  onWriteNote,
 }: {
   bggName: string
   personal: PersonalApi
   api: PlaySessionsApi
+  // 補完日期後使用者選「好」：帶著遊戲、日期、日期紀錄 id 去寫這天的心得
+  onWriteNote?: (info: { bggName: string; playedOn: string; sessionId: string }) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [date, setDate] = useState(todayLocal)
-  const [players, setPlayers] = useState('')
-  const [note, setNote] = useState('')
   const list = api.getSessions(bggName)
   const autoCount = list.filter((item) => item.source !== 'manual').length
   const manualCount = list.length - autoCount
+  // 還沒指定日期的次數：補日期只是把其中一次換成有日期，總次數不變
+  const undated = personal.getEntry(bggName).playCount
 
   if (!personal.isLoggedIn) {
-    return (
-      <p className="personal-hint">登入後可記錄每次遊玩的日期、人數與心得</p>
-    )
+    return <p className="personal-hint">登入後可記錄每次遊玩的日期</p>
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-
-    const count = players.trim() === '' ? null : Number(players)
-    if (count !== null && (!Number.isInteger(count) || count < 1 || count > 99)) {
-      void showNotice('玩家人數請填 1～99 的整數，或留空。')
-      return
-    }
     if (!date || date > todayLocal()) {
       void showNotice('請選擇今天或更早的日期。')
       return
     }
+    const result = await api.addPlayDate(bggName, date)
+    if (!result) return
 
-    const ok = await api.addSession(bggName, {
-      playedOn: date,
-      playerCount: count,
-      note: note.trim(),
-    })
-    if (!ok) return
+    // 資料庫已把無日期次數 −1，這裡只同步畫面（跳過「次數 0 時設為 1」的規則）
+    personal.updateEntry(bggName, { playCount: result.playCount }, { skipPlayedRule: true })
 
-    // 有紀錄就一定玩過；略過「次數 0 時設為 1」的規則，避免總次數多算
-    if (!personal.getEntry(bggName).played) {
-      personal.updateEntry(bggName, { played: true }, { skipPlayedRule: true })
-    }
-
+    const playedOn = date
     setDate(todayLocal())
-    setPlayers('')
-    setNote('')
     setIsOpen(false)
+
+    if (onWriteNote) {
+      const ok = await askConfirm('要不要寫這天的心得？', {
+        confirmText: '好',
+        cancelText: '稍後再說',
+      })
+      if (ok) onWriteNote({ bggName, playedOn, sessionId: result.id })
+    }
   }
 
   async function handleDelete(id: string) {
-    const ok = await askConfirm('確定要刪除這筆遊玩紀錄嗎？', {
-      confirmText: '刪除',
-      cancelText: '取消',
-      danger: true,
-    })
+    const ok = await askConfirm(
+      '確定要刪除這筆日期嗎？\n總次數不變，這次會變回「沒有日期的次數」。這天的心得也會一併刪除。',
+      { confirmText: '刪除', cancelText: '取消', danger: true },
+    )
     if (!ok) return
-    void api.deleteSession(id)
+    const count = await api.deletePlayDate(id)
+    if (count !== null) {
+      personal.updateEntry(bggName, { playCount: count }, { skipPlayedRule: true })
+    }
   }
+
+  const canAdd = personal.canEdit && api.status === 'ready' && undated > 0
 
   return (
     <div className="play-sessions">
       {!isOpen ? (
-        <button
-          type="button"
-          className="play-sessions-add"
-          disabled={!personal.canEdit || api.status !== 'ready'}
-          onClick={() => setIsOpen(true)}
-        >
-          ＋ 補一個日期
-        </button>
+        <>
+          <button
+            type="button"
+            className="play-sessions-add"
+            disabled={!canAdd}
+            onClick={() => setIsOpen(true)}
+          >
+            ＋ 補一個日期
+          </button>
+          <p className="personal-hint">
+            {undated > 0
+              ? `還有 ${undated} 次沒有日期，可以補上日期（總次數不變）。`
+              : '目前每一次都有日期了。要再補，請先按「＋」增加次數。'}
+          </p>
+        </>
       ) : (
         <form className="play-sessions-form" onSubmit={handleSubmit}>
           <label>
@@ -88,26 +94,6 @@ export default function PlaySessions({
               max={todayLocal()}
               onChange={(event) => setDate(event.target.value)}
               required
-            />
-          </label>
-          <label>
-            <span>玩家人數（選填）</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={99}
-              value={players}
-              onChange={(event) => setPlayers(event.target.value)}
-            />
-          </label>
-          <label>
-            <span>心得（選填，200 字內）</span>
-            <textarea
-              rows={2}
-              maxLength={200}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
             />
           </label>
           <div className="play-sessions-actions">
@@ -126,9 +112,7 @@ export default function PlaySessions({
         </form>
       )}
 
-      {api.status === 'loading' && (
-        <p className="personal-hint">讀取遊玩紀錄中…</p>
-      )}
+      {api.status === 'loading' && <p className="personal-hint">讀取遊玩紀錄中…</p>}
       {api.status === 'error' && (
         <p className="personal-hint">
           讀取遊玩紀錄失敗。
@@ -143,38 +127,40 @@ export default function PlaySessions({
           <summary style={{ cursor: 'pointer', margin: '8px 0 4px' }}>
             所有已玩日期 {list.length} 筆（手動 {manualCount}・自動 {autoCount}）
           </summary>
-        <ul className="play-sessions-list">
-          {list.map((item) => (
-            <li key={item.id}>
-              <div className="play-sessions-main">
-                <strong>{item.playedOn.replaceAll('-', '/')}</strong>
-                {item.source !== 'manual' && (
-                  <span
-                    style={{
-                      fontSize: '0.75em',
-                      background: '#e6efe8',
-                      color: '#3d6b4c',
-                      borderRadius: 999,
-                      padding: '1px 8px',
-                    }}
-                  >
-                    自動
-                  </span>
-                )}
-                {item.playerCount != null && <span>{item.playerCount} 人</span>}
-                <button
-                  type="button"
-                  className="play-sessions-link"
-                  disabled={api.busy}
-                  onClick={() => void handleDelete(item.id)}
-                >
-                  刪除
-                </button>
-              </div>
-              {item.note && <p>{item.note}</p>}
-            </li>
-          ))}
-        </ul>
+          <ul className="play-sessions-list">
+            {list.map((item) => (
+              <li key={item.id}>
+                <div className="play-sessions-main">
+                  <strong>{item.playedOn.replaceAll('-', '/')}</strong>
+                  {item.source !== 'manual' && (
+                    <span
+                      style={{
+                        fontSize: '0.75em',
+                        background: '#e6efe8',
+                        color: '#3d6b4c',
+                        borderRadius: 999,
+                        padding: '1px 8px',
+                      }}
+                    >
+                      自動
+                    </span>
+                  )}
+                  {item.playerCount != null && <span>{item.playerCount} 人</span>}
+                  {item.source === 'manual' && (
+                    <button
+                      type="button"
+                      className="play-sessions-link"
+                      disabled={api.busy}
+                      onClick={() => void handleDelete(item.id)}
+                    >
+                      刪除
+                    </button>
+                  )}
+                </div>
+                {item.note && <p>{item.note}</p>}
+              </li>
+            ))}
+          </ul>
         </details>
       )}
     </div>
