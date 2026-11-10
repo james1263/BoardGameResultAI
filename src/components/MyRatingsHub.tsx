@@ -96,11 +96,8 @@ export default function MyRatingsHub({
         })
     }, [ready, boardGames, ratings, isPlayed])
 
-    // 「已玩」範圍＝標過已玩的，加上評過分的
-    const playedRows = useMemo(
-        () => allRows.filter((row) => row.played || row.mine),
-        [allRows],
-    )
+    // 「已玩」範圍＝已玩打勾的（與「我的統計→已玩」一致）；有評分但沒打勾的只在「全部桌遊」
+    const playedRows = useMemo(() => allRows.filter((row) => row.played), [allRows])
     const rows = scope === 'played' ? playedRows : allRows
 
     const counts = useMemo(() => {

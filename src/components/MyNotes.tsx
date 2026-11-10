@@ -343,14 +343,16 @@ export default function MyNotes({
         const note = hasPriv.has(game.bggName)
         const pub = hasPub.has(game.bggName)
         const canPub = played || composer.isAdmin
-        return { game, played, note, pub, canPub, touched: note || pub }
+        // 「已玩的遊戲」範圍＝我的統計「已玩」清單（已玩打勾）；按「移除」的遊戲就算次數還在也不編入
+        const inPlayed = composer.personal.getEntry(game.bggName).played === true
+        return { game, played, note, pub, canPub, inPlayed }
       })
       .sort((a, b) => a.game.name.localeCompare(b.game.name, 'zh-Hant'))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [composer, items, boardGames, composer?.personal.entries, composer?.ratings])
 
   const scopedGameRows = useMemo(
-    () => (gScope === 'played' ? gameRows.filter((row) => row.played || row.touched) : gameRows),
+    () => (gScope === 'played' ? gameRows.filter((row) => row.inPlayed) : gameRows),
     [gameRows, gScope],
   )
 

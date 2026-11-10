@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase'
 import { ATTENDANCE_CONFIRMED_EVENT } from '../lib/useTodayTask'
 import { requestNoteAsk } from '../lib/postGatheringNotes'
 import { todayLocal } from '../lib/useLoyalty'
+import { announcePlayed } from '../lib/useGamePlaySessions'
 import {
   detectReward,
   fetchLoyaltySnap,
@@ -140,6 +141,12 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
     })()
   }, [phase, userId])
 
+  // 這款評分存檔成功後：向資料庫登記「今天有玩」（已評完整的遊戲也會 +1 次；同一天同一款只記一筆）
+  async function recordPlay(bggName: string) {
+    const { data, error } = await supabase.rpc('record_gathering_play', { p_bgg_name: bggName })
+    if (!error && data === true) announcePlayed([bggName])
+  }
+
   function togglePick(bggName: string) {
     setPicked((list) =>
       list.includes(bggName) ? list.filter((name) => name !== bggName) : [...list, bggName],
@@ -262,6 +269,7 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
                           } else setStep((value) => value - 1)
                         },
                         onNext: () => {
+                          void recordPlay(name)
                           if (isLast) setPhase('finish')
                           else {
                             setStep((value) => value + 1)
