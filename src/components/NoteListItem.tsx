@@ -24,6 +24,8 @@ export default function NoteListItem({
   canLike = false,
   likeBusy = false,
   onLike,
+  onDelete,
+  deleteBusy = false,
   children,
 }: {
   name: string
@@ -44,6 +46,8 @@ export default function NoteListItem({
   canLike?: boolean // 可以按（不是自己的留言、且是 VIP／管理者）
   likeBusy?: boolean
   onLike?: () => void
+  onDelete?: () => void // 有傳就在清單列底下顯示「刪除」鈕（不用點開）
+  deleteBusy?: boolean
   children?: ReactNode
 }) {
   return (
@@ -110,6 +114,21 @@ export default function NoteListItem({
           <div className="np-view">
             {like ? <p className="np-line np-like">👍 喜歡：{like}</p> : null}
             {dislike ? <p className="np-line np-dislike">👎 不喜歡：{dislike}</p> : null}
+          </div>
+        ) : null}
+        {onDelete ? (
+          <div className="nl-quick">
+            <button
+              type="button"
+              className="nl-quick-del"
+              disabled={deleteBusy}
+              onClick={(event) => {
+                event.stopPropagation()
+                onDelete()
+              }}
+            >
+              🗑 {deleteBusy ? '刪除中…' : '刪除'}
+            </button>
           </div>
         ) : null}
         </div>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
-import { useAllMyNotes } from '../lib/useGatheringNotes'
+import { saveGatheringNote, useAllMyNotes } from '../lib/useGatheringNotes'
+import { askConfirm } from '../lib/askConfirm'
 import { useMyGatherings } from '../lib/useMyGatherings'
 import { supabase } from '../lib/supabase'
 import NoteListItem from './NoteListItem'
@@ -179,6 +180,8 @@ export default function MyNotes({
         }
       : null,
   )
+  const [deletingKey, setDeletingKey] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState('')
   const topRef = useRef<HTMLDivElement | null>(null)
 
   const gameByName = useMemo(() => {
@@ -355,6 +358,55 @@ export default function MyNotes({
     gameNotes.reload()
     gatherings.reload()
     statusTimes.reload()
+  }
+
+  // 直接在清單上刪除一則紀錄（不用點進去）
+  async function deleteItem(item: Item) {
+    if (!composer || deletingKey) return
+    const both = item.pubText !== '' && item.privText !== ''
+    const message =
+      item.kind === 'gathering' && both
+        ? '要刪除這場聚會的留言和心得嗎？兩則都會刪除，無法復原。'
+        : item.kind === 'overall'
+          ? '要刪除這款的整體心得嗎？刪除後無法復原。'
+          : item.pubText !== ''
+            ? '要刪除這則公開留言嗎？刪除後無法復原。'
+            : '要刪除這則心得嗎？刪除後無法復原。'
+    if (!(await askConfirm(message))) return
+    setDeletingKey(item.key)
+    setDeleteError('')
+    try {
+      if (item.kind === 'game' && item.noteId) {
+        const { error } = await supabase.rpc('delete_my_public_note', { p_note: item.noteId })
+        if (error) {
+          setDeleteError('刪除失敗：' + error.message)
+          return
+        }
+      } else if (item.kind === 'gathering' && item.gatheringId) {
+        const result = await saveGatheringNote(item.gatheringId, item.bggName, '', '', '', '')
+        if (!result.ok) {
+          setDeleteError(result.message)
+          return
+        }
+      } else if (item.kind === 'overall') {
+        if (!composer.personal.canEdit) {
+          setDeleteError('目前無法刪除，請稍後再試。')
+          return
+        }
+        composer.personal.updateEntry(item.bggName, { note: '' })
+      }
+      // 如果正在編輯的就是這一則，一併收起寫作畫面
+      setCompose((current) =>
+        current &&
+        current.game === item.bggName &&
+        (current.noteId === (item.noteId ?? null) || current.gid === (item.gatheringId ?? null))
+          ? null
+          : current,
+      )
+      reloadAll()
+    } finally {
+      setDeletingKey(null)
+    }
   }
 
   function openCompose(next: Omit<ComposeState, 'nonce'>) {
@@ -625,6 +677,7 @@ export default function MyNotes({
                       </button>
                     </div>
                   )}
+                  {deleteError && <p className="mh-fail">{deleteError}</p>}
                   {shown.length === 0 ? (
                     <p className="mylist-empty">
                       {items.length === 0
@@ -664,6 +717,8 @@ export default function MyNotes({
                               item.kind === 'game' && !item.hidden ? item.likeCount : undefined
                             }
                             open={false}
+                            onDelete={composer ? () => void deleteItem(item) : undefined}
+                            deleteBusy={deletingKey === item.key}
                             onToggle={() => {
                               if (!composer) return
                               openCompose({
@@ -682,7 +737,7 @@ export default function MyNotes({
                     </ul>
                   )}
                   <p className="mg-hint">
-                    點一則紀錄，會載入當時的遊戲、場次和內容，可以修改；內容清空後按「刪除」就能刪掉。
+                    點一則紀錄，會載入當時的遊戲、場次和內容，可以修改；也可以直接按每則底下的「刪除」。
                   </p>
                 </>
               )}

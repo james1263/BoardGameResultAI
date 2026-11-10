@@ -275,3 +275,15 @@
 
 /* 表單：清空後的「刪除」鈕 */
 .nf-save.danger { background: #a24a3a; border-color: #a24a3a; color: #fff; }
+
+/* 清單列底下的快速刪除鈕 */
+.nl-quick { display: flex; justify-content: flex-end; margin-top: 2px; }
+.nl-quick-del {
+  border: 0;
+  background: transparent;
+  color: #a24a3a;
+  font-size: 0.78rem;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+.nl-quick-del:disabled { opacity: 0.5; cursor: default; }
