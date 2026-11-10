@@ -60,6 +60,7 @@ export default function NoteForm({
   initialKind = 'private',
   initialNoteId = null,
   initialOverall = false,
+  compact = false,
   myGameNotes,
   renderCover,
   onSaved,
@@ -77,6 +78,8 @@ export default function NoteForm({
   // 從發表紀錄點進來：指定要編輯哪一則一般留言／這款的整體心得
   initialNoteId?: string | null
   initialOverall?: boolean
+  // 聚會後的寫心得視窗：場次與遊戲都已固定，不顯示場次封面列、場次標籤和遊戲名稱（外面自己放標題）
+  compact?: boolean
   myGameNotes?: { loading: boolean; rows: MyGameNote[] }
   renderCover?: (game: BoardGame) => ReactNode
   onSaved: () => void
@@ -439,7 +442,7 @@ export default function NoteForm({
 
   return (
     <div className="nf">
-      {lockedGid && (
+      {lockedGid && !compact && (
         <div className="nf-ctx">
           <p className="nf-taglabel">
             {contextGathering
@@ -467,7 +470,7 @@ export default function NoteForm({
         </div>
       )}
 
-      {picked ? (
+      {compact ? null : picked ? (
         <p className="nf-picked">
           <b>{picked.name}</b>
           {!lockedGid && (
@@ -542,7 +545,7 @@ export default function NoteForm({
         <p className="nf-hint">標記已玩或評分過這款，才能發公開留言；現在只能寫私人心得。</p>
       )}
 
-      {picked && gatheringOptions.length > 0 && (
+      {picked && !compact && gatheringOptions.length > 0 && (
         <div className="nf-tagbox">
           <p className="nf-taglabel">
             這是哪一場？（選填；不選就是一般{kind === 'public' ? '留言' : '整體心得'}）

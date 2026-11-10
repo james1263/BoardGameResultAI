@@ -69,7 +69,7 @@ import TrashSection from './components/TrashSection'
 import BackToTop from './components/BackToTop'
 import { useTrashActions } from './lib/useTrashActions'
 import { updateDescription } from './lib/saveDescription'
-import NotePrompt from './components/NotePrompt'
+import PostGatheringNotes from './components/PostGatheringNotes'
 import { usePlannedUnseen } from './lib/usePlannedUnseen'
 import { useLoyaltyAlerts } from './lib/useLoyaltyAlerts'
 import { useNotesUnseen } from './lib/useNotesUnseen'
@@ -1284,10 +1284,12 @@ function Library({
           }}
         />
       )}
-      <NotePrompt
+      <PostGatheringNotes
         boardGames={boardGames}
+        personal={personal}
         ratings={ratings}
-        onWriteNow={openGatheringFromGame}
+        isAdmin={isAdmin}
+        canPublic={vip.isVip || isAdmin}
       />
       <BackToTop />
       {personal.needsMerge && <MergeDialog personal={personal} />}

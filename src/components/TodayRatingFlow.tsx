@@ -9,6 +9,7 @@ import RewardDialog from './RewardDialog'
 import { useSession } from '../lib/useSession'
 import { supabase } from '../lib/supabase'
 import { ATTENDANCE_CONFIRMED_EVENT } from '../lib/useTodayTask'
+import { requestNoteAsk } from '../lib/postGatheringNotes'
 import { todayLocal } from '../lib/useLoyalty'
 import {
   detectReward,
@@ -50,6 +51,10 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
   // 走完流程就向資料庫確認出席（管理者手動加入的人要確認後才得點、才會用免費券）
   const confirmRef = useRef<Promise<void> | null>(null)
   const [confirmError, setConfirmError] = useState('')
+  // 走完流程後問要不要寫今天的心得（詢問卡在 App 層，評分視窗關掉後還在；只送一次）
+  const phaseRef = useRef(phase)
+  const doneGamesRef = useRef<string[]>([])
+  const askedRef = useRef(false)
 
   const gameMap = new Map(boardGames.map((game) => [game.bggName, game]))
 
@@ -67,6 +72,26 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
   const isLast = step >= total - 1
   const doneCount = pickedGames.filter(isComplete).length
   const percent = total === 0 ? 0 : Math.round((doneCount / total) * 100)
+
+  useEffect(() => {
+    phaseRef.current = phase
+    doneGamesRef.current = pickedGames.filter(isComplete)
+  })
+
+  function sendAsk() {
+    if (askedRef.current) return
+    askedRef.current = true
+    requestNoteAsk(doneGamesRef.current)
+  }
+
+  // 在完成畫面直接關掉視窗（✕、手機返回）也一樣會問
+  useEffect(
+    () => () => {
+      if (phaseRef.current === 'finish') sendAsk()
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
 
   useEffect(() => {
     if (phase === 'rate' && boxRef.current) boxRef.current.scrollTop = 0
@@ -276,7 +301,14 @@ export default function TodayRatingFlow({ games, boardGames, ratings, finishLabe
           </p>
         )}
       </div>
-      <button type="button" className="tf-primary" onClick={onFinish}>
+      <button
+        type="button"
+        className="tf-primary"
+        onClick={() => {
+          sendAsk()
+          onFinish()
+        }}
+      >
         {finishLabel}
       </button>
       {reward && userId && (
