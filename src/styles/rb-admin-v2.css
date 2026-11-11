@@ -229,3 +229,177 @@
   flex-wrap: wrap;
 }
 .rb .rbv-list-toggle h3 { margin: 0; }
+
+/* 規則書子分頁：遊戲｜PDF 檔案 */
+.rb .rbv-subtabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 10px;
+}
+.rb .rbv-subtabs > button {
+  height: 40px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #34463c;
+  background: #fbf7ec;
+  border: 1px solid #d8c9a8;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.rb .rbv-subtabs > button[aria-selected='true'] {
+  color: #fff;
+  background: #456b50;
+  border-color: #456b50;
+}
+
+/* 上傳 PDF 視窗：桌面置中、手機接近全螢幕，「全部上傳」固定在底部 */
+.rbu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1270;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(40, 50, 44, 0.45);
+}
+.rbu-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(640px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+  background: #f8f4e9;
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+}
+.rbu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e3d9c4;
+}
+.rbu-head h3 { margin: 0; font-size: 17px; color: #34463c; }
+.rbu-close {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  line-height: 1;
+  color: #34463c;
+  background: #fbf7ec;
+  border: 1px solid #d8c9a8;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.rbu-close:disabled { opacity: 0.4; cursor: default; }
+.rbu-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 12px 14px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.rbu-body .rb-hint { font-size: 12px; line-height: 1.6; }
+.rbu-body .rb-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin: 12px -14px 0;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: #f8f4e9;
+  border-top: 1px solid #e3d9c4;
+}
+@media (max-width: 760px) {
+  .rbu-backdrop { align-items: flex-end; padding: 0; }
+  .rbu-modal {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    border-radius: 18px 18px 0 0;
+  }
+}
+
+/* ── 批次 C：統計一條小字、篩選收進按鈕、清單一行一款 ── */
+.rb .rbv-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #6b6a5c;
+}
+.rb .rbv-stats > button {
+  padding: 2px 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.rb .rbv-stats > button:hover { color: #34463c; text-decoration: underline; }
+.rb .rbv-stats b { font-weight: 700; color: #34463c; }
+.rb .rbv-stats > button.warn b { color: #b4541a; }
+.rb .rbv-stats > button.bad,
+.rb .rbv-stats > button.bad b { color: #a4432f; }
+.rb .rbv-stats-usage { margin-left: auto; font-size: 12px; color: #7a8a80; white-space: nowrap; }
+
+.rb .rbv-list { margin-top: 8px; padding-top: 0; border-top: 0; }
+.rb .rbv-searchrow { align-items: center; }
+.rb .rbv-filterbtn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 14px;
+  color: #34463c;
+  background: #fbf7ec;
+  border: 1px solid #d8c9a8;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.rb .rbv-filterbtn small {
+  min-width: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  color: #fff;
+  background: #456b50;
+  border-radius: 99px;
+}
+.rb .rbv-filterbtn.on { border-color: #456b50; }
+.rb .rbv-filters { margin: 0 0 8px; }
+.rb .rbv-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+.rb .rbv-tag {
+  height: 28px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 12px;
+  color: #fff;
+  background: #456b50;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.rb .rbv-note { margin: 2px 2px 8px; font-size: 11px; line-height: 1.5; }
+
+/* 遊戲清單：一行一款（名稱＋PDF／連結／索引＋箭頭） */
+.rb .rbv-rows { gap: 6px; }
+.rb .rbv-row-head {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: 'name badges arrow';
+  gap: 8px;
+  padding: 8px 10px;
+}
+.rb .rbv-row-name { font-size: 14px; }
+.rb .rbv-badges { flex-wrap: nowrap; gap: 4px; }
+.rb .rbv-badge { padding: 2px 7px; font-size: 11px; white-space: nowrap; }

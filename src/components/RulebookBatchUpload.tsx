@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
+import { useBackClose } from '../lib/useBackClose'
 import { askConfirm, askInput } from '../lib/askConfirm'
 import { sniffPdfLanguage, takeEmptyPageNote } from '../lib/extractPdfText'
 import {
@@ -222,72 +224,34 @@ function OverviewCards({
   onApply: (pdf: YesNo, link: YesNo, pendingOnly: boolean) => void
 }) {
   const total = usage ? usage.buckets.reduce((sum, b) => sum + b.total_bytes, 0) : 0
-  const percent = Math.min(100, Math.round((total / STORAGE_LIMIT_BYTES) * 100))
   const uploaded = rows.filter((r) => r.uploads > 0).length
   const pending = rows.filter((r) => r.uploads > 0 && r.indexed === 0).length
   const linked = rows.filter((r) => r.links > 0).length
   const none = rows.filter((r) => r.uploads === 0 && r.links === 0).length
   const dash = (value: string | number) => (loaded ? value : '—')
   return (
-    <div className="rbv-cards">
-      <button type="button" className="rbv-card" onClick={() => onApply('yes', 'all', false)}>
-        <span className="rbv-card-label">已上傳規則書</span>
-        <span className="rbv-card-num">
-          {dash(uploaded)}
-          <small> / {dash(rows.length)}</small>
-        </span>
-        <span className="rbv-card-sub">
-          {pending > 0 ? (
-            <span
-              role="button"
-              tabIndex={0}
-              className="rbv-card-link"
-              onClick={(event) => {
-                event.stopPropagation()
-                onApply('yes', 'all', true)
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.stopPropagation()
-                  onApply('yes', 'all', true)
-                }
-              }}
-            >
-              索引未完成 {pending}
-            </span>
-          ) : (
-            '索引都完成'
-          )}
-        </span>
+    <div className="rbv-stats" role="group" aria-label="規則書統計">
+      <button type="button" onClick={() => onApply('yes', 'all', false)}>
+        已上傳 <b>{dash(uploaded)}</b>/{dash(rows.length)}
       </button>
-      <button type="button" className="rbv-card" onClick={() => onApply('all', 'yes', false)}>
-        <span className="rbv-card-label">有連結的遊戲</span>
-        <span className="rbv-card-num">{dash(linked)}</span>
-        <span className="rbv-card-sub">未連結 {dash(rows.length - linked)}</span>
+      {pending > 0 && (
+        <button type="button" className="warn" onClick={() => onApply('yes', 'all', true)}>
+          索引未完成 <b>{pending}</b>
+        </button>
+      )}
+      <button type="button" onClick={() => onApply('all', 'yes', false)}>
+        有連結 <b>{dash(linked)}</b>
       </button>
-      <button type="button" className="rbv-card rbv-card-warn" onClick={() => onApply('no', 'no', false)}>
-        <span className="rbv-card-label">什麼都沒有</span>
-        <span className="rbv-card-num">{dash(none)}</span>
-        <span className="rbv-card-sub">沒 PDF、沒連結</span>
+      <button
+        type="button"
+        className={loaded && none > 0 ? 'bad' : ''}
+        onClick={() => onApply('no', 'no', false)}
+      >
+        沒資料 <b>{dash(none)}</b>
       </button>
-      <div className="rbv-card rbv-card-static">
-        <span className="rbv-card-label">檔案用量</span>
-        {error ? (
-          <span className="rbv-card-sub">{error}</span>
-        ) : !usage ? (
-          <span className="rbv-card-sub">讀取中…</span>
-        ) : (
-          <>
-            <span className="rbv-card-num rbv-card-num-sm">
-              {formatMb(total)}
-              <small> / {formatMb(STORAGE_LIMIT_BYTES)}</small>
-            </span>
-            <span className="rbv-bar" aria-hidden="true">
-              <span style={{ width: `${percent}%` }} />
-            </span>
-          </>
-        )}
-      </div>
+      <span className="rbv-stats-usage">
+        {error ? error : usage ? `${formatMb(total)} / ${formatMb(STORAGE_LIMIT_BYTES)}` : '讀取中…'}
+      </span>
     </div>
   )
 }
@@ -587,7 +551,7 @@ function RulebookOverviewList({
   onDeleted: () => void
   onAddLink: (bggName: string) => void
 }) {
-  const [listOpen, setListOpen] = useState(false)
+  const [filtOpen, setFiltOpen] = useState(false)
   const q = query.trim().toLocaleLowerCase()
   const shown = rows.filter((r) => {
     if (pdfFilter === 'yes' && r.uploads === 0) return false
@@ -604,25 +568,12 @@ function RulebookOverviewList({
   const lkN = rows.filter((r) => r.links > 0).length
   const pendingN = rows.filter((r) => r.uploads > 0 && r.indexed === 0).length
   const filtered = pdfFilter !== 'all' || linkFilter !== 'all' || pendingOnly || q !== ''
+  const activeN = (pdfFilter !== 'all' ? 1 : 0) + (linkFilter !== 'all' ? 1 : 0) + (pendingOnly ? 1 : 0)
 
   return (
     <section className="rbv-list">
-      <button
-        type="button"
-        className="rbv-list-head rbv-list-toggle"
-        aria-expanded={listOpen}
-        onClick={() => setListOpen((v) => !v)}
-      >
-        <h3>規則書清單 {listOpen ? '▾' : '▸'}</h3>
-        <small>
-          {loaded
-            ? `已上傳 ${upN}／${rows.length}・已連結 ${lkN}${pendingN > 0 ? `・索引未完成 ${pendingN}` : ''}`
-            : '讀取中…'}
-        </small>
-      </button>
-
-      {listOpen && (
       <>
+      {filtOpen && (
       <div className="rbv-filters">
         <FilterChips
           label="規則書"
@@ -658,6 +609,7 @@ function RulebookOverviewList({
           </div>
         </div>
       </div>
+      )}
 
       <div className="rbv-searchrow">
         <input
@@ -667,6 +619,14 @@ function RulebookOverviewList({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
+        <button
+          type="button"
+          className={`rbv-filterbtn ${filtOpen || activeN > 0 ? 'on' : ''}`}
+          aria-expanded={filtOpen}
+          onClick={() => setFiltOpen((v) => !v)}
+        >
+          篩選{activeN > 0 && <small>{activeN}</small>}
+        </button>
         {filtered && (
           <button
             type="button"
@@ -682,13 +642,31 @@ function RulebookOverviewList({
           </button>
         )}
       </div>
+      {activeN > 0 && (
+        <div className="rbv-tags">
+          {pdfFilter !== 'all' && (
+            <button type="button" className="rbv-tag" onClick={() => setPdfFilter('all')}>
+              規則書：{pdfFilter === 'yes' ? '已上傳' : '未上傳'} ✕
+            </button>
+          )}
+          {linkFilter !== 'all' && (
+            <button type="button" className="rbv-tag" onClick={() => setLinkFilter('all')}>
+              連結：{linkFilter === 'yes' ? '已連結' : '未連結'} ✕
+            </button>
+          )}
+          {pendingOnly && (
+            <button type="button" className="rbv-tag" onClick={() => setPendingOnly(false)}>
+              索引：未完成 ✕
+            </button>
+          )}
+        </div>
+      )}
       <p className="rbv-count">
         顯示 {shown.length} / {rows.length} 款
-        {pdfFilter !== 'all' || linkFilter !== 'all' ? '（兩組篩選同時生效）' : ''}
       </p>
 
       <p className="rbv-note">
-        「已上傳」不等於可搜尋：要看到「已建立索引」才表示規則助手搜得到。垃圾桶與「僅供參考」的遊戲不列入。
+        「已上傳」不等於可搜尋，要有「索引 ✓」規則助手才搜得到。垃圾桶與「僅供參考」不列入。
       </p>
 
       {!loaded ? (
@@ -701,15 +679,17 @@ function RulebookOverviewList({
             const id = r.game.bgg_name
             const open = openIds.includes(id)
             const pdfBadge =
+              r.uploads === 0 ? { cls: 'bad', text: 'PDF ✕' } : { cls: 'ok', text: 'PDF ✓' }
+            const idxBadge =
               r.uploads === 0
-                ? { cls: 'bad', text: '規則書：未上傳' }
+                ? { cls: 'muted', text: '索引 —' }
                 : r.indexed > 0
-                  ? { cls: 'ok', text: `規則書：已索引${r.pages > 0 ? `・${r.pages} 頁` : ''}` }
-                  : { cls: 'warn', text: '規則書：已上傳・索引未完成' }
+                  ? { cls: 'ok', text: `索引 ✓${r.pages > 0 ? ` ${r.pages}頁` : ''}` }
+                  : { cls: 'warn', text: '索引 未完成' }
             const linkBadge =
               r.links > 0
-                ? { cls: 'ok', text: `連結：已連結 ${r.links}` }
-                : { cls: 'muted', text: '連結：未連結' }
+                ? { cls: 'ok', text: `連結 ✓${r.links > 1 ? ` ${r.links}` : ''}` }
+                : { cls: 'muted', text: '連結 ✕' }
             return (
               <li key={id} className={`rbv-row ${open ? 'open' : ''}`}>
                 <button
@@ -722,6 +702,7 @@ function RulebookOverviewList({
                   <span className="rbv-badges">
                     <span className={`rbv-badge ${pdfBadge.cls}`}>{pdfBadge.text}</span>
                     <span className={`rbv-badge ${linkBadge.cls}`}>{linkBadge.text}</span>
+                    <span className={`rbv-badge ${idxBadge.cls}`}>{idxBadge.text}</span>
                   </span>
                   <span className="rbv-arrow" aria-hidden="true">
                     {open ? '▴' : '▾'}
@@ -756,8 +737,48 @@ function RulebookOverviewList({
         </ul>
       )}
       </>
-      )}
     </section>
+  )
+}
+
+// 上傳 PDF 的視窗：桌面置中、手機接近全螢幕；「全部上傳」鈕固定在底部（樣式見 rb-admin-v2.css）
+// 上傳中（locked）不能關閉，避免中途關掉
+function PdfUploadModal({
+  locked,
+  onClose,
+  children,
+}: {
+  locked: boolean
+  onClose: () => void
+  children: ReactNode
+}) {
+  useBackClose(() => {
+    if (!locked) onClose()
+  })
+  return createPortal(
+    <div
+      className="rb rbu-backdrop"
+      onClick={() => {
+        if (!locked) onClose()
+      }}
+    >
+      <div
+        className="rbu-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="批次上傳規則書"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="rbu-head">
+          <h3>批次上傳規則書</h3>
+          <button type="button" className="rbu-close" aria-label="關閉" disabled={locked} onClick={onClose}>
+            ✕
+          </button>
+        </div>
+        <div className="rbu-body">{children}</div>
+      </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -786,6 +807,8 @@ export default function RulebookBatchUpload({
   // 已上傳的 PDF 清單：依範圍／語言篩選
   const [scopeFilter, setScopeFilter] = useState<string>('all')
   const [docLangFilter, setDocLangFilter] = useState<string>('all')
+  // 規則書子分頁：遊戲（以遊戲為單位）｜PDF 檔案（以檔案為單位）
+  const [sub, setSub] = useState<'games' | 'files'>('games')
 
   const loadUsage = useCallback(async () => {
     const [usageResult, docsResult] = await Promise.all([
@@ -1401,6 +1424,28 @@ export default function RulebookBatchUpload({
 
   return (
     <div className="rb">
+      <div className="rbv-subtabs" role="tablist" aria-label="規則書管理分頁">
+        <button type="button" role="tab" aria-selected={sub === 'games'} onClick={() => setSub('games')}>
+          遊戲
+        </button>
+        <button type="button" role="tab" aria-selected={sub === 'files'} onClick={() => setSub('files')}>
+          PDF 檔案
+        </button>
+      </div>
+      {sub === 'files' && (
+        <div className="rbv-stats rbv-stats-plain">
+          <span>
+            PDF 檔案 <b>{pdfDocs.length}</b> 份
+          </span>
+          <span className="rbv-stats-usage">
+            總容量{' '}
+            {usage
+              ? formatMb(usage.buckets.find((b) => b.bucket_id === 'rulebooks')?.total_bytes ?? 0)
+              : '讀取中…'}
+          </span>
+        </div>
+      )}
+      {sub === 'games' && (
       <OverviewCards
         usage={usage}
         error={usageError}
@@ -1413,6 +1458,7 @@ export default function RulebookBatchUpload({
           setOvQuery('')
         }}
       />
+      )}
       <div className="rb-seg" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <button
           type="button"
@@ -1458,8 +1504,7 @@ export default function RulebookBatchUpload({
       {gamesError && <p className="admin-error">{gamesError}</p>}
 
       {mode === 'pdf' && (
-        <>
-          <h3>批次上傳規則書</h3>
+        <PdfUploadModal locked={running} onClose={() => setMode(null)}>
           <p className="rb-hint">
             一次選多個 PDF（文字版，每個最大 50 MB）。用瀏覽器開啟能選取文字或按 Ctrl+F 搜尋，才算可用的文字版。系統會從檔名猜遊戲，猜不到的請自己選。
             檔名含 faq 或 errata／勘誤會自動歸類，其餘當規則書。確認後按「全部上傳」，
@@ -1620,7 +1665,7 @@ export default function RulebookBatchUpload({
               )}
             </>
           )}
-        </>
+        </PdfUploadModal>
       )}
 
       {mode === 'link' && (
@@ -1725,6 +1770,7 @@ export default function RulebookBatchUpload({
 
       {mode === 'glossary' && <GlossaryMisses />}
 
+      {sub === 'games' && (
       <RulebookOverviewList
         rows={coverRows}
         loaded={docsLoaded && games.length > 0}
@@ -1751,10 +1797,11 @@ export default function RulebookBatchUpload({
           setMode('link')
         }}
       />
+      )}
 
-      {mode === 'pdf' &&
+      {sub === 'files' &&
         renderDocList('PDF', pdfDocs, (d) => d.source_type === 'upload')}
-      {mode === 'link' &&
+      {sub === 'games' && mode === 'link' &&
         renderDocList('連結', linkDocs, (d) => d.source_type !== 'upload')}
       {mode === 'errata' && (
         <p className="rb-hint">
