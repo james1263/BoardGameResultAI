@@ -489,8 +489,18 @@ export default function MyList({
     // 從留言板進來的寫心得畫面，返回要回到留言板；其他一律回俱樂部首頁
     // 只在「這次是從遊戲詳細資料跳進來」時才回遊戲（一開始就記下來，之後在俱樂部裡自己走動不受影響）
     const cameFromGame = useRef(returnToGame && !!(openView?.write || openRatings))
+    // 從「已玩 → 補日期」補完選「好」進寫作畫面：✕／返回要回到「我的統計→已玩」並重新打開那款的補日期視窗
+    const [recordReturn, setRecordReturn] = useState<string | null>(null)
+    const [reopenRecord, setReopenRecord] = useState<string | null>(null)
+    // 回到統計時讓返回鍵的歷史紀錄重新登記一次（先關再開），避免之後多退一層
+    const [backPaused, setBackPaused] = useState(false)
     function leaveView() {
-        if (view === 'notes' && writeFromBoard && onReturnToBoard) {
+        if (view === 'notes' && recordReturn) {
+            setStatsTab('played')
+            setSearch('')
+            setBackPaused(true)
+            setView('stats')
+        } else if (view === 'notes' && writeFromBoard && onReturnToBoard) {
             onReturnToBoard()
         } else if ((view === 'notes' || view === 'ratings') && cameFromGame.current && onReturnToGame) {
             cameFromGame.current = false
@@ -501,14 +511,32 @@ export default function MyList({
     }
     useBackClose(
         leaveView,
-        isOpen && mode !== 'loyalty' && view !== 'home',
+        isOpen && mode !== 'loyalty' && view !== 'home' && !backPaused,
     )
+
+    // 返回鍵登記好之後，才打開補日期視窗（先後順序不能反，否則返回鍵會先關掉整個統計）
+    useEffect(() => {
+        if (backPaused) {
+            setBackPaused(false)
+            return
+        }
+        if (recordReturn && view === 'stats') {
+            setReopenRecord(recordReturn)
+            setRecordReturn(null)
+        }
+    }, [backPaused, recordReturn, view])
+
+    // 離開統計就清掉「要重開的補日期視窗」
+    useEffect(() => {
+        if (view !== 'stats' && !(view === 'notes' && recordReturn)) setReopenRecord(null)
+    }, [view, recordReturn])
 
     // 回到首頁就清掉「前往留言板／我的心得」帶來的遊戲
     useEffect(() => {
         if (view === 'home') {
             setViewFocus(null)
             setWriteReq(null)
+            setRecordReturn(null)
         }
     }, [view])
 
@@ -572,6 +600,7 @@ export default function MyList({
     function openWrite(bggName: string | null, gatheringId: string | null = null, sessionId: string | null = null) {
         setViewFocus(bggName)
         setWriteReq({ bggName, gatheringId, sessionId })
+        setRecordReturn(null)
         setView('notes')
     }
 
@@ -1192,9 +1221,11 @@ export default function MyList({
                                                                         gameName={game.name}
                                                                         personal={personal}
                                                                         playSessions={playSessions}
-                                                                        onWriteNote={(info) =>
+                                                                        autoOpen={reopenRecord === game.bggName}
+                                                                        onWriteNote={(info) => {
                                                                             openWrite(info.bggName, null, info.sessionId)
-                                                                        }
+                                                                            setRecordReturn(info.bggName)
+                                                                        }}
                                                                     />
                                                                 )}
                                                             </div>

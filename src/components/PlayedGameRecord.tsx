@@ -1,4 +1,4 @@
-import { useState, type ComponentProps } from 'react'
+import { useEffect, useState, type ComponentProps } from 'react'
 import { createPortal } from 'react-dom'
 import PlaySessions from './PlaySessions'
 import { useBackClose } from '../lib/useBackClose'
@@ -14,6 +14,8 @@ type Props = {
   playSessions: SessionsProp
   // 補完日期後選「好」：帶著遊戲、日期、日期紀錄 id 去寫這天的心得
   onWriteNote?: (info: { bggName: string; playedOn: string; sessionId: string }) => void
+  // 從寫心得畫面返回時，自動重新打開這款的補日期視窗
+  autoOpen?: boolean
 }
 
 // 一款遊戲的「補日期」視窗：只管遊玩次數與日期（心得統一在俱樂部「我的心得」）
@@ -77,6 +79,10 @@ function RecordSheet({
 
 export default function PlayedGameRecord(props: Props) {
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (props.autoOpen) setOpen(true)
+  }, [props.autoOpen])
 
   return (
     <>
