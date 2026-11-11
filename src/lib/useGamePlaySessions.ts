@@ -134,65 +134,6 @@ export function useGamePlaySessions() {
     [byGame],
   )
 
-  const addSession = useCallback(
-    async (
-      bggName: string,
-      input: { playedOn: string; playerCount: number | null; note: string },
-    ): Promise<boolean> => {
-      if (!userId || status !== 'ready') return false
-      setBusy(true)
-      const { data, error } = await supabase
-        .from(TABLE)
-        .insert({
-          user_id: userId,
-          bgg_name: bggName,
-          played_on: input.playedOn,
-          player_count: input.playerCount,
-          note: input.note.slice(0, 200),
-        })
-        .select(COLUMNS)
-        .single()
-      setBusy(false)
-
-      if (error || !data) {
-        window.alert('儲存失敗：' + (error?.message ?? '請稍後再試。'))
-        return false
-      }
-
-      const created = rowToSession(data as SessionRow)
-      setSessions((current) =>
-        [created, ...current].sort((a, b) =>
-          b.playedOn.localeCompare(a.playedOn),
-        ),
-      )
-      return true
-    },
-    [userId, status],
-  )
-
-  const deleteSession = useCallback(
-    async (id: string): Promise<boolean> => {
-      if (!userId) return false
-      setBusy(true)
-      const { data, error } = await supabase
-        .from(TABLE)
-        .delete()
-        .eq('id', id)
-        .eq('user_id', userId)
-        .select('id')
-      setBusy(false)
-
-      if (error || !data || data.length === 0) {
-        window.alert('刪除失敗：' + (error?.message ?? '找不到這筆紀錄。'))
-        return false
-      }
-
-      setSessions((current) => current.filter((item) => item.id !== id))
-      return true
-    },
-    [userId],
-  )
-
   // 補日期：資料庫一次做完「新增手動日期＋無日期次數 −1」，總次數不變
   const addPlayDate = useCallback(
     async (
@@ -274,8 +215,6 @@ export function useGamePlaySessions() {
     sessions,
     getSessions,
     getSummary,
-    addSession,
-    deleteSession,
     addPlayDate,
     deletePlayDate,
     setPlayDateNote,
