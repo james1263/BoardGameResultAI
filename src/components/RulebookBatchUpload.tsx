@@ -1132,6 +1132,19 @@ export default function RulebookBatchUpload({
           : x.name.localeCompare(y.name, 'zh-Hant'),
       )
   }
+  // 一款遊戲底下各分類各有幾份，例如「主遊戲 1・擴充 1　中文 2」
+  function groupTags(docs: AllDoc[]): string {
+    const labels = SCOPE_LABELS as Record<string, string>
+    const scopeParts = Object.keys(labels)
+      .map((key) => ({ key, n: docs.filter((d) => (d.content_scope ?? 'main') === key).length }))
+      .filter((x) => x.n > 0)
+      .map((x) => `${labels[x.key]} ${x.n}`)
+    const langParts = (['zh', 'en', 'other'] as const)
+      .map((key) => ({ key, n: docs.filter((d) => d.language === key).length }))
+      .filter((x) => x.n > 0)
+      .map((x) => `${langText(x.key)} ${x.n}`)
+    return [scopeParts.join('・'), langParts.join('・')].filter(Boolean).join('　')
+  }
   const pdfDocs = allDocs.filter((d) => d.source_type === 'upload')
   const linkDocs = allDocs.filter((d) => d.source_type !== 'upload')
   const errataTotal = [...errataCounts.values()].reduce((sum, n) => sum + n, 0)
@@ -1340,6 +1353,11 @@ export default function RulebookBatchUpload({
                       {open ? '▴' : '▾'}
                     </span>
                   </button>
+                  {isPdf && (
+                    <p style={{ margin: '0 0 6px', padding: '0 4px', fontSize: 12, color: '#6b6a5c' }}>
+                      {groupTags(group.docs)}
+                    </p>
+                  )}
                   {open && group.trashed && (
                     <p className="rb-warn">
                       這款遊戲已在垃圾桶。{' '}

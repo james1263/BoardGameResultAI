@@ -1214,7 +1214,7 @@ export default function MyList({
                                                                         </p>
                                                                     )
                                                                 )}
-                                                                <PastPlayDates bggName={game.bggName} playSessions={playSessions} />
+                                                              <PastPlayDates bggName={game.bggName} playSessions={playSessions} personal={personal} />
                                                                 {tab === 'played' && (
                                                                     <PlayedGameRecord
                                                                         bggName={game.bggName}
