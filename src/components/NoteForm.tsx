@@ -27,6 +27,9 @@ export type MyGameNote = {
   dislike_point: string | null
 }
 
+// 單一欄位儲存的結果；失敗時 message 是空字串＝使用者自己取消
+type Outcome = { ok: true; info: string } | { ok: false; message: string }
+
 function normalize(text: string): string {
   return text.toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '')
 }
@@ -325,7 +328,7 @@ export default function NoteForm({
     else setPub(source.slice(0, 200))
     setKindState(fromPublic ? 'private' : 'public')
     setError('')
-    setInfo(`已複製到${fromPublic ? '心得（私人）' : '留言（公開）'}，檢查後按儲存。`)
+    setInfo(`已複製到${fromPublic ? '心得（私人）' : '留言（公開）'}，兩邊內容相同；按「儲存全部」會一起儲存。`)
   }
 
   // 內容清空後按「刪除」：只刪目前這個欄位（留言或心得）
@@ -394,6 +397,60 @@ export default function NoteForm({
     }
   }
 
+  // 留言和心得兩邊都有字：按鈕變成「儲存全部」，兩邊一起存
+  const pubFilled = canPublic && !publicLocked && pub.trim() !== ''
+  const privFilled = priv.trim() !== ''
+  const saveAll = pubFilled && privFilled
+  const otherFilled = kind === 'public' ? privFilled : pubFilled
+
+  // 公開留言（沒選場次）：存成遊戲留言
+  async function publicLoose(): Promise<Outcome> {
+    if (!picked) return { ok: false, message: '請先選擇遊戲，才能儲存。' }
+    if (editingId) {
+      const { error: rpcError } = await supabase.rpc('update_my_game_note', {
+        p_note: editingId,
+        p_content: pub,
+        p_like: like,
+        p_dislike: dislike,
+      })
+      if (rpcError) return { ok: false, message: explainAdd(rpcError.message) }
+      return { ok: true, info: '已更新這則公開留言。' }
+    }
+    const { error: rpcError } = await supabase.rpc('add_game_note', {
+      p_bgg_name: picked.bggName,
+      p_content: pub,
+      p_like: like,
+      p_dislike: dislike,
+    })
+    if (rpcError) return { ok: false, message: explainAdd(rpcError.message) }
+    // 發表完清空文字框，下一次儲存會再新增一則（每款最多 10 則）
+    setPub('')
+    setLike('')
+    setDislike('')
+    return { ok: true, info: '已發表。' }
+  }
+
+  // 私人心得（沒選場次）：自己補的日期，或這款的整體心得
+  async function privateLoose(): Promise<Outcome> {
+    if (!picked) return { ok: false, message: '請先選擇遊戲，才能儲存。' }
+    if (dateId && playSessions) {
+      if (!(await playSessions.setPlayDateNote(dateId, priv.trim()))) {
+        return { ok: false, message: '儲存失敗，請稍後再試。' }
+      }
+      return { ok: true, info: '已儲存這天的私人心得。' }
+    }
+    if (!personal.canEdit) return { ok: false, message: '目前無法儲存，請稍後再試。' }
+    if (!editOverall && (personal.getEntry(picked.bggName).note ?? '').trim() !== '') {
+      const go = await askConfirm('這款已經有整體心得（每款一則），儲存後會取代原本的內容。要繼續嗎？', {
+        danger: false,
+      })
+      if (!go) return { ok: false, message: '' }
+    }
+    personal.updateEntry(picked.bggName, { note: priv.trim() })
+    setEditOverall(true)
+    return { ok: true, info: '已儲存為這款的整體心得。' }
+  }
+
   async function save() {
     setError('')
     setInfo('')
@@ -401,104 +458,77 @@ export default function NoteForm({
       setError('請先選擇遊戲，才能儲存。')
       return
     }
-    if (text.trim() === '') {
+    // 兩邊都有字＝存全部；只有一邊有字＝存當前視窗；當前視窗是空的、另一邊有字＝存另一邊
+    let target: 'public' | 'private' | 'all' = saveAll ? 'all' : kind
+    if (!saveAll && text.trim() === '') {
       if (hasExisting) {
         await remove()
         return
       }
-      setError(kind === 'public' ? '請先輸入留言內容。' : '請先輸入心得內容。')
-      return
+      if (otherFilled) {
+        target = kind === 'public' ? 'private' : 'public'
+      } else {
+        setError(kind === 'public' ? '請先輸入留言內容。' : '請先輸入心得內容。')
+        return
+      }
     }
+    const wantsPublic = target !== 'private'
+    const wantsPrivate = target !== 'public'
     setSaving(true)
     try {
-      if (kind === 'public') {
+      if (wantsPublic) {
         const firstPublic = gid === '' ? editingId === null : (existing?.publicNote ?? '').trim() === ''
         if (firstPublic && !(await confirmPublicPost())) return
-        if (gid) {
-          const result = await saveGatheringNote(
-            gid,
-            picked.bggName,
-            existing?.privateNote ?? '',
-            pub,
-            like,
-            dislike,
-          )
-          if (!result.ok) {
-            setError(result.message)
-            return
-          }
-        } else if (editingId) {
-          const { error: rpcError } = await supabase.rpc('update_my_game_note', {
-            p_note: editingId,
-            p_content: pub,
-            p_like: like,
-            p_dislike: dislike,
-          })
-          if (rpcError) {
-            setError(explainAdd(rpcError.message))
-            return
-          }
-        } else {
-          const { error: rpcError } = await supabase.rpc('add_game_note', {
-            p_bgg_name: picked.bggName,
-            p_content: pub,
-            p_like: like,
-            p_dislike: dislike,
-          })
-          if (rpcError) {
-            setError(explainAdd(rpcError.message))
-            return
-          }
-          // 發表完清空文字框，下一次儲存會再新增一則（每款最多 10 則）
-          setPub('')
-          setLike('')
-          setDislike('')
-        }
-        setInfo(
-          gid
-            ? willUpdatePublic
-              ? '已更新這場的公開留言。'
-              : '已發表。'
-            : editingId
-              ? '已更新這則公開留言。'
-              : '已發表。',
-        )
-      } else if (gid) {
+      }
+      if (gid) {
+        // 同一場的留言與心得在同一列，一次存（分兩次存會互相蓋掉）
         const result = await saveGatheringNote(
           gid,
           picked.bggName,
-          priv,
-          existing?.publicNote ?? '',
-          existing?.likePoint ?? '',
-          existing?.dislikePoint ?? '',
+          wantsPrivate ? priv : (existing?.privateNote ?? ''),
+          wantsPublic ? pub : (existing?.publicNote ?? ''),
+          wantsPublic ? like : (existing?.likePoint ?? ''),
+          wantsPublic ? dislike : (existing?.dislikePoint ?? ''),
         )
         if (!result.ok) {
           setError(result.message)
           return
         }
-        setInfo('已儲存這場的私人心得。')
-      } else if (dateId && playSessions) {
-        if (!(await playSessions.setPlayDateNote(dateId, priv.trim()))) {
-          setError('儲存失敗，請稍後再試。')
-          return
-        }
-        setInfo('已儲存這天的私人心得。')
+        setInfo(
+          target === 'all'
+            ? '已儲存這場的留言與心得。'
+            : wantsPublic
+              ? willUpdatePublic
+                ? '已更新這場的公開留言。'
+                : '已發表。'
+              : '已儲存這場的私人心得。',
+        )
       } else {
-        if (!personal.canEdit) {
-          setError('目前無法儲存，請稍後再試。')
-          return
-        }
-        if (!editOverall && (personal.getEntry(picked.bggName).note ?? '').trim() !== '') {
-          if (
-            !(await askConfirm('這款已經有整體心得（每款一則），儲存後會取代原本的內容。要繼續嗎？', {
-              danger: false,
-            }))
-          )
+        let publicInfo = ''
+        if (wantsPublic) {
+          const result = await publicLoose()
+          if (!result.ok) {
+            if (result.message) setError(result.message)
             return
+          }
+          publicInfo = result.info
         }
-        personal.updateEntry(picked.bggName, { note: priv.trim() })
-        setEditOverall(true)
-        setInfo('已儲存為這款的整體心得。')
+        if (wantsPrivate) {
+          const result = await privateLoose()
+          if (!result.ok) {
+            if (publicInfo) {
+              // 留言已經存好了，只有心得沒存
+              setInfo('留言已儲存，心得沒有儲存。')
+              allNotes.reload()
+              onSaved()
+            }
+            if (result.message) setError(result.message)
+            return
+          }
+          setInfo(target === 'all' ? '已儲存留言與心得。' : result.info)
+        } else {
+          setInfo(publicInfo)
+        }
       }
       allNotes.reload()
       onSaved()
@@ -650,9 +680,16 @@ export default function NoteForm({
           </div>
         </div>
       )}
-      {picked && gatheringOptions.length === 0 && manualDates.length === 0 && !gatherings.loading && !lockedGid && (
-        <p className="nf-hint">這款沒有你出席過、而且指定了它的聚會，所以沒有場次標籤可選。</p>
-      )}
+      {picked &&
+        gatheringOptions.length === 0 &&
+        (kind === 'public' || manualDates.length === 0) &&
+        !gatherings.loading &&
+        !lockedGid && (
+          <p className="nf-hint">
+            這款沒有你出席過、而且指定了它的聚會，所以沒有場次標籤可選
+            {kind === 'public' ? '；公開留言會存成一般遊戲留言。' : '。'}
+          </p>
+        )}
 
       {willUpdatePublic && (
         <p className="nf-warn">這場聚會你已經有這款的公開留言，儲存後將更新原留言。</p>
@@ -704,6 +741,12 @@ export default function NoteForm({
       {!picked && !lockedGid && text.trim() !== '' && (
         <p className="nf-hint">已經先寫了也沒關係，記得在上面選好遊戲再按儲存。</p>
       )}
+      {saveAll && (
+        <p className="nf-hint">留言和心得兩邊都有內容，按「儲存全部」會一起儲存。</p>
+      )}
+      {!saveAll && text.trim() === '' && otherFilled && !hasExisting && (
+        <p className="nf-hint">這一邊是空的，按「儲存」會存另一邊的內容。</p>
+      )}
       {error && <p className="nf-error">{error}</p>}
       {info && <p className="nf-info">{info}</p>}
 
@@ -730,10 +773,10 @@ export default function NoteForm({
           <button
             type="button"
             className={`nf-save${deleting ? ' danger' : ''}`}
-            disabled={saving || (text.trim() === '' && !hasExisting)}
+            disabled={saving || (text.trim() === '' && !hasExisting && !otherFilled)}
             onClick={() => void save()}
           >
-            {saving ? (deleting ? '刪除中…' : '儲存中…') : deleting ? '刪除' : '儲存'}
+            {saving ? (deleting ? '刪除中…' : '儲存中…') : deleting ? '刪除' : saveAll ? '儲存全部' : '儲存'}
           </button>
         </div>
       </div>

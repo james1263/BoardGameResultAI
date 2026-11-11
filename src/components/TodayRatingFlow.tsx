@@ -332,11 +332,14 @@ export function TodayRatingModal({
   boardGames,
   ratings,
   onClose,
+  onFinished,
 }: {
   games: string[]
   boardGames: BoardGame[]
   ratings: RatingsApi
   onClose: () => void
+  // 按完「回到集點卡」：有給就用它（例如從俱樂部首頁開的，要真的切到集點卡）；沒給就只是關閉
+  onFinished?: () => void
 }) {
   useBackClose(onClose)
   return createPortal(
@@ -354,7 +357,7 @@ export function TodayRatingModal({
             boardGames={boardGames}
             ratings={ratings}
             finishLabel="回到集點卡"
-            onFinish={onClose}
+            onFinish={onFinished ?? onClose}
           />
         </div>
       </div>

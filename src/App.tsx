@@ -206,6 +206,10 @@ function Library({
   const [jumpView, setJumpView] = useState<{ view: 'board' | 'notes'; bggName: string | null; write?: boolean } | null>(null)
   // 從報到、集點卡連結、「去評分」進來：直接打開俱樂部裡的集點卡
   const [jumpCard, setJumpCard] = useState(false)
+  // 從「聚會．留言」的留言板按「發表留言」進寫心得畫面：按 ✕ 或返回要回到留言板，不是俱樂部
+  const [writeFromBoard, setWriteFromBoard] = useState(false)
+  // 從遊戲詳細資料按「寫心得／留言」「前往我的評分」跳走：按 ✕ 或返回要回到那款遊戲的詳細資料
+  const [returnGame, setReturnGame] = useState<{ bggName: string; tab: 'discussion' | 'ratings' } | null>(null)
   // 聚會報到後評分：遊戲視窗要顯示完整評分表單（集點必填）
   const [ratingFromCheckin, setRatingFromCheckin] = useState(false)
   const isMyListOpen = activePage === 'mylist' || activePage === 'loyalty'
@@ -362,6 +366,8 @@ function Library({
 
   // 遊戲視窗「前往我的評分」→ 關掉遊戲視窗，打開俱樂部的我的評分頁
   function openMyRatingsFromGame(bggName: string) {
+    setWriteFromBoard(false)
+    setReturnGame({ bggName, tab: 'ratings' })
     setSelectedGame(null)
     setSelectedTab('overview')
     setRatingFromCheckin(false)
@@ -377,7 +383,9 @@ function Library({
   }
 
   // 遊戲視窗「寫心得／留言」、留言板「發表留言」→ 開在俱樂部「我的心得」的寫作畫面（bggName 有值就帶入那款遊戲）
-  function openWriteNotes(bggName: string | null) {
+  function openWriteNotes(bggName: string | null, from?: 'board' | 'game') {
+    setWriteFromBoard(from === 'board')
+    setReturnGame(from === 'game' && bggName ? { bggName, tab: 'discussion' } : null)
     setSelectedGame(null)
     setSelectedTab('overview')
     setRatingFromCheckin(false)
@@ -392,7 +400,30 @@ function Library({
     setActivePage('mylist')
   }
 
+  // 寫完心得／留言按 ✕：回到「聚會．留言」的留言板分頁
+  function returnToBoard() {
+    setWriteFromBoard(false)
+    setJumpView({ view: 'board', bggName: null })
+    setSelectedGame(null)
+    openGatherings()
+  }
+
+  // 從遊戲詳細資料跳出去之後按 ✕：回到那款遊戲的詳細資料（討論或評分分頁）
+  function returnToGame() {
+    const target = returnGame
+    setReturnGame(null)
+    setActivePage(null)
+    if (!target) return
+    const game = statGames.find((item) => item.bggName === target.bggName)
+    if (!game) return
+    setCoverMessage('')
+    setSelectedTab(target.tab)
+    setSelectedGame(game)
+  }
+
   function goPage(page: NavPage) {
+    setWriteFromBoard(false)
+    setReturnGame(null)
     // 點導覽時，先關掉開著的詳細視窗與進階篩選，避免視窗疊在一起
     setJumpCard(false)
     setJumpGatheringId(null)
@@ -1150,7 +1181,7 @@ function Library({
           }}
           fullRatingForm={ratingFromCheckin}
           onOpenMyRatings={() => openMyRatingsFromGame(selectedGame.bggName)}
-          onOpenWrite={() => openWriteNotes(selectedGame.bggName)}
+          onOpenWrite={() => openWriteNotes(selectedGame.bggName, 'game')}
           initialTab={selectedTab}
           onOpenGathering={openGatheringFromGame}
           isAdmin={isAdmin}
@@ -1206,6 +1237,10 @@ function Library({
         onNotesSeen={notesUnseen.markSeen}
         onOpenLoyalty={openMyLoyalty}
         onOpenWrite={openWriteNotes}
+        writeFromBoard={writeFromBoard}
+        onReturnToBoard={returnToBoard}
+        returnToGame={returnGame !== null}
+        onReturnToGame={returnToGame}
         onOpenRules={() => setActivePage('rules')}
         isAdmin={isAdmin}
         isVip={vip.isVip}
@@ -1231,6 +1266,7 @@ function Library({
         isOpen={isMyListOpen}
         onClose={() => setActivePage(null)}
         onOpenGame={(game, tab) => {
+          setReturnGame(null)
           setCoverMessage('')
           setRatingFromCheckin(false)
           setSelectedTab(tab ?? 'overview')

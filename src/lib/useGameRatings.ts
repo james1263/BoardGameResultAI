@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { useSession } from './useSession'
 import { VIP_CHANGED_EVENT } from './useVip'
+import { RATINGS_CHANGED_EVENT } from './unplayFlow'
 
 export type RatingKey =
     | 'like'
@@ -109,6 +110,7 @@ export function useGameRatings() {
     const [status, setStatus] = useState<RatingsStatus>('guest')
     const [busy, setBusy] = useState(false)
     const [vipKey, setVipKey] = useState(0)
+    const [reloadKey, setReloadKey] = useState(0)
 
     // 剛加入 VIP（或被移除）後，重新讀取彙總與自己的評分
     useEffect(() => {
@@ -118,6 +120,16 @@ export function useGameRatings() {
         }
         window.addEventListener(VIP_CHANGED_EVENT, handler)
         return () => window.removeEventListener(VIP_CHANGED_EVENT, handler)
+    }, [])
+
+    // 取消已玩、批次刪評分之後，重新讀取自己的評分與彙總
+    useEffect(() => {
+        const handler = () => {
+            setSummaryKey((current) => current + 1)
+            setReloadKey((current) => current + 1)
+        }
+        window.addEventListener(RATINGS_CHANGED_EVENT, handler)
+        return () => window.removeEventListener(RATINGS_CHANGED_EVENT, handler)
     }, [])
 
     // 公開彙總：訪客也讀得到（門檻 5 人由資料庫判斷）
@@ -142,14 +154,14 @@ export function useGameRatings() {
 
     // 自己的評分：登入後讀一次
     useEffect(() => {
-        setMine({})
         if (!userId) {
+            setMine({})
             setStatus('guest')
             return
         }
 
         let cancelled = false
-        setStatus('loading')
+        if (reloadKey === 0) setStatus('loading')
 
         supabase
             .from(TABLE)
@@ -172,7 +184,7 @@ export function useGameRatings() {
         return () => {
             cancelled = true
         }
-    }, [userId, vipKey])
+    }, [userId, vipKey, reloadKey])
 
     const getSummary = useCallback(
         (bggName: string): RatingSummary => summaries[bggName] ?? EMPTY_SUMMARY,

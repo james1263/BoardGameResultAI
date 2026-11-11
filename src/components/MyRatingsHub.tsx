@@ -2,9 +2,12 @@ import { useMemo, useState, type ReactNode } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { RatingsApi, MyRating } from '../lib/useGameRatings'
 import { RATING_FIELDS } from '../lib/useGameRatings'
-import { askConfirm } from '../lib/askConfirm'
+import { askConfirm, showNotice } from '../lib/askConfirm'
+import { supabase } from '../lib/supabase'
+import { notifyRatingsChanged } from '../lib/unplayFlow'
 import RatingSection from './RatingSection'
 import '../styles/my-ratings-hub.css'
+import '../styles/batch-select.css'
 
 type Status = 'none' | 'partial' | 'full'
 type Filter = 'all' | Status
@@ -79,6 +82,10 @@ export default function MyRatingsHub({
     const [reverse, setReverse] = useState(false)
     // 一次只展開一款
     const [openName, setOpenName] = useState<string | null>(focusGame ? focusGame.bggName : null)
+    // 勾選刪除模式
+    const [selectMode, setSelectMode] = useState(false)
+    const [selected, setSelected] = useState<Set<string>>(new Set())
+    const [removing, setRemoving] = useState(false)
 
     const ready = ratings.status === 'ready'
 
@@ -138,6 +145,47 @@ export default function MyRatingsHub({
     }, [rows, filter, search, field, reverse])
 
     const dirLabel = field === 'updated' ? (reverse ? '舊→新' : '新→舊') : reverse ? 'Z→A' : 'A→Z'
+
+    const selectableShown = shown.filter((row) => row.mine)
+    const selectedShown = selectableShown.filter((row) => selected.has(row.game.bggName))
+
+    function toggleSelected(bggName: string) {
+        setSelected((current) => {
+            const next = new Set(current)
+            if (next.has(bggName)) next.delete(bggName)
+            else next.add(bggName)
+            return next
+        })
+    }
+
+    function leaveSelectMode() {
+        setSelectMode(false)
+        setSelected(new Set())
+    }
+
+    // 只刪評分；已玩、已玩次數、公開留言與心得都不動，已得的點數與免費券也不受影響
+    async function removeRatings(names: string[]): Promise<boolean> {
+        if (names.length === 0 || removing) return false
+        const message =
+            names.length === 1
+                ? '要移除這款的評分嗎？\n只刪評分，已玩、已玩次數與留言都會保留。刪除後無法復原。'
+                : `要移除選取的 ${names.length} 款評分嗎？\n只刪評分，已玩、已玩次數與留言都會保留。刪除後無法復原。`
+        if (!(await askConfirm(message, { confirmText: '移除評分', danger: true }))) return false
+        setRemoving(true)
+        const { error } = await supabase.rpc('delete_my_ratings', { p_names: names })
+        setRemoving(false)
+        if (error) {
+            await showNotice('移除評分失敗，請稍後再試。')
+            return false
+        }
+        notifyRatingsChanged()
+        return true
+    }
+
+    async function removeSelected() {
+        const names = selectedShown.map((row) => row.game.bggName)
+        if (await removeRatings(names)) leaveSelectMode()
+    }
 
     // 沒玩過的遊戲存檔前確認：評分會同時把它標成已玩
     function makeBeforeSave(row: Row) {
@@ -261,6 +309,49 @@ export default function MyRatingsHub({
                                 </div>
                             </div>
 
+                            {ratedTotal > 0 && (
+                                <div className="bs-bar">
+                                    {selectMode ? (
+                                        <>
+                                            <span className="bs-count">已選 {selectedShown.length} 款</span>
+                                            <button
+                                                type="button"
+                                                className="bs-btn"
+                                                onClick={() =>
+                                                    setSelected(
+                                                        new Set(selectableShown.map((row) => row.game.bggName)),
+                                                    )
+                                                }
+                                            >
+                                                全選目前顯示
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="bs-btn danger"
+                                                disabled={selectedShown.length === 0 || removing}
+                                                onClick={() => void removeSelected()}
+                                            >
+                                                移除評分
+                                            </button>
+                                            <button type="button" className="bs-btn" onClick={leaveSelectMode}>
+                                                取消
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            className="bs-btn"
+                                            onClick={() => {
+                                                setOpenName(null)
+                                                setSelectMode(true)
+                                            }}
+                                        >
+                                            ☑ 勾選刪除
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
                             {(search.trim() || filter !== 'all') && (
                                 <p className="mrh-count">
                                     顯示 {shown.length} / {rows.length} 款
@@ -273,6 +364,36 @@ export default function MyRatingsHub({
                                 </p>
                             ) : shown.length === 0 ? (
                                 <p className="mylist-empty">這個分類沒有符合的遊戲。</p>
+                            ) : selectMode ? (
+                                <ul className="bs-list">
+                                    {shown.map((row) => {
+                                        const on = selected.has(row.game.bggName)
+                                        return (
+                                            <li key={row.game.bggName}>
+                                                <button
+                                                    type="button"
+                                                    className={`bs-row ${on ? 'on' : ''}`}
+                                                    disabled={!row.mine}
+                                                    aria-pressed={on}
+                                                    onClick={() => toggleSelected(row.game.bggName)}
+                                                >
+                                                    <span className="bs-check" aria-hidden="true">
+                                                        {on ? '✓' : ''}
+                                                    </span>
+                                                    <span className="bs-thumb">{renderCover(row.game)}</span>
+                                                    <span className="bs-main">
+                                                        <span className="bs-name">{row.game.name}</span>
+                                                        <span className="bs-sub">
+                                                            {row.mine
+                                                                ? `${STATUS_LABEL[row.status]}・整體 ${row.mine.overall}`
+                                                                : '沒有評分'}
+                                                        </span>
+                                                    </span>
+                                                </button>
+                                            </li>
+                                        )
+                                    })}
+                                </ul>
                             ) : (
                                 <ul className="mrh-list">
                                     {shown.map((row) => {

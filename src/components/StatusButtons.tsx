@@ -1,5 +1,6 @@
 import type { PersonalApi } from '../lib/personalApi'
 import { CheckIcon, HeartIcon } from './Icons'
+import { runUnplayFlow } from '../lib/unplayFlow'
 
 export default function StatusButtons({
   bggName,
@@ -40,9 +41,14 @@ export default function StatusButtons({
         aria-label="已玩"
         title="已玩"
         disabled={disabled}
-        onClick={() =>
-          personal.updateEntry(bggName, { played: !entry.played })
-        }
+        onClick={() => {
+          // 取消已玩要先檢查日期紀錄、評分與公開留言
+          if (entry.played) {
+            void runUnplayFlow(bggName, personal)
+            return
+          }
+          personal.updateEntry(bggName, { played: true })
+        }}
       >
         <CheckIcon />
         {withLabel && <span>已玩</span>}

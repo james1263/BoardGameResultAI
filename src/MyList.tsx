@@ -7,7 +7,7 @@ import type { AdminScores } from './lib/libraryTypes'
 import LoyaltyCard from './components/LoyaltyCard'
 import type { GameChange } from './lib/useLoyaltyAlerts'
 import { supabase } from './lib/supabase'
-import { askConfirm, showNotice } from './lib/askConfirm'
+import { runUnplayFlow } from './lib/unplayFlow'
 import { useSession } from './lib/useSession'
 import { useMyLoyalty, todayLocal } from './lib/useLoyalty'
 import { TodayRatingModal } from './components/TodayRatingFlow'
@@ -281,6 +281,12 @@ function ClubPointsCard({
                         setFlowOpen(false)
                         loyalty.reload()
                     }}
+                    onFinished={() => {
+                        // 評分完按「回到集點卡」：真的切到集點卡（聚會後的心得詢問卡會疊在上面）
+                        setFlowOpen(false)
+                        loyalty.reload()
+                        onOpen()
+                    }}
                 />
             )}
         </>
@@ -397,6 +403,10 @@ export default function MyList({
     onBrowse,
     onOpenGame,
     onOpenWrite,
+    writeFromBoard = false,
+    onReturnToBoard,
+    returnToGame = false,
+    onReturnToGame,
     onOpenRules,
     renderCover,
 }: {
@@ -435,7 +445,13 @@ export default function MyList({
     onOpenGame: (game: BoardGame, tab?: 'ratings' | 'discussion') => void
     onOpenLoyalty: () => void
     // 從集點聚會頁的留言板「發表留言」跳到俱樂部的寫心得／留言（App 傳入）
-    onOpenWrite?: (bggName: string | null) => void
+    onOpenWrite?: (bggName: string | null, from?: 'board' | 'game') => void
+    // 從「聚會．留言」留言板進寫心得畫面時，✕ 與返回要回到留言板
+    writeFromBoard?: boolean
+    onReturnToBoard?: () => void
+    // 從遊戲詳細資料跳來的寫心得／我的評分：✕ 與返回要回到那款遊戲
+    returnToGame?: boolean
+    onReturnToGame?: () => void
     // 從「我的投稿 → AI 回答」跳到規則助手（App 傳入；沒傳就不顯示按鈕）
     onOpenRules?: () => void
     renderCover: (game: BoardGame) => ReactNode
@@ -470,8 +486,21 @@ export default function MyList({
     // 分布圖用全螢幕頁面開啟
     const [chartOpen, setChartOpen] = useState(false)
     // 分頁切換不另建瀏覽歷史：返回鍵與 ✕ 一律回「我的俱樂部」首頁
+    // 從留言板進來的寫心得畫面，返回要回到留言板；其他一律回俱樂部首頁
+    // 只在「這次是從遊戲詳細資料跳進來」時才回遊戲（一開始就記下來，之後在俱樂部裡自己走動不受影響）
+    const cameFromGame = useRef(returnToGame && !!(openView?.write || openRatings))
+    function leaveView() {
+        if (view === 'notes' && writeFromBoard && onReturnToBoard) {
+            onReturnToBoard()
+        } else if ((view === 'notes' || view === 'ratings') && cameFromGame.current && onReturnToGame) {
+            cameFromGame.current = false
+            onReturnToGame()
+        } else {
+            setView('home')
+        }
+    }
     useBackClose(
-        () => setView('home'),
+        leaveView,
         isOpen && mode !== 'loyalty' && view !== 'home',
     )
 
@@ -654,7 +683,7 @@ export default function MyList({
         }
     }, [boardGames, personal.entries, playSessions])
 
-    // 已玩次數按「−」：總次數會變 0 時，先查評分與公開留言，再問清楚才從已玩移除
+    // 已玩次數按「−」：總次數會變 0 時，走共用的取消已玩流程（見 unplayFlow.ts）
     async function decrementPlayed(bggName: string) {
         const entry = personal.entries[bggName]
         const count = entry?.playCount ?? 0
@@ -664,36 +693,7 @@ export default function MyList({
             personal.updateEntry(bggName, { playCount: count - 1 }, { skipPlayedRule: true })
             return
         }
-        if ((ratings.status as string) === 'loading') {
-            await showNotice('評分資料還在讀取，請稍後再試。')
-            return
-        }
-        const hasRating = ratings.getMine(bggName) !== null
-        const [mine, gathering] = await Promise.all([
-            supabase.rpc('get_my_game_notes', { p_bgg_name: bggName }),
-            supabase.rpc('get_my_gathering_notes'),
-        ])
-        if (mine.error || gathering.error) {
-            await showNotice('讀取你的留言失敗，請稍後再試。')
-            return
-        }
-        const hasPublic =
-            ((mine.data ?? []) as unknown[]).length > 0 ||
-            ((gathering.data ?? []) as { bgg_name: string; public_note: string | null }[]).some(
-                (row) => row.bgg_name === bggName && (row.public_note ?? '').trim() !== '',
-            )
-        if (hasRating || hasPublic) {
-            await showNotice(
-                '這款有你的評分或公開留言。\n已玩歸零時會一併清除它們（私人心得會保留），這個功能還在準備中，暫時不能歸零。',
-            )
-            return
-        }
-        const ok = await askConfirm(
-            '這款沒有評分，也沒有公開留言。\n歸零會把它從「已玩」移除，主畫面的打勾也會取消。私人心得不受影響。確定嗎？',
-            { confirmText: '移除已玩' },
-        )
-        if (!ok) return
-        personal.updateEntry(bggName, { playCount: 0, played: false }, { skipPlayedRule: true })
+        await runUnplayFlow(bggName, personal)
     }
 
     if (!isOpen) return null
@@ -779,7 +779,7 @@ export default function MyList({
                                 onBack={() => setLoyaltyTab('upcoming')}
                                 onClose={onClose}
                                 onOpenGame={onOpenGame}
-                                onWrite={() => onOpenWrite?.(null)}
+                                onWrite={() => onOpenWrite?.(null, 'board')}
                                 initialSearch={
                                     viewFocus ? (lookupGames.find((g) => g.bggName === viewFocus)?.name ?? '') : ''
                                 }
@@ -861,7 +861,7 @@ export default function MyList({
             <MyNotes
                 boardGames={lookupGames}
                 renderCover={renderCover}
-                onBack={() => setView('home')}
+                onBack={leaveView}
                 onClose={onClose}
                 focusGame={viewFocus}
                 writeRequest={writeReq}
@@ -908,7 +908,7 @@ export default function MyList({
                 boardGames={boardGames}
                 ratings={ratings}
                 isPlayed={(bggName) => !!personal.entries[bggName]?.played}
-                onBack={() => setView('home')}
+                onBack={leaveView}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
                 renderCover={renderCover}
@@ -1196,9 +1196,6 @@ export default function MyList({
                                                                             openWrite(info.bggName, null, info.sessionId)
                                                                         }
                                                                     />
-                                                                )}
-                                                                {entry?.note && (
-                                                                    <p className="mylist-note">{entry.note}</p>
                                                                 )}
                                                             </div>
                                                             {tab === 'want' && (

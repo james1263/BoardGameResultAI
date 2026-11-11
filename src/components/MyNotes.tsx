@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase'
 import NoteListItem from './NoteListItem'
 import '../styles/my-notes.css'
 import '../styles/my-notes-manage.css'
+import '../styles/batch-select.css'
 import NoteForm, { type MyGameNote, type NoteKind } from './NoteForm'
 import type { PersonalApi } from '../lib/personalApi'
 import type { RatingsApi } from '../lib/useGameRatings'
@@ -193,6 +194,9 @@ export default function MyNotes({
   )
   const [deletingKey, setDeletingKey] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState('')
+  // 勾選刪除模式（發表紀錄）
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const topRef = useRef<HTMLDivElement | null>(null)
 
   const gameByName = useMemo(() => {
@@ -392,6 +396,39 @@ export default function MyNotes({
     statusTimes.reload()
   }
 
+  // 刪除一則紀錄的實際動作（單則與勾選刪除共用）：成功回傳 null，失敗回傳錯誤文字
+  async function removeItem(item: Item): Promise<string | null> {
+    if (!composer) return '目前無法刪除，請稍後再試。'
+    if (item.kind === 'game' && item.noteId) {
+      const { error } = await supabase.rpc('delete_my_public_note', { p_note: item.noteId })
+      if (error) return '刪除失敗：' + error.message
+    } else if (item.kind === 'gathering' && item.gatheringId) {
+      const result = await saveGatheringNote(item.gatheringId, item.bggName, '', '', '', '')
+      if (!result.ok) return result.message
+    } else if (item.kind === 'date' && item.sessionId) {
+      if (!composer.playSessions || !(await composer.playSessions.setPlayDateNote(item.sessionId, ''))) {
+        return '刪除失敗，請稍後再試。'
+      }
+    } else if (item.kind === 'overall') {
+      if (!composer.personal.canEdit) return '目前無法刪除，請稍後再試。'
+      composer.personal.updateEntry(item.bggName, { note: '' })
+    }
+    return null
+  }
+
+  // 如果正在編輯的就是這一則，一併收起寫作畫面
+  function closeComposeFor(item: Item) {
+    setCompose((current) =>
+      current &&
+      current.game === item.bggName &&
+      (item.kind === 'date'
+        ? current.sessionId === (item.sessionId ?? null)
+        : current.noteId === (item.noteId ?? null) || current.gid === (item.gatheringId ?? null))
+        ? null
+        : current,
+    )
+  }
+
   // 直接在清單上刪除一則紀錄（不用點進去）
   async function deleteItem(item: Item) {
     if (!composer || deletingKey) return
@@ -410,41 +447,54 @@ export default function MyNotes({
     setDeletingKey(item.key)
     setDeleteError('')
     try {
-      if (item.kind === 'game' && item.noteId) {
-        const { error } = await supabase.rpc('delete_my_public_note', { p_note: item.noteId })
-        if (error) {
-          setDeleteError('刪除失敗：' + error.message)
-          return
-        }
-      } else if (item.kind === 'gathering' && item.gatheringId) {
-        const result = await saveGatheringNote(item.gatheringId, item.bggName, '', '', '', '')
-        if (!result.ok) {
-          setDeleteError(result.message)
-          return
-        }
-      } else if (item.kind === 'date' && item.sessionId) {
-        if (!composer.playSessions || !(await composer.playSessions.setPlayDateNote(item.sessionId, ''))) {
-          setDeleteError('刪除失敗，請稍後再試。')
-          return
-        }
-      } else if (item.kind === 'overall') {
-        if (!composer.personal.canEdit) {
-          setDeleteError('目前無法刪除，請稍後再試。')
-          return
-        }
-        composer.personal.updateEntry(item.bggName, { note: '' })
+      const failure = await removeItem(item)
+      if (failure) {
+        setDeleteError(failure)
+        return
       }
-      // 如果正在編輯的就是這一則，一併收起寫作畫面
-      setCompose((current) =>
-        current &&
-        current.game === item.bggName &&
-        (item.kind === 'date'
-          ? current.sessionId === (item.sessionId ?? null)
-          : current.noteId === (item.noteId ?? null) || current.gid === (item.gatheringId ?? null))
-          ? null
-          : current,
-      )
+      closeComposeFor(item)
       reloadAll()
+    } finally {
+      setDeletingKey(null)
+    }
+  }
+
+  const selectedItems = shown.filter((item) => selected.has(item.key))
+
+  function leaveSelectMode() {
+    setSelectMode(false)
+    setSelected(new Set())
+  }
+
+  // 勾選刪除：一次確認、逐則刪除；已玩次數、評分、點數都不受影響
+  async function deleteSelected() {
+    if (!composer || deletingKey || selectedItems.length === 0) return
+    const ok = await askConfirm(
+      `要刪除選取的 ${selectedItems.length} 則紀錄嗎？\n聚會紀錄會連公開留言與私人心得一起刪；補日期的紀錄只刪心得，日期會保留。\n刪除後無法復原，已玩次數與評分都不受影響。`,
+      { confirmText: '刪除', danger: true },
+    )
+    if (!ok) return
+    setDeletingKey('batch')
+    setDeleteError('')
+    let failed = 0
+    const failedKeys = new Set<string>()
+    try {
+      for (const item of selectedItems) {
+        const failure = await removeItem(item)
+        if (failure) {
+          failed += 1
+          failedKeys.add(item.key)
+        } else {
+          closeComposeFor(item)
+        }
+      }
+      reloadAll()
+      if (failed > 0) {
+        setDeleteError(`有 ${failed} 則刪除失敗，已保留勾選，請稍後再試。`)
+        setSelected(failedKeys)
+      } else {
+        leaveSelectMode()
+      }
     } finally {
       setDeletingKey(null)
     }
@@ -720,6 +770,37 @@ export default function MyNotes({
                       </button>
                     </div>
                   )}
+                  {composer && items.length > 0 && (
+                    <div className="bs-bar">
+                      {selectMode ? (
+                        <>
+                          <span className="bs-count">已選 {selectedItems.length} 則</span>
+                          <button
+                            type="button"
+                            className="bs-btn"
+                            onClick={() => setSelected(new Set(shown.map((item) => item.key)))}
+                          >
+                            全選目前顯示
+                          </button>
+                          <button
+                            type="button"
+                            className="bs-btn danger"
+                            disabled={selectedItems.length === 0 || deletingKey !== null}
+                            onClick={() => void deleteSelected()}
+                          >
+                            刪除
+                          </button>
+                          <button type="button" className="bs-btn" onClick={leaveSelectMode}>
+                            取消
+                          </button>
+                        </>
+                      ) : (
+                        <button type="button" className="bs-btn" onClick={() => setSelectMode(true)}>
+                          ☑ 勾選刪除
+                        </button>
+                      )}
+                    </div>
+                  )}
                   {deleteError && <p className="mh-fail">{deleteError}</p>}
                   {shown.length === 0 ? (
                     <p className="mylist-empty">
@@ -727,6 +808,56 @@ export default function MyNotes({
                         ? '還沒有紀錄。按右上角的「寫心得／留言」開始寫。'
                         : '沒有符合的紀錄。'}
                     </p>
+                  ) : selectMode ? (
+                    <ul className="bs-list">
+                      {shown.map((item) => {
+                        const game = gameByName.get(item.bggName) ?? null
+                        const on = selected.has(item.key)
+                        const primary = item.pubText !== '' ? item.pubText : item.privText
+                        const tags = [
+                          item.pubText !== '' ? '留言' : '',
+                          item.privText !== '' ? '心得' : '',
+                        ]
+                          .filter(Boolean)
+                          .join('＋')
+                        const where =
+                          item.kind === 'gathering'
+                            ? `聚會 ${item.date.slice(5).replace(/-/g, '/')}`
+                            : item.kind === 'date'
+                              ? `補日期 ${item.date.slice(5).replace(/-/g, '/')}`
+                              : '整體'
+                        return (
+                          <li key={item.key}>
+                            <button
+                              type="button"
+                              className={`bs-row ${on ? 'on' : ''}`}
+                              aria-pressed={on}
+                              onClick={() =>
+                                setSelected((current) => {
+                                  const next = new Set(current)
+                                  if (next.has(item.key)) next.delete(item.key)
+                                  else next.add(item.key)
+                                  return next
+                                })
+                              }
+                            >
+                              <span className="bs-check" aria-hidden="true">
+                                {on ? '✓' : ''}
+                              </span>
+                              <span className="bs-thumb">
+                                {game ? renderCover(game) : <span aria-hidden="true">🎲</span>}
+                              </span>
+                              <span className="bs-main">
+                                <span className="bs-name">《{game?.name ?? item.bggName}》</span>
+                                <span className="bs-sub">
+                                  {where}・{tags}・{primary}
+                                </span>
+                              </span>
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
                   ) : (
                     <ul className="nl-list">
                       {shown.map((item) => {
