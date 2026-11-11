@@ -335,6 +335,39 @@ export function usePersonalCollection() {
         saveLocal({})
     }, [userId])
 
+    // 只重讀指定幾款遊戲的雲端紀錄（資料庫自動改了已玩／次數時，讓畫面跟上；
+    // 不會寫入任何資料，所以測試場的評分不會因此被標成已玩）
+    const refreshEntries = useCallback(
+        async (bggNames: string[]) => {
+            if (!userId || bggNames.length === 0) return
+            const { data, error } = await supabase
+                .from(TABLE)
+                .select(
+                    'bgg_name, want_to_play, played, note, play_count, want_first_at, played_first_at',
+                )
+                .eq('user_id', userId)
+                .in('bgg_name', bggNames)
+            if (error) return
+
+            const next: PersonalCollection = { ...cloudRef.current }
+            for (const name of bggNames) delete next[name]
+            for (const row of (data ?? []) as StatusRow[]) {
+                const entry: PersonalEntry = {
+                    wantToPlay: row.want_to_play,
+                    played: row.played,
+                    note: row.note,
+                    playCount: clampCount(row.play_count),
+                    wantFirstAt: row.want_first_at ?? null,
+                    playedFirstAt: row.played_first_at ?? null,
+                }
+                if (!isEmptyEntry(entry)) next[row.bgg_name] = entry
+            }
+            cloudRef.current = next
+            setCloud(next)
+        },
+        [userId],
+    )
+
     const reload = useCallback(() => {
         setErrorMessage('')
         setReloadKey((current) => current + 1)
@@ -346,6 +379,7 @@ export function usePersonalCollection() {
         entries,
         getEntry,
         updateEntry,
+        refreshEntries,
         isLoggedIn: !!userId,
         canEdit,
         status,

@@ -290,18 +290,19 @@ function Library({
     const before = ratedBeforeRef.current
     ratedBeforeRef.current = rated
     if (before === null || personal.status !== 'ready') return
+    // 只重讀資料庫的結果，不自己寫「已玩」（測試場的評分資料庫刻意不標已玩）
+    const fresh: string[] = []
     for (const name of rated) {
-      if (!before.has(name) && !personal.getEntry(name).played) {
-        personal.updateEntry(name, { played: true }, { skipPlayedRule: true })
-      }
+      if (!before.has(name) && !personal.getEntry(name).played) fresh.push(name)
     }
+    if (fresh.length > 0) void personal.refreshEntries(fresh)
   }, [
     ratings.status,
     ratings.getMine,
     boardGames,
     personal.status,
     personal.getEntry,
-    personal.updateEntry,
+    personal.refreshEntries,
   ])
 
   // 系統自動替我記了已玩（評分得點、管理者建立聚會）：畫面上的「已玩」打勾同步
@@ -309,15 +310,12 @@ function Library({
     function handlePlayedSync(event: Event) {
       const games = (event as CustomEvent<{ games?: string[] }>).detail?.games ?? []
       if (personal.status !== 'ready') return
-      for (const name of games) {
-        if (!personal.getEntry(name).played) {
-          personal.updateEntry(name, { played: true }, { skipPlayedRule: true })
-        }
-      }
+      const fresh = games.filter((name) => !personal.getEntry(name).played)
+      if (fresh.length > 0) void personal.refreshEntries(fresh)
     }
     window.addEventListener(PLAYED_SYNC_EVENT, handlePlayedSync)
     return () => window.removeEventListener(PLAYED_SYNC_EVENT, handlePlayedSync)
-  }, [personal.status, personal.getEntry, personal.updateEntry])
+  }, [personal.status, personal.getEntry, personal.refreshEntries])
 
   // 頂端導覽「聚會．留言」：未來聚會、留言板兩個分頁
   function openGatherings() {

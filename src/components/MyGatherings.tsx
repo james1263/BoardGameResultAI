@@ -178,9 +178,9 @@ export default function MyGatherings({
           onClose()
         }}
       />
-      <aside className="mylist-drawer" role="dialog" aria-label="我的場次">
+      <aside className="mylist-drawer" role="dialog" aria-label="我的聚會">
         <div className="mylist-header">
-          <h2>{selectedId ? '聚會詳情' : '我的場次'}</h2>
+          <h2>{selectedId ? '聚會詳情' : '我的聚會'}</h2>
           <button
             className="mylist-close"
             type="button"

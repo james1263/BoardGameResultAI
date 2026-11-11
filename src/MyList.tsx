@@ -870,7 +870,7 @@ export default function MyList({
         )
     }
 
-    // ---------- 我的場次 ----------
+    // ---------- 我的聚會 ----------
     if (view === 'gatherings') {
         return (
             <MyGatherings
@@ -1201,21 +1201,20 @@ export default function MyList({
                                                                     <p className="mylist-note">{entry.note}</p>
                                                                 )}
                                                             </div>
-                                                            <button
-                                                                type="button"
-                                                                className="mylist-remove"
-                                                                disabled={!personal.canEdit}
-                                                                onClick={() =>
-                                                                    personal.updateEntry(
-                                                                        game.bggName,
-                                                                        tab === 'want'
-                                                                            ? { wantToPlay: false }
-                                                                            : { played: false },
-                                                                    )
-                                                                }
-                                                            >
-                                                                移除
-                                                            </button>
+                                                            {tab === 'want' && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="mylist-remove"
+                                                                    disabled={!personal.canEdit}
+                                                                    onClick={() =>
+                                                                        personal.updateEntry(game.bggName, {
+                                                                            wantToPlay: false,
+                                                                        })
+                                                                    }
+                                                                >
+                                                                    移除
+                                                                </button>
+                                                            )}
                                                         </li>
                                                     )
                                                 })}
@@ -1303,22 +1302,6 @@ export default function MyList({
                             </button>
                         </div>
                     )}
-                    {personal.isLoggedIn && isVip && !isAdmin && (
-                        <div className="club-list club-more">
-                            <button
-                                type="button"
-                                className="club-menu-item club-menu-single"
-                                onClick={() => setView('submissions')}
-                            >
-                                <span className="club-menu-icon" aria-hidden="true">✍️</span>
-                                <span className="club-menu-text">
-                                    <b>我的投稿</b>
-                                    <span className="club-menu-sub">玩錯紀錄、規則連結、詞庫</span>
-                                </span>
-                                <span className="club-menu-arrow" aria-hidden="true">›</span>
-                            </button>
-                        </div>
-                    )}
                     {personal.isLoggedIn && (
                         <>
                             {isAdmin && (
@@ -1362,12 +1345,28 @@ export default function MyList({
                                 >
                                     <span className="club-menu-icon" aria-hidden="true">📅</span>
                                     <span className="club-menu-text">
-                                        <b>我的場次</b>
+                                        <b>我的聚會</b>
                                         <span className="club-menu-sub">參加過的聚會與心得</span>
                                     </span>
                                     <span className="club-menu-arrow" aria-hidden="true">›</span>
                                 </button>
                             </div>
+                            {isVip && !isAdmin && (
+                                <div className="club-list club-more">
+                                    <button
+                                        type="button"
+                                        className="club-menu-item club-menu-single"
+                                        onClick={() => setView('submissions')}
+                                    >
+                                        <span className="club-menu-icon" aria-hidden="true">✍️</span>
+                                        <span className="club-menu-text">
+                                            <b>我的投稿</b>
+                                            <span className="club-menu-sub">玩錯紀錄、規則連結、詞庫</span>
+                                        </span>
+                                        <span className="club-menu-arrow" aria-hidden="true">›</span>
+                                    </button>
+                                </div>
+                            )}
                             {!isAdmin && !isVip && (
                                 <div className="club-list club-more">
                                     <button

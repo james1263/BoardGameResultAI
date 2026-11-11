@@ -34,12 +34,9 @@ function effectivePoints(d: { pub: string; like: string; dislike: string }) {
 
 export default function GatheringNotePanel({
     gatheringId,
-    gatheredOn,
     games,
     blockedReason,
     getNote,
-    personal,
-    playSessions,
     renderCover,
     onOpenGame,
     onChanged,
@@ -104,12 +101,6 @@ export default function GatheringNotePanel({
         }
     }
 
-    function hasSession(bggName: string): boolean {
-        return playSessions
-            .getSessions(bggName)
-            .some((item) => item.playedOn === gatheredOn)
-    }
-
     function isDirty(bggName: string): boolean {
         const draft = draftOf(bggName)
         const base = baseOf(bggName)
@@ -118,8 +109,7 @@ export default function GatheringNotePanel({
             draft.priv !== base.priv ||
             draft.pub !== base.pub ||
             points.like !== base.like ||
-            points.dislike !== base.dislike ||
-            (draft.play && !hasSession(bggName))
+            points.dislike !== base.dislike
         )
     }
 
@@ -134,9 +124,6 @@ export default function GatheringNotePanel({
     const draft = draftOf(cur.bggName)
     const base = baseOf(cur.bggName)
     const dirtyNames = games.filter((g) => isDirty(g.bggName)).map((g) => g.bggName)
-    const recorded = hasSession(cur.bggName)
-    const canRecordPlay =
-        personal.canEdit && playSessions.status === 'ready' && !playSessions.busy
     const hasSaved = base.priv !== '' || base.pub !== ''
     const text = pane === 'private' ? draft.priv : draft.pub
     const pointsWithoutPublic =
@@ -208,37 +195,6 @@ export default function GatheringNotePanel({
                 },
             }))
             onChanged()
-        }
-
-        // 已有同一天、同一款的紀錄就沿用，不新增也不覆寫
-        if (d.play && !hasSession(bggName)) {
-            const ok = await playSessions.addSession(bggName, {
-                playedOn: gatheredOn,
-                playerCount: null,
-                note: '',
-            })
-            if (!ok) {
-                setError(
-                    noteChanged
-                        ? '心得已儲存，但新增遊玩紀錄失敗，請稍後再試。'
-                        : '新增遊玩紀錄失敗，請稍後再試。',
-                )
-                setDrafts((c) => ({
-                    ...c,
-                    [bggName]: {
-                        priv: d.priv,
-                        pub: d.pub,
-                        like: points.like,
-                        dislike: points.dislike,
-                        play: true,
-                    },
-                }))
-                return false
-            }
-            // 有紀錄就一定玩過；略過「次數 0 時設為 1」的規則，避免總次數多算
-            if (!personal.getEntry(bggName).played) {
-                personal.updateEntry(bggName, { played: true }, { skipPlayedRule: true })
-            }
         }
 
         setDrafts((c) => ({
@@ -493,25 +449,6 @@ export default function GatheringNotePanel({
                         <p className="gn2-warn">
                             你的公開留言已被管理者隱藏，其他人看不到。修改內容不會自動恢復公開；清空公開欄並儲存可以撤回。
                         </p>
-                    )}
-
-                    {recorded ? (
-                        <p className="gn2-played">✓ 這場已記成「有玩過」，已算進你的已玩次數</p>
-                    ) : (
-                        <label className="gn2-check">
-                            <input
-                                type="checkbox"
-                                checked={draft.play}
-                                disabled={!canRecordPlay || saving}
-                                onChange={(event) =>
-                                    patchDraft(cur.bggName, { play: event.target.checked })
-                                }
-                            />
-                            <span>
-                                我這場有玩這款
-                                <small>勾選後，我的「已玩次數」會 +1。</small>
-                            </span>
-                        </label>
                     )}
 
                     {hasSaved && (
