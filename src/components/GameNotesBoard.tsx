@@ -242,6 +242,7 @@ export default function GameNotesBoard({
                 name={note.nickname}
                 mine={note.isMine}
                 date={note.postedOn ? formatDate(note.postedOn) : ''}
+                tag={note.tag}
                 content={note.content}
                 like={note.like}
                 dislike={note.dislike}

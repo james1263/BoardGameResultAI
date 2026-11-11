@@ -10,6 +10,7 @@ export default function NoteListItem({
   mine = false,
   date,
   gameName,
+  tag,
   onOpenGame,
   content,
   open,
@@ -32,6 +33,7 @@ export default function NoteListItem({
   mine?: boolean
   date?: string
   gameName?: string
+  tag?: string // 場次標籤（例如「11/11 聚會名稱」），沒標聚會就不傳
   onOpenGame?: () => void
   content: string
   open: boolean
@@ -94,21 +96,26 @@ export default function NoteListItem({
             {open ? '▴' : '▾'}
           </span>
         </div>
-        {gameName &&
-          (onOpenGame ? (
-            <button
-              type="button"
-              className="nl-game"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpenGame()
-              }}
-            >
-              {gameName} ›
-            </button>
-          ) : (
-            <span className="nl-game nl-game-off">{gameName}</span>
-          ))}
+        {(gameName || tag) && (
+          <div className="nl-chips">
+            {gameName &&
+              (onOpenGame ? (
+                <button
+                  type="button"
+                  className="nl-game"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onOpenGame()
+                  }}
+                >
+                  {gameName} ›
+                </button>
+              ) : (
+                <span className="nl-game nl-game-off">{gameName}</span>
+              ))}
+            {tag ? <span className="nl-tag">🏷 {tag}</span> : null}
+          </div>
+        )}
         {hideText ? null : <p className={`nl-text${open ? ' full' : ''}`}>{content}</p>}
         {open && !hideText && (like || dislike) ? (
           <div className="np-view">

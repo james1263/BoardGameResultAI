@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import NoteListItem from './NoteListItem'
 import NoteLikersButton from './NoteLikersButton'
 import { likeErrorText, toggleNoteLike } from '../lib/noteLikes'
+import { formatNoteTag } from '../lib/noteTag'
 import '../styles/club-board.css'
 import { askConfirm } from '../lib/askConfirm'
 
@@ -21,6 +22,8 @@ type NoteRow = {
   dislike_point?: string | null
   like_count?: number | null
   i_liked?: boolean | null
+  gathering_date?: string | null
+  gathering_title?: string | null
 }
 
 // 搜尋時忽略大小寫、空白與標點
@@ -210,6 +213,7 @@ export default function ClubBoard({
                         mine={row.is_mine}
                         date={row.posted_on ? row.posted_on.replaceAll('-', '/') : ''}
                         gameName={gameName}
+                        tag={formatNoteTag(row.gathering_date, row.gathering_title)}
                         onOpenGame={game ? () => onOpenGame(game, 'discussion') : undefined}
                         content={row.content}
                         like={row.like_point ?? ''}

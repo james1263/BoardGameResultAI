@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { likeErrorText, toggleNoteLike } from './noteLikes'
+import { formatNoteTag } from './noteTag'
 
 export type BoardNote = {
   id: string
@@ -12,6 +13,7 @@ export type BoardNote = {
   dislike: string // 不喜歡的點（選填）
   likeCount: number // 按讚數
   iLiked: boolean // 我是否按過讚
+  tag: string // 場次標籤（標了聚會才有，例如「11/11 聚會名稱」）
 }
 
 // 自己在這款遊戲「別處玩過」類型的留言（可編輯；含被隱藏的）
@@ -35,6 +37,8 @@ type PublicRow = {
   dislike_point?: string | null
   like_count?: number | null
   i_liked?: boolean | null
+  gathering_date?: string | null
+  gathering_title?: string | null
 }
 type HiddenRow = {
   id: string
@@ -95,6 +99,7 @@ export function useGameNotesBoard(
         dislike: row.dislike_point ?? '',
         likeCount: Number(row.like_count ?? 0),
         iLiked: !!row.i_liked,
+        tag: formatNoteTag(row.gathering_date, row.gathering_title),
       })),
     )
 
@@ -127,6 +132,7 @@ export function useGameNotesBoard(
             dislike: row.dislike_point ?? '',
             likeCount: 0,
             iLiked: false,
+            tag: '',
           })),
         )
       }

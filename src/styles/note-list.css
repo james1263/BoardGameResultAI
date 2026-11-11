@@ -22,8 +22,8 @@
 .nl-row {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 10px 8px;
+  gap: 8px;
+  padding: 6px 6px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -96,9 +96,9 @@
   color: #8a8f84;
 }
 .nl-text {
-  margin: 5px 0 0;
+  margin: 3px 0 0;
   font-size: 15px;
-  line-height: 1.45;
+  line-height: 1.4;
   color: #34463c;
   white-space: pre-wrap;
   word-break: break-word;
@@ -116,16 +116,40 @@
 }
 .nl-actions,
 .nl-edit {
-  padding: 0 12px 10px;
+  padding: 0 10px 6px;
 }
 .nl-edit {
-  padding-top: 9px;
+  padding-top: 6px;
 }
 .nl-btnrow {
   display: flex;
   justify-content: flex-end;
   gap: 14px;
 }
+/* 遊戲名稱與場次標籤放在同一行（放不下就換行） */
+.nl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin: 3px 0 0;
+}
+.nl-chips .nl-game {
+  margin: 0;
+}
+.nl-tag {
+  display: inline-block;
+  max-width: 100%;
+  padding: 2px 10px;
+  font-size: 13px;
+  color: #7a5a33;
+  background: #f3e7d3;
+  border: 1px solid #e2cfae;
+  border-radius: 999px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* 輸入框矮一點 */
 .gb-board .gb-textarea.nl-short,
 .cb-compose .gb-textarea.nl-short,
