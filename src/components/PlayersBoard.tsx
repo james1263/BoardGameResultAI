@@ -134,13 +134,18 @@ export default function PlayersBoard({
 
   return (
     <>
-      <div className="lb-tabs">
+      <div className="lbc-boards" role="tablist">
         {TABS.map((item) => (
           <button
             key={item.key}
             type="button"
-            className={`lb-tab ${tab === item.key ? 'active' : ''}`}
-            onClick={() => setTab(item.key)}
+            role="tab"
+            aria-selected={tab === item.key}
+            className={`lbc-board ${tab === item.key ? 'active' : ''}`}
+            onClick={(event) => {
+              setTab(item.key)
+              event.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+            }}
           >
             {item.label}
           </button>

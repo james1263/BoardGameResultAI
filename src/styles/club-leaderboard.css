@@ -1,0 +1,442 @@
+/* 統計中心改版（第一批：外框、頂部切換列、遊戲榜）
+   只作用在 .mylist-drawer.club-leaderboard，其他抽屜、首頁、我的統計、統計表全螢幕頁不受影響
+   深色模式：跟隨系統，只限這個抽屜；不動 :root，不依賴 .club-home／.club-stats */
+
+/* ---------- 顏色變數（淺色＝原本米白深綠） ---------- */
+.mylist-drawer.club-leaderboard {
+  --lc-bg: #fffdf9;
+  --lc-card: #ffffff;
+  --lc-line: rgba(52, 70, 60, 0.14);
+  --lc-ink: #34463c;
+  --lc-sub: #6f7d74;
+  --lc-accent: #456b50;
+  --lc-accent-bg: rgba(69, 107, 80, 0.12);
+  --lc-tab-bg: #efe6d2;
+  --lc-tab-on: #456b50;
+  --lc-tab-on-ink: #fbf7ec;
+  --lc-btn-bg: #ffffff;
+  --lc-input-bg: #ffffff;
+  --lc-panel-bg: #fbf7ec;
+  --lc-gold: #c58a1a;
+  background: var(--lc-bg);
+  color: var(--lc-ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  .mylist-drawer.club-leaderboard {
+    color-scheme: dark; /* 只影響這個抽屜裡的捲軸與表單元件 */
+    --lc-bg: #151c18;
+    --lc-card: #212b25;
+    --lc-line: rgba(232, 239, 233, 0.14);
+    --lc-ink: #e8efe9;
+    --lc-sub: #a9b8ae;
+    --lc-accent: #8fc7a2;
+    --lc-accent-bg: rgba(143, 199, 162, 0.16);
+    --lc-tab-bg: #212b25;
+    --lc-tab-on: #3f6b50;
+    --lc-tab-on-ink: #f1f7f2;
+    --lc-btn-bg: #2a362f;
+    --lc-input-bg: #1b241f;
+    --lc-panel-bg: #1b241f;
+    --lc-gold: #e3b04b;
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* ---------- 標題 ---------- */
+.mylist-drawer.club-leaderboard .mylist-header {
+  border-bottom: 1px solid var(--lc-line);
+}
+.mylist-drawer.club-leaderboard .mylist-header h2,
+.mylist-drawer.club-leaderboard .mylist-close {
+  color: var(--lc-ink);
+}
+
+/* ---------- 頂部切換：膠囊分頁＋右側統計表圖示按鈕 ---------- */
+.mylist-drawer.club-leaderboard .lbc-pages {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 0;
+}
+.mylist-drawer.club-leaderboard .lbc-pageset {
+  display: flex;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--lc-tab-bg);
+}
+.mylist-drawer.club-leaderboard .lbc-page {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--lc-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mylist-drawer.club-leaderboard .lbc-page.active {
+  background: var(--lc-tab-on);
+  color: var(--lc-tab-on-ink);
+}
+.mylist-drawer.club-leaderboard .lbc-table-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--lc-line);
+  border-radius: 50%;
+  background: var(--lc-card);
+  color: var(--lc-accent);
+  cursor: pointer;
+}
+.mylist-drawer.club-leaderboard .lbc-table-btn.active {
+  background: var(--lc-accent-bg);
+}
+@media (max-width: 380px) {
+  .mylist-drawer.club-leaderboard .lbc-page {
+    padding: 0 2px;
+    font-size: 13px;
+  }
+}
+
+/* ---------- 遊戲榜第二層：橫向可滑的膠囊列（不縮小、不換行） ---------- */
+.mylist-drawer.club-leaderboard .lbc-boards {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.mylist-drawer.club-leaderboard .lbc-boards::-webkit-scrollbar {
+  display: none;
+}
+.mylist-drawer.club-leaderboard .lbc-board {
+  flex: none;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--lc-line);
+  border-radius: 999px;
+  background: var(--lc-btn-bg);
+  color: var(--lc-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mylist-drawer.club-leaderboard .lbc-board.active {
+  border-color: var(--lc-tab-on);
+  background: var(--lc-tab-on);
+  color: var(--lc-tab-on-ink);
+}
+
+/* ---------- 搜尋列與篩選面板（只調顏色，結構不動） ---------- */
+.mylist-drawer.club-leaderboard .lbs-bar {
+  border-color: var(--lc-line);
+  background: var(--lc-input-bg);
+}
+.mylist-drawer.club-leaderboard .lbs-bar:focus-within {
+  border-color: var(--lc-accent);
+}
+.mylist-drawer.club-leaderboard .lbs-input {
+  color: var(--lc-ink);
+}
+.mylist-drawer.club-leaderboard .lbs-clear {
+  color: var(--lc-sub);
+}
+.mylist-drawer.club-leaderboard .lbs-filter {
+  border-color: var(--lc-line);
+  background: var(--lc-btn-bg);
+  color: var(--lc-ink);
+}
+.mylist-drawer.club-leaderboard .lbs-filter.on {
+  border-color: var(--lc-tab-on);
+  background: var(--lc-tab-on);
+  color: var(--lc-tab-on-ink);
+}
+.mylist-drawer.club-leaderboard .lbs-badge {
+  background: var(--lc-tab-on-ink);
+  color: var(--lc-tab-on);
+}
+.mylist-drawer.club-leaderboard .lbs-panel {
+  border-color: var(--lc-line);
+  background: var(--lc-panel-bg);
+}
+.mylist-drawer.club-leaderboard .lbs-label {
+  color: var(--lc-sub);
+}
+.mylist-drawer.club-leaderboard .lbs-chips button,
+.mylist-drawer.club-leaderboard .lbs-seg button {
+  border-color: var(--lc-line);
+  background: var(--lc-btn-bg);
+  color: var(--lc-ink);
+}
+.mylist-drawer.club-leaderboard .lbs-chips button.active,
+.mylist-drawer.club-leaderboard .lbs-seg button.active {
+  border-color: var(--lc-tab-on);
+  background: var(--lc-tab-on);
+  color: var(--lc-tab-on-ink);
+}
+.mylist-drawer.club-leaderboard .lbs-field select {
+  border-color: var(--lc-line);
+  background: var(--lc-input-bg);
+  color: var(--lc-ink);
+}
+.mylist-drawer.club-leaderboard .lbs-reset {
+  color: var(--lc-accent);
+}
+
+/* ---------- 說明列、最高／最低切換（沿用 .lb-pages.pb-toggle） ---------- */
+.mylist-drawer.club-leaderboard .mylist-body {
+  padding: 12px 16px 28px;
+}
+.mylist-drawer.club-leaderboard .lb-pages {
+  background: var(--lc-tab-bg);
+}
+.mylist-drawer.club-leaderboard .lb-pages button {
+  color: var(--lc-ink);
+}
+.mylist-drawer.club-leaderboard .lb-pages button.active {
+  background: var(--lc-tab-on);
+  color: var(--lc-tab-on-ink);
+}
+.mylist-drawer.club-leaderboard .mylist-empty,
+.mylist-drawer.club-leaderboard .st-tip,
+.mylist-drawer.club-leaderboard .sc-note {
+  color: var(--lc-sub);
+}
+
+/* ---------- 榜單列表：卡片（名次、封面、名稱、數值） ---------- */
+.mylist-drawer.club-leaderboard .mylist-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mylist-drawer.club-leaderboard .mylist-list > .mylist-item {
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 12px 8px 10px;
+  border: 1px solid var(--lc-line);
+  border-radius: 14px;
+  background: var(--lc-card);
+}
+.mylist-drawer.club-leaderboard .mylist-list .mylist-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+}
+.mylist-drawer.club-leaderboard .mylist-info {
+  min-width: 0; /* 長名稱不擠壓右側數值 */
+}
+.mylist-drawer.club-leaderboard .mylist-name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--lc-ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mylist-drawer.club-leaderboard .lb-rank {
+  width: 2em;
+  color: var(--lc-accent);
+}
+.mylist-drawer.club-leaderboard .lb-rank.top {
+  color: var(--lc-gold); /* 前三名金色強調 */
+}
+.mylist-drawer.club-leaderboard .lb-value {
+  flex: none;
+  white-space: nowrap;
+}
+.mylist-drawer.club-leaderboard .lb-value strong {
+  color: var(--lc-ink);
+}
+.mylist-drawer.club-leaderboard .lb-value span {
+  color: var(--lc-sub);
+}
+
+/* 顯示名單／評分者按鈕與展開的名單：接在卡片下方 */
+.mylist-drawer.club-leaderboard .lb-people-btn {
+  margin-top: 4px;
+  padding: 3px 10px;
+  border: 1px solid var(--lc-line);
+  border-radius: 999px;
+  background: var(--lc-btn-bg);
+  color: var(--lc-sub);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.mylist-drawer.club-leaderboard .mylist-list > .lb-people-row {
+  margin-top: -8px;
+  padding: 8px 12px 10px;
+  border: 1px solid var(--lc-line);
+  border-top: 0;
+  border-radius: 0 0 14px 14px;
+  background: var(--lc-card);
+  color: var(--lc-ink);
+  list-style: none;
+}
+.mylist-drawer.club-leaderboard .mylist-list > .mylist-item:has(+ .lb-people-row) {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* ---------- 空狀態 ---------- */
+.mylist-drawer.club-leaderboard .lb-empty {
+  border-color: var(--lc-line);
+  background: var(--lc-card);
+}
+.mylist-drawer.club-leaderboard .lb-empty b {
+  color: var(--lc-ink);
+}
+.mylist-drawer.club-leaderboard .lb-empty p {
+  color: var(--lc-sub);
+}
+.mylist-drawer.club-leaderboard .lb-empty-btn {
+  background: var(--lc-tab-on);
+  color: var(--lc-tab-on-ink);
+}
+
+/* ======================= 第二批：玩家榜、規則助手 ======================= */
+
+/* 玩家榜／規則助手在 .mylist-body 內：第二層分頁與搜尋列不再重複左右留白 */
+.mylist-drawer.club-leaderboard .mylist-body .lbc-boards {
+  margin: 0 -16px;
+  padding: 0 16px 10px;
+}
+.mylist-drawer.club-leaderboard .mylist-body .lbs {
+  padding: 0 0 8px;
+}
+.mylist-drawer.club-leaderboard .mylist-body .lb-hintrow {
+  margin-bottom: 8px;
+}
+
+/* 玩家榜（評分、綜合分數）：每位玩家一張卡片，下方是最高／最低分遊戲的封面 */
+.mylist-drawer.club-leaderboard .pbg-list {
+  display: grid;
+  gap: 8px;
+}
+.mylist-drawer.club-leaderboard .pbg-row {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--lc-line);
+  border-radius: 14px;
+  background: var(--lc-card);
+  color: var(--lc-ink);
+}
+.mylist-drawer.club-leaderboard .pbg-who {
+  color: var(--lc-ink);
+}
+.mylist-drawer.club-leaderboard .pbg-score {
+  color: var(--lc-accent);
+}
+.mylist-drawer.club-leaderboard .pbg-game {
+  color: var(--lc-ink);
+}
+.mylist-drawer.club-leaderboard .pbg-thumb {
+  background: var(--lc-tab-bg);
+}
+.mylist-drawer.club-leaderboard .pbg-name {
+  color: var(--lc-ink);
+}
+
+/* 規則助手熱搜：卡片列表（名次圓章、名稱、次數） */
+.mylist-drawer.club-leaderboard .rsb-periods {
+  margin: 0 0 12px;
+}
+.mylist-drawer.club-leaderboard .rsb-h {
+  margin: 4px 0 8px;
+  font-size: 16px;
+  color: var(--lc-ink);
+}
+.mylist-drawer.club-leaderboard .rsb-h2 {
+  margin-top: 18px;
+}
+.mylist-drawer.club-leaderboard .rsb-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mylist-drawer.club-leaderboard .rsb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--lc-line);
+  border-radius: 14px;
+  background: var(--lc-card);
+}
+.mylist-drawer.club-leaderboard .rsb-rank {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--lc-accent-bg);
+  color: var(--lc-accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+.mylist-drawer.club-leaderboard .rsb-rank.top {
+  color: var(--lc-gold);
+}
+.mylist-drawer.club-leaderboard .rsb-link,
+.mylist-drawer.club-leaderboard .rsb-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--lc-ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+}
+.mylist-drawer.club-leaderboard .rsb-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.mylist-drawer.club-leaderboard .rsb-games {
+  margin-left: 6px;
+  color: var(--lc-sub);
+  font-size: 12px;
+  font-weight: 400;
+}
+.mylist-drawer.club-leaderboard .rsb-count {
+  flex: none;
+  color: var(--lc-accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.mylist-drawer.club-leaderboard .rsb-empty {
+  margin: 4px 0;
+  color: var(--lc-sub);
+  font-size: 13px;
+}
+.mylist-drawer.club-leaderboard .rsb-foot {
+  margin: 14px 0 0;
+  color: var(--lc-sub);
+  font-size: 12px;
+  line-height: 1.6;
+}

@@ -24,6 +24,7 @@ import '../styles/stats-chart.css'
 import InfoHint from './InfoHint'
 import '../styles/leaderboard-filter.css'
 import '../styles/leaderboard-search.css'
+import '../styles/club-leaderboard.css'
 
 type BoardKey = 'want' | 'played' | 'overall' | 'keep' | 'combo'
 type Period = 'all' | 'month' | 'quarter' | 'year'
@@ -471,7 +472,7 @@ export default function Leaderboard({
       {(
         <>
           <div className="mylist-backdrop" onClick={onClose} />
-          <aside className="mylist-drawer" role="dialog" aria-label="統計中心">
+          <aside className="mylist-drawer club-leaderboard" role="dialog" aria-label="統計中心">
             <div className="mylist-header">
               <h2>統計中心</h2>
               <button
@@ -485,34 +486,41 @@ export default function Leaderboard({
             </div>
 
             {(canSeePeople || isAdmin) && (
-              <div className="lb-pages">
+              <div className="lbc-pages">
+                <div className="lbc-pageset">
+                  <button
+                    type="button"
+                    className={`lbc-page ${page === 'games' ? 'active' : ''}`}
+                    onClick={() => setPage('games')}
+                  >
+                    遊戲榜
+                  </button>
+                  <button
+                    type="button"
+                    className={`lbc-page ${page === 'players' ? 'active' : ''}`}
+                    onClick={() => setPage('players')}
+                  >
+                    玩家榜
+                  </button>
+                  <button
+                    type="button"
+                    className={`lbc-page ${page === 'rules' ? 'active' : ''}`}
+                    onClick={() => setPage('rules')}
+                  >
+                    規則助手
+                  </button>
+                </div>
                 <button
                   type="button"
-                  className={page === 'games' ? 'active' : ''}
-                  onClick={() => setPage('games')}
-                >
-                  遊戲榜
-                </button>
-                <button
-                  type="button"
-                  className={page === 'players' ? 'active' : ''}
-                  onClick={() => setPage('players')}
-                >
-                  玩家榜
-                </button>
-                <button
-                  type="button"
-                  className={page === 'rules' ? 'active' : ''}
-                  onClick={() => setPage('rules')}
-                >
-                  規則助手
-                </button>
-                <button
-                  type="button"
-                  className={statsOpen ? 'active' : ''}
+                  className={`lbc-table-btn ${statsOpen ? 'active' : ''}`}
+                  aria-label="開啟統計表"
+                  title="統計表"
                   onClick={() => setStatsOpen(true)}
                 >
-                  統計表 ↗
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <path d="M3 10h18M3 15h18M9 4v16" />
+                  </svg>
                 </button>
               </div>
             )}
@@ -538,13 +546,18 @@ export default function Leaderboard({
               </div>
             ) : (
               <>
-            <div className={`lb-tabs${boards.length > 4 ? ' lb-tabs-5' : ''}`}>
+            <div className="lbc-boards" role="tablist">
               {boards.map((item) => (
                 <button
                   key={item.key}
                   type="button"
-                  className={`lb-tab ${board === item.key ? 'active' : ''}`}
-                  onClick={() => setBoard(item.key)}
+                  role="tab"
+                  aria-selected={board === item.key}
+                  className={`lbc-board ${board === item.key ? 'active' : ''}`}
+                  onClick={(event) => {
+                    setBoard(item.key)
+                    event.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+                  }}
                 >
                   {item.label}
                 </button>
