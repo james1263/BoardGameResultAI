@@ -24,34 +24,6 @@
   background: var(--ch-bg);
 }
 
-@media (prefers-color-scheme: dark) {
-  .mylist-drawer.club-home {
-    color-scheme: dark; /* 只影響這個抽屜裡的捲軸與表單元件 */
-    --ch-bg: #151c18;
-    --ch-card: #212b25;
-    --ch-line: rgba(232, 239, 233, 0.14);
-    --ch-ink: #e8efe9;
-    --ch-sub: #a9b8ae;
-    --ch-icon: #8fc7a2;
-    --ch-icon-bg: rgba(143, 199, 162, 0.16);
-    --ch-arrow: #8d9a92;
-    --ch-count: #8fc7a2;
-    --ch-pts-bg: #2c2a21;
-    --ch-pts-line: #4d4533;
-    --ch-pts-label: #d1bf98;
-    --ch-pts-ink: #f6efdc;
-    --ch-pts-arrow: #c9b994;
-    --ch-warn: #ff9c8c;
-    --ch-go: #5d8a6e;
-    --ch-dot: #ef5a5a;
-    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
-  }
-  /* 個人資訊卡維持深墨綠，只和深色底拉開一點距離 */
-  .mylist-drawer.club-home .club-card {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-}
-
 .mylist-drawer.club-home .club-body {
   padding-bottom: 28px; /* 最後一張卡不被底部導覽遮住（抽屜本身已停在導覽上方） */
 }
@@ -250,3 +222,4 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+/* 第 3 批：深色模式區塊已移除，全站統一淺色 */

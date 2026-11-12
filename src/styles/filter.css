@@ -496,3 +496,80 @@ p.filter-group-hint {
   padding-bottom: 12px;
   color: var(--c-ink-soft);
 }
+
+/* ---------- 第 2 批：手機一目了然（人數 2×2、時間單行橫滑、常用在前、其餘收進「更多篩選」） ---------- */
+.filter-drawer .filter-grid-people {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.filter-drawer .filter-heading {
+  margin-bottom: 8px;
+}
+
+.filter-drawer .filter-group {
+  margin-top: 12px;
+}
+
+.filter-drawer .filter-group-title {
+  margin-bottom: 6px;
+}
+
+.filter-drawer .filter-field {
+  gap: 4px;
+}
+
+.filter-drawer .filter-field select {
+  min-height: 38px;
+}
+
+.filter-pills.filter-pills-scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.filter-pills.filter-pills-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-pills.filter-pills-scroll .filter-pill {
+  flex: none;
+  white-space: nowrap;
+}
+
+.filter-drawer .filter-more {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #eeeee6;
+}
+
+.filter-drawer .filter-more > summary {
+  padding: 6px 0;
+  color: #4d6847;
+  font-size: 14px;
+  font-weight: 750;
+  cursor: pointer;
+  list-style: none;
+}
+
+.filter-drawer .filter-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.filter-drawer .filter-more > summary::after {
+  content: ' ▾';
+}
+
+.filter-drawer .filter-more[open] > summary::after {
+  content: ' ▴';
+}
+
+.filter-drawer .mine-filter {
+  margin-top: 10px;
+}
+
+.filter-drawer .mine-eyes {
+  margin: 6px 0;
+}

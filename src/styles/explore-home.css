@@ -210,3 +210,163 @@
     min-width: 0;
   }
 }
+
+/* ---------- 第 1 批（第 8 項）：標題顏色修正、手機縮小留白 ---------- */
+main .library .section-heading.explore-head h2 {
+  color: var(--c-ink, #34463c);
+}
+
+@media (max-width: 520px) {
+  .explore-home .explore-title {
+    margin-bottom: 6px;
+    font-size: 16px;
+  }
+
+  .explore-new-list {
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+
+  .explore-new-list > li {
+    width: 112px;
+  }
+
+  .explore-new-art {
+    height: 78px;
+  }
+
+  .explore-new-name {
+    padding-top: 4px;
+    font-size: 13px;
+  }
+
+  .explore-home.explore-new {
+    padding-bottom: 0;
+  }
+
+  .hero-tools-row.explore-meta {
+    gap: 4px 8px;
+  }
+
+  .explore-mine-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .library .explore-head {
+    margin-bottom: 8px;
+  }
+
+  .library .explore-head h2 {
+    font-size: 18px;
+  }
+}
+
+/* ---------- 第 1 批（第 8 項）：手機首頁頂部（標題＋搜尋區）縮小 ---------- */
+@media (max-width: 520px) {
+  .hero {
+    padding: 10px 16px 4px;
+  }
+
+  .hero-inner {
+    gap: 6px;
+  }
+
+  .hero h1 {
+    font-size: 20px;
+    line-height: 1.2;
+  }
+
+  .hero .search-box {
+    min-height: 42px;
+    padding: 0 12px;
+  }
+
+  .hero .search-box > span:first-child {
+    font-size: 22px;
+  }
+
+  .hero-tools {
+    gap: 6px;
+  }
+}
+
+/* ---------- 第 1 批（第 8 項補充）：拿掉「新加入桌遊」「探索所有桌遊」兩個標題並縮排 ----------
+   標題只是視覺上隱藏（螢幕閱讀器仍讀得到），App.tsx、NewArrivals.tsx 不用改 */
+.explore-home .explore-title,
+main .library .section-heading.explore-head h2 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 標題沒了，排序靠右 */
+main .library .explore-head {
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.explore-home.explore-new {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.explore-new-list {
+  padding-top: 0;
+  padding-bottom: 4px;
+}
+
+.explore-home.explore-types .quick-chips {
+  margin-top: 4px;
+  padding-bottom: 2px;
+}
+
+main .library {
+  padding-top: 2px;
+}
+
+/* ---------- 第 1 批：類型膠囊與排序（Ranking engine／升冪降冪）排在同一排 ---------- */
+.explore-types-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.explore-types-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.explore-types-row .quick-chips {
+  margin: 0;
+}
+
+.explore-types-row .explore-sort {
+  flex: none;
+  justify-content: flex-end;
+}
+
+main .library .explore-head {
+  margin: 0;
+}
+
+/* 手機放不下一排：膠囊在上、排序在下 */
+@media (max-width: 760px) {
+  .explore-types-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .explore-types-row .explore-sort {
+    flex: none;
+  }
+}

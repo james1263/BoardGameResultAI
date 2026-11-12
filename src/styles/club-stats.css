@@ -21,26 +21,6 @@
   color: var(--cs-ink);
 }
 
-@media (prefers-color-scheme: dark) {
-  .mylist-drawer.club-stats {
-    color-scheme: dark; /* 只影響這個抽屜裡的捲軸與表單元件 */
-    --cs-bg: #151c18;
-    --cs-card: #212b25;
-    --cs-line: rgba(232, 239, 233, 0.14);
-    --cs-ink: #e8efe9;
-    --cs-sub: #a9b8ae;
-    --cs-accent: #8fc7a2;
-    --cs-accent-bg: rgba(143, 199, 162, 0.16);
-    --cs-tab-bg: #212b25;
-    --cs-tab-on: #3f6b50;
-    --cs-tab-on-ink: #f1f7f2;
-    --cs-btn-bg: #2a362f;
-    --cs-input-bg: #1b241f;
-    --cs-warn: #ff9c8c;
-    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
-  }
-}
-
 /* ---------- 標題 ---------- */
 .mylist-drawer.club-stats .mylist-header {
   border-bottom: 1px solid var(--cs-line);
@@ -442,3 +422,64 @@
   font-weight: 700;
   color: var(--cs-accent);
 }
+
+/* ---------- 版型修正：抽屜強制直向排列（標題→分頁→內容），三塊都吃滿寬度 ---------- */
+body .mylist-drawer.club-stats {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+body .mylist-drawer.club-stats > .mylist-header,
+body .mylist-drawer.club-stats > .cs-tabs,
+body .mylist-drawer.club-stats > .mylist-body {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex: none;
+}
+
+body .mylist-drawer.club-stats > .mylist-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body .mylist-drawer.club-stats .mylist-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+body .mylist-drawer.club-stats .mylist-header h2 {
+  margin: 0;
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
+}
+
+/* ---------- 第 1 批（第 5 項）：「聚會．留言」兩個分頁鈕不換行、並排吃滿寬度 ----------
+   （這頁由 MyList.tsx 畫出，這裡的樣式只作用在沒有 club-* 範圍 class 的抽屜） */
+body .mylist-drawer:not(.club-stats):not(.club-home):not(.club-leaderboard) .lb-tabs {
+  display: flex;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+body .mylist-drawer:not(.club-stats):not(.club-home):not(.club-leaderboard) .lb-tabs .lb-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 8px !important;
+  font-size: 16px !important;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-align: center;
+}
+/* 第 3 批：深色模式區塊已移除，全站統一淺色 */

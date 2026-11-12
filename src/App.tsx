@@ -1064,32 +1064,34 @@ function Library({
         />
 
         <div className="explore-home explore-types">
-          <CategoryChips
-            games={boardGames}
-            selected={selectedCategories}
-            onToggle={toggleCategory}
-            onClear={() => setSelectedCategories([])}
-            resultCount={displayedGameCount}
-          />
+          <div className="explore-types-row">
+            <CategoryChips
+              games={boardGames}
+              selected={selectedCategories}
+              onToggle={toggleCategory}
+              onClear={() => setSelectedCategories([])}
+              resultCount={displayedGameCount}
+            />
+            <div className="heading-actions explore-sort">
+              <SortControl
+                sortBy={effectiveSortBy}
+                isAdmin={isAdmin}
+                showMyScores={!!session}
+                setSortBy={handleSetSortBy}
+                sortDirection={sortDirection}
+                onToggleDirection={() =>
+                  setSortDirection((current) =>
+                    current === 'asc' ? 'desc' : 'asc',
+                  )
+                }
+              />
+            </div>
+          </div>
         </div>
 
         <section className="library">
           <div className="section-heading explore-head">
             <h2>探索所有桌遊</h2>
-            <div className="heading-actions">
-                  <SortControl
-                    sortBy={effectiveSortBy}
-                    isAdmin={isAdmin}
-                    showMyScores={!!session}
-                    setSortBy={handleSetSortBy}
-                    sortDirection={sortDirection}
-                    onToggleDirection={() =>
-                      setSortDirection((current) =>
-                        current === 'asc' ? 'desc' : 'asc',
-                      )
-                    }
-                  />
-            </div>
           </div>
 
           <FilterDrawer

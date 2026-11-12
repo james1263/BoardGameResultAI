@@ -1,7 +1,7 @@
 /* 規則助手頁 v2（第一階段：外框、搜尋首頁、選定遊戲頁、玩錯紀錄與規則連結）。
    只改樣式與排列。所有選擇器以 body .ra-backdrop.ra-v2 開頭（優先度高於 vip.css、ra-large.css）。
    不動 .ra-backdrop 的定位（手機停在 --nav-h 上方由 vip.css 與 ra-large.css 負責）。
-   深色模式：只用 prefers-color-scheme，只作用在 .ra-backdrop.ra-v2，不動 :root。 */
+   （深色模式區塊已於第 3 批移除，全站統一淺色。） */
 
 body .ra-backdrop.ra-v2 {
   --ra-bg: #f6f8f2;
@@ -262,127 +262,6 @@ body .ra-backdrop.ra-v2 .ra-src-qa {
 }
 
 /* ---------- 深色模式（跟隨系統，只限規則助手頁） ---------- */
-@media (prefers-color-scheme: dark) {
-  body .ra-backdrop.ra-v2 {
-    color-scheme: dark;
-    --ra-bg: #18211c;
-    --ra-surface: #222e27;
-    --ra-ink: #e6eee4;
-    --ra-soft: #a7b6ab;
-    --ra-line: #34443a;
-    --ra-accent: #7fb08a;
-    --ra-accent-ink: #a9d3b2;
-    --ra-accent-bg: #2a3a31;
-    --ra-warm: #dcb987;
-    --ra-warm-line: #a37c4c;
-    --ra-warm-bg: #2d291f;
-    --ra-danger: #d9534f;
-    --ra-focus: rgba(127, 176, 138, 0.35);
-  }
-
-  /* 玩錯紀錄清單（errata.css 寫死淺色） */
-  body .ra-backdrop.ra-v2 .er-list li,
-  body .ra-backdrop.ra-v2 .er-box {
-    border-color: rgba(220, 185, 135, 0.35);
-    background: var(--ra-surface);
-  }
-
-  body .ra-backdrop.ra-v2 .er-box {
-    background: var(--ra-warm-bg);
-  }
-
-  body .ra-backdrop.ra-v2 .er-title,
-  body .ra-backdrop.ra-v2 .er-body,
-  body .ra-backdrop.ra-v2 .er-list-title {
-    color: var(--ra-ink);
-  }
-
-  body .ra-backdrop.ra-v2 .er-src,
-  body .ra-backdrop.ra-v2 .er-box-title {
-    color: var(--ra-warm);
-  }
-
-  body .ra-backdrop.ra-v2 .er-note,
-  body .ra-backdrop.ra-v2 .er-count {
-    color: var(--ra-soft);
-  }
-
-  body .ra-backdrop.ra-v2 .er-form textarea {
-    border-color: var(--ra-line);
-    background: var(--ra-surface);
-    color: var(--ra-ink);
-  }
-
-  /* 規則助手問答區（ra-compact.css、vip.css 寫死淺色；第二階段會再整理） */
-  body .ra-backdrop.ra-v2 .ra,
-  body .ra-backdrop.ra-v2 .ra2 .ra2-label,
-  body .ra-backdrop.ra-v2 .ra2 .ra2-text {
-    color: var(--ra-ink);
-  }
-
-  body .ra-backdrop.ra-v2 .ra2 .ra2-row input.ra2-input {
-    border-color: var(--ra-line);
-    background: var(--ra-surface);
-    color: var(--ra-ink);
-  }
-
-  body .ra-backdrop.ra-v2 .ra2 .ra2-small,
-  body .ra-backdrop.ra-v2 .ra2 .ra2-status,
-  body .ra-backdrop.ra-v2 .ra2 .ra2-doc,
-  body .ra-backdrop.ra-v2 .ra-suggest-title {
-    color: var(--ra-soft);
-  }
-
-  body .ra-backdrop.ra-v2 .ra2 .ra2-ocr {
-    color: var(--ra-warm);
-  }
-
-  body .ra-backdrop.ra-v2 .ra2 .ra2-page,
-  body .ra-backdrop.ra-v2 .ra2 .ra2-link,
-  body .ra-backdrop.ra-v2 .ra-notice {
-    color: var(--ra-accent-ink);
-  }
-
-  body .ra-backdrop.ra-v2 .ra2 .ra2-pill {
-    border-color: var(--ra-accent);
-    color: var(--ra-accent-ink);
-  }
-
-  body .ra-backdrop.ra-v2 .ra2 .ra2-list > li {
-    border-bottom-color: var(--ra-line);
-  }
-
-  body .ra-backdrop.ra-v2 .ra-chip {
-    border-color: var(--ra-accent);
-    background: var(--ra-surface);
-    color: var(--ra-accent-ink);
-  }
-
-  body .ra-backdrop.ra-v2 .ra-chip-all {
-    background: var(--ra-accent);
-    color: #14201a;
-  }
-
-  body .ra-backdrop.ra-v2 .ra-btn {
-    border-color: var(--ra-accent);
-    background: var(--ra-surface);
-    color: var(--ra-accent-ink);
-  }
-
-  body .ra-backdrop.ra-v2 .ra-btn-main {
-    background: var(--ra-accent);
-    color: #14201a;
-  }
-
-  body .ra-backdrop.ra-v2 .admin-link {
-    color: var(--ra-accent-ink);
-  }
-
-  body .ra-backdrop.ra-v2 .ra-error,
-  body .ra-backdrop.ra-v2 .admin-error {
-    color: var(--ra-danger);
-  }
-}
 
 /* =====================================================================
    第二階段：規則助手問答區（RulebookAssistant）
@@ -692,33 +571,3 @@ body .ra2-sheet .ra-chip:disabled {
 }
 
 /* ---------- 深色模式（第二階段補充） ---------- */
-@media (prefers-color-scheme: dark) {
-  body .ra-backdrop.ra-v2 .ra-mark {
-    background: #6b5a1f;
-    color: #fff4cf;
-  }
-
-  body .ra-backdrop.ra-v2 .ra2 .ra2-badge-scope[data-scope='expansion'] {
-    border-color: #7f9db5;
-    background: rgba(127, 157, 181, 0.18);
-    color: #aac6dc;
-  }
-
-  body .ra2-backdrop {
-    color-scheme: dark;
-    --ra-bg: #1d2822;
-    --ra-surface: #263329;
-    --ra-ink: #e6eee4;
-    --ra-soft: #a7b6ab;
-    --ra-line: #34443a;
-    --ra-accent: #7fb08a;
-    --ra-accent-ink: #a9d3b2;
-    --ra-accent-bg: #2a3a31;
-  }
-
-  body .ra2-sheet .ra-chip[aria-pressed='true'],
-  body .ra2-sheet .ra-btn[aria-pressed='true'] {
-    background: var(--ra-accent);
-    color: #14201a;
-  }
-}

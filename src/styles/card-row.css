@@ -120,3 +120,17 @@
     font-size: 10.5px;
   }
 }
+
+/* ---------- 第 1 批（第 4 項）：清單檢視資訊小字改固定欄寬，每款對齊 ---------- */
+.game-grid.view-list .game-card.no-info .game-row-facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: 6px;
+}
+
+.game-grid.view-list .game-card.no-info .game-row-facts span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

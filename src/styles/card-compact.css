@@ -156,3 +156,32 @@
     gap: 12px;
   }
 }
+
+/* ---------- 第 1 批（第 4 項）：清單檢視（卡片下方文字開啟時）資訊欄固定寬度、每款對齊 ---------- */
+.game-grid.view-list .game-card .game-facts {
+  display: grid;
+  grid-template-columns: 64px 64px 54px 50px;
+  flex: 0 0 auto;
+  gap: 0 8px;
+  width: 248px;
+}
+
+/* 兩個外層 span 不佔版面，裡面四個小項目直接排進格線 */
+.game-grid.view-list .game-card .game-facts > span {
+  display: contents;
+}
+
+.game-grid.view-list .game-card .game-facts > span > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .game-grid.view-list .game-card .game-facts {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 0.9fr);
+    flex: 1 1 100%;
+    width: auto;
+  }
+}

@@ -116,6 +116,10 @@ export default function FilterDrawer(props: FilterDrawerProps) {
     setGroupByMine,
   } = props
 
+  // 「更多篩選」裡有東西被套用時預設展開，避免使用者忘記自己開了什麼
+  const hasMoreActive =
+    onlyNew || hiddenGroups.length > 0 || groupByMine || ratingFilter !== 'all'
+
   return (
     <>
       {isOpen && <div className="drawer-backdrop" onClick={onClose} />}
@@ -150,49 +154,43 @@ export default function FilterDrawer(props: FilterDrawerProps) {
             <div className="filter-group-title">
               <span>
                 我們有幾個人？
-                <InfoHint text="可選區間，例如 3～5 人。只列出整個人數區間都玩得起來的遊戲；只選一邊，就是剛好這個人數。" />
+                <InfoHint text="最少～最多可選區間，例如 3～5 人。只列出整個人數區間都玩得起來的遊戲；只選一邊，就是剛好這個人數。" />
               </span>
             </div>
-            <div className="filter-range">
+            <div className="filter-grid filter-grid-people">
               <NumberSelect
                 label="最少"
                 value={props.groupSize}
                 options={groupSizes}
                 onChange={props.setGroupSize}
               />
-              <span className="filter-range-sep" aria-hidden="true">
-                ～
-              </span>
               <NumberSelect
                 label="最多"
                 value={props.groupSizeMax}
                 options={groupSizes}
                 onChange={props.setGroupSizeMax}
               />
+              <NumberSelect
+                label={
+                  <>
+                    <PairIcon /> 最佳人數
+                  </>
+                }
+                value={props.bestPlayerCount}
+                options={playerCounts}
+                onChange={props.setBestPlayerCount}
+              />
+              <NumberSelect
+                label={
+                  <>
+                    <PersonIcon /> 推薦人數
+                  </>
+                }
+                value={props.recommendPlayerCount}
+                options={playerCounts}
+                onChange={props.setRecommendPlayerCount}
+              />
             </div>
-          </div>
-
-          <div className="filter-grid filter-grid-spaced">
-            <NumberSelect
-              label={
-                <>
-                  <PairIcon /> 最佳人數
-                </>
-              }
-              value={props.bestPlayerCount}
-              options={playerCounts}
-              onChange={props.setBestPlayerCount}
-            />
-            <NumberSelect
-              label={
-                <>
-                  <PersonIcon /> 推薦人數
-                </>
-              }
-              value={props.recommendPlayerCount}
-              options={playerCounts}
-              onChange={props.setRecommendPlayerCount}
-            />
           </div>
 
           <div className="filter-group">
@@ -202,7 +200,7 @@ export default function FilterDrawer(props: FilterDrawerProps) {
                 <InfoHint text="不超過幾分鐘；再按一次可取消。" />
               </span>
             </div>
-            <div className="filter-pills">
+            <div className="filter-pills filter-pills-scroll">
               {TIME_LIMITS.map((limit) => {
                 const on = timeLimit === limit
                 return (
@@ -247,107 +245,110 @@ export default function FilterDrawer(props: FilterDrawerProps) {
             </div>
           </div>
 
-          <div className="filter-group">
-            <label className="category-option">
-              <input
-                type="checkbox"
-                checked={onlyNew}
-                onChange={(event) => setOnlyNew(event.target.checked)}
-              />
-              <span>只看新遊戲（{NEW_GAME_DAYS} 天內加入）</span>
-            </label>
-          </div>
-
-          <div className="mine-filter">
-            <div className="category-heading">
-              <span>
-                我的紀錄
-                <InfoHint text="按眼睛可隱藏該類遊戲。想玩的遊戲就算也玩過，仍歸在「想玩」區。" />
-              </span>
-            </div>
-
-            <div className="mine-eyes">
-              {MINE_GROUPS.map((group) => {
-                const hidden = hiddenGroups.includes(group)
-                return (
-                  <button
-                    key={group}
-                    type="button"
-                    className={`mine-eye ${hidden ? 'hidden' : ''}`}
-                    aria-pressed={!hidden}
-                    onClick={() => toggleMineGroup(group)}
-                  >
-                    <EyeIcon off={hidden} />
-                    {MINE_GROUP_LABELS[group]}
-                  </button>
-                )
-              })}
-            </div>
-
-            <label className="category-option">
-              <input
-                type="checkbox"
-                checked={groupByMine}
-                onChange={(event) => setGroupByMine(event.target.checked)}
-              />
-              <span>依我的紀錄分區顯示</span>
-            </label>
-
+          <details className="filter-more" open={hasMoreActive}>
+            <summary>更多篩選</summary>
             <div className="filter-group">
-              <div className="filter-group-title">
-                <span>評分狀態</span>
-                {!canFilterByRating && (
-                  <span className="filter-group-hint">登入後才能使用</span>
-                )}
+              <label className="category-option">
+                <input
+                  type="checkbox"
+                  checked={onlyNew}
+                  onChange={(event) => setOnlyNew(event.target.checked)}
+                />
+                <span>只看新遊戲（{NEW_GAME_DAYS} 天內加入）</span>
+              </label>
+            </div>
+
+            <div className="mine-filter">
+              <div className="category-heading">
+                <span>
+                  我的紀錄
+                  <InfoHint text="按眼睛可隱藏該類遊戲。想玩的遊戲就算也玩過，仍歸在「想玩」區。" />
+                </span>
               </div>
-              <div className="filter-pills">
-                {RATING_FILTERS.map((value) => {
-                  const on = ratingFilter === value
+
+              <div className="mine-eyes">
+                {MINE_GROUPS.map((group) => {
+                  const hidden = hiddenGroups.includes(group)
                   return (
                     <button
-                      key={value}
+                      key={group}
                       type="button"
-                      className={`filter-pill ${on ? 'on' : ''}`}
-                      aria-pressed={on}
-                      disabled={!canFilterByRating && value !== 'all'}
-                      onClick={() => setRatingFilter(value)}
+                      className={`mine-eye ${hidden ? 'hidden' : ''}`}
+                      aria-pressed={!hidden}
+                      onClick={() => toggleMineGroup(group)}
                     >
-                      {RATING_FILTER_LABELS[value]}
+                      <EyeIcon off={hidden} />
+                      {MINE_GROUP_LABELS[group]}
                     </button>
                   )
                 })}
               </div>
-            </div>
-          </div>
 
-          <div className="filter-group">
-            <div className="filter-group-title">
-              <span>顯示設定</span>
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                gap: '10px 16px',
-              }}
-            >
               <label className="category-option">
                 <input
                   type="checkbox"
-                  checked={props.showCardInfo}
-                  onChange={(event) =>
-                    props.onShowCardInfoChange(event.target.checked)
-                  }
+                  checked={groupByMine}
+                  onChange={(event) => setGroupByMine(event.target.checked)}
                 />
-                <span>顯示卡片下方文字</span>
+                <span>依我的紀錄分區顯示</span>
               </label>
-              <ViewToggle
-                viewMode={props.viewMode}
-                onChange={props.onViewModeChange}
-              />
+
+              <div className="filter-group">
+                <div className="filter-group-title">
+                  <span>評分狀態</span>
+                  {!canFilterByRating && (
+                    <span className="filter-group-hint">登入後才能使用</span>
+                  )}
+                </div>
+                <div className="filter-pills filter-pills-scroll">
+                  {RATING_FILTERS.map((value) => {
+                    const on = ratingFilter === value
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        className={`filter-pill ${on ? 'on' : ''}`}
+                        aria-pressed={on}
+                        disabled={!canFilterByRating && value !== 'all'}
+                        onClick={() => setRatingFilter(value)}
+                      >
+                        {RATING_FILTER_LABELS[value]}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
+
+            <div className="filter-group">
+              <div className="filter-group-title">
+                <span>顯示設定</span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  gap: '10px 16px',
+                }}
+              >
+                <label className="category-option">
+                  <input
+                    type="checkbox"
+                    checked={props.showCardInfo}
+                    onChange={(event) =>
+                      props.onShowCardInfoChange(event.target.checked)
+                    }
+                  />
+                  <span>顯示卡片下方文字</span>
+                </label>
+                <ViewToggle
+                  viewMode={props.viewMode}
+                  onChange={props.onViewModeChange}
+                />
+              </div>
+            </div>
+          </details>
         </section>
 
         <button

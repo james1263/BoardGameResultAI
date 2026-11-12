@@ -55,12 +55,6 @@ const SHEET_TITLES: Record<SheetKey, string> = {
   errata: '玩錯紀錄・AI 回饋',
 }
 
-function playersText(min: number | null | undefined, max: number | null | undefined): string {
-  if (min == null && max == null) return '—'
-  if (min == null || max == null || min === max) return `${min ?? max} 人`
-  return `${min}–${max} 人`
-}
-
 function difficultyText(value: number | null | undefined): string {
   if (value == null) return '—'
   const name =
@@ -305,8 +299,12 @@ export default function GameModal({
             <>
               <div className="gm-info" aria-label="基本資訊">
                 <div className="gm-info-cell">
-                  <span>人數</span>
-                  <b>{playersText(game.minPlayers, game.maxPlayers)}</b>
+                  <span>最佳人數</span>
+                  <b>{bestText(game.bestPlayers)}</b>
+                </div>
+                <div className="gm-info-cell">
+                  <span>推薦人數</span>
+                  <b>{bestText(game.recommendPlayers)}</b>
                 </div>
                 <div className="gm-info-cell">
                   <span>時間</span>
@@ -315,10 +313,6 @@ export default function GameModal({
                 <div className="gm-info-cell">
                   <span>難度</span>
                   <b>{difficultyText(game.bggDifficulty)}</b>
-                </div>
-                <div className="gm-info-cell">
-                  <span>最佳人數</span>
-                  <b>{bestText(game.bestPlayers)}</b>
                 </div>
               </div>
 
