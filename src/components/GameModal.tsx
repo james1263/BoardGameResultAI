@@ -1,5 +1,6 @@
 import { useBackClose } from '../lib/useBackClose'
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -23,10 +24,15 @@ import GamePlayHistory from './GamePlayHistory'
 import GameErrata from './GameErrata'
 import GameExpansions from './GameExpansions'
 import GameBackground from './GameBackground'
+import GameInfoSheet from './GameInfoSheet'
+import { useGameExpansions } from '../lib/useGameExpansions'
+import { useGameBackground } from '../lib/useGameBackground'
+import { useGameErrata } from '../lib/useGameErrata'
 import { useVip } from '../lib/useVip'
 import { useAdminRatings } from '../lib/useGamePeople'
 import { RATING_FIELDS } from '../lib/useGameRatings'
 import '../styles/overview.css'
+import '../styles/game-modal-v2.css'
 
 const TABS = [
   { key: 'overview', label: '概覽' },
@@ -37,8 +43,35 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key']
 
-// 舊的「規則」分頁已併進概覽；外部仍可傳 'rules'，會開到概覽並展開規則區
+// 舊的「規則」分頁已併進概覽；外部仍可傳 'rules'，會開到概覽並直接開「規則連結」彈窗
 const WALL_PREVIEW = 12
+
+type SheetKey = 'rules' | 'background' | 'expansions' | 'errata'
+
+const SHEET_TITLES: Record<SheetKey, string> = {
+  rules: '規則連結與影片',
+  background: '遊戲背景',
+  expansions: '擴充',
+  errata: '玩錯紀錄・AI 回饋',
+}
+
+function playersText(min: number | null | undefined, max: number | null | undefined): string {
+  if (min == null && max == null) return '—'
+  if (min == null || max == null || min === max) return `${min ?? max} 人`
+  return `${min}–${max} 人`
+}
+
+function difficultyText(value: number | null | undefined): string {
+  if (value == null) return '—'
+  const name =
+    value < 1.8 ? '入門' : value < 2.6 ? '輕度' : value < 3.2 ? '中度' : value < 3.8 ? '中重' : '重度'
+  return `${value.toFixed(2)}・${name}`
+}
+
+function bestText(value: unknown): string {
+  if (!Array.isArray(value) || value.length === 0) return '—'
+  return `${value.join('、')} 人`
+}
 
 export default function GameModal({
   game,
@@ -95,31 +128,40 @@ export default function GameModal({
   )
   // 僅供參考的遊戲只有概覽，沒有評分、討論、紀錄
   const activeTab: TabKey = game.referenceOnly ? 'overview' : tab
-  const [rulesOpen, setRulesOpen] = useState(initialTab === 'rules')
+  const [sheet, setSheet] = useState<SheetKey | null>(initialTab === 'rules' ? 'rules' : null)
   const [openType, setOpenType] = useState<string | null>(null)
   const [showAllWall, setShowAllWall] = useState(false)
   const docsApi = useGameDocuments(game.bggName)
   const vip = useVip()
+  // 入口卡片的數量與底部彈窗共用同一份資料（只讀一次）
+  const expApi = useGameExpansions(game.bggName)
+  const bgApi = useGameBackground(game.bggName)
+  const errataApi = useGameErrata(game.bggName, (vip.isVip || isAdmin) && !game.referenceOnly)
   // 只有管理者會讀：每個人各自的評分
   const adminRatings = useAdminRatings(isAdmin)
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const lastGameRef = useRef(game.bggName)
+  const closeSheet = useCallback(() => setSheet(null), [])
   useBackClose(onClose)
+  // 宣告在上面那行之後，彈窗才會在返回鍵堆疊的最上面（一次只退一層）
+  useBackClose(closeSheet, sheet !== null)
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose()
+      if (event.key !== 'Escape') return
+      if (sheet) closeSheet()
+      else onClose()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  }, [onClose, sheet, closeSheet])
 
   // 從小封面切換到另一款遊戲時，回到概覽最上面、收起類型與規則
   useEffect(() => {
     if (lastGameRef.current === game.bggName) return
     lastGameRef.current = game.bggName
     setTab('overview')
-    setRulesOpen(false)
+    setSheet(null)
     setOpenType(null)
     setShowAllWall(false)
     bodyRef.current?.scrollTo({ top: 0 })
@@ -141,10 +183,37 @@ export default function GameModal({
   const wallGames = openType ? (relatedByType[openType] ?? []) : []
   const shownWall = showAllWall ? wallGames : wallGames.slice(0, WALL_PREVIEW)
 
+  // 入口卡片：只顯示原本就有權限、且有資料（或管理者本來就看得到）的入口
+  const bgHasData =
+    !!bgApi.data && (bgApi.data.content !== '' || bgApi.data.links.length > 0)
+  const errataCount = errataApi.items.filter(
+    (item) => !item.status || item.status === 'approved',
+  ).length
+  const entries: { key: SheetKey; icon: string; sub: string }[] = [
+    {
+      key: 'rules',
+      icon: '📖',
+      sub: isAdmin ? '規則書・連結・教學影片' : '連結・教學影片',
+    },
+  ]
+  if (isAdmin || (!bgApi.loading && bgHasData)) {
+    entries.push({ key: 'background', icon: '🏛', sub: bgHasData ? '背景科普' : '尚未填寫' })
+  }
+  if (isAdmin || (!expApi.loading && expApi.rows.length > 0)) {
+    entries.push({
+      key: 'expansions',
+      icon: '🧩',
+      sub: expApi.rows.length > 0 ? `${expApi.rows.length} 個擴充` : '尚未登錄',
+    })
+  }
+  if ((vip.isVip || isAdmin) && !game.referenceOnly) {
+    entries.push({ key: 'errata', icon: '💡', sub: `${errataCount} 則` })
+  }
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <section
-        className="game-modal compact has-tabs"
+        className="game-modal compact has-tabs gm-v2"
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -234,11 +303,31 @@ export default function GameModal({
         <div className="modal-body" role="tabpanel" ref={bodyRef}>
           {activeTab === 'overview' && (
             <>
+              <div className="gm-info" aria-label="基本資訊">
+                <div className="gm-info-cell">
+                  <span>人數</span>
+                  <b>{playersText(game.minPlayers, game.maxPlayers)}</b>
+                </div>
+                <div className="gm-info-cell">
+                  <span>時間</span>
+                  <b>{game.bggTime == null ? '—' : `${game.bggTime} 分鐘`}</b>
+                </div>
+                <div className="gm-info-cell">
+                  <span>難度</span>
+                  <b>{difficultyText(game.bggDifficulty)}</b>
+                </div>
+                <div className="gm-info-cell">
+                  <span>最佳人數</span>
+                  <b>{bestText(game.bestPlayers)}</b>
+                </div>
+              </div>
+
               <DescriptionEditor
                 key={game.bggName}
                 value={game.description ?? ''}
                 isAdmin={isAdmin}
                 onSave={onSaveDescription}
+                clamp
               />
 
               <div className="modal-section">
@@ -322,43 +411,28 @@ export default function GameModal({
               )}
 
               <div className="modal-section">
-                <details
-                  className="ov-fold"
-                  open={rulesOpen}
-                  onToggle={(event) => setRulesOpen(event.currentTarget.open)}
-                >
-                  <summary>規則連結與影片</summary>
-                  <div className="ov-fold-body">
-                    <GameDocuments
-                      key={game.bggName}
-                      api={docsApi}
-                      isAdmin={isAdmin}
-                    />
-                  </div>
-                </details>
-              </div>
-
-              <GameBackground
-                key={game.bggName}
-                bggName={game.bggName}
-                isAdmin={isAdmin}
-              />
-
-              <GameExpansions
-                key={game.bggName}
-                bggName={game.bggName}
-                isAdmin={isAdmin}
-              />
-
-              {(vip.isVip || isAdmin) && !game.referenceOnly && (
-                <div className="modal-section">
-                  <GameErrata
-                    key={game.bggName}
-                    bggName={game.bggName}
-                    isAdmin={isAdmin}
-                  />
+                <div className="gm-entries">
+                  {entries.map((entry) => (
+                    <button
+                      key={entry.key}
+                      type="button"
+                      className="gm-entry"
+                      onClick={() => setSheet(entry.key)}
+                    >
+                      <span className="gm-entry-icon" aria-hidden="true">
+                        {entry.icon}
+                      </span>
+                      <span className="gm-entry-text">
+                        <b>{SHEET_TITLES[entry.key]}</b>
+                        <small>{entry.sub}</small>
+                      </span>
+                      <span className="gm-entry-go" aria-hidden="true">
+                        ›
+                      </span>
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
 
               {isAdmin && (
                 <div className="cover-upload">
@@ -544,6 +618,41 @@ export default function GameModal({
             </div>
           )}
         </div>
+
+        {sheet && (
+          <GameInfoSheet title={SHEET_TITLES[sheet]} onClose={closeSheet}>
+            {sheet === 'rules' && (
+              <GameDocuments key={game.bggName} api={docsApi} isAdmin={isAdmin} />
+            )}
+            {sheet === 'background' && (
+              <GameBackground
+                key={game.bggName}
+                bggName={game.bggName}
+                isAdmin={isAdmin}
+                embedded
+                api={bgApi}
+              />
+            )}
+            {sheet === 'expansions' && (
+              <GameExpansions
+                key={game.bggName}
+                bggName={game.bggName}
+                isAdmin={isAdmin}
+                embedded
+                api={expApi}
+              />
+            )}
+            {sheet === 'errata' && (
+              <GameErrata
+                key={game.bggName}
+                bggName={game.bggName}
+                isAdmin={isAdmin}
+                embedded
+                api={errataApi}
+              />
+            )}
+          </GameInfoSheet>
+        )}
       </section>
     </div>
   )

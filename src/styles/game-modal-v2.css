@@ -1,0 +1,568 @@
+/* 遊戲詳細視窗 v2（只作用在 .game-modal.gm-v2）：圖鑑風頂部、資訊格、入口卡片、底部彈窗、深色模式
+   還原：刪掉這個檔、GameInfoSheet.tsx，並拿掉 GameModal.tsx 的 import 與 gm-v2 class */
+
+/* ---------- 變數（淺色） ---------- */
+.modal-backdrop .game-modal.gm-v2 {
+  --gm-bg: #fffefa;
+  --gm-fixed: #f6f8f2;
+  --gm-card: #fbf7ec;
+  --gm-line: rgba(183, 138, 90, 0.35);
+  --gm-ink: #34463c;
+  --gm-soft: #6b7a70;
+  --gm-accent: #456b50;
+  --gm-caramel: #b78a5a;
+  color: var(--gm-ink);
+  background: var(--gm-bg);
+}
+
+.modal-backdrop .game-modal.gm-v2 .modal-fixed {
+  background: var(--gm-fixed);
+  padding-top: 8px;
+}
+
+/* ---------- 頂部：封面要有份量 ---------- */
+.modal-backdrop .game-modal.gm-v2 .modal-head {
+  align-items: flex-start;
+  gap: 14px;
+  margin: 4px 0 8px;
+}
+
+.modal-backdrop .game-modal.gm-v2 .modal-cover {
+  width: 104px;
+  height: 104px;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(52, 70, 60, 0.22);
+}
+
+.modal-backdrop .game-modal.gm-v2 .modal-game-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 104px;
+  height: 104px;
+  border-radius: 14px;
+  background: var(--gm-card);
+  font-size: 44px;
+}
+
+.modal-backdrop .game-modal.gm-v2 .modal-head-info {
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.modal-backdrop .game-modal.gm-v2 h2 {
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.modal-backdrop .game-modal.gm-v2 .modal-score {
+  font-size: 28px;
+}
+
+.modal-backdrop .game-modal.gm-v2 .ov-counts {
+  color: var(--gm-ink);
+}
+
+/* ---------- 資訊格（2×2，跟著內容捲動） ---------- */
+.gm-v2 .gm-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+
+.gm-v2 .gm-info-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--gm-line);
+  border-radius: 12px;
+  background: var(--gm-card);
+}
+
+.gm-v2 .gm-info-cell span {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--gm-soft);
+}
+
+.gm-v2 .gm-info-cell b {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gm-ink);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 簡介三行可展開 ---------- */
+.gm-v2 .modal-description.is-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.gm-v2 .modal-description.is-clamp.is-open {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+}
+
+.gm-v2 .desc-toggle {
+  display: block;
+  margin: 0 auto 4px;
+  padding: 0 18px;
+  border: 0;
+  background: transparent;
+  color: var(--gm-caramel);
+  font-size: 16px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+/* ---------- 入口卡片（2×2；奇數張最後一張撐滿整列） ---------- */
+.gm-v2 .gm-entries {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gm-v2 .gm-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 8px 10px;
+  border: 1px solid var(--gm-line);
+  border-radius: 12px;
+  background: var(--gm-card);
+  color: var(--gm-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gm-v2 .gm-entry:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.gm-v2 .gm-entry-icon {
+  flex: none;
+  font-size: 20px;
+}
+
+.gm-v2 .gm-entry-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.gm-v2 .gm-entry-text b {
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--gm-ink);
+}
+
+.gm-v2 .gm-entry-text small {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--gm-soft);
+}
+
+.gm-v2 .gm-entry-go {
+  flex: none;
+  color: var(--gm-caramel);
+  font-size: 18px;
+}
+
+/* ---------- 底部彈窗（放在 .game-modal 裡面） ---------- */
+.gm-v2 .gm-sheet-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.gm-v2 .gm-sheet-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(24, 35, 29, 0.5);
+}
+
+.gm-v2 .gm-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: 88%;
+  border-radius: 18px 18px 0 0;
+  background: var(--gm-bg);
+  color: var(--gm-ink);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.25);
+  animation: gm-sheet-up 0.2s ease-out;
+}
+
+@keyframes gm-sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0.6;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gm-v2 .gm-sheet {
+    animation: none;
+  }
+}
+
+.gm-v2 .gm-sheet-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--gm-line);
+}
+
+.gm-v2 .gm-sheet-head h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--gm-ink);
+}
+
+.gm-v2 .gm-sheet-close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(52, 70, 60, 0.1);
+  color: var(--gm-ink);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gm-v2 .gm-sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+/* 嵌入彈窗的區塊：不再有自己的收合外框 */
+.gm-v2 .ge-embedded {
+  padding: 0;
+}
+
+.gm-v2 .gm-sheet-body .game-docs {
+  margin: 0;
+}
+
+/* ================= 深色模式（跟著系統） =================
+   vip.css 把全站強制成淺色；這裡只讓遊戲詳細視窗跟著系統變深。
+   評分／討論／紀錄分頁的內容元件顏色多半寫死，所以下面逐一覆寫。 */
+@media (prefers-color-scheme: dark) {
+  .modal-backdrop .game-modal.gm-v2 {
+    color-scheme: dark;
+    --gm-bg: #1c2520;
+    --gm-fixed: #222d26;
+    --gm-card: #2a362e;
+    --gm-line: rgba(251, 247, 236, 0.16);
+    --gm-ink: #f1ead9;
+    --gm-soft: #b6c0b4;
+    --gm-accent: #6fa07b;
+    --gm-caramel: #d6ab75;
+  }
+
+  /* 文字一律吃視窗的字色，再逐項補回強調色 */
+  .modal-backdrop .game-modal.gm-v2 :where(p, span, small, strong, b, h3, h4, label, li, summary, a, div) {
+    color: inherit;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .modal-head-info h2,
+  .modal-backdrop .game-modal.gm-v2 #modal-title,
+  .modal-backdrop .game-modal.gm-v2 h2 {
+    color: var(--gm-ink) !important;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .modal-body {
+    background: var(--gm-bg);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .modal-close {
+    background: rgba(251, 247, 236, 0.12);
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .modal-score,
+  .modal-backdrop .game-modal.gm-v2 .modal-score-star,
+  .modal-backdrop .game-modal.gm-v2 .bgg-link {
+    color: #a9cfa2;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .modal-score-label,
+  .modal-backdrop .game-modal.gm-v2 .modal-score-empty,
+  .modal-backdrop .game-modal.gm-v2 .rating-label,
+  .modal-backdrop .game-modal.gm-v2 .rating-empty,
+  .modal-backdrop .game-modal.gm-v2 .personal-hint,
+  .modal-backdrop .game-modal.gm-v2 .modal-section-title,
+  .modal-backdrop .game-modal.gm-v2 .rate-subtitle,
+  .modal-backdrop .game-modal.gm-v2 .rate-note,
+  .modal-backdrop .game-modal.gm-v2 .rate-grid-item,
+  .modal-backdrop .game-modal.gm-v2 .rate-overall,
+  .modal-backdrop .game-modal.gm-v2 .ov-wall-title,
+  .modal-backdrop .game-modal.gm-v2 .ge-hint,
+  .modal-backdrop .game-modal.gm-v2 .ge-note,
+  .modal-backdrop .game-modal.gm-v2 .ge-empty,
+  .modal-backdrop .game-modal.gm-v2 .ge-msg,
+  .modal-backdrop .game-modal.gm-v2 .game-docs-empty,
+  .modal-backdrop .game-modal.gm-v2 .gd-label,
+  .modal-backdrop .game-modal.gm-v2 .er-note,
+  .modal-backdrop .game-modal.gm-v2 .nl-date,
+  .modal-backdrop .game-modal.gm-v2 .nl-caret,
+  .modal-backdrop .game-modal.gm-v2 .np-count,
+  .modal-backdrop .game-modal.gm-v2 .desc-count {
+    color: var(--gm-soft);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .modal-section,
+  .modal-backdrop .game-modal.gm-v2 .modal-tabs,
+  .modal-backdrop .game-modal.gm-v2 .nl-item {
+    border-color: var(--gm-line);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .modal-tab {
+    border-color: var(--gm-line);
+    background: var(--gm-card);
+    color: var(--gm-soft);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .modal-tab.is-active {
+    border-color: var(--gm-accent);
+    background: var(--gm-accent);
+    color: #fbf7ec;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .modal-description,
+  .modal-backdrop .game-modal.gm-v2 .gbg-text {
+    color: var(--gm-ink);
+  }
+
+  /* 類型、小封面牆、舊的收合區 */
+  .modal-backdrop .game-modal.gm-v2 .ov-type {
+    border-color: var(--gm-line);
+    background: var(--gm-card);
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .ov-type.is-active {
+    border-color: var(--gm-accent);
+    background: var(--gm-accent);
+    color: #fbf7ec;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .ov-cover-img,
+  .modal-backdrop .game-modal.gm-v2 .ov-cover-fallback,
+  .modal-backdrop .game-modal.gm-v2 .ge-thumb {
+    background: var(--gm-card);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .ov-more {
+    border-color: var(--gm-line);
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .rating-dot {
+    filter: brightness(1.15);
+  }
+
+  /* 評分分頁 */
+  .modal-backdrop .game-modal.gm-v2 .rate-grid-item strong,
+  .modal-backdrop .game-modal.gm-v2 .rate-label,
+  .modal-backdrop .game-modal.gm-v2 .rate-overall strong {
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .rate-scale button {
+    border-color: var(--gm-line);
+    background: var(--gm-card);
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .rate-scale button.is-selected,
+  .modal-backdrop .game-modal.gm-v2 .rate-save {
+    border-color: var(--gm-accent);
+    background: var(--gm-accent);
+    color: #fbf7ec;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .rate-toggle {
+    color: #a9cfa2;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .rate-delete {
+    color: #f0a398;
+  }
+
+  /* 討論分頁 */
+  .modal-backdrop .game-modal.gm-v2 .nl-item.is-open {
+    background: var(--gm-card);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .nl-name,
+  .modal-backdrop .game-modal.gm-v2 .nl-text {
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .nl-game {
+    border-color: var(--gm-line);
+    background: var(--gm-card);
+    color: #a9cfa2;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .nl-tag {
+    border-color: rgba(214, 171, 117, 0.4);
+    background: rgba(214, 171, 117, 0.16);
+    color: var(--gm-caramel);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .nl-like {
+    border-color: var(--gm-line);
+    background: var(--gm-card);
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .nl-like.on {
+    border-color: var(--gm-accent);
+    background: var(--gm-accent);
+    color: #fbf7ec;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .np-like {
+    color: #a9cfa2;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .np-dislike {
+    color: #f0a398;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .np-btn {
+    border-color: var(--gm-caramel);
+    color: var(--gm-caramel);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .np-btn.on {
+    background: rgba(214, 171, 117, 0.18);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .gdl-btn {
+    border-color: var(--gm-accent);
+    background: var(--gm-card);
+    color: var(--gm-ink);
+  }
+
+  /* game-tabs.css（留言框、紀錄清單）我沒看過，這裡是依 class 命名的保守覆寫［未驗證］ */
+  .modal-backdrop .game-modal.gm-v2 .gb-item,
+  .modal-backdrop .game-modal.gm-v2 .gb-mine-box,
+  .modal-backdrop .game-modal.gm-v2 .gh-item {
+    border-color: var(--gm-line);
+    background: var(--gm-card);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .gb-textarea,
+  .modal-backdrop .game-modal.gm-v2 .gm-sheet textarea,
+  .modal-backdrop .game-modal.gm-v2 .desc-editor textarea,
+  .modal-backdrop .game-modal.gm-v2 .ge-input,
+  .modal-backdrop .game-modal.gm-v2 .er-form textarea,
+  .modal-backdrop .game-modal.gm-v2 .gm-sheet input[type='text'] {
+    border-color: var(--gm-line);
+    background: #151c18;
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .gb-action,
+  .modal-backdrop .game-modal.gm-v2 .gb-hidden-toggle {
+    border-color: var(--gm-line);
+    background: var(--gm-card);
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .gb-save {
+    background: var(--gm-accent);
+    color: #fbf7ec;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .gh-badge.played {
+    color: #a9cfa2;
+  }
+
+  /* 規則連結、擴充、背景、玩錯紀錄（彈窗內） */
+  .modal-backdrop .game-modal.gm-v2 .game-docs .gd-link,
+  .modal-backdrop .game-modal.gm-v2 .game-docs .gd-plain {
+    border-color: var(--gm-line);
+    background: var(--gm-card);
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .game-docs .gd-del {
+    border-color: rgba(240, 163, 152, 0.4);
+    background: transparent;
+    color: #f0a398;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .ge-name,
+  .modal-backdrop .game-modal.gm-v2 .ge-links a {
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .ge-actions button,
+  .modal-backdrop .game-modal.gm-v2 .ge-file {
+    border-color: var(--gm-line);
+    background: var(--gm-card);
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .ge-actions button.ge-danger {
+    color: #f0a398;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .ge-editor,
+  .modal-backdrop .game-modal.gm-v2 .er-list li {
+    border-color: var(--gm-line);
+    background: var(--gm-card);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .er-title,
+  .modal-backdrop .game-modal.gm-v2 .er-body,
+  .modal-backdrop .game-modal.gm-v2 .er-list-title {
+    color: var(--gm-ink);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .er-src {
+    color: var(--gm-caramel);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .gm-sheet-close {
+    background: rgba(251, 247, 236, 0.12);
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .gm-sheet {
+    box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.55);
+  }
+}
