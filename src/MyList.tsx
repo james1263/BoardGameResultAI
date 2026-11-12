@@ -1062,7 +1062,18 @@ export default function MyList({
                                         {stats.top.slice(0, topN).map(({ game, total }, index) => (
                                             <li key={game.bggName}>
                                                 <span className="mystat-rank">{index + 1}</span>
-                                                <div className="mylist-thumb">{renderCover(game)}</div>
+                                                <div
+                                                    className="mylist-thumb"
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => onOpenGame(game)}
+                                                    onKeyDown={(event) => {
+                                                        if (event.key === 'Enter') onOpenGame(game)
+                                                    }}
+                                                >
+                                                    {renderCover(game)}
+                                                </div>
                                                 <button
                                                     type="button"
                                                     className="mylist-name"
@@ -1158,7 +1169,18 @@ export default function MyList({
                                                     const total = (entry?.playCount ?? 0) + summary.count
                                                     return (
                                                         <li className="mylist-item" key={game.bggName}>
-                                                            <div className="mylist-thumb">{renderCover(game)}</div>
+                                                            <div
+                                                    className="mylist-thumb"
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => onOpenGame(game)}
+                                                    onKeyDown={(event) => {
+                                                        if (event.key === 'Enter') onOpenGame(game)
+                                                    }}
+                                                >
+                                                    {renderCover(game)}
+                                                </div>
                                                             <div className="mylist-info">
                                                                 <button
                                                                     type="button"

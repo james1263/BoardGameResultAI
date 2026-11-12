@@ -403,3 +403,25 @@
 .rb .rbv-row-name { font-size: 14px; }
 .rb .rbv-badges { flex-wrap: nowrap; gap: 4px; }
 .rb .rbv-badge { padding: 2px 7px; font-size: 11px; white-space: nowrap; }
+
+/* 統計一行放得下：字小一點、容量縮短；「顯示 N / M 款」旁的 ⓘ */
+.rb .rbv-stats { gap: 2px 10px; font-size: 12px; }
+.rb .rbv-stats > button,
+.rb .rbv-stats > span { white-space: nowrap; }
+.rb .rbv-stats-usage { font-size: 11px; }
+.rb .rbv-countrow { display: flex; align-items: center; gap: 6px; margin: 6px 2px 0; }
+.rb .rbv-countrow .rbv-count { margin: 0; }
+.rb .rbv-info {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  color: #5d6f64;
+  background: #fff;
+  border: 1px solid #d8c9a8;
+  border-radius: 50%;
+  cursor: pointer;
+}

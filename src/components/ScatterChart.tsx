@@ -242,30 +242,27 @@ export default function ScatterChart({
             重設範圍
           </button>
         </div>
-        <div className={`sc-pick ${pickedGroup ? '' : 'sc-pick-empty'}`}>
-          {pickedGroup ? (
-            <>
-              <h4>
-                {xLabel}：{formatValue(pickedGroup.x, xDecimals)}　{yLabel}：
-                {formatValue(pickedGroup.y, yDecimals)}
-              </h4>
-              <ul>
-                {pickedGroup.games.map((game) => (
-                  <li key={game.bggName}>
-                    <span>{game.name}</span>
-                    {onOpenGame && (
-                      <button type="button" onClick={() => onOpenGame(game)}>
-                        查看遊戲
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <span>點圓點或下方名單，這裡會顯示遊戲名稱與分數</span>
-          )}
-        </div>
+        <div className="sc-plot">
+        {pickedGroup && (
+          <div className="sc-pick sc-pick-float">
+            <h4>
+              {xLabel}：{formatValue(pickedGroup.x, xDecimals)}　{yLabel}：
+              {formatValue(pickedGroup.y, yDecimals)}
+            </h4>
+            <ul>
+              {pickedGroup.games.map((game) => (
+                <li key={game.bggName}>
+                  <span>{game.name}</span>
+                  {onOpenGame && (
+                    <button type="button" onClick={() => onOpenGame(game)}>
+                      查看遊戲
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <svg
           ref={svgRef}
           className="sc-svg sc-zoomable"
@@ -344,6 +341,7 @@ export default function ScatterChart({
             ))}
           </g>
         </svg>
+        </div>
         {groups.length === 0 && <p className="sc-note">沒有同時有這兩項資料的遊戲。</p>}
         {groups.length > 0 && (
           <ol className={`sc-names ${groups.length > 24 ? 'sc-names-scroll' : ''}`}>
@@ -366,7 +364,7 @@ export default function ScatterChart({
         <p className="sc-note">
           共 {points.length} 款
           {view && `，目前範圍內 ${shownCount} 款`}
-          {excluded > 0 && `；${excluded} 款因資料不足未顯示`}。較大的點代表同一位置有多款遊戲。
+          {excluded > 0 && `；${excluded} 款因資料不足未顯示`}。較大的點＝同位置多款。
         </p>
       </div>
 

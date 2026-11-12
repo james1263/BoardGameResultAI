@@ -12,6 +12,75 @@ import { useSession } from '../lib/useSession'
 import '../styles/ra-large.css'
 import '../styles/errata.css'
 
+// 標題旁的 ⓘ：按住顯示說明，放開就消失（氣泡掛到 body，不會被標題列裁掉）
+function HoldTip({ text }: { text: string }) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  const show = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect()
+    setPos({ x: Math.max(12, Math.min(r.left, window.innerWidth - 272)), y: r.bottom + 8 })
+  }
+  const hide = () => setPos(null)
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="說明（按住顯示）"
+        onPointerDown={(event) => show(event.currentTarget)}
+        onPointerUp={hide}
+        onPointerLeave={hide}
+        onPointerCancel={hide}
+        onBlur={hide}
+        onContextMenu={(event) => event.preventDefault()}
+        style={{
+          marginLeft: 8,
+          width: 26,
+          height: 26,
+          padding: 0,
+          border: '1px solid #d8c9a8',
+          borderRadius: '50%',
+          background: '#fff',
+          color: '#5d6f64',
+          fontSize: 14,
+          lineHeight: 1,
+          verticalAlign: 'middle',
+          cursor: 'pointer',
+          touchAction: 'manipulation',
+          WebkitTouchCallout: 'none',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+        }}
+      >
+        ⓘ
+      </button>
+      {pos &&
+        createPortal(
+          <div
+            role="tooltip"
+            style={{
+              position: 'fixed',
+              left: pos.x,
+              top: pos.y,
+              width: 260,
+              zIndex: 3000,
+              padding: '8px 12px',
+              borderRadius: 10,
+              background: '#34463c',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 400,
+              lineHeight: 1.6,
+              boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
+              pointerEvents: 'none',
+            }}
+          >
+            {text}
+          </div>,
+          document.body,
+        )}
+    </>
+  )
+}
+
 // 規則助手：搜尋優先的單一頁面。搜尋遊戲 → 規則連結、玩錯紀錄、直接問問題
 export default function RulebookPage({
   boardGames,
@@ -91,7 +160,12 @@ export default function RulebookPage({
               ‹ 換遊戲
             </button>
           )}
-          <h2>{picked ? picked.name : '規則助手'}</h2>
+          <h2>
+            {picked ? picked.name : '規則助手'}
+            {!picked && (
+              <HoldTip text="選一款遊戲後，可以看規則連結、管理者認證的玩錯紀錄，或直接問規則問題。" />
+            )}
+          </h2>
           <button type="button" className="ra-x" aria-label="關閉" onClick={onClose}>
             ✕
           </button>
@@ -145,9 +219,6 @@ export default function RulebookPage({
 
               {!search.trim() && (
                 <>
-                  <p className="er-note">
-                    選一款遊戲後，可以看規則連結、管理者認證的玩錯紀錄，或直接問規則問題。
-                  </p>
                   <details className="ov-fold er-fold" open={newCount > 0 || undefined}>
                     <summary>
                       最近更新的玩錯紀錄

@@ -144,8 +144,10 @@ function ScoreList({
 }) {
     const [search, setSearch] = useState('')
     const [low, setLow] = useState(false)
+    const [base, setBase] = useState<'composite' | 'overall'>('composite')
+    const [showInfo, setShowInfo] = useState(false)
 
-    const scored = useMemo(() => rows.filter((row) => row.values.composite != null), [rows])
+    const scored = useMemo(() => rows.filter((row) => row.values[base] != null), [rows, base])
     const unscoredCount = rows.length - scored.length
 
     const shown = useMemo(() => {
@@ -157,16 +159,31 @@ function ScoreList({
                 normalizeText(row.game.bggName).includes(query),
         )
         return [...list].sort((a, b) => {
-            const diff = (b.values.composite ?? 0) - (a.values.composite ?? 0)
+            const diff = (b.values[base] ?? 0) - (a.values[base] ?? 0)
             return (low ? -diff : diff) || a.game.name.localeCompare(b.game.name, 'zh-Hant')
         })
-    }, [scored, search, low])
+    }, [scored, search, low, base])
 
     return (
         <>
-            <p className="st-tip">
-                綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來，六項加總（最高 30 分，不含整體分數）。{csv ? '管理者以 CSV 換算分數為準，不看手動評分。' : '只算你自己的評分。'}
-            </p>
+            <div className="ms-head">
+                <div className="lb-pages pb-toggle">
+                    <button type="button" className={base === 'composite' ? 'active' : ''} onClick={() => setBase('composite')}>
+                        綜合評分
+                    </button>
+                    <button type="button" className={base === 'overall' ? 'active' : ''} onClick={() => setBase('overall')}>
+                        整體評分
+                    </button>
+                </div>
+                <button type="button" className="ms-info" aria-label="說明" aria-expanded={showInfo} onClick={() => setShowInfo((v) => !v)}>
+                    ⓘ
+                </button>
+            </div>
+            {showInfo && (
+                <p className="st-tip">
+                    綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來，六項加總（最高 30 分，不含整體分數）；整體評分＝你給的 1～10 分。{csv ? '管理者以 CSV 換算分數為準，不看手動評分。' : '只算你自己的評分。'}
+                </p>
+            )}
             <div className="cls-searchbox cls-sticky">
                 <input
                     type="search"
@@ -186,7 +203,9 @@ function ScoreList({
             )}
             {scored.length === 0 ? (
                 <p className="mylist-empty">
-                    還沒有六項都填的評分。補齊「適合留下來」以外的細項評分，就會有綜合分數。
+                    {base === 'composite'
+                        ? '還沒有六項都填的評分。補齊「適合留下來」以外的細項評分，就會有綜合分數。'
+                        : '還沒有整體評分。'}
                 </p>
             ) : shown.length === 0 ? (
                 <p className="mylist-empty">找不到符合的遊戲。</p>
@@ -194,7 +213,18 @@ function ScoreList({
                 <ul className="mylist-list">
                     {shown.map((row) => (
                         <li className="mylist-item" key={row.game.bggName}>
-                            <div className="mylist-thumb">{renderCover(row.game)}</div>
+                            <div
+                                className="mylist-thumb"
+                                role="button"
+                                tabIndex={0}
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => onOpenGame(row.game)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') onOpenGame(row.game)
+                                }}
+                            >
+                                {renderCover(row.game)}
+                            </div>
                             <div className="mylist-info">
                                 <button
                                     type="button"
@@ -203,16 +233,22 @@ function ScoreList({
                                 >
                                     {row.game.name}
                                 </button>
-                                <small>整體 {row.values.overall}</small>
+                                <small>
+                                    {base === 'composite'
+                                        ? `整體 ${row.values.overall ?? '—'}`
+                                        : `綜合 ${row.values.composite ?? '—'}`}
+                                </small>
                             </div>
-                            <b className="mystat-count">{row.values.composite} / 30</b>
+                            <b className="mystat-count">
+                                {base === 'composite' ? `${row.values.composite} / 30` : `${row.values.overall} / 10`}
+                            </b>
                         </li>
                     ))}
                 </ul>
             )}
             {unscoredCount > 0 && (
                 <p className="mystat-foot">
-                    另有 {unscoredCount} 款評分的六項沒有填滿，沒有綜合分數。
+                    另有 {unscoredCount} 款{base === 'composite' ? '評分的六項沒有填滿，沒有綜合分數' : '沒有整體評分'}。
                 </p>
             )}
         </>
@@ -251,9 +287,6 @@ function ScatterMine({
 
     return (
         <>
-            <p className="st-tip">
-                {csv ? '每個點是一款玩過的遊戲（CSV 換算分數）' : '每個點是一款你評過分的遊戲'}；點圓點看遊戲名稱與分數。{csv ? '' : '只算你自己的評分，'}還沒玩過的遊戲不會畫出。
-            </p>
             <div className="sc-controls">
                 <label>
                     X 軸（橫軸）

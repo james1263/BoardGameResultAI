@@ -341,3 +341,61 @@
   flex: 1 1 100%;
   white-space: normal;
 }
+
+/* 分布圖：點到的遊戲卡片浮在圖上方，不再推擠版面；沒點時不佔空間 */
+.sc-plot {
+  position: relative;
+}
+.sc-box .sc-pick.sc-pick-float {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  z-index: 2;
+  margin: 0;
+  background: rgba(251, 247, 236, 0.97);
+  box-shadow: 0 2px 8px rgba(52, 70, 60, 0.18);
+}
+
+/* 統計表：勾選框緊貼文字 */
+.st-check {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.st-check input[type='checkbox'] {
+  flex: none;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+}
+
+/* 我的統計：綜合／整體切換列與 ⓘ 說明鈕 */
+.ms-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+.ms-head .lb-pages.pb-toggle {
+  flex: 1;
+}
+.ms-head .lb-pages.pb-toggle button {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.ms-info {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #d9ceb4;
+  border-radius: 50%;
+  background: #fff;
+  color: #5d6f64;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}

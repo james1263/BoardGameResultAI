@@ -166,3 +166,12 @@ textarea.gb-textarea.nl-short {
 .nl-item .nl-btnrow {
   justify-content: flex-end;
 }
+
+/* 按讚固定靠右（在展開箭頭左邊），每一列位置一致 */
+.nl-top .nl-like {
+  margin-left: auto;
+  flex: none;
+}
+.nl-top .nl-like + .nl-caret {
+  margin-left: 0;
+}

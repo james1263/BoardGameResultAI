@@ -209,6 +209,30 @@ function buildCoverRows(games: GameOption[], docs: AllDoc[]): CoverRow[] {
     )
 }
 
+// ── 「顯示 N / M 款」＋ ⓘ（說明預設收起）─────────────────────
+function CountLine({ shown, total, note }: { shown: number; total: number; note: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <div className="rbv-countrow">
+        <p className="rbv-count">
+          顯示 {shown} / {total} 款
+        </p>
+        <button
+          type="button"
+          className="rbv-info"
+          aria-label="說明"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          ⓘ
+        </button>
+      </div>
+      {open && <p className="rbv-note">{note}</p>}
+    </>
+  )
+}
+
 // ── 統計卡（可點：直接套用下方篩選）─────────────────────────
 function OverviewCards({
   usage,
@@ -250,7 +274,11 @@ function OverviewCards({
         沒資料 <b>{dash(none)}</b>
       </button>
       <span className="rbv-stats-usage">
-        {error ? error : usage ? `${formatMb(total)} / ${formatMb(STORAGE_LIMIT_BYTES)}` : '讀取中…'}
+        {error
+          ? error
+          : usage
+            ? `${(total / 1024 / 1024).toFixed(1)} / ${Math.round(STORAGE_LIMIT_BYTES / 1024 / 1024)} MB`
+            : '讀取中…'}
       </span>
     </div>
   )
@@ -661,13 +689,11 @@ function RulebookOverviewList({
           )}
         </div>
       )}
-      <p className="rbv-count">
-        顯示 {shown.length} / {rows.length} 款
-      </p>
-
-      <p className="rbv-note">
-        「已上傳」不等於可搜尋，要有「索引 ✓」規則助手才搜得到。垃圾桶與「僅供參考」不列入。
-      </p>
+      <CountLine
+        shown={shown.length}
+        total={rows.length}
+        note="「已上傳」不等於可搜尋，要有「索引 ✓」規則助手才搜得到。垃圾桶與「僅供參考」不列入。"
+      />
 
       {!loaded ? (
         <p className="rb-hint">讀取中…</p>

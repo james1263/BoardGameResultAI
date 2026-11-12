@@ -112,7 +112,6 @@ function ScatterPanel({
 
     return (
         <>
-            <p className="st-tip">兩指縮放、拖曳移動；點圓點或下方名單看遊戲名稱與數值。評分需滿 5 人才有平均，未玩過的不畫。</p>
             <div className="sc-controls">
                 <label>
                     X 軸（橫軸）
@@ -419,10 +418,7 @@ export default function StatsTables({
                                 </button>
                             )}
                         </div>
-                        <p className="st-tip">
-                                點欄位標題可以排序。評分需滿 5 人才會顯示平均。遊戲名稱只顯示前 4 個字，可在名稱上左右滑動看完整名稱。
-                                {!isAdmin && '選擇不公開暱稱的玩家只算人數，不會列名。'}
-                            </p>
+                        {!isAdmin && <p className="st-tip">選擇不公開暱稱的玩家只算人數，不會列名。</p>}
                         <div className="st-wrap">
                             <table className="st-table">
                                 <thead>
@@ -534,9 +530,6 @@ export default function StatsTables({
                                 匯出 CSV
                             </button>
                         </div>
-                        <p className="st-tip">
-                                ✓ 已玩　♥ 想玩　★ 整體評分。最下面「合計」＝已玩／想玩／評分款數。遊戲名稱只顯示前 4 個字，可在名稱上左右滑動看完整名稱。
-                            </p>
                         {matrix.members.length === 0 ? (
                             <p className="ma-note">目前還沒有任何玩家的紀錄。</p>
                         ) : (
