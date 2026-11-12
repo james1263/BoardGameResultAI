@@ -5,16 +5,7 @@ import type { PersonalApi } from '../lib/personalApi'
 // 「我的統計」清單裡，一款遊戲的過去遊玩日期（預設摺疊）
 // 自己記的（manual）可以刪除，避免填錯；系統自動記的不能刪（刪了評分時又會長回來）
 // 刪除走 delete_play_date：總次數不變，這次會變回「沒有日期的次數」
-const SMALL_BTN = {
-  padding: '2px 10px',
-  font: 'inherit',
-  fontSize: 12,
-  color: '#6b6a5c',
-  background: '#fffefa',
-  border: '1px solid #d9d6c9',
-  borderRadius: 999,
-  cursor: 'pointer',
-} as const
+// 樣式在 styles/club-stats.css（.ppd-*，只在「我的統計」抽屜內生效）
 
 export default function PastPlayDates({
   bggName,
@@ -34,60 +25,31 @@ export default function PastPlayDates({
   if (list.length === 0) return null
 
   return (
-    <div style={{ margin: '2px 0 4px' }}>
+    <div className="ppd">
       <button
         type="button"
+        className="ppd-toggle"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        style={{
-          padding: '2px 0',
-          font: 'inherit',
-          fontSize: 13,
-          color: '#6b6a5c',
-          background: 'none',
-          border: 0,
-          cursor: 'pointer',
-        }}
       >
         {open ? '▾' : '▸'} 過去紀錄 {list.length} 筆
       </button>
       {open && (
-        <ul
-          style={{
-            listStyle: 'none',
-            margin: '4px 0 0',
-            padding: '0 0 0 4px',
-            maxHeight: 180,
-            overflowY: 'auto',
-          }}
-        >
+        <ul className="ppd-list">
           {list.map((item) => (
-            <li
-              key={item.id}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0', fontSize: 13 }}
-            >
+            <li key={item.id} className="ppd-item">
               <span>{item.playedOn.replaceAll('-', '/')}</span>
-              {item.playerCount != null && <span style={{ color: '#7a8a80' }}>{item.playerCount} 人</span>}
+              {item.playerCount != null && <span className="ppd-who">{item.playerCount} 人</span>}
               {item.source !== 'manual' && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: '0 7px',
-                    color: '#3d6b4c',
-                    background: '#e6efe8',
-                    borderRadius: 999,
-                  }}
-                >
-                  自動
-                </span>
+                <span className="ppd-tag">自動</span>
               )}
               {item.source === 'manual' &&
                 (confirmId === item.id ? (
-                  <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6 }}>
+                  <span className="ppd-confirm">
                     <button
                       type="button"
+                      className="ppd-btn solid"
                       disabled={playSessions.busy}
-                      style={{ ...SMALL_BTN, color: '#fff', background: '#b5483a', borderColor: '#b5483a' }}
                       onClick={async () => {
                         const count = await playSessions.deletePlayDate(item.id)
                         if (count !== null) {
@@ -98,7 +60,7 @@ export default function PastPlayDates({
                     >
                       確定刪除
                     </button>
-                    <button type="button" style={SMALL_BTN} onClick={() => setConfirmId(null)}>
+                    <button type="button" className="ppd-btn" onClick={() => setConfirmId(null)}>
                       取消
                     </button>
                   </span>
@@ -106,8 +68,8 @@ export default function PastPlayDates({
                   <button
                     type="button"
                     aria-label={`刪除 ${item.playedOn} 的紀錄`}
+                    className="ppd-btn danger"
                     disabled={playSessions.busy}
-                    style={{ ...SMALL_BTN, marginLeft: 'auto', color: '#b5483a' }}
                     onClick={() => setConfirmId(item.id)}
                   >
                     刪除

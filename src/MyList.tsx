@@ -26,6 +26,7 @@ import DrawerToTop from './components/DrawerToTop'
 import FullScreenPage from './components/FullScreenPage'
 import ClubIcon from './components/ClubIcons'
 import './styles/club-home.css'
+import './styles/club-stats.css'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
@@ -912,7 +913,7 @@ export default function MyList({
         return (
             <>
                 <div className="mylist-backdrop" onClick={onClose} />
-                <aside className="mylist-drawer" role="dialog" aria-label="我的統計">
+                <aside className="mylist-drawer club-stats" role="dialog" aria-label="我的統計">
                     <div className="mylist-header">
                         <h2>我的統計</h2>
                         <button
@@ -925,41 +926,51 @@ export default function MyList({
                         </button>
                     </div>
 
-                    <div className="lb-tabs lb-tabs-5">
+                    <div className="cs-tabs">
+                        <div className="cs-tabset">
+                            <button
+                                type="button"
+                                className={`cs-tab ${statsTab === 'overview' ? 'active' : ''}`}
+                                onClick={() => switchStatsTab('overview')}
+                            >
+                                概況
+                            </button>
+                            <button
+                                type="button"
+                                className={`cs-tab ${statsTab === 'want' ? 'active' : ''}`}
+                                onClick={() => switchStatsTab('want')}
+                            >
+                                想玩 {wantGames.length}
+                            </button>
+                            <button
+                                type="button"
+                                className={`cs-tab ${statsTab === 'played' ? 'active' : ''}`}
+                                onClick={() => switchStatsTab('played')}
+                            >
+                                已玩 {playedGames.length}
+                            </button>
+                            <button
+                                type="button"
+                                className={`cs-tab ${statsTab === 'score' ? 'active' : ''}`}
+                                onClick={() => switchStatsTab('score')}
+                            >
+                                綜合評分
+                            </button>
+                        </div>
                         <button
                             type="button"
-                            className={`lb-tab ${statsTab === 'overview' ? 'active' : ''}`}
-                            onClick={() => switchStatsTab('overview')}
-                        >
-                            概況
-                        </button>
-                        <button
-                            type="button"
-                            className={`lb-tab ${statsTab === 'want' ? 'active' : ''}`}
-                            onClick={() => switchStatsTab('want')}
-                        >
-                            想玩 {wantGames.length}
-                        </button>
-                        <button
-                            type="button"
-                            className={`lb-tab ${statsTab === 'played' ? 'active' : ''}`}
-                            onClick={() => switchStatsTab('played')}
-                        >
-                            已玩 {playedGames.length}
-                        </button>
-                        <button
-                            type="button"
-                            className={`lb-tab ${statsTab === 'score' ? 'active' : ''}`}
-                            onClick={() => switchStatsTab('score')}
-                        >
-                            綜合評分
-                        </button>
-                        <button
-                            type="button"
-                            className={`lb-tab ${chartOpen ? 'active' : ''}`}
+                            className={`cs-chart-btn ${chartOpen ? 'active' : ''}`}
+                            aria-label="開啟分布圖"
+                            title="分布圖"
                             onClick={() => setChartOpen(true)}
                         >
-                            分布圖
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+                                <circle cx="8" cy="15" r="1.2" />
+                                <circle cx="12" cy="9" r="1.2" />
+                                <circle cx="16" cy="13" r="1.2" />
+                                <circle cx="19" cy="6" r="1.2" />
+                            </svg>
                         </button>
                     </div>
 
@@ -1123,38 +1134,66 @@ export default function MyList({
                                         {shown.length === 0 ? (
                                             <p className="mylist-empty">找不到符合的遊戲。</p>
                                         ) : (
-                                            <ul className="mylist-list">
+                                            <ul className="cs-list">
                                                 {shown.map((game) => {
                                                     const entry = personal.entries[game.bggName]
                                                     const summary = playSessions.getSummary(game.bggName)
                                                     const total = (entry?.playCount ?? 0) + summary.count
+                                                    const lastOn = summary.lastPlayedOn
+                                                        ? summary.lastPlayedOn.replaceAll('-', '/')
+                                                        : null
                                                     return (
-                                                        <li className="mylist-item" key={game.bggName}>
-                                                            <div
-                                                    className="mylist-thumb"
-                                                    role="button"
-                                                    tabIndex={0}
-                                                    style={{ cursor: 'pointer' }}
-                                                    onClick={() => onOpenGame(game)}
-                                                    onKeyDown={(event) => {
-                                                        if (event.key === 'Enter') onOpenGame(game)
-                                                    }}
-                                                >
-                                                    {renderCover(game)}
-                                                </div>
-                                                            <div className="mylist-info">
-                                                                <button
-                                                                    type="button"
-                                                                    className="mylist-name"
+                                                        <li className="cs-row" key={game.bggName}>
+                                                            <div className="cs-top">
+                                                                <div
+                                                                    className="mylist-thumb cs-thumb"
+                                                                    role="button"
+                                                                    tabIndex={0}
+                                                                    style={{ cursor: 'pointer' }}
                                                                     onClick={() => onOpenGame(game)}
+                                                                    onKeyDown={(event) => {
+                                                                        if (event.key === 'Enter') onOpenGame(game)
+                                                                    }}
                                                                 >
-                                                                    {game.name}
-                                                                </button>
-                                                                {tab === 'played' ? (
-                                                                    <div className="mylist-counter">
+                                                                    {renderCover(game)}
+                                                                </div>
+                                                                <div className="cs-title">
+                                                                    <button
+                                                                        type="button"
+                                                                        className="cs-name"
+                                                                        onClick={() => onOpenGame(game)}
+                                                                    >
+                                                                        {game.name}
+                                                                    </button>
+                                                                    {tab === 'played'
+                                                                        ? lastOn && <small className="cs-sub">最近：{lastOn}</small>
+                                                                        : total > 0 && (
+                                                                              <small className="cs-sub">
+                                                                                  玩過 {total} 次{lastOn && ` · 最近：${lastOn}`}
+                                                                              </small>
+                                                                          )}
+                                                                </div>
+                                                                {tab === 'want' && (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="cs-remove"
+                                                                        disabled={!personal.canEdit}
+                                                                        onClick={() =>
+                                                                            personal.updateEntry(game.bggName, {
+                                                                                wantToPlay: false,
+                                                                            })
+                                                                        }
+                                                                    >
+                                                                        移除
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                            <div className="cs-ctrl">
+                                                                {tab === 'played' && (
+                                                                    <div className="cs-counter">
                                                                         <button
                                                                             type="button"
-                                                                            className="mylist-counter-btn"
+                                                                            className="cs-step"
                                                                             aria-label="減少遊玩次數"
                                                                             title={
                                                                                 (entry?.playCount ?? 0) <= 0 && summary.count > 0
@@ -1166,10 +1205,10 @@ export default function MyList({
                                                                         >
                                                                             −
                                                                         </button>
-                                                                        <span className="mylist-counter-value">{total} 次</span>
+                                                                        <span className="cs-count">{total} 次</span>
                                                                         <button
                                                                             type="button"
-                                                                            className="mylist-counter-btn"
+                                                                            className="cs-step"
                                                                             aria-label="增加遊玩次數"
                                                                             disabled={!personal.canEdit || (entry?.playCount ?? 0) >= 999}
                                                                             onClick={() =>
@@ -1182,22 +1221,8 @@ export default function MyList({
                                                                         >
                                                                             ＋
                                                                         </button>
-                                                                        {summary.lastPlayedOn && (
-                                                                            <span className="mylist-counter-last">
-                                                                                最近：{summary.lastPlayedOn.replaceAll('-', '/')}
-                                                                            </span>
-                                                                        )}
                                                                     </div>
-                                                                ) : (
-                                                                    total > 0 && (
-                                                                        <p className="mylist-meta">
-                                                                            玩過 {total} 次
-                                                                            {summary.lastPlayedOn &&
-                                                                                ` · 最近：${summary.lastPlayedOn.replaceAll('-', '/')}`}
-                                                                        </p>
-                                                                    )
                                                                 )}
-                                                              <PastPlayDates bggName={game.bggName} playSessions={playSessions} personal={personal} />
                                                                 {tab === 'played' && (
                                                                     <PlayedGameRecord
                                                                         bggName={game.bggName}
@@ -1211,21 +1236,8 @@ export default function MyList({
                                                                         }}
                                                                     />
                                                                 )}
+                                                                <PastPlayDates bggName={game.bggName} playSessions={playSessions} personal={personal} />
                                                             </div>
-                                                            {tab === 'want' && (
-                                                                <button
-                                                                    type="button"
-                                                                    className="mylist-remove"
-                                                                    disabled={!personal.canEdit}
-                                                                    onClick={() =>
-                                                                        personal.updateEntry(game.bggName, {
-                                                                            wantToPlay: false,
-                                                                        })
-                                                                    }
-                                                                >
-                                                                    移除
-                                                                </button>
-                                                            )}
                                                         </li>
                                                     )
                                                 })}

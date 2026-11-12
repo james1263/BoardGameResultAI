@@ -1,0 +1,444 @@
+/* 我的統計改版（只作用在 .mylist-drawer.club-stats，其他抽屜、首頁、分布圖全螢幕頁、GameModal 不受影響）
+   版面：標題 → 膠囊分頁＋分布圖按鈕 → 概況／想玩／已玩／綜合評分
+   深色模式：跟隨系統，只限這個抽屜；不動 :root，不依賴 .club-home */
+
+/* ---------- 顏色變數（淺色＝原本米白深綠） ---------- */
+.mylist-drawer.club-stats {
+  --cs-bg: #fffdf9;
+  --cs-card: #ffffff;
+  --cs-line: rgba(52, 70, 60, 0.14);
+  --cs-ink: #34463c;
+  --cs-sub: #6f7d74;
+  --cs-accent: #456b50;
+  --cs-accent-bg: rgba(69, 107, 80, 0.12);
+  --cs-tab-bg: #efe6d2;
+  --cs-tab-on: #456b50;
+  --cs-tab-on-ink: #fbf7ec;
+  --cs-btn-bg: #ffffff;
+  --cs-input-bg: #fbf7ec;
+  --cs-warn: #b5483a;
+  background: var(--cs-bg);
+  color: var(--cs-ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  .mylist-drawer.club-stats {
+    color-scheme: dark; /* 只影響這個抽屜裡的捲軸與表單元件 */
+    --cs-bg: #151c18;
+    --cs-card: #212b25;
+    --cs-line: rgba(232, 239, 233, 0.14);
+    --cs-ink: #e8efe9;
+    --cs-sub: #a9b8ae;
+    --cs-accent: #8fc7a2;
+    --cs-accent-bg: rgba(143, 199, 162, 0.16);
+    --cs-tab-bg: #212b25;
+    --cs-tab-on: #3f6b50;
+    --cs-tab-on-ink: #f1f7f2;
+    --cs-btn-bg: #2a362f;
+    --cs-input-bg: #1b241f;
+    --cs-warn: #ff9c8c;
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* ---------- 標題 ---------- */
+.mylist-drawer.club-stats .mylist-header {
+  border-bottom: 1px solid var(--cs-line);
+}
+.mylist-drawer.club-stats .mylist-header h2,
+.mylist-drawer.club-stats .mylist-close {
+  color: var(--cs-ink);
+}
+
+/* ---------- 分頁列：膠囊分頁＋右側分布圖按鈕 ---------- */
+.mylist-drawer.club-stats .cs-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 0;
+}
+.mylist-drawer.club-stats .cs-tabset {
+  display: flex;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--cs-tab-bg);
+}
+.mylist-drawer.club-stats .cs-tab {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--cs-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mylist-drawer.club-stats .cs-tab.active {
+  background: var(--cs-tab-on);
+  color: var(--cs-tab-on-ink);
+}
+.mylist-drawer.club-stats .cs-chart-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--cs-line);
+  border-radius: 50%;
+  background: var(--cs-card);
+  color: var(--cs-accent);
+  cursor: pointer;
+}
+.mylist-drawer.club-stats .cs-chart-btn.active {
+  background: var(--cs-accent-bg);
+}
+@media (max-width: 380px) {
+  .mylist-drawer.club-stats .cs-tab {
+    padding: 0 2px;
+    font-size: 13px;
+  }
+}
+
+.mylist-drawer.club-stats .mylist-body {
+  padding: 12px 16px 28px;
+}
+
+/* ---------- 共用文字顏色 ---------- */
+.mylist-drawer.club-stats .mylist-empty,
+.mylist-drawer.club-stats .mystat-foot,
+.mylist-drawer.club-stats .cls-count,
+.mylist-drawer.club-stats .st-tip {
+  color: var(--cs-sub);
+}
+.mylist-drawer.club-stats .mylist-name,
+.mylist-drawer.club-stats .mystat-title {
+  color: var(--cs-ink);
+}
+
+/* ---------- 概況 ---------- */
+.mylist-drawer.club-stats .mystat-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 0;
+}
+.mylist-drawer.club-stats .mystat-box {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 12px 10px;
+  border: 1px solid var(--cs-line);
+  border-radius: 14px;
+  background: var(--cs-card);
+  color: var(--cs-ink);
+  font: inherit;
+  text-align: left;
+}
+.mylist-drawer.club-stats .mystat-box span {
+  font-size: 12px;
+  color: var(--cs-sub);
+}
+.mylist-drawer.club-stats .mystat-box strong {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--cs-accent);
+}
+.mylist-drawer.club-stats .mystat-box small {
+  font-size: 11px;
+  color: var(--cs-sub);
+}
+.mylist-drawer.club-stats .mystat-box-btn {
+  cursor: pointer;
+}
+.mylist-drawer.club-stats .mystat-topn-btn {
+  border: 1px solid var(--cs-line);
+  background: var(--cs-btn-bg);
+  color: var(--cs-ink);
+}
+.mylist-drawer.club-stats .mystat-topn-btn.active {
+  border-color: var(--cs-tab-on);
+  background: var(--cs-tab-on);
+  color: var(--cs-tab-on-ink);
+}
+
+/* 最常玩 TOP N：卡片列表（名次、封面、名稱、次數） */
+.mylist-drawer.club-stats .mystat-top {
+  display: grid;
+  gap: 8px;
+}
+.mylist-drawer.club-stats .mystat-top li {
+  gap: 10px;
+  padding: 8px 12px 8px 10px;
+  border: 1px solid var(--cs-line);
+  border-radius: 14px;
+  background: var(--cs-card);
+}
+.mylist-drawer.club-stats .mystat-top .mylist-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+.mylist-drawer.club-stats .mystat-top .mylist-name {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mylist-drawer.club-stats .mystat-top .mystat-count {
+  flex: none;
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--cs-accent);
+}
+.mylist-drawer.club-stats .mystat-rank {
+  flex: none;
+}
+
+/* ---------- 想玩／已玩清單 ---------- */
+.mylist-drawer.club-stats .cs-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mylist-drawer.club-stats .cs-row {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--cs-line);
+  border-radius: 14px;
+  background: var(--cs-card);
+}
+.mylist-drawer.club-stats .cs-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.mylist-drawer.club-stats .cs-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+}
+.mylist-drawer.club-stats .cs-title {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.mylist-drawer.club-stats .cs-name {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--cs-ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mylist-drawer.club-stats .cs-sub {
+  font-size: 12px;
+  color: var(--cs-sub);
+}
+
+/* 第二層：左＝次數調整；右＝補日期、過去紀錄（窄螢幕會自動換行） */
+.mylist-drawer.club-stats .cs-ctrl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--cs-line);
+}
+.mylist-drawer.club-stats .cs-ctrl:empty {
+  display: none;
+}
+.mylist-drawer.club-stats .cs-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+}
+.mylist-drawer.club-stats .cs-step {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--cs-line);
+  border-radius: 50%;
+  background: var(--cs-btn-bg);
+  color: var(--cs-ink);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.mylist-drawer.club-stats .cs-step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.mylist-drawer.club-stats .cs-count {
+  min-width: 44px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--cs-accent);
+}
+
+/* 補日期（PlayedGameRecord 的按鈕）與過去紀錄：同高度、同圓角、同字級 */
+.mylist-drawer.club-stats .cs-ctrl .pgr-open,
+.mylist-drawer.club-stats .ppd-toggle,
+.mylist-drawer.club-stats .cs-remove {
+  box-sizing: border-box;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--cs-line);
+  border-radius: 999px;
+  background: var(--cs-btn-bg);
+  color: var(--cs-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mylist-drawer.club-stats .cs-ctrl .pgr-open {
+  margin-left: auto; /* 靠右 */
+}
+.mylist-drawer.club-stats .cs-remove {
+  flex: none;
+  color: var(--cs-warn);
+}
+.mylist-drawer.club-stats .cs-remove:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+/* 想玩分頁沒有「補日期」，過去紀錄自己靠左即可 */
+
+/* ---------- 過去紀錄（PastPlayDates） ---------- */
+.mylist-drawer.club-stats .ppd {
+  display: contents; /* 讓切換鈕加入第二層的排列，展開的列表另起一行 */
+}
+.mylist-drawer.club-stats .ppd-list {
+  order: 99;
+  flex-basis: 100%;
+  max-height: 180px;
+  margin: 0;
+  padding: 2px 0 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.mylist-drawer.club-stats .ppd-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--cs-line);
+  font-size: 13px;
+  color: var(--cs-ink);
+}
+.mylist-drawer.club-stats .ppd-item:last-child {
+  border-bottom: 0;
+}
+.mylist-drawer.club-stats .ppd-who {
+  color: var(--cs-sub);
+}
+.mylist-drawer.club-stats .ppd-tag {
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--cs-accent-bg);
+  color: var(--cs-accent);
+  font-size: 11px;
+}
+.mylist-drawer.club-stats .ppd-btn {
+  box-sizing: border-box;
+  height: 30px;
+  margin-left: auto;
+  padding: 0 12px;
+  border: 1px solid var(--cs-line);
+  border-radius: 999px;
+  background: var(--cs-btn-bg);
+  color: var(--cs-ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.mylist-drawer.club-stats .ppd-btn.danger {
+  color: var(--cs-warn);
+}
+.mylist-drawer.club-stats .ppd-btn.solid {
+  margin-left: 0;
+  border-color: #b5483a;
+  background: #b5483a;
+  color: #fff;
+}
+.mylist-drawer.club-stats .ppd-confirm {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.mylist-drawer.club-stats .ppd-confirm .ppd-btn {
+  margin-left: 0;
+}
+
+/* ---------- 綜合評分（MyRatingsPanel，只在這個抽屜內調色與卡片化） ---------- */
+.mylist-drawer.club-stats .lb-pages {
+  background: var(--cs-tab-bg);
+}
+.mylist-drawer.club-stats .lb-pages button {
+  color: var(--cs-ink);
+}
+.mylist-drawer.club-stats .lb-pages button.active {
+  background: var(--cs-tab-on);
+  color: var(--cs-tab-on-ink);
+}
+.mylist-drawer.club-stats .ms-info {
+  border-color: var(--cs-line);
+  background: var(--cs-btn-bg);
+  color: var(--cs-sub);
+}
+.mylist-drawer.club-stats .cls-sticky {
+  background: var(--cs-bg);
+}
+.mylist-drawer.club-stats .cls-search-input,
+.mylist-drawer.club-stats .cls-sort-field,
+.mylist-drawer.club-stats .cls-sort-dir {
+  border-color: var(--cs-line);
+  background: var(--cs-input-bg);
+  color: var(--cs-ink);
+}
+.mylist-drawer.club-stats .mylist-list {
+  display: grid;
+  gap: 8px;
+}
+.mylist-drawer.club-stats .mylist-list .mylist-item {
+  padding: 8px 12px 8px 10px;
+  border: 1px solid var(--cs-line);
+  border-radius: 14px;
+  background: var(--cs-card);
+}
+.mylist-drawer.club-stats .mylist-info small {
+  color: var(--cs-sub);
+}
+.mylist-drawer.club-stats .mylist-list .mystat-count {
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--cs-accent);
+}
