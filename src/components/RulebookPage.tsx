@@ -11,6 +11,7 @@ import { useIsAdmin } from '../lib/useIsAdmin'
 import { useSession } from '../lib/useSession'
 import '../styles/ra-large.css'
 import '../styles/errata.css'
+import '../styles/ra-v2.css'
 
 // 標題旁的 ⓘ：按住顯示說明，放開就消失（氣泡掛到 body，不會被標題列裁掉）
 function HoldTip({ text }: { text: string }) {
@@ -24,6 +25,7 @@ function HoldTip({ text }: { text: string }) {
     <>
       <button
         type="button"
+        className="ra-hold-tip"
         aria-label="說明（按住顯示）"
         onPointerDown={(event) => show(event.currentTarget)}
         onPointerUp={hide}
@@ -31,24 +33,6 @@ function HoldTip({ text }: { text: string }) {
         onPointerCancel={hide}
         onBlur={hide}
         onContextMenu={(event) => event.preventDefault()}
-        style={{
-          marginLeft: 8,
-          width: 26,
-          height: 26,
-          padding: 0,
-          border: '1px solid #d8c9a8',
-          borderRadius: '50%',
-          background: '#fff',
-          color: '#5d6f64',
-          fontSize: 14,
-          lineHeight: 1,
-          verticalAlign: 'middle',
-          cursor: 'pointer',
-          touchAction: 'manipulation',
-          WebkitTouchCallout: 'none',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-        }}
       >
         ⓘ
       </button>
@@ -56,22 +40,8 @@ function HoldTip({ text }: { text: string }) {
         createPortal(
           <div
             role="tooltip"
-            style={{
-              position: 'fixed',
-              left: pos.x,
-              top: pos.y,
-              width: 260,
-              zIndex: 3000,
-              padding: '8px 12px',
-              borderRadius: 10,
-              background: '#34463c',
-              color: '#fff',
-              fontSize: 13,
-              fontWeight: 400,
-              lineHeight: 1.6,
-              boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
-              pointerEvents: 'none',
-            }}
+            className="ra-hold-tip-pop"
+            style={{ left: pos.x, top: pos.y }}
           >
             {text}
           </div>,
@@ -146,7 +116,7 @@ export default function RulebookPage({
   }
 
   return createPortal(
-    <div className="ra-backdrop" onClick={onClose}>
+    <div className="ra-backdrop ra-v2" onClick={onClose}>
       <section
         className="ra-page"
         role="dialog"
@@ -176,16 +146,20 @@ export default function RulebookPage({
             <>
               <button
                 type="button"
-                className="ra-btn ra-btn-small ra-rules-link"
+                className="ra-btn ra-btn-small ra-rules-link ra-src-official"
                 onClick={() => onOpenGame(picked)}
               >
                 📖 這款的規則連結與影片
               </button>
-              <GameErrata bggName={picked.bggName} isAdmin={isAdmin} hideSubmit />
+              <div className="ra-src ra-src-errata">
+                <GameErrata bggName={picked.bggName} isAdmin={isAdmin} hideSubmit />
+              </div>
               {indexed === null ? (
                 <p className="ra-notice">讀取中…</p>
               ) : hasIndex ? (
-                <RulebookAssistant key={picked.bggName} bggName={picked.bggName} gameName={picked.name} />
+                <div className="ra-src ra-src-qa">
+                  <RulebookAssistant key={picked.bggName} bggName={picked.bggName} gameName={picked.name} />
+                </div>
               ) : (
                 <p className="ra-notice">
                   這款還沒有可搜尋的規則書，可以先看上面的規則連結與玩錯紀錄。
@@ -209,7 +183,7 @@ export default function RulebookPage({
                       <button type="button" onClick={() => setPicked(game)}>
                         {game.name}
                         {indexed && !indexed.includes(game.bggName) && (
-                          <small style={{ marginLeft: 8, opacity: 0.6 }}>（無規則書搜尋）</small>
+                          <small className="ra-game-list-meta">（無規則書搜尋）</small>
                         )}
                       </button>
                     </li>
@@ -219,20 +193,11 @@ export default function RulebookPage({
 
               {!search.trim() && (
                 <>
-                  <details className="ov-fold er-fold" open={newCount > 0 || undefined}>
+                  <details className="ov-fold er-fold ra-feed" open={newCount > 0 || undefined}>
                     <summary>
                       最近更新的玩錯紀錄
                       {newCount > 0 && (
-                        <span
-                          style={{
-                            marginLeft: 6,
-                            padding: '1px 7px',
-                            borderRadius: 999,
-                            background: '#c0392b',
-                            color: '#fff',
-                            fontSize: 12,
-                          }}
-                        >
+                        <span className="ra-new-badge">
                           {newCount} 則新
                         </span>
                       )}
@@ -255,7 +220,7 @@ export default function RulebookPage({
                                 </button>
                                 》{row.title}
                                 {isNew && (
-                                  <small className="er-src" style={{ color: '#c0392b', fontWeight: 700 }}>
+                                  <small className="er-src ra-new-mark">
                                     {' '}・新
                                   </small>
                                 )}
@@ -269,7 +234,7 @@ export default function RulebookPage({
                     </div>
                   </details>
                   {!isAdmin && (
-                    <p className="er-note">想分享玩錯的規則？到「俱樂部 → 我的投稿」投稿。</p>
+                    <p className="er-note ra-feed-hint">想分享玩錯的規則？到「俱樂部 → 我的投稿」投稿。</p>
                   )}
                 </>
               )}

@@ -1,0 +1,385 @@
+/* 規則助手頁 v2（第一階段：外框、搜尋首頁、選定遊戲頁、玩錯紀錄與規則連結）。
+   只改樣式與排列。所有選擇器以 body .ra-backdrop.ra-v2 開頭（優先度高於 vip.css、ra-large.css）。
+   不動 .ra-backdrop 的定位（手機停在 --nav-h 上方由 vip.css 與 ra-large.css 負責）。
+   深色模式：只用 prefers-color-scheme，只作用在 .ra-backdrop.ra-v2，不動 :root。 */
+
+body .ra-backdrop.ra-v2 {
+  --ra-bg: #f6f8f2;
+  --ra-surface: #ffffff;
+  --ra-ink: #34463c;
+  --ra-soft: #5d6f64;
+  --ra-line: #e3e9dd;
+  --ra-accent: #456b50;
+  --ra-accent-ink: #365b40;
+  --ra-accent-bg: #eef4ea;
+  --ra-warm: #8a6a43;
+  --ra-warm-line: #b78a5a;
+  --ra-warm-bg: #fbf3e4;
+  --ra-danger: #c0392b;
+  --ra-focus: rgba(69, 107, 80, 0.28);
+}
+
+/* ---------- 外框與標題區 ---------- */
+body .ra-backdrop.ra-v2 .ra-page {
+  background: var(--ra-bg);
+  color: var(--ra-ink);
+}
+
+body .ra-backdrop.ra-v2 .ra-page-head {
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ra-line);
+  background: var(--ra-surface);
+}
+
+body .ra-backdrop.ra-v2 .ra-page-head h2 {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ra-ink);
+  font-size: 18px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body .ra-backdrop.ra-v2 .ra-back {
+  flex: none;
+  padding: 6px 12px;
+  border: 1px solid var(--ra-line);
+  border-radius: 999px;
+  background: var(--ra-bg);
+  color: var(--ra-accent-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+body .ra-backdrop.ra-v2 .ra-x {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--ra-bg);
+  color: var(--ra-ink);
+  font-size: 16px;
+}
+
+body .ra-backdrop.ra-v2 .ra-page-body {
+  padding: 14px 16px 24px;
+}
+
+/* ---------- ⓘ 提示（按住顯示） ---------- */
+body .ra-backdrop.ra-v2 .ra-hold-tip {
+  margin-left: 8px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--ra-line);
+  border-radius: 50%;
+  background: var(--ra-bg);
+  color: var(--ra-soft);
+  font-size: 14px;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 氣泡掛在 body 底下，不在 .ra-v2 裡，所以不加範圍前綴；層級維持 3000 */
+body .ra-hold-tip-pop {
+  position: fixed;
+  z-index: 3000;
+  width: 260px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #34463c;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* ---------- 首頁：搜尋與候選 ---------- */
+body .ra-backdrop.ra-v2 .ra-search {
+  height: 48px;
+  margin-bottom: 12px;
+  padding: 0 14px;
+  border: 1px solid var(--ra-line);
+  border-radius: 14px;
+  background: var(--ra-surface);
+  color: var(--ra-ink);
+  font-size: 16px;
+}
+
+body .ra-backdrop.ra-v2 .ra-search:focus {
+  outline: none;
+  border-color: var(--ra-accent);
+  box-shadow: 0 0 0 3px var(--ra-focus);
+}
+
+body .ra-backdrop.ra-v2 .ra-game-list {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--ra-line);
+  border-radius: 14px;
+  background: var(--ra-surface);
+}
+
+body .ra-backdrop.ra-v2 .ra-game-list li + li {
+  border-top: 1px solid var(--ra-line);
+}
+
+body .ra-backdrop.ra-v2 .ra-game-list button {
+  display: block;
+  width: 100%;
+  padding: 13px 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ra-ink);
+  font-size: 15px;
+  text-align: left;
+}
+
+body .ra-backdrop.ra-v2 .ra-game-list button:hover,
+body .ra-backdrop.ra-v2 .ra-game-list button:focus-visible,
+body .ra-backdrop.ra-v2 .ra-game-list button:active {
+  background: var(--ra-accent-bg);
+  outline: none;
+}
+
+body .ra-backdrop.ra-v2 .ra-game-list-meta {
+  margin-left: 8px;
+  color: var(--ra-soft);
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+body .ra-backdrop.ra-v2 .ra-notice {
+  margin: 0 0 10px;
+  color: var(--ra-accent-ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ---------- 最近更新的玩錯紀錄（獨立區塊，暖色邊） ---------- */
+body .ra-backdrop.ra-v2 details.ra-feed {
+  margin-top: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--ra-warm-line);
+  border-left-width: 4px;
+  border-radius: 14px;
+  background: var(--ra-warm-bg);
+  color: var(--ra-ink);
+}
+
+body .ra-backdrop.ra-v2 details.ra-feed > summary {
+  padding: 12px 0;
+  color: var(--ra-warm);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+body .ra-backdrop.ra-v2 details.ra-feed .ov-fold-body {
+  padding: 0 0 12px;
+}
+
+body .ra-backdrop.ra-v2 .ra-feed .er-list li {
+  border: 1px solid rgba(183, 138, 90, 0.35);
+  background: var(--ra-surface);
+}
+
+/* 紅色「N 則新」：保留紅底，不被一般標籤取代 */
+body .ra-backdrop.ra-v2 .ra-new-badge {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--ra-danger);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+body .ra-backdrop.ra-v2 .ra-new-mark {
+  display: inline;
+  color: var(--ra-danger);
+  font-weight: 700;
+}
+
+body .ra-backdrop.ra-v2 .ra-feed-hint {
+  margin: 10px 2px 0;
+  color: var(--ra-soft);
+}
+
+/* ---------- 選定遊戲：三種來源各自有明確區別 ---------- */
+/* 官方規則連結：綠色邊的整列按鈕 */
+body .ra-backdrop.ra-v2 .ra-rules-link.ra-src-official {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--ra-line);
+  border-left: 4px solid var(--ra-accent);
+  border-radius: 12px;
+  background: var(--ra-surface);
+  color: var(--ra-accent-ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+}
+
+/* 玩錯紀錄（玩家整理）：暖色邊，和官方規則分開 */
+body .ra-backdrop.ra-v2 .ra-src-errata {
+  margin-bottom: 12px;
+  padding-left: 10px;
+  border-left: 4px solid var(--ra-warm-line);
+}
+
+/* 問答區：主要內容，綠色邊 */
+body .ra-backdrop.ra-v2 .ra-src-qa {
+  padding-left: 10px;
+  border-left: 4px solid var(--ra-accent);
+}
+
+/* ---------- 窄螢幕 ---------- */
+@media (max-width: 520px) {
+  body .ra-backdrop.ra-v2 .ra-page-body {
+    padding: 12px 12px 24px;
+  }
+
+  body .ra-backdrop.ra-v2 .ra-src-errata,
+  body .ra-backdrop.ra-v2 .ra-src-qa {
+    padding-left: 8px;
+  }
+}
+
+/* ---------- 深色模式（跟隨系統，只限規則助手頁） ---------- */
+@media (prefers-color-scheme: dark) {
+  body .ra-backdrop.ra-v2 {
+    color-scheme: dark;
+    --ra-bg: #18211c;
+    --ra-surface: #222e27;
+    --ra-ink: #e6eee4;
+    --ra-soft: #a7b6ab;
+    --ra-line: #34443a;
+    --ra-accent: #7fb08a;
+    --ra-accent-ink: #a9d3b2;
+    --ra-accent-bg: #2a3a31;
+    --ra-warm: #dcb987;
+    --ra-warm-line: #a37c4c;
+    --ra-warm-bg: #2d291f;
+    --ra-danger: #d9534f;
+    --ra-focus: rgba(127, 176, 138, 0.35);
+  }
+
+  /* 玩錯紀錄清單（errata.css 寫死淺色） */
+  body .ra-backdrop.ra-v2 .er-list li,
+  body .ra-backdrop.ra-v2 .er-box {
+    border-color: rgba(220, 185, 135, 0.35);
+    background: var(--ra-surface);
+  }
+
+  body .ra-backdrop.ra-v2 .er-box {
+    background: var(--ra-warm-bg);
+  }
+
+  body .ra-backdrop.ra-v2 .er-title,
+  body .ra-backdrop.ra-v2 .er-body,
+  body .ra-backdrop.ra-v2 .er-list-title {
+    color: var(--ra-ink);
+  }
+
+  body .ra-backdrop.ra-v2 .er-src,
+  body .ra-backdrop.ra-v2 .er-box-title {
+    color: var(--ra-warm);
+  }
+
+  body .ra-backdrop.ra-v2 .er-note,
+  body .ra-backdrop.ra-v2 .er-count {
+    color: var(--ra-soft);
+  }
+
+  body .ra-backdrop.ra-v2 .er-form textarea {
+    border-color: var(--ra-line);
+    background: var(--ra-surface);
+    color: var(--ra-ink);
+  }
+
+  /* 規則助手問答區（ra-compact.css、vip.css 寫死淺色；第二階段會再整理） */
+  body .ra-backdrop.ra-v2 .ra,
+  body .ra-backdrop.ra-v2 .ra2 .ra2-label,
+  body .ra-backdrop.ra-v2 .ra2 .ra2-text {
+    color: var(--ra-ink);
+  }
+
+  body .ra-backdrop.ra-v2 .ra2 .ra2-row input.ra2-input {
+    border-color: var(--ra-line);
+    background: var(--ra-surface);
+    color: var(--ra-ink);
+  }
+
+  body .ra-backdrop.ra-v2 .ra2 .ra2-small,
+  body .ra-backdrop.ra-v2 .ra2 .ra2-status,
+  body .ra-backdrop.ra-v2 .ra2 .ra2-doc,
+  body .ra-backdrop.ra-v2 .ra-suggest-title {
+    color: var(--ra-soft);
+  }
+
+  body .ra-backdrop.ra-v2 .ra2 .ra2-ocr {
+    color: var(--ra-warm);
+  }
+
+  body .ra-backdrop.ra-v2 .ra2 .ra2-page,
+  body .ra-backdrop.ra-v2 .ra2 .ra2-link,
+  body .ra-backdrop.ra-v2 .ra-notice {
+    color: var(--ra-accent-ink);
+  }
+
+  body .ra-backdrop.ra-v2 .ra2 .ra2-pill {
+    border-color: var(--ra-accent);
+    color: var(--ra-accent-ink);
+  }
+
+  body .ra-backdrop.ra-v2 .ra2 .ra2-list > li {
+    border-bottom-color: var(--ra-line);
+  }
+
+  body .ra-backdrop.ra-v2 .ra-chip {
+    border-color: var(--ra-accent);
+    background: var(--ra-surface);
+    color: var(--ra-accent-ink);
+  }
+
+  body .ra-backdrop.ra-v2 .ra-chip-all {
+    background: var(--ra-accent);
+    color: #14201a;
+  }
+
+  body .ra-backdrop.ra-v2 .ra-btn {
+    border-color: var(--ra-accent);
+    background: var(--ra-surface);
+    color: var(--ra-accent-ink);
+  }
+
+  body .ra-backdrop.ra-v2 .ra-btn-main {
+    background: var(--ra-accent);
+    color: #14201a;
+  }
+
+  body .ra-backdrop.ra-v2 .admin-link {
+    color: var(--ra-accent-ink);
+  }
+
+  body .ra-backdrop.ra-v2 .ra-error,
+  body .ra-backdrop.ra-v2 .admin-error {
+    color: var(--ra-danger);
+  }
+}
