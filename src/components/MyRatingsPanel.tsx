@@ -127,7 +127,7 @@ export default function MyRatingsPanel({
     return mode === 'score' ? (
         <ScoreList rows={rows} csv={useCsv} onOpenGame={onOpenGame} renderCover={renderCover} />
     ) : (
-        <ScatterMine rows={rows} csv={useCsv} onOpenGame={onOpenGame} />
+        <ScatterMine rows={rows} onOpenGame={onOpenGame} />
     )
 }
 
@@ -257,11 +257,9 @@ function ScoreList({
 
 function ScatterMine({
     rows,
-    csv,
     onOpenGame,
 }: {
     rows: Row[]
-    csv: boolean
     onOpenGame: (game: BoardGame) => void
 }) {
     const [xKey, setXKey] = useState<Metric>('overall')
