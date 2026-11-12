@@ -1,5 +1,6 @@
 ﻿import CategoryChips from './components/CategoryChips'
 import SortControl from './components/SortControl'
+import NewArrivals from './components/NewArrivals'
 import RulebookPage from './components/RulebookPage'
 import {
   useCallback,
@@ -1041,23 +1042,28 @@ function Library({
                   )}
                 </button>
               </label>
-              <div className="hero-tools-row">
-                <SortControl
-                  sortBy={effectiveSortBy}
-                  isAdmin={isAdmin}
-                  showMyScores={!!session}
-                  setSortBy={handleSetSortBy}
-                  sortDirection={sortDirection}
-                  onToggleDirection={() =>
-                    setSortDirection((current) =>
-                      current === 'asc' ? 'desc' : 'asc',
-                    )
-                  }
-                />
+              <div className="hero-tools-row explore-meta">
                 <StatusLegend />
+                <button
+                  type="button"
+                  className="explore-mine-btn"
+                  onClick={() => goPage('mylist')}
+                >
+                  我的想玩與已玩 ›
+                </button>
               </div>
             </div>
           </div>
+        </section>
+
+        <NewArrivals
+          games={boardGames}
+          coverVersions={coverVersions}
+          nowMs={nowMs}
+          onOpen={openGame}
+        />
+
+        <div className="explore-home explore-types">
           <CategoryChips
             games={boardGames}
             selected={selectedCategories}
@@ -1065,9 +1071,26 @@ function Library({
             onClear={() => setSelectedCategories([])}
             resultCount={displayedGameCount}
           />
-        </section>
+        </div>
 
         <section className="library">
+          <div className="section-heading explore-head">
+            <h2>探索所有桌遊</h2>
+            <div className="heading-actions">
+                  <SortControl
+                    sortBy={effectiveSortBy}
+                    isAdmin={isAdmin}
+                    showMyScores={!!session}
+                    setSortBy={handleSetSortBy}
+                    sortDirection={sortDirection}
+                    onToggleDirection={() =>
+                      setSortDirection((current) =>
+                        current === 'asc' ? 'desc' : 'asc',
+                      )
+                    }
+                  />
+            </div>
+          </div>
 
           <FilterDrawer
             isOpen={isFilterOpen}

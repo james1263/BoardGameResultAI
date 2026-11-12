@@ -1,0 +1,212 @@
+/* 首頁改版（探索桌遊優先）：新加入桌遊、類型區、標題列、圖例列 */
+
+/* 新加入桌遊 */
+.explore-home.explore-new {
+  padding: 4px 24px 6px;
+}
+
+.explore-new-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.explore-home .explore-title {
+  margin: 0 0 10px;
+  color: var(--c-ink);
+  font-size: 18px;
+  letter-spacing: -0.3px;
+}
+
+.explore-new-list {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 2px 0 8px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.explore-new-list::-webkit-scrollbar {
+  display: none;
+}
+
+.explore-new-list > li {
+  flex: none;
+  width: 150px;
+  scroll-snap-align: start;
+}
+
+.explore-home .explore-new-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  width: 100%;
+  padding: 0 0 10px;
+  overflow: hidden;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-m);
+  background: var(--c-paper);
+  color: var(--c-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.explore-home .explore-new-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-m);
+}
+
+.explore-new-art {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 110px;
+  overflow: hidden;
+  background: #e8eddf;
+}
+
+.explore-new-art .explore-new-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.explore-new-emoji {
+  font-size: 40px;
+}
+
+.explore-new-badge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 1;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #f0a22e;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.explore-new-name {
+  padding: 6px 10px 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.explore-new-score {
+  padding: 0 10px;
+  color: var(--c-ink-soft);
+  font-size: 12px;
+}
+
+/* 類型區（移出 hero 後自己留左右邊距） */
+.explore-home.explore-types {
+  padding: 0 24px;
+}
+
+.explore-home.explore-types .quick-chips {
+  margin-top: 8px;
+}
+
+/* 圖例列：左圖例、右「我的想玩與已玩」 */
+.hero-tools-row.explore-meta {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.explore-mine-btn {
+  flex: none;
+  margin-left: auto;
+  padding: 7px 14px;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  background: var(--c-paper);
+  color: var(--c-forest);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.explore-mine-btn:hover {
+  border-color: var(--c-forest);
+}
+
+/* 探索所有桌遊：標題＋排序 */
+.library .explore-head {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.library .explore-head h2 {
+  margin: 0;
+  font-size: 20px;
+  white-space: nowrap;
+}
+
+.library .explore-head .heading-actions {
+  flex: none;
+  justify-content: flex-end;
+}
+
+.library .explore-head .heading-actions .sort-control {
+  flex: none;
+}
+
+@media (max-width: 520px) {
+  .explore-home.explore-new {
+    padding: 2px 16px 4px;
+  }
+
+  .explore-home.explore-types {
+    padding: 0 16px;
+  }
+
+  .explore-new-list > li {
+    width: 128px;
+  }
+
+  .explore-new-art {
+    height: 92px;
+  }
+
+  /* 放不下就讓排序獨占一行 */
+  .library .explore-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .library .explore-head .heading-actions {
+    justify-content: stretch;
+  }
+
+  .library .explore-head .heading-actions .sort-control {
+    flex: 1 1 100%;
+  }
+
+  .library .explore-head .heading-actions .sort-control select {
+    flex: 1;
+    min-width: 0;
+  }
+}
