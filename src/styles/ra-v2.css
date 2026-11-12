@@ -383,3 +383,342 @@ body .ra-backdrop.ra-v2 .ra-src-qa {
     color: var(--ra-danger);
   }
 }
+
+/* =====================================================================
+   第二階段：規則助手問答區（RulebookAssistant）
+   結果列維持底線分隔列表（不做卡片，保留資訊密度），只調間距、文字層級與來源徽章。
+   ===================================================================== */
+
+/* ---------- 搜尋列 ---------- */
+body .ra-backdrop.ra-v2 .ra2 .ra2-label {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-row input.ra2-input {
+  height: 48px;
+  border: 1px solid var(--ra-line);
+  border-radius: 14px;
+  background: var(--ra-surface);
+  color: var(--ra-ink);
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-row input.ra2-input:focus {
+  outline: none;
+  border-color: var(--ra-accent);
+  box-shadow: 0 0 0 3px var(--ra-focus);
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-row button.ra2-go {
+  height: 48px;
+  border-radius: 14px;
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-small {
+  color: var(--ra-soft);
+}
+
+/* ---------- 大家最近常查 ---------- */
+body .ra-backdrop.ra-v2 .ra-hot {
+  margin: 12px 0;
+}
+
+body .ra-backdrop.ra-v2 .ra-hot-title {
+  margin: 0 0 2px;
+  color: var(--ra-ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+body .ra-backdrop.ra-v2 .ra-hot-sub {
+  margin: 0 0 8px;
+  color: var(--ra-soft);
+  font-size: 12px;
+}
+
+body .ra-backdrop.ra-v2 .ra-hot-empty {
+  margin: 0;
+  color: var(--ra-soft);
+  font-size: 13px;
+}
+
+body .ra-backdrop.ra-v2 .ra-hot-list {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--ra-line);
+  border-radius: 14px;
+  background: var(--ra-surface);
+  list-style: none;
+}
+
+body .ra-backdrop.ra-v2 .ra-hot-list li + li {
+  border-top: 1px solid var(--ra-line);
+}
+
+body .ra-backdrop.ra-v2 .ra-hot-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--ra-ink);
+  font-size: 15px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+body .ra-backdrop.ra-v2 .ra-hot-item:hover,
+body .ra-backdrop.ra-v2 .ra-hot-item:active,
+body .ra-backdrop.ra-v2 .ra-hot-item:focus-visible {
+  background: var(--ra-accent-bg);
+  outline: none;
+}
+
+body .ra-backdrop.ra-v2 .ra-hot-rank {
+  flex: none;
+  width: 22px;
+  color: var(--ra-warm);
+  font-weight: 700;
+  text-align: center;
+}
+
+body .ra-backdrop.ra-v2 .ra-hot-kw {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+body .ra-backdrop.ra-v2 .ra-hot-count {
+  flex: none;
+  color: var(--ra-soft);
+  font-size: 13px;
+}
+
+/* ---------- 狀態列 ---------- */
+body .ra-backdrop.ra-v2 .ra2 .ra2-status {
+  margin: 12px 0 4px;
+  color: var(--ra-soft);
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-pill {
+  border: 1px solid var(--ra-accent);
+  background: var(--ra-surface);
+  color: var(--ra-accent-ink);
+  font-weight: 600;
+}
+
+/* ---------- 搜尋結果：底線列表 ---------- */
+body .ra-backdrop.ra-v2 .ra2 .ra2-list {
+  margin: 6px 0 10px;
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-list > li {
+  padding: 14px 4px 12px;
+  border-bottom: 1px solid var(--ra-line);
+  border-left: 3px solid transparent;
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-head {
+  align-items: center;
+  gap: 6px 10px;
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-page {
+  font-size: 16px;
+  color: var(--ra-accent-ink);
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-doc {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--ra-soft);
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-text {
+  margin: 8px 0 6px;
+  color: var(--ra-ink);
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-actions {
+  gap: 4px 16px;
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-link {
+  padding: 6px 0;
+  color: var(--ra-accent-ink);
+  font-weight: 600;
+}
+
+/* 命中詞標黃（原本是行內 style） */
+body .ra-backdrop.ra-v2 .ra-mark {
+  padding: 0 1px;
+  border-radius: 3px;
+  background: #f6e2a3;
+  color: inherit;
+}
+
+/* 來源徽章：語言＋文件範圍（主遊戲／擴充／FAQ／玩家整理） */
+body .ra-backdrop.ra-v2 .ra2 .ra2-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-badge {
+  padding: 1px 8px;
+  border: 1px solid var(--ra-line);
+  border-radius: 999px;
+  background: var(--ra-surface);
+  color: var(--ra-soft);
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+/* 官方規則：綠色徽章 */
+body .ra-backdrop.ra-v2 .ra2 .ra2-badge-scope {
+  border-color: var(--ra-accent);
+  background: var(--ra-accent-bg);
+  color: var(--ra-accent-ink);
+  font-weight: 700;
+}
+
+/* 擴充：藍灰徽章 */
+body .ra-backdrop.ra-v2 .ra2 .ra2-badge-scope[data-scope='expansion'] {
+  border-color: #6b8aa3;
+  background: rgba(107, 138, 163, 0.14);
+  color: #44647d;
+}
+
+/* FAQ／勘誤：焦糖徽章 */
+body .ra-backdrop.ra-v2 .ra2 .ra2-badge-scope[data-scope='faq'] {
+  border-color: var(--ra-warm-line);
+  background: var(--ra-warm-bg);
+  color: var(--ra-warm);
+}
+
+/* 玩家整理：虛線焦糖徽章＋整列左邊焦糖色條，一眼和官方規則分開 */
+body .ra-backdrop.ra-v2 .ra2 .ra2-badge-scope[data-scope='player_notes'] {
+  border-style: dashed;
+  border-color: var(--ra-warm-line);
+  background: var(--ra-warm-bg);
+  color: var(--ra-warm);
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-list > li[data-scope='player_notes'] {
+  border-left-color: var(--ra-warm-line);
+  padding-left: 10px;
+}
+
+body .ra-backdrop.ra-v2 .ra2 .ra2-list > li[data-scope='faq'] {
+  border-left-color: rgba(183, 138, 90, 0.55);
+  padding-left: 10px;
+}
+
+/* ---------- AI 回饋投稿 ---------- */
+body .ra-backdrop.ra-v2 .ra2-fb {
+  margin: 12px 0;
+}
+
+body .ra-backdrop.ra-v2 .ra2-fb-text {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body .ra-backdrop.ra-v2 .ra2-fb-check {
+  display: block;
+  margin: 6px 0;
+}
+
+/* ---------- 縮小搜尋範圍（底部彈窗，portal 到 body；層級維持 1270） ---------- */
+body .ra2-backdrop {
+  --ra-bg: #fbf7ec;
+  --ra-surface: #ffffff;
+  --ra-ink: #34463c;
+  --ra-soft: #6d6a5c;
+  --ra-line: #e3d9c4;
+  --ra-accent: #456b50;
+  --ra-accent-ink: #365b40;
+  --ra-accent-bg: #eef4ea;
+}
+
+body .ra2-sheet {
+  background: var(--ra-bg);
+  color: var(--ra-ink);
+}
+
+body .ra2-sheet .ra2-sheet-head {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ra-line);
+}
+
+body .ra2-sheet .ra2-x {
+  color: var(--ra-ink);
+}
+
+body .ra2-sheet .ra2-sec-title {
+  color: var(--ra-soft);
+}
+
+body .ra2-sheet .ra2-set summary {
+  color: var(--ra-ink);
+}
+
+body .ra2-sheet .ra2-set-label {
+  color: var(--ra-ink);
+  font-size: 13px;
+}
+
+body .ra2-sheet .ra-chip,
+body .ra2-sheet .ra-btn {
+  border-color: var(--ra-accent);
+  background: var(--ra-surface);
+  color: var(--ra-accent-ink);
+}
+
+/* 選中狀態：原本是行內 style，改由 aria-pressed 控制 */
+body .ra2-sheet .ra-chip[aria-pressed='true'],
+body .ra2-sheet .ra-btn[aria-pressed='true'] {
+  background: var(--ra-accent);
+  color: #fff;
+}
+
+body .ra2-sheet .ra-chip:disabled {
+  opacity: 0.55;
+}
+
+/* ---------- 深色模式（第二階段補充） ---------- */
+@media (prefers-color-scheme: dark) {
+  body .ra-backdrop.ra-v2 .ra-mark {
+    background: #6b5a1f;
+    color: #fff4cf;
+  }
+
+  body .ra-backdrop.ra-v2 .ra2 .ra2-badge-scope[data-scope='expansion'] {
+    border-color: #7f9db5;
+    background: rgba(127, 157, 181, 0.18);
+    color: #aac6dc;
+  }
+
+  body .ra2-backdrop {
+    color-scheme: dark;
+    --ra-bg: #1d2822;
+    --ra-surface: #263329;
+    --ra-ink: #e6eee4;
+    --ra-soft: #a7b6ab;
+    --ra-line: #34443a;
+    --ra-accent: #7fb08a;
+    --ra-accent-ink: #a9d3b2;
+    --ra-accent-bg: #2a3a31;
+  }
+
+  body .ra2-sheet .ra-chip[aria-pressed='true'],
+  body .ra2-sheet .ra-btn[aria-pressed='true'] {
+    background: var(--ra-accent);
+    color: #14201a;
+  }
+}

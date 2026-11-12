@@ -274,7 +274,7 @@ function highlight(text: string, terms: string[]): ReactNode {
     const re = new RegExp(`(${sorted.map(escapeRegex).join('|')})`, 'gi')
     return text.split(re).map((part, i) =>
         i % 2 === 1 ? (
-            <mark key={i} style={{ background: '#f6e2a3', color: 'inherit', borderRadius: 3, padding: '0 1px' }}>
+            <mark key={i} className="ra-mark">
                 {part}
             </mark>
         ) : (
@@ -582,8 +582,6 @@ ${parts}${errataText}
         setFbErr('')
     }
 
-    const chipStyle = (word: string) =>
-        activeLabel === word ? { background: '#456B50', color: '#fff' } : undefined
     const allChunks = chunks ?? []
     const hasChunks = allChunks.length > 0
     const visible = allChunks
@@ -639,11 +637,6 @@ ${parts}${errataText}
                                           type="button"
                                           className="ra-chip"
                                           aria-pressed={langFilter === key}
-                                          style={
-                                              langFilter === key
-                                                  ? { background: '#456B50', color: '#fff' }
-                                                  : undefined
-                                          }
                                           onClick={() => setLangFilter(key)}
                                       >
                                           {label}
@@ -662,7 +655,6 @@ ${parts}${errataText}
                                       className="ra-chip"
                                       disabled={busy}
                                       aria-pressed={activeLabel === '全部輸入內容'}
-                                      style={chipStyle('全部輸入內容')}
                                       onClick={() => {
                                           setDrawerOpen(false)
                                           handleSearch()
@@ -677,7 +669,6 @@ ${parts}${errataText}
                                           className="ra-chip"
                                           disabled={busy}
                                           aria-pressed={activeLabel === word}
-                                          style={chipStyle(word)}
                                           onClick={() => pickChip(word)}
                                       >
                                           {word}
@@ -690,7 +681,6 @@ ${parts}${errataText}
                                           className="ra-chip"
                                           disabled={busy}
                                           aria-pressed={activeLabel === word}
-                                          style={chipStyle(word)}
                                           onClick={() => pickChip(word)}
                                       >
                                           {word}
@@ -712,18 +702,13 @@ ${parts}${errataText}
                                   </button>
                               )}
                               <div className="ra2-set-row">
-                                  <span style={{ fontSize: 13 }}>字體</span>
+                                  <span className="ra2-set-label">字體</span>
                                   {(['normal', 'large', 'xl'] as FontSize[]).map((size) => (
                                       <button
                                           key={size}
                                           type="button"
                                           className="ra-btn ra-btn-small"
                                           aria-pressed={fontSize === size}
-                                          style={
-                                              fontSize === size
-                                                  ? { background: '#456B50', color: '#fff' }
-                                                  : undefined
-                                          }
                                           onClick={() => changeFont(size)}
                                       >
                                           {FONT_LABEL[size]}
@@ -785,39 +770,27 @@ ${parts}${errataText}
             )}
 
             {chunks === null && activeLabel === '' && !busy && hot.loaded && (
-                <div style={{ margin: '10px 0' }}>
-                    <p style={{ fontWeight: 700, margin: '0 0 2px' }}>大家最近常查</p>
-                    <p style={{ fontSize: 12, opacity: 0.75, margin: '0 0 4px' }}>
-                        最近 30 天，點一下直接搜尋
-                    </p>
+                <div className="ra-hot">
+                    <p className="ra-hot-title">大家最近常查</p>
+                    <p className="ra-hot-sub">最近 30 天，點一下直接搜尋</p>
                     {hot.items.length === 0 ? (
-                        <p style={{ fontSize: 13, opacity: 0.75 }}>這款還沒有人搜尋過。</p>
+                        <p className="ra-hot-empty">這款還沒有人搜尋過。</p>
                     ) : (
-                        <ol style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                        <ol className="ra-hot-list">
                             {hot.items.map((item, index) => (
                                 <li key={item.keyword}>
                                     <button
                                         type="button"
-                                        className="admin-link"
-                                        style={{
-                                            display: 'flex',
-                                            width: '100%',
-                                            gap: 10,
-                                            padding: '7px 0',
-                                            border: 0,
-                                            borderBottom: '1px solid #e3d9c4',
-                                            background: 'transparent',
-                                            textAlign: 'left',
-                                        }}
+                                        className="admin-link ra-hot-item"
                                         onClick={() => {
                                             setQuery(item.keyword)
                                             setLastQuery(item.keyword)
                                             void run(item.keyword, '全部輸入內容')
                                         }}
                                     >
-                                        <span style={{ width: 22 }}>{index + 1}</span>
-                                        <span style={{ flex: 1 }}>{item.keyword}</span>
-                                        <span style={{ opacity: 0.7 }}>{item.count} 次</span>
+                                        <span className="ra-hot-rank">{index + 1}</span>
+                                        <span className="ra-hot-kw">{item.keyword}</span>
+                                        <span className="ra-hot-count">{item.count} 次</span>
                                     </button>
                                 </li>
                             ))}
@@ -853,7 +826,7 @@ ${parts}${errataText}
             {notice && <p className="ra-notice">{notice}</p>}
 
             {fb && fbShown && !isAdmin && (
-                <div className="er-box" ref={fbRef} style={{ margin: '10px 0' }}>
+                <div className="er-box ra2-fb" ref={fbRef}>
                     <p className="er-box-title">AI 回饋投稿</p>
                     {fbSent ? (
                         <p className="er-note">已送出，管理者審核通過後才會公開。謝謝你分享！</p>
@@ -865,7 +838,7 @@ ${parts}${errataText}
                             <textarea
                                 rows={6}
                                 value={fbText}
-                                style={{ width: '100%' }}
+                                className="ra2-fb-text"
                                 placeholder="貼上 AI 回覆最後的回饋區塊"
                                 onChange={(event) => setFbText(event.target.value)}
                             />
@@ -876,7 +849,7 @@ ${parts}${errataText}
                                     <div className="er-title">{parsed.data.title}</div>
                                     <p className="er-body">{parsed.data.answer}</p>
                                     <small className="er-src">依據：{parsed.data.pageText}</small>
-                                    <label className="er-src" style={{ display: 'block', margin: '6px 0' }}>
+                                    <label className="er-src ra2-fb-check">
                                         <input
                                             type="checkbox"
                                             checked={fbVerified}
@@ -925,13 +898,20 @@ ${parts}${errataText}
                         const shown = isOpen || !snip.partial ? fullText : snip.text
                         const canTranslate = !isZh && translateHref.length <= TRANSLATE_URL_LIMIT
                         return (
-                            <li key={rowKey}>
+                            <li key={rowKey} data-scope={(c as ScopedChunk).doc_scope ?? 'main'}>
                                 <div className="ra2-head">
                                     <span className="ra2-page">
                                         {c.page_number ? `第 ${c.page_number} 頁` : '頁碼不明'}
                                     </span>
-                                    <span className="ra2-doc">
-                                        {c.doc_title || '規則書'}（{langTag(c.doc_lang)}）【{chunkScope(c)}】
+                                    <span className="ra2-doc">{c.doc_title || '規則書'}</span>
+                                    <span className="ra2-badges">
+                                        <span className="ra2-badge">{langTag(c.doc_lang)}</span>
+                                        <span
+                                            className="ra2-badge ra2-badge-scope"
+                                            data-scope={(c as ScopedChunk).doc_scope ?? 'main'}
+                                        >
+                                            {chunkScope(c)}
+                                        </span>
                                     </span>
                                 </div>
                                 <p
