@@ -1,0 +1,252 @@
+/* 俱樂部首頁改版（只作用在 .mylist-drawer.club-home，其他抽屜不受影響）
+   版面：個人資訊 → 集點福利卡 → 我的桌遊紀錄（兩欄）→ 功能入口（桌面兩欄、手機單欄）
+   深色模式：跟隨系統，只限首頁；不動 :root，不影響其他頁面 */
+
+/* ---------- 顏色變數（淺色＝原本的配色） ---------- */
+.mylist-drawer.club-home {
+  --ch-bg: #fffdf9;
+  --ch-card: #ffffff;
+  --ch-line: rgba(52, 70, 60, 0.14);
+  --ch-ink: #34463c;
+  --ch-sub: #6f7d74;
+  --ch-icon: #456b50;
+  --ch-icon-bg: rgba(69, 107, 80, 0.12);
+  --ch-arrow: #8a948d;
+  --ch-count: #456b50;
+  --ch-pts-bg: #fbf7ec;
+  --ch-pts-line: #e3d9c4;
+  --ch-pts-label: #7a6a52;
+  --ch-pts-ink: #34463c;
+  --ch-pts-arrow: #a89478;
+  --ch-warn: #b5483a;
+  --ch-go: #4a6b57;
+  --ch-dot: #d64545;
+  background: var(--ch-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  .mylist-drawer.club-home {
+    color-scheme: dark; /* 只影響這個抽屜裡的捲軸與表單元件 */
+    --ch-bg: #151c18;
+    --ch-card: #212b25;
+    --ch-line: rgba(232, 239, 233, 0.14);
+    --ch-ink: #e8efe9;
+    --ch-sub: #a9b8ae;
+    --ch-icon: #8fc7a2;
+    --ch-icon-bg: rgba(143, 199, 162, 0.16);
+    --ch-arrow: #8d9a92;
+    --ch-count: #8fc7a2;
+    --ch-pts-bg: #2c2a21;
+    --ch-pts-line: #4d4533;
+    --ch-pts-label: #d1bf98;
+    --ch-pts-ink: #f6efdc;
+    --ch-pts-arrow: #c9b994;
+    --ch-warn: #ff9c8c;
+    --ch-go: #5d8a6e;
+    --ch-dot: #ef5a5a;
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
+  }
+  /* 個人資訊卡維持深墨綠，只和深色底拉開一點距離 */
+  .mylist-drawer.club-home .club-card {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
+
+.mylist-drawer.club-home .club-body {
+  padding-bottom: 28px; /* 最後一張卡不被底部導覽遮住（抽屜本身已停在導覽上方） */
+}
+
+/* ---------- 集點福利卡 ---------- */
+.mylist-drawer.club-home .ch-pts {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  width: calc(100% - 32px);
+  margin: 12px 16px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--ch-pts-line);
+  border-radius: 14px;
+  background: var(--ch-pts-bg);
+  color: var(--ch-pts-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mylist-drawer.club-home .ch-pts-loading {
+  flex: 1;
+  font-size: 14px;
+}
+
+.mylist-drawer.club-home .ch-pts-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.mylist-drawer.club-home .ch-pts-label {
+  display: block;
+  font-size: 13px;
+  color: var(--ch-pts-label);
+}
+
+.mylist-drawer.club-home .ch-pts-num {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ch-pts-ink);
+}
+
+.mylist-drawer.club-home .ch-pts-sub {
+  display: block;
+  font-size: 12px;
+  color: var(--ch-pts-label);
+}
+
+.mylist-drawer.club-home .ch-pts-arrow {
+  font-size: 22px;
+  color: var(--ch-pts-arrow);
+}
+
+.mylist-drawer.club-home .ch-pts-go {
+  position: relative;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--ch-go);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.mylist-drawer.club-home .ch-pts-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--ch-dot);
+  border: 2px solid var(--ch-pts-bg);
+}
+
+.mylist-drawer.club-home .ch-pts-warn {
+  flex-basis: 100%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ch-warn);
+}
+
+/* ---------- 共用卡片 ---------- */
+.mylist-drawer.club-home .ch-card {
+  box-sizing: border-box;
+  min-width: 0;
+  border: 1px solid var(--ch-line);
+  border-radius: 14px;
+  background: var(--ch-card);
+  color: var(--ch-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mylist-drawer.club-home .ch-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--ch-icon-bg);
+  color: var(--ch-icon);
+}
+
+.mylist-drawer.club-home .ch-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mylist-drawer.club-home .ch-text b {
+  font-size: 15px;
+  color: var(--ch-ink);
+}
+
+.mylist-drawer.club-home .ch-sub {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--ch-sub);
+  overflow-wrap: anywhere;
+}
+
+.mylist-drawer.club-home .ch-count {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ch-count);
+}
+
+.mylist-drawer.club-home .ch-arrow {
+  flex: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ch-arrow);
+}
+
+/* ---------- 我的桌遊紀錄：兩欄（手機也是兩欄） ---------- */
+.mylist-drawer.club-home .ch-records {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 16px 0;
+}
+
+.mylist-drawer.club-home .ch-records.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.mylist-drawer.club-home .ch-record {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+}
+
+.mylist-drawer.club-home .ch-record .ch-text {
+  flex: none;
+  width: 100%;
+}
+
+/* ---------- 功能入口：桌面兩欄、手機單欄 ---------- */
+.mylist-drawer.club-home .ch-menu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 10px 16px 0;
+}
+
+.mylist-drawer.club-home .ch-menu > .ch-card:last-child:nth-child(odd) {
+  grid-column: 1 / -1; /* 奇數張時最後一張撐滿 */
+}
+
+.mylist-drawer.club-home .ch-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+}
+
+@media (max-width: 440px) {
+  .mylist-drawer.club-home .ch-menu {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

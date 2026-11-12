@@ -24,6 +24,8 @@ import UpcomingGatherings from './components/UpcomingGatherings'
 import { useBackClose } from './lib/useBackClose'
 import DrawerToTop from './components/DrawerToTop'
 import FullScreenPage from './components/FullScreenPage'
+import ClubIcon from './components/ClubIcons'
+import './styles/club-home.css'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
@@ -194,80 +196,39 @@ function ClubPointsCard({
         <>
             <button
                 type="button"
+                className="ch-pts"
                 onClick={() => (canFlow ? setFlowOpen(true) : onOpen())}
                 aria-label={canFlow ? '開始今日遊戲評分' : '打開集點卡'}
-                style={{
-                    position: 'relative',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: 12,
-                    width: '100%',
-                    margin: '12px 0 0',
-                    padding: '14px 16px',
-                    border: '1px solid #e3d9c4',
-                    borderRadius: 14,
-                    background: '#fbf7ec',
-                    color: '#34463c',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                }}
             >
                 {loading ? (
-                    <span style={{ flex: 1, fontSize: 14 }}>集點資料讀取中…</span>
+                    <span className="ch-pts-loading">集點資料讀取中…</span>
                 ) : (
                     <>
-                        <span style={{ flex: 1 }}>
-                            <span style={{ display: 'block', fontSize: 13, color: '#7a6a52' }}>免費券</span>
-                            <span style={{ display: 'block', fontSize: 22, fontWeight: 800, color: '#34463c' }}>
-                                🎟 {held} 張
+                        <span className="ch-pts-col">
+                            <span className="ch-pts-label">免費券</span>
+                            <span className="ch-pts-num">
+                                <ClubIcon name="ticket" size={22} /> {held} 張
                             </span>
                             {later > 0 && (
-                                <span style={{ display: 'block', fontSize: 12, color: '#7a6a52' }}>
-                                    {later} 張明天起可用
-                                </span>
+                                <span className="ch-pts-sub">{later} 張明天起可用</span>
                             )}
                         </span>
-                        <span style={{ flex: 1 }}>
-                            <span style={{ display: 'block', fontSize: 13, color: '#7a6a52' }}>本月點數</span>
-                            <span style={{ display: 'block', fontSize: 22, fontWeight: 800, color: '#34463c' }}>
-                                {month} / 2
-                            </span>
+                        <span className="ch-pts-col">
+                            <span className="ch-pts-label">本月點數</span>
+                            <span className="ch-pts-num">{month} / 2</span>
                         </span>
                     </>
                 )}
                 {canFlow ? (
-                    <span
-                        aria-hidden="true"
-                        style={{
-                            position: 'relative',
-                            padding: '8px 16px',
-                            borderRadius: 999,
-                            background: '#4a6b57',
-                            color: '#fff',
-                            fontSize: 15,
-                            fontWeight: 700,
-                        }}
-                    >
+                    <span className="ch-pts-go" aria-hidden="true">
                         去評分
-                        <span
-                            style={{
-                                position: 'absolute',
-                                top: -3,
-                                right: -3,
-                                width: 12,
-                                height: 12,
-                                borderRadius: 999,
-                                background: '#d64545',
-                                border: '2px solid #fbf7ec',
-                            }}
-                        />
+                        <span className="ch-pts-dot" />
                     </span>
                 ) : (
-                    <span aria-hidden="true" style={{ fontSize: 22, color: '#a89478' }}>›</span>
+                    <span className="ch-pts-arrow" aria-hidden="true">›</span>
                 )}
                 {pending && (
-                    <span style={{ flexBasis: '100%', fontSize: 12, fontWeight: 700, color: '#b5483a' }}>
+                    <span className="ch-pts-warn">
                         今天的聚會待確認：評分流程走完前不會得點，也不會使用免費券
                     </span>
                 )}
@@ -1297,10 +1258,12 @@ export default function MyList({
     }
 
     // ---------- 我的桌遊（首頁） ----------
+    // 顯示條件與原本完全相同：我的評分＝已登入且非管理者
+    const showRatingsEntry = personal.isLoggedIn && !isAdmin
     return (
         <>
             <div className="mylist-backdrop" onClick={onClose} />
-            <aside className="mylist-drawer" role="dialog" aria-label="我的俱樂部">
+            <aside className="mylist-drawer club-home" role="dialog" aria-label="我的俱樂部">
                 <div className="mylist-body club-body">
                     <ClubHeader isAdmin={isAdmin} isVip={isVip} onClose={onClose} />
                     {personal.isLoggedIn && isVip && !isAdmin && (
@@ -1311,129 +1274,129 @@ export default function MyList({
                             ratings={ratings}
                         />
                     )}
-                    <div className="club-list club-more">
+                    <div className={`ch-records${showRatingsEntry ? '' : ' is-single'}`}>
                         <button
                             type="button"
-                            className="club-menu-item club-menu-single"
+                            className="ch-card ch-record"
                             onClick={openStats}
                         >
-                            <span className="club-menu-icon" aria-hidden="true">▤</span>
-                            <span className="club-menu-text">
-                                <b>我的統計</b>
-                                <span className="club-menu-sub">想玩、已玩與遊玩次數</span>
+                            <span className="ch-icon" aria-hidden="true">
+                                <ClubIcon name="stats" />
                             </span>
-                            <span className="club-menu-count">
+                            <span className="ch-text">
+                                <b>我的統計</b>
+                                <span className="ch-sub">想玩、已玩與遊玩次數</span>
+                            </span>
+                            <span className="ch-count">
                                 想玩 {wantGames.length}・已玩 {playedGames.length}
                             </span>
-                            <span className="club-menu-arrow" aria-hidden="true">›</span>
                         </button>
-                    </div>
-                    {personal.isLoggedIn && !isAdmin && (
-                        <div className="club-list club-more">
+                        {showRatingsEntry && (
                             <button
                                 type="button"
-                                className="club-menu-item club-menu-single"
+                                className="ch-card ch-record"
                                 onClick={() => {
                                     setRatingsFocus(null)
                                     setView('ratings')
                                 }}
                             >
-                                <span className="club-menu-icon" aria-hidden="true">⭐</span>
-                                <span className="club-menu-text">
+                                <span className="ch-icon" aria-hidden="true">
+                                    <ClubIcon name="star" />
+                                </span>
+                                <span className="ch-text">
                                     <b>我的評分</b>
-                                    <span className="club-menu-sub">把玩過的遊戲逐款評完</span>
+                                    <span className="ch-sub">把玩過的遊戲逐款評完</span>
                                 </span>
                                 {ratings.status === 'ready' && (
-                                    <span className="club-menu-count">
+                                    <span className="ch-count">
                                         已評分 {playedGames.filter((game) => ratings.getMine(game.bggName)).length}・已玩 {playedGames.length}
                                     </span>
                                 )}
-                                <span className="club-menu-arrow" aria-hidden="true">›</span>
                             </button>
-                        </div>
-                    )}
+                        )}
+                    </div>
                     {personal.isLoggedIn && (
-                        <>
+                        <div className="ch-menu">
                             {isAdmin && (
-                            <div className="club-list club-more">
                                 <button
                                     type="button"
-                                    className="club-menu-item club-menu-single"
+                                    className="ch-card ch-entry"
                                     onClick={() => setView('board')}
                                 >
-                                    <span className="club-menu-icon" aria-hidden="true">💬</span>
-                                    <span className="club-menu-text">
+                                    <span className="ch-icon" aria-hidden="true">
+                                        <ClubIcon name="message" />
+                                    </span>
+                                    <span className="ch-text">
                                         <b>留言板</b>
-                                        <span className="club-menu-sub">大家的留言、發表留言</span>
+                                        <span className="ch-sub">大家的留言、發表留言</span>
                                     </span>
-                                    <span className="club-menu-arrow" aria-hidden="true">›</span>
+                                    <span className="ch-arrow" aria-hidden="true">›</span>
                                 </button>
-                            </div>
                             )}
-                            <div className="club-list club-more">
-                                <button
-                                    type="button"
-                                    className="club-menu-item club-menu-single"
-                                    onClick={() => setView('notes')}
-                                >
-                                    <span className="club-menu-icon" aria-hidden="true">📝</span>
-                                    <span className="club-menu-text">
-                                        <b>我的心得</b>
-                                        <span className="club-menu-sub">寫心得／留言、我寫過的紀錄</span>
-                                    </span>
-                                    <span className="club-menu-arrow" aria-hidden="true">›</span>
-                                </button>
-                            </div>
-                            <div className="club-list club-more">
-                                <button
-                                    type="button"
-                                    className="club-menu-item club-menu-single"
-                                    onClick={() => {
-                                        setGatheringTarget(null)
-                                        setView('gatherings')
-                                    }}
-                                >
-                                    <span className="club-menu-icon" aria-hidden="true">📅</span>
-                                    <span className="club-menu-text">
-                                        <b>我的聚會</b>
-                                        <span className="club-menu-sub">參加過的聚會與心得</span>
-                                    </span>
-                                    <span className="club-menu-arrow" aria-hidden="true">›</span>
-                                </button>
-                            </div>
+                            <button
+                                type="button"
+                                className="ch-card ch-entry"
+                                onClick={() => setView('notes')}
+                            >
+                                <span className="ch-icon" aria-hidden="true">
+                                    <ClubIcon name="notes" />
+                                </span>
+                                <span className="ch-text">
+                                    <b>我的心得</b>
+                                    <span className="ch-sub">寫心得／留言、我寫過的紀錄</span>
+                                </span>
+                                <span className="ch-arrow" aria-hidden="true">›</span>
+                            </button>
+                            <button
+                                type="button"
+                                className="ch-card ch-entry"
+                                onClick={() => {
+                                    setGatheringTarget(null)
+                                    setView('gatherings')
+                                }}
+                            >
+                                <span className="ch-icon" aria-hidden="true">
+                                    <ClubIcon name="calendar" />
+                                </span>
+                                <span className="ch-text">
+                                    <b>我的聚會</b>
+                                    <span className="ch-sub">參加過的聚會與心得</span>
+                                </span>
+                                <span className="ch-arrow" aria-hidden="true">›</span>
+                            </button>
                             {isVip && !isAdmin && (
-                                <div className="club-list club-more">
-                                    <button
-                                        type="button"
-                                        className="club-menu-item club-menu-single"
-                                        onClick={() => setView('submissions')}
-                                    >
-                                        <span className="club-menu-icon" aria-hidden="true">✍️</span>
-                                        <span className="club-menu-text">
-                                            <b>我的投稿</b>
-                                            <span className="club-menu-sub">玩錯紀錄、規則連結、詞庫</span>
-                                        </span>
-                                        <span className="club-menu-arrow" aria-hidden="true">›</span>
-                                    </button>
-                                </div>
+                                <button
+                                    type="button"
+                                    className="ch-card ch-entry"
+                                    onClick={() => setView('submissions')}
+                                >
+                                    <span className="ch-icon" aria-hidden="true">
+                                        <ClubIcon name="submit" />
+                                    </span>
+                                    <span className="ch-text">
+                                        <b>我的投稿</b>
+                                        <span className="ch-sub">玩錯紀錄、規則連結、詞庫</span>
+                                    </span>
+                                    <span className="ch-arrow" aria-hidden="true">›</span>
+                                </button>
                             )}
                             {!isAdmin && !isVip && (
-                                <div className="club-list club-more">
-                                    <button
-                                        type="button"
-                                        className="club-menu-item club-menu-single"
-                                        onClick={() => setView('card')}
-                                    >
-                                        <span className="club-menu-icon" aria-hidden="true">🎟</span>
-                                        <span className="club-menu-text">
-                                            <b>集點卡</b>
-                                            <span className="club-menu-sub">點數、免費券、近期紀錄</span>
-                                        </span>
-                                        <span className="club-menu-arrow" aria-hidden="true">›</span>
-                                    </button>
-                                </div>
+                                <button
+                                    type="button"
+                                    className="ch-card ch-entry"
+                                    onClick={() => setView('card')}
+                                >
+                                    <span className="ch-icon" aria-hidden="true">
+                                        <ClubIcon name="ticket" />
+                                    </span>
+                                    <span className="ch-text">
+                                        <b>集點卡</b>
+                                        <span className="ch-sub">點數、免費券、近期紀錄</span>
+                                    </span>
+                                    <span className="ch-arrow" aria-hidden="true">›</span>
+                                </button>
                             )}
-                        </>
+                        </div>
                     )}
                 </div>
             </aside>
