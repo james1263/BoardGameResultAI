@@ -9,14 +9,23 @@ import { linkLabel, linksToLines, parseLinkLines } from '../lib/useGameExpansion
 import '../styles/game-expansions.css'
 import '../styles/game-background.css'
 
+export type GameBackgroundApi = ReturnType<typeof useGameBackground>
+
 export default function GameBackground({
   bggName,
   isAdmin,
+  embedded = false,
+  api: sharedApi,
 }: {
   bggName: string
   isAdmin: boolean
+  // 底部彈窗用：不畫自己的收合標題與外框
+  embedded?: boolean
+  // 外面已讀好的資料（入口卡片與彈窗共用同一份）
+  api?: GameBackgroundApi
 }) {
-  const api = useGameBackground(bggName)
+  const ownApi = useGameBackground(bggName, !sharedApi)
+  const api = sharedApi ?? ownApi
   const [editing, setEditing] = useState(false)
   const [text, setText] = useState('')
   const [linkText, setLinkText] = useState('')
@@ -65,11 +74,8 @@ export default function GameBackground({
     setEditing(false)
   }
 
-  return (
-    <div className="modal-section">
-      <details className="ov-fold">
-        <summary>遊戲背景{hasData ? '' : '（尚未填寫）'}</summary>
-        <div className="ov-fold-body">
+  const body = (
+    <>
           {api.error && <p className="ge-msg">{api.error}</p>}
 
           {hasData && data && !editing && (
@@ -153,7 +159,16 @@ export default function GameBackground({
           )}
 
           {message && <p className="ge-msg">{message}</p>}
-        </div>
+    </>
+  )
+
+  if (embedded) return <div className="ge-embedded">{body}</div>
+
+  return (
+    <div className="modal-section">
+      <details className="ov-fold">
+        <summary>遊戲背景{hasData ? '' : '（尚未填寫）'}</summary>
+        <div className="ov-fold-body">{body}</div>
       </details>
     </div>
   )

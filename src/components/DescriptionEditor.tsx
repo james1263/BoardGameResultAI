@@ -1,18 +1,31 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { askConfirm } from '../lib/askConfirm'
 
 export default function DescriptionEditor({
   value,
   isAdmin,
   onSave,
+  clamp = false,
 }: {
   value: string
   isAdmin: boolean
   onSave: (text: string) => Promise<boolean>
+  // true＝簡介預設只顯示三行，可展開（遊戲詳細視窗概覽用）
+  clamp?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   const [busy, setBusy] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [overflow, setOverflow] = useState(false)
+  const textRef = useRef<HTMLParagraphElement | null>(null)
+
+  // 只在收起狀態量一次：文字被截掉才顯示展開鈕
+  useLayoutEffect(() => {
+    const el = textRef.current
+    if (!clamp || !el || expanded) return
+    setOverflow(el.scrollHeight > el.clientHeight + 1)
+  }, [clamp, expanded, value, editing])
 
   if (!isAdmin && !value) return null
 
@@ -61,7 +74,25 @@ export default function DescriptionEditor({
 
   return (
     <div className="desc-block">
-      {value && <p className="modal-description">{value}</p>}
+      {value && (
+        <p
+          ref={textRef}
+          className={`modal-description${clamp ? ' is-clamp' : ''}${expanded ? ' is-open' : ''}`}
+        >
+          {value}
+        </p>
+      )}
+      {value && clamp && (overflow || expanded) && (
+        <button
+          type="button"
+          className="desc-toggle"
+          aria-expanded={expanded}
+          aria-label={expanded ? '收合簡介' : '展開簡介'}
+          onClick={() => setExpanded((open) => !open)}
+        >
+          {expanded ? '▴' : '▾'}
+        </button>
+      )}
       {isAdmin && (
         <div className="desc-admin-row">
           <button

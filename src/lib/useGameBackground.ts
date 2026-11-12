@@ -18,7 +18,7 @@ type Row = {
   source_note: string | null
 }
 
-export function useGameBackground(bggName: string) {
+export function useGameBackground(bggName: string, enabled = true) {
   const [data, setData] = useState<GameBackground | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -49,9 +49,11 @@ export function useGameBackground(bggName: string) {
   }, [bggName])
 
   useEffect(() => {
+    // enabled=false：資料由外面（GameModal）讀，這裡不重複讀
+    if (!enabled) return
     setLoading(true)
     void reload()
-  }, [reload])
+  }, [reload, enabled])
 
   // 回傳空字串＝成功，否則是錯誤訊息。全部留空＝刪除這筆
   async function save(

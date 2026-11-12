@@ -13,6 +13,8 @@ import {
 } from '../lib/useGameErrata'
 import '../styles/errata.css'
 
+export type GameErrataApi = ReturnType<typeof useGameErrata>
+
 // 遊戲詳細資料概覽：可收合的「玩錯紀錄（N）」，只有 VIP／管理者會掛這個元件
 // 已核准的紀錄人人（VIP）看得到；VIP 可投稿，審核中／被退回的只有本人與管理者看得到
 export default function GameErrata({
@@ -21,6 +23,8 @@ export default function GameErrata({
   defaultOpen,
   bigSubmit,
   hideSubmit,
+  embedded = false,
+  api: sharedApi,
 }: {
   bggName: string
   isAdmin: boolean
@@ -28,8 +32,13 @@ export default function GameErrata({
   bigSubmit?: boolean
   // 規則助手裡只看、不投稿（投稿統一在「俱樂部 → 我的投稿」）
   hideSubmit?: boolean
+  // 底部彈窗用：不畫自己的收合標題
+  embedded?: boolean
+  // 外面已讀好的資料（入口卡片的數量與彈窗共用同一份）
+  api?: GameErrataApi
 }) {
-  const { items, loading, error, reload } = useGameErrata(bggName, true)
+  const ownApi = useGameErrata(bggName, !sharedApi)
+  const { items, loading, error, reload } = sharedApi ?? ownApi
   const [formOpen, setFormOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [title, setTitle] = useState('')
@@ -180,10 +189,8 @@ export default function GameErrata({
           </div>
     ) : null
 
-  return (
-    <details className="ov-fold er-fold" open={defaultOpen || undefined}>
-      <summary>玩錯紀錄・AI 回饋（{approved.length}）</summary>
-      <div className="ov-fold-body">
+  const body = (
+    <>
         <p className="er-note">
           管理者記錄或玩家整理（管理者審核後公開）的玩錯經驗，不是官方規則；與規則書衝突時，以規則書為準。
         </p>
@@ -294,7 +301,15 @@ export default function GameErrata({
         )}
 
         {!bigSubmit && formBlock}
-      </div>
+    </>
+  )
+
+  if (embedded) return <div className="ge-embedded">{body}</div>
+
+  return (
+    <details className="ov-fold er-fold" open={defaultOpen || undefined}>
+      <summary>玩錯紀錄・AI 回饋（{approved.length}）</summary>
+      <div className="ov-fold-body">{body}</div>
     </details>
   )
 }

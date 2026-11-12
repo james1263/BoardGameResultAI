@@ -14,14 +14,23 @@ import '../styles/game-expansions.css'
 
 const MAX_NAME = 60
 
+export type GameExpansionsApi = ReturnType<typeof useGameExpansions>
+
 export default function GameExpansions({
   bggName,
   isAdmin,
+  embedded = false,
+  api: sharedApi,
 }: {
   bggName: string
   isAdmin: boolean
+  // 底部彈窗用：不畫自己的收合標題與外框
+  embedded?: boolean
+  // 外面已讀好的資料（入口卡片的數量與彈窗共用同一份）
+  api?: GameExpansionsApi
 }) {
-  const api = useGameExpansions(bggName)
+  const ownApi = useGameExpansions(bggName, !sharedApi)
+  const api = sharedApi ?? ownApi
   const [newName, setNewName] = useState('')
   const [newFile, setNewFile] = useState<File | null>(null)
   const [newLinks, setNewLinks] = useState('')
@@ -167,13 +176,8 @@ export default function GameExpansions({
     return <span className="ge-name">{row.name}</span>
   }
 
-  return (
-    <div className="modal-section">
-      <details className="ov-fold">
-        <summary>
-          擴充{api.rows.length > 0 ? `（${api.rows.length}）` : ''}
-        </summary>
-        <div className="ov-fold-body">
+  const body = (
+    <>
           {api.error && <p className="ge-msg">{api.error}</p>}
 
           {api.rows.length === 0 && isAdmin && (
@@ -351,7 +355,18 @@ export default function GameExpansions({
           )}
 
           {message && <p className="ge-msg">{message}</p>}
-        </div>
+    </>
+  )
+
+  if (embedded) return <div className="ge-embedded">{body}</div>
+
+  return (
+    <div className="modal-section">
+      <details className="ov-fold">
+        <summary>
+          擴充{api.rows.length > 0 ? `（${api.rows.length}）` : ''}
+        </summary>
+        <div className="ov-fold-body">{body}</div>
       </details>
     </div>
   )

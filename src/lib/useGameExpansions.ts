@@ -170,7 +170,7 @@ function msgOf(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
 }
 
-export function useGameExpansions(bggName: string) {
+export function useGameExpansions(bggName: string, enabled = true) {
   const [rows, setRows] = useState<GameExpansion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -193,9 +193,11 @@ export function useGameExpansions(bggName: string) {
   }, [bggName])
 
   useEffect(() => {
+    // enabled=false：資料由外面（GameModal）讀，這裡不重複讀
+    if (!enabled) return
     setLoading(true)
     void reload()
-  }, [reload])
+  }, [reload, enabled])
 
   // 回傳空字串＝成功，否則是錯誤訊息
   async function add(
