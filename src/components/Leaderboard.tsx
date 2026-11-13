@@ -315,10 +315,10 @@ export default function Leaderboard({
     const keyword = query.trim().toLowerCase()
     const matched = keyword
       ? rankedAll.filter(
-          (entry) =>
-            entry.game.name.toLowerCase().includes(keyword) ||
-            entry.game.bggName.toLowerCase().includes(keyword),
-        )
+        (entry) =>
+          entry.game.name.toLowerCase().includes(keyword) ||
+          entry.game.bggName.toLowerCase().includes(keyword),
+      )
       : rankedAll
     // 評分榜：沒搜尋只顯示前 30 款；有搜尋就列出符合的遊戲和它在全部遊戲裡的名次（可能在 30 名之外）
     if (isRatingBoard) return keyword ? matched : matched.slice(0, RATING_TOP)
@@ -349,8 +349,8 @@ export default function Leaderboard({
           )}
           {list.length > 0 && (
             <ul className="lb-people">
-              {list.map((person) => (
-                <li key={person.n}>{personLabel(person, isAdmin)}</li>
+              {list.map((person, index) => (
+                <li key={`${person.n}-${index}`}>{personLabel(person, isAdmin)}</li>
               ))}
             </ul>
           )}
@@ -369,8 +369,8 @@ export default function Leaderboard({
         )}
         {list.length > 0 && (
           <ul className="lb-people">
-            {list.map((person) => (
-              <li key={person.n}>
+            {list.map((person, index) => (
+              <li key={`${person.n}-${index}`}>
                 {personLabel(person, true)}：整體 {person.o ?? '—'}・留下來{' '}
                 {person.k ?? '—'}
               </li>
@@ -385,11 +385,10 @@ export default function Leaderboard({
     ? period === 'all'
       ? '依目前的總人數排名，只統計 VIP 玩家。'
       : '依該期間「新增」的人數排名（下方小字是目前總人數），只統計 VIP 玩家。'
-    : `每款遊戲需滿 5 位玩家評分才會上榜；還沒玩過的遊戲不列入。${
-        board === 'combo'
-          ? '綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來六項的玩家平均加起來，最高 30 分。'
-          : ''
-      }預設只顯示前 ${RATING_TOP} 款；搜尋遊戲名稱可以看到它在全部遊戲裡的名次。最高／最低都是對全部遊戲排名。`
+    : `每款遊戲需滿 5 位玩家評分才會上榜；還沒玩過的遊戲不列入。${board === 'combo'
+      ? '綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來六項的玩家平均加起來，最高 30 分。'
+      : ''
+    }預設只顯示前 ${RATING_TOP} 款；搜尋遊戲名稱可以看到它在全部遊戲裡的名次。最高／最低都是對全部遊戲排名。`
   function renderEmpty(): ReactNode {
     if (query.trim() && rankedAll.length > 0) {
       return (
@@ -546,252 +545,252 @@ export default function Leaderboard({
               </div>
             ) : (
               <>
-            <div className="lbc-boards" role="tablist">
-              {boards.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={board === item.key}
-                  className={`lbc-board ${board === item.key ? 'active' : ''}`}
-                  onClick={(event) => {
-                    setBoard(item.key)
-                    event.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-                  }}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="lbs">
-              <div className="lbs-bar">
-                <span className="lbs-icon" aria-hidden="true">🔍</span>
-                <input
-                  type="search"
-                  className="lbs-input"
-                  placeholder="搜尋遊戲名稱"
-                  aria-label="搜尋遊戲名稱"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-                {query && (
-                  <button
-                    type="button"
-                    className="lbs-clear"
-                    aria-label="清除搜尋"
-                    onClick={() => setQuery('')}
-                  >
-                    ×
-                  </button>
-                )}
-                {!isRatingBoard && (
-                  <button
-                    type="button"
-                    className={`lbs-filter ${filterOpen || activeFilterCount > 0 ? 'on' : ''}`}
-                    aria-expanded={filterOpen}
-                    onClick={() => setFilterOpen((value) => !value)}
-                  >
-                    篩選
-                    {activeFilterCount > 0 && (
-                      <span className="lbs-badge">{activeFilterCount}</span>
-                    )}
-                  </button>
-                )}
-              </div>
-
-              {filterOpen && !isRatingBoard && (
-                <div className="lbs-panel">
-                  {periodApplies && (
-                    <div className="lbs-group">
-                      <span className="lbs-label">統計期間</span>
-                      <div className="lbs-chips">
-                        {PERIODS.map((item) => (
-                          <button
-                            key={item.key}
-                            type="button"
-                            className={period === item.key ? 'active' : ''}
-                            onClick={() => setPeriod(item.key)}
-                          >
-                            {item.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="lbs-group">
-                    <span className="lbs-label">排序方式</span>
-                    <div className="lbs-seg">
-                      <button
-                        type="button"
-                        className={sortDir === 'desc' ? 'active' : ''}
-                        onClick={() => setSortDir('desc')}
-                      >
-                        由高到低
-                      </button>
-                      <button
-                        type="button"
-                        className={sortDir === 'asc' ? 'active' : ''}
-                        onClick={() => setSortDir('asc')}
-                      >
-                        由低到高
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="lbs-fields">
-                    <label className="lbs-field">
-                      <span className="lbs-label">類型</span>
-                      <select
-                        value={filters.category}
-                        onChange={(event) =>
-                          setFilters((f) => ({ ...f, category: event.target.value }))
-                        }
-                      >
-                        <option value="">不限</option>
-                        {categoryOptions.map(([name, count]) => (
-                          <option key={name} value={name}>
-                            {name}（{count}）
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="lbs-field">
-                      <span className="lbs-label">推薦人數</span>
-                      <select
-                        value={filters.players}
-                        onChange={(event) =>
-                          setFilters((f) => ({ ...f, players: event.target.value }))
-                        }
-                      >
-                        {PLAYER_OPTIONS.map((item) => (
-                          <option key={item.key} value={item.key}>
-                            {item.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="lbs-field">
-                      <span className="lbs-label">遊戲時間</span>
-                      <select
-                        value={filters.time}
-                        onChange={(event) =>
-                          setFilters((f) => ({ ...f, time: event.target.value }))
-                        }
-                      >
-                        {TIME_OPTIONS.map((item) => (
-                          <option key={item.key} value={item.key}>
-                            {item.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="lbs-field">
-                      <span className="lbs-label">難度</span>
-                      <select
-                        value={filters.difficulty}
-                        onChange={(event) =>
-                          setFilters((f) => ({ ...f, difficulty: event.target.value }))
-                        }
-                      >
-                        {DIFFICULTY_OPTIONS.map((item) => (
-                          <option key={item.key} value={item.key}>
-                            {item.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-
-                  {activeFilterCount > 0 && (
-                    <button type="button" className="lbs-reset" onClick={resetAll}>
-                      重設全部
+                <div className="lbc-boards" role="tablist">
+                  {boards.map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={board === item.key}
+                      className={`lbc-board ${board === item.key ? 'active' : ''}`}
+                      onClick={(event) => {
+                        setBoard(item.key)
+                        event.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+                      }}
+                    >
+                      {item.label}
                     </button>
+                  ))}
+                </div>
+
+                <div className="lbs">
+                  <div className="lbs-bar">
+                    <span className="lbs-icon" aria-hidden="true">🔍</span>
+                    <input
+                      type="search"
+                      className="lbs-input"
+                      placeholder="搜尋遊戲名稱"
+                      aria-label="搜尋遊戲名稱"
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                    />
+                    {query && (
+                      <button
+                        type="button"
+                        className="lbs-clear"
+                        aria-label="清除搜尋"
+                        onClick={() => setQuery('')}
+                      >
+                        ×
+                      </button>
+                    )}
+                    {!isRatingBoard && (
+                      <button
+                        type="button"
+                        className={`lbs-filter ${filterOpen || activeFilterCount > 0 ? 'on' : ''}`}
+                        aria-expanded={filterOpen}
+                        onClick={() => setFilterOpen((value) => !value)}
+                      >
+                        篩選
+                        {activeFilterCount > 0 && (
+                          <span className="lbs-badge">{activeFilterCount}</span>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {filterOpen && !isRatingBoard && (
+                    <div className="lbs-panel">
+                      {periodApplies && (
+                        <div className="lbs-group">
+                          <span className="lbs-label">統計期間</span>
+                          <div className="lbs-chips">
+                            {PERIODS.map((item) => (
+                              <button
+                                key={item.key}
+                                type="button"
+                                className={period === item.key ? 'active' : ''}
+                                onClick={() => setPeriod(item.key)}
+                              >
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="lbs-group">
+                        <span className="lbs-label">排序方式</span>
+                        <div className="lbs-seg">
+                          <button
+                            type="button"
+                            className={sortDir === 'desc' ? 'active' : ''}
+                            onClick={() => setSortDir('desc')}
+                          >
+                            由高到低
+                          </button>
+                          <button
+                            type="button"
+                            className={sortDir === 'asc' ? 'active' : ''}
+                            onClick={() => setSortDir('asc')}
+                          >
+                            由低到高
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="lbs-fields">
+                        <label className="lbs-field">
+                          <span className="lbs-label">類型</span>
+                          <select
+                            value={filters.category}
+                            onChange={(event) =>
+                              setFilters((f) => ({ ...f, category: event.target.value }))
+                            }
+                          >
+                            <option value="">不限</option>
+                            {categoryOptions.map(([name, count]) => (
+                              <option key={name} value={name}>
+                                {name}（{count}）
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="lbs-field">
+                          <span className="lbs-label">推薦人數</span>
+                          <select
+                            value={filters.players}
+                            onChange={(event) =>
+                              setFilters((f) => ({ ...f, players: event.target.value }))
+                            }
+                          >
+                            {PLAYER_OPTIONS.map((item) => (
+                              <option key={item.key} value={item.key}>
+                                {item.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="lbs-field">
+                          <span className="lbs-label">遊戲時間</span>
+                          <select
+                            value={filters.time}
+                            onChange={(event) =>
+                              setFilters((f) => ({ ...f, time: event.target.value }))
+                            }
+                          >
+                            {TIME_OPTIONS.map((item) => (
+                              <option key={item.key} value={item.key}>
+                                {item.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="lbs-field">
+                          <span className="lbs-label">難度</span>
+                          <select
+                            value={filters.difficulty}
+                            onChange={(event) =>
+                              setFilters((f) => ({ ...f, difficulty: event.target.value }))
+                            }
+                          >
+                            {DIFFICULTY_OPTIONS.map((item) => (
+                              <option key={item.key} value={item.key}>
+                                {item.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+
+                      {activeFilterCount > 0 && (
+                        <button type="button" className="lbs-reset" onClick={resetAll}>
+                          重設全部
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            <div className="mylist-body">
-              <div className="lb-hintrow">
-                <InfoHint text={note} />
-                {isRatingBoard && (
-                  <span className="lb-pages pb-toggle" style={{ marginLeft: 'auto' }}>
-                    <button
-                      type="button"
-                      className={!ratingLow ? 'active' : ''}
-                      onClick={() => setRatingLow(false)}
-                    >
-                      最高
-                    </button>
-                    <button
-                      type="button"
-                      className={ratingLow ? 'active' : ''}
-                      onClick={() => setRatingLow(true)}
-                    >
-                      最低
-                    </button>
-                  </span>
-                )}
-              </div>
+                <div className="mylist-body">
+                  <div className="lb-hintrow">
+                    <InfoHint text={note} />
+                    {isRatingBoard && (
+                      <span className="lb-pages pb-toggle" style={{ marginLeft: 'auto' }}>
+                        <button
+                          type="button"
+                          className={!ratingLow ? 'active' : ''}
+                          onClick={() => setRatingLow(false)}
+                        >
+                          最高
+                        </button>
+                        <button
+                          type="button"
+                          className={ratingLow ? 'active' : ''}
+                          onClick={() => setRatingLow(true)}
+                        >
+                          最低
+                        </button>
+                      </span>
+                    )}
+                  </div>
 
-              {ranked.length === 0 ? (
-                renderEmpty()
-              ) : (
-                <ul className="mylist-list">
-                  {ranked.map((entry) => {
-                    const bggName = entry.game.bggName
-                    const expanded = openNames.includes(bggName)
-                    return (
-                      <Fragment key={bggName}>
-                        <li className="mylist-item">
-                          <span
-                            className={`lb-rank ${entry.rank <= 3 ? 'top' : ''}`}
-                          >
-                            {entry.rank}
-                          </span>
-                          <div className="mylist-thumb">
-                            {renderCover(entry.game)}
-                          </div>
-                          <div className="mylist-info">
-                            <button
-                              type="button"
-                              className="mylist-name"
-                              onClick={() => onOpenGame(entry.game)}
-                            >
-                              {entry.game.name}
-                            </button>
-                            {canExpand && (
-                              <button
-                                type="button"
-                                className="lb-people-btn"
-                                onClick={() => toggleNames(bggName)}
+                  {ranked.length === 0 ? (
+                    renderEmpty()
+                  ) : (
+                    <ul className="mylist-list">
+                      {ranked.map((entry) => {
+                        const bggName = entry.game.bggName
+                        const expanded = openNames.includes(bggName)
+                        return (
+                          <Fragment key={bggName}>
+                            <li className="mylist-item">
+                              <span
+                                className={`lb-rank ${entry.rank <= 3 ? 'top' : ''}`}
                               >
-                                {expanded
-                                  ? '收起名單 ▴'
-                                  : isCountBoard
-                                    ? '顯示名單 ▾'
-                                    : '顯示評分者 ▾'}
-                              </button>
+                                {entry.rank}
+                              </span>
+                              <div className="mylist-thumb">
+                                {renderCover(entry.game)}
+                              </div>
+                              <div className="mylist-info">
+                                <button
+                                  type="button"
+                                  className="mylist-name"
+                                  onClick={() => onOpenGame(entry.game)}
+                                >
+                                  {entry.game.name}
+                                </button>
+                                {canExpand && (
+                                  <button
+                                    type="button"
+                                    className="lb-people-btn"
+                                    onClick={() => toggleNames(bggName)}
+                                  >
+                                    {expanded
+                                      ? '收起名單 ▴'
+                                      : isCountBoard
+                                        ? '顯示名單 ▾'
+                                        : '顯示評分者 ▾'}
+                                  </button>
+                                )}
+                              </div>
+                              <div className="lb-value">
+                                <strong>{entry.display}</strong>
+                                {entry.extra && <span>{entry.extra}</span>}
+                              </div>
+                            </li>
+                            {canExpand && expanded && (
+                              <li className="lb-people-row">
+                                {renderNames(bggName)}
+                              </li>
                             )}
-                          </div>
-                          <div className="lb-value">
-                            <strong>{entry.display}</strong>
-                            {entry.extra && <span>{entry.extra}</span>}
-                          </div>
-                        </li>
-                        {canExpand && expanded && (
-                          <li className="lb-people-row">
-                            {renderNames(bggName)}
-                          </li>
-                        )}
-                      </Fragment>
-                    )
-                  })}
-                </ul>
-              )}
-            </div>
+                          </Fragment>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </div>
               </>
             )}
           </aside>

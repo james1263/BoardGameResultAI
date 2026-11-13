@@ -86,6 +86,32 @@ function buildRows(boardGames: BoardGame[], ratings: RatingsApi): Row[] {
     return rows
 }
 
+// 本命桌遊設定視窗用：自己的整體／適合留下來／綜合分數（管理者走 CSV 換算，一般玩家用自己的評分）
+export type MyScoreRow = {
+    game: BoardGame
+    overall: number | null
+    keep: number | null
+    composite: number | null
+}
+
+export function buildMyScoreRows(
+    boardGames: BoardGame[],
+    ratings: RatingsApi,
+    isAdmin: boolean,
+    adminScores?: Map<string, AdminScores>,
+): MyScoreRow[] {
+    const rows =
+        isAdmin && adminScores
+            ? buildAdminRows(boardGames, adminScores)
+            : buildRows(boardGames, ratings)
+    return rows.map((row) => ({
+        game: row.game,
+        overall: row.values.overall,
+        keep: row.values.keep,
+        composite: row.values.composite,
+    }))
+}
+
 function normalizeText(text: string): string {
     return text.toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '')
 }

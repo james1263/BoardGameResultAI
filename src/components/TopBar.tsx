@@ -4,7 +4,6 @@ import AdminCenter from './AdminCenter'
 import VipJoinDialog from './VipJoinDialog'
 import WelcomeDialog from './WelcomeDialog'
 import VipGate from './VipGate'
-import { supabase } from '../lib/supabase'
 import { useIsAdmin } from '../lib/useIsAdmin'
 import { useVip } from '../lib/useVip'
 import { useAdminPending } from '../lib/useAdminPending'
@@ -181,15 +180,6 @@ export default function TopBar({
         <div className="sb-account">
           {showVipTag && <span className="vip-tag">VIP</span>}
           <PlayerPanel />
-          {isAdmin && (
-            <button
-              type="button"
-              className="sb-logout"
-              onClick={() => void supabase.auth.signOut()}
-            >
-              登出
-            </button>
-          )}
         </div>
       </div>
 

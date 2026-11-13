@@ -25,6 +25,7 @@ import { useBackClose } from './lib/useBackClose'
 import DrawerToTop from './components/DrawerToTop'
 import FullScreenPage from './components/FullScreenPage'
 import ClubIcon from './components/ClubIcons'
+import { FavoritePicker, FavoritePodium, useMyFavorites } from './components/FavoriteGames'
 import './styles/club-home.css'
 import './styles/club-stats.css'
 
@@ -259,10 +260,18 @@ function ClubHeader({
     isAdmin,
     isVip,
     onClose,
+    favorites,
+    gameByName,
+    renderCover,
+    onOpenFavorites,
 }: {
     isAdmin: boolean
     isVip: boolean
     onClose: () => void
+    favorites: string[]
+    gameByName: Map<string, BoardGame>
+    renderCover: (game: BoardGame) => ReactNode
+    onOpenFavorites: () => void
 }) {
     const session = useSession()
     const userId = session?.user?.id ?? null
@@ -310,6 +319,14 @@ function ClubHeader({
                     <p className="club-name">{name}</p>
                     <p className={`club-badge ${isVip || isAdmin ? 'vip' : ''}`}>{badge}</p>
                 </div>
+                {loggedIn && (
+                    <FavoritePodium
+                        names={favorites}
+                        gameByName={gameByName}
+                        renderCover={renderCover}
+                        onClick={onOpenFavorites}
+                    />
+                )}
             </div>
 
             {!loggedIn && (
@@ -432,6 +449,26 @@ export default function MyList({
     // 要直接打開的聚會詳情（從遊戲視窗或「我的心得」跳過來）
     const [gatheringTarget, setGatheringTarget] = useState<string | null>(openGatheringId ?? null)
     const [statsTab, setStatsTab] = useState<StatsTab>('overview')
+    // 本命桌遊（最多 3 款）：俱樂部頂部頒獎台與「我的統計」概況按鈕都開同一個設定視窗
+    const favs = useMyFavorites(personal.isLoggedIn)
+    const [favOpen, setFavOpen] = useState(false)
+    const favGameByName = useMemo(() => {
+        const map = new Map<string, BoardGame>()
+        for (const game of boardGames) map.set(game.bggName, game)
+        return map
+    }, [boardGames])
+    const favPicker = favOpen ? (
+        <FavoritePicker
+            current={favs.names}
+            boardGames={boardGames}
+            ratings={ratings}
+            isAdmin={isAdmin}
+            adminScores={adminScores}
+            renderCover={renderCover}
+            onSave={favs.save}
+            onClose={() => setFavOpen(false)}
+        />
+    ) : null
     // 「聚會．留言」頁（VIP）的兩個分頁：未來聚會｜留言板（集點卡已搬到俱樂部）
     function defaultLoyaltyTab(): 'upcoming' | 'board' {
         if (mode === 'loyalty' && openView?.view === 'board' && isVip && !isAdmin) return 'board'
@@ -917,6 +954,7 @@ export default function MyList({
             <>
                 <div className="mylist-backdrop" onClick={onClose} />
                 <aside className="mylist-drawer club-stats" role="dialog" aria-label="我的統計">
+                    {favPicker}
                     <div className="mylist-header">
                         <h2>我的統計</h2>
                         <button
@@ -1062,6 +1100,11 @@ export default function MyList({
                                     </ol>
                                 )}
 
+                                {personal.isLoggedIn && (
+                                    <button type="button" className="fv-open-btn" onClick={() => setFavOpen(true)}>
+                                        前往我的本命桌遊 ›
+                                    </button>
+                                )}
                             </>
                         ) : statsTab === 'score' ? (
                             <MyRatingsPanel
@@ -1279,8 +1322,17 @@ export default function MyList({
         <>
             <div className="mylist-backdrop" onClick={onClose} />
             <aside className="mylist-drawer club-home" role="dialog" aria-label="我的俱樂部">
+                {favPicker}
                 <div className="mylist-body club-body">
-                    <ClubHeader isAdmin={isAdmin} isVip={isVip} onClose={onClose} />
+                    <ClubHeader
+                        isAdmin={isAdmin}
+                        isVip={isVip}
+                        onClose={onClose}
+                        favorites={favs.names}
+                        gameByName={favGameByName}
+                        renderCover={renderCover}
+                        onOpenFavorites={() => setFavOpen(true)}
+                    />
                     {personal.isLoggedIn && isVip && !isAdmin && (
                         <ClubPointsCard
                             onOpen={() => setView('card')}

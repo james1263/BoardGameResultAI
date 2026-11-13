@@ -1,0 +1,217 @@
+/* 本命桌遊：俱樂部頂部頒獎台、設定視窗、統計概況按鈕、玩家榜分頁 */
+
+/* ---- 頒獎台（放在深綠色的俱樂部頂部，所以用半透明白） ---- */
+.fv-podium {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 4px;
+  margin-left: auto;
+  padding: 4px 6px 0;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+.fv-pod { display: flex; flex-direction: column; align-items: center; width: 34px; }
+.fv-pod-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 2px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.fv-pod-cover > *, .fv-slot-cover > *, .fv-thumb > * {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fv-pod-plus { font-style: normal; font-size: 16px; line-height: 1; color: #fbf7ec; opacity: 0.8; }
+.fv-pod-step {
+  display: block;
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  color: #34463c;
+}
+.fv-pod-1 .fv-pod-step { height: 18px; padding-top: 4px; background: #e9c46a; }
+.fv-pod-2 .fv-pod-step { height: 12px; padding-top: 1px; background: #cfd3cf; }
+.fv-pod-3 .fv-pod-step { height: 8px; padding-top: 0; background: #c99a6b; font-size: 9px; }
+.fv-pod-1 .fv-pod-cover { width: 34px; height: 34px; }
+
+/* ---- 設定視窗 ---- */
+.fv-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1250;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(30, 40, 34, 0.5);
+}
+.fv-sheet {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 520px);
+  max-height: 92vh;
+  overflow: hidden;
+  border-radius: 18px 18px 0 0;
+  background: #fbf7ec;
+  color: #34463c;
+}
+@media (min-width: 761px) {
+  .fv-backdrop { align-items: center; }
+  .fv-sheet { max-height: 86vh; border-radius: 18px; }
+}
+.fv-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e3d9c4;
+}
+.fv-head h3 { margin: 0; font-size: 1.05rem; }
+.fv-x { border: 0; background: transparent; color: #6b6455; font-size: 1.4rem; cursor: pointer; }
+.fv-body { padding: 10px 14px 14px; overflow-y: auto; }
+.fv-sub { margin: 0 0 10px; font-size: 0.82rem; color: #6b6455; }
+.fv-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.fv-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border: 2px solid #e3d9c4;
+  border-radius: 12px;
+  background: #fffdf7;
+  cursor: pointer;
+}
+.fv-slot.active { border-color: #456b50; }
+.fv-slot-label { font-size: 0.78rem; font-weight: 800; }
+.fv-slot-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #efe6d2;
+}
+.fv-slot-name {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.78rem;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fv-slot-clear {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  border: 0;
+  background: transparent;
+  color: #8a8270;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.fv-slot .fv-pod-plus { color: #8a8270; }
+.fv-search {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 6px;
+  padding: 10px 14px;
+  border: 1px solid #d8cdb5;
+  border-radius: 12px;
+  background: #fffdf7;
+  color: #34463c;
+  font-size: 16px;
+}
+.fv-list { margin: 0 0 6px; padding: 0; list-style: none; border: 1px solid #e3d9c4; border-radius: 12px; background: #fffdf7; overflow: hidden; }
+.fv-list li + li { border-top: 1px solid #efe6d2; }
+.fv-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fv-thumb {
+  flex: none;
+  display: block;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #efe6d2;
+}
+.fv-row-name { flex: 1; min-width: 0; overflow: hidden; font-size: 0.92rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.fv-rank { flex: none; width: 1.2em; text-align: center; font-weight: 800; color: #456b50; }
+.fv-score { flex: none; font-size: 0.85rem; font-weight: 800; color: #456b50; }
+.fv-empty { margin: 6px 2px; padding: 4px 10px; font-size: 0.82rem; color: #8a8270; list-style: none; }
+.fv-ref-title { margin: 12px 0 4px; font-size: 0.82rem; font-weight: 700; color: #6b6455; }
+.fv-board h4 { margin: 8px 0 4px; font-size: 0.9rem; }
+.fv-error { margin: 8px 0 0; color: #b5483a; font-size: 0.85rem; font-weight: 700; }
+.fv-foot { display: flex; gap: 8px; padding: 10px 14px 14px; border-top: 1px solid #e3d9c4; }
+.fv-cancel, .fv-save { flex: 1; padding: 10px; border-radius: 12px; font-size: 0.95rem; font-weight: 700; cursor: pointer; }
+.fv-cancel { border: 1px solid #d8cdb5; background: #fbf7ec; color: #6b6455; }
+.fv-save { border: 0; background: #456b50; color: #fbf7ec; }
+.fv-save:disabled { opacity: 0.6; cursor: default; }
+
+/* ---- 我的統計概況底下的按鈕 ---- */
+.fv-open-btn {
+  display: block;
+  width: 100%;
+  margin: 14px 0 0;
+  padding: 12px;
+  border: 1px solid #d8cdb5;
+  border-radius: 12px;
+  background: #fffdf7;
+  color: #34463c;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---- 玩家榜「本命桌遊」 ---- */
+.fv-games { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.fv-game { width: 64px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; cursor: pointer; }
+.fv-game .fv-thumb { width: 52px; height: 52px; margin: 0 auto 3px; }
+.fv-game-name { display: block; font-size: 11px; line-height: 1.3; word-break: break-all; }
+.fv-tag { margin-left: 6px; font-size: 11px; font-weight: 600; color: #8a6a43; }
+
+/* ---- 深色 ---- */
+:root[data-theme="dark"] .fv-backdrop { background: rgba(0, 0, 0, 0.6); }
+:root[data-theme="dark"] .fv-sheet { background: #18211c; color: #e8e2d0; }
+:root[data-theme="dark"] .fv-head, :root[data-theme="dark"] .fv-foot { border-color: #34463c; }
+:root[data-theme="dark"] .fv-x, :root[data-theme="dark"] .fv-sub, :root[data-theme="dark"] .fv-ref-title { color: #a9b3a8; }
+:root[data-theme="dark"] .fv-slot, :root[data-theme="dark"] .fv-list, :root[data-theme="dark"] .fv-search, :root[data-theme="dark"] .fv-open-btn {
+  background: #202b25;
+  border-color: #34463c;
+  color: #e8e2d0;
+}
+:root[data-theme="dark"] .fv-slot.active { border-color: #5f8f6d; }
+:root[data-theme="dark"] .fv-slot-cover, :root[data-theme="dark"] .fv-thumb { background: #263229; }
+:root[data-theme="dark"] .fv-slot-clear, :root[data-theme="dark"] .fv-empty, :root[data-theme="dark"] .fv-slot .fv-pod-plus { color: #8a968c; }
+:root[data-theme="dark"] .fv-list li + li { border-top-color: #2b3a31; }
+:root[data-theme="dark"] .fv-rank, :root[data-theme="dark"] .fv-score { color: #8fc19e; }
+:root[data-theme="dark"] .fv-cancel { background: #263229; border-color: #34463c; color: #a9b3a8; }
+:root[data-theme="dark"] .fv-save { background: #5f8f6d; color: #fff; }
+:root[data-theme="dark"] .fv-error { color: #f0907f; }
+:root[data-theme="dark"] .fv-tag { color: #d9a45b; }

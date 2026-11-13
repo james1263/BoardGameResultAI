@@ -4,15 +4,17 @@ import type { PlayerStat } from '../lib/usePlayerStats'
 import { rankGames } from '../lib/leaderboards'
 import { isUnplayedGame } from '../lib/playedStatus'
 import InfoHint from './InfoHint'
+import { FAVORITE_MEDALS, useFavoriteBoards } from './FavoriteGames'
 import '../styles/players-board-games.css'
 
-type Tab = 'played' | 'rated' | 'score' | 'combo'
+type Tab = 'played' | 'rated' | 'score' | 'combo' | 'fav'
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'played', label: '玩過最多' },
   { key: 'rated', label: '評過最多' },
   { key: 'score', label: '評分' },
   { key: 'combo', label: '綜合分數' },
+  { key: 'fav', label: '本命桌遊' },
 ]
 
 const TOP_COUNT = 10 // 款數榜：前 10 名（同分並列）
@@ -38,6 +40,7 @@ export default function PlayersBoard({
   const [highest, setHighest] = useState(true)
   const [hideAdmin, setHideAdmin] = useState(false)
   const [query, setQuery] = useState('')
+  const favBoards = useFavoriteBoards(tab === 'fav')
 
   const gameByName = useMemo(() => {
     const map = new Map<string, BoardGame>()
@@ -95,14 +98,14 @@ export default function PlayersBoard({
     }
     const matched = keyword
       ? result.filter(
-          (row) =>
-            row.label.toLowerCase().includes(keyword) ||
-            row.games.some(
-              (game) =>
-                game.name.toLowerCase().includes(keyword) ||
-                game.bggName.toLowerCase().includes(keyword),
-            ),
-        )
+        (row) =>
+          row.label.toLowerCase().includes(keyword) ||
+          row.games.some(
+            (game) =>
+              game.name.toLowerCase().includes(keyword) ||
+              game.bggName.toLowerCase().includes(keyword),
+          ),
+      )
       : result
     return matched.sort((a, b) => a.label.localeCompare(b.label, 'zh-Hant'))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,15 +118,40 @@ export default function PlayersBoard({
   }
 
   const isCount = tab === 'played' || tab === 'rated'
+  const isFav = tab === 'fav'
+
+  // 本命桌遊：每位玩家一列，依序冠軍、亞軍、季軍；隱藏暱稱者一律顯示「匿名玩家」（管理者另看得到本人）
+  const favRows = useMemo(() => {
+    if (!isFav) return []
+    return favBoards.rows
+      .filter((row) => !(hideAdmin && row.isAdminAccount))
+      .map((row) => ({
+        ...row,
+        list: row.games.flatMap((name, index) => {
+          const game = gameByName.get(name)
+          return game ? [{ game, medal: FAVORITE_MEDALS[index] ?? '' }] : []
+        }),
+      }))
+      .filter((row) => row.list.length > 0)
+      .filter(
+        (row) =>
+          !keyword ||
+          row.label.toLowerCase().includes(keyword) ||
+          row.list.some(({ game }) => game.name.toLowerCase().includes(keyword)),
+      )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFav, favBoards.rows, hideAdmin, keyword, gameByName])
 
   const hint =
     tab === 'played'
-      ? '依已玩的遊戲款數排名（只統計 VIP 玩家與管理者）。選擇不公開暱稱的玩家不會列入，管理者看得到全部。'
-      : tab === 'rated'
-        ? '依評過分的遊戲款數排名。管理者的分數是從 CSV 換算，算法和一般玩家的評分一樣。'
-        : tab === 'score'
-          ? '以玩家為主，不排名。每位玩家顯示他給過整體分數（1～10）最高的遊戲，同分就列出多款；切到「最低」顯示他給最低分的遊戲。還沒玩過的遊戲不列入。'
-          : '以玩家為主，不排名。綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來這六項（各 1～5）加起來，最高 30 分，不含整體分數。每位玩家顯示最高（或最低）的遊戲，同分列多款；六項沒填完整的評分、還沒玩過的遊戲不列入。'
+      ? '依已玩的遊戲款數排名（只統計 VIP 玩家與管理者）。選擇隱藏暱稱的玩家仍會列入，但一律顯示「匿名玩家」，只有管理者看得到本人。'
+      : tab === 'fav'
+        ? '每位玩家自己選的本命桌遊，依序是冠軍、亞軍、季軍（最多 3 款）。選擇隱藏暱稱的玩家一律顯示「匿名玩家」，只有管理者看得到本人。'
+        : tab === 'rated'
+          ? '依評過分的遊戲款數排名。管理者的分數是從 CSV 換算，算法和一般玩家的評分一樣。'
+          : tab === 'score'
+            ? '以玩家為主，不排名。每位玩家顯示他給過整體分數（1～10）最高的遊戲，同分就列出多款；切到「最低」顯示他給最低分的遊戲。還沒玩過的遊戲不列入。'
+            : '以玩家為主，不排名。綜合分數＝喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來這六項（各 1～5）加起來，最高 30 分，不含整體分數。每位玩家顯示最高（或最低）的遊戲，同分列多款；六項沒填完整的評分、還沒玩過的遊戲不列入。'
 
   if (status === 'loading' || status === 'idle') return <p className="mylist-empty">讀取中…</p>
   if (status === 'error') {
@@ -186,7 +214,7 @@ export default function PlayersBoard({
           />
           隱藏管理者
         </label>
-        {!isCount && (
+        {!isCount && !isFav && (
           <span className="lb-pages pb-toggle">
             <button
               type="button"
@@ -206,7 +234,49 @@ export default function PlayersBoard({
         )}
       </div>
 
-      {isCount ? (
+      {isFav ? (
+        favBoards.status === 'loading' || favBoards.status === 'idle' ? (
+          <p className="mylist-empty">讀取中…</p>
+        ) : favBoards.status === 'error' ? (
+          <p className="mylist-empty">讀取本命桌遊失敗，請稍後再試。</p>
+        ) : favRows.length === 0 ? (
+          <p className="mylist-empty">
+            {keyword ? `找不到「${query.trim()}」。` : '還沒有人設定本命桌遊。'}
+          </p>
+        ) : (
+          <>
+            <ul className="mylist-list pbg-list">
+              {favRows.map((row, index) => (
+                <li className="pbg-row" key={`${row.label}-${index}`}>
+                  <div className="pbg-head">
+                    <span className="pbg-who">
+                      {row.label}
+                      {row.hidden && <span className="fv-tag">（隱藏暱稱）</span>}
+                    </span>
+                  </div>
+                  <div className="fv-games">
+                    {row.list.map(({ game, medal }) => (
+                      <button
+                        type="button"
+                        className="fv-game"
+                        key={game.bggName}
+                        title={game.name}
+                        onClick={() => onOpenGame(game)}
+                      >
+                        <span className="fv-thumb">{renderCover(game)}</span>
+                        <span className="fv-game-name">
+                          {medal} {shortName(game.name)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="sc-note">共 {favRows.length} 位玩家。</p>
+          </>
+        )
+      ) : isCount ? (
         countRows.length === 0 ? (
           <p className="mylist-empty">
             {keyword ? `找不到「${query.trim()}」。` : '還沒有資料。'}
@@ -233,8 +303,8 @@ export default function PlayersBoard({
       ) : (
         <>
           <ul className="mylist-list pbg-list">
-            {scoreRows.map((row) => (
-              <li className="pbg-row" key={row.label}>
+            {scoreRows.map((row, index) => (
+              <li className="pbg-row" key={`${row.label}-${index}`}>
                 <div className="pbg-head">
                   <span className="pbg-who">{row.label}</span>
                   <strong className="pbg-score">
