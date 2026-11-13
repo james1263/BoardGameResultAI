@@ -143,9 +143,9 @@ function RaterList({ raters }: { raters: RatingPerson[] }) {
                 每個人的評分（{raters.length} 人，只有管理者看得到）
             </summary>
             <ul style={{ listStyle: 'none', margin: '6px 0 0', padding: 0 }}>
-                {raters.map((person) => (
+                {raters.map((person, index) => (
                     <li
-                        key={person.n}
+                        key={`${person.n}-${index}`}
                         style={{ padding: '6px 0', borderTop: '1px dashed #e3d9c4' }}
                     >
                         <strong style={{ fontSize: 14 }}>{personLabel(person, true)}</strong>
