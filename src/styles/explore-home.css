@@ -370,3 +370,22 @@ main .library .explore-head {
     flex: none;
   }
 }
+
+/* ---------- 電腦版：新加入桌遊那一排顯示細捲軸，才能用滑鼠拖到後面的遊戲 ---------- */
+@media (min-width: 761px) {
+  .explore-new-list {
+    padding-bottom: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(138, 150, 140, 0.7) transparent;
+  }
+
+  .explore-new-list::-webkit-scrollbar {
+    display: block;
+    height: 8px;
+  }
+
+  .explore-new-list::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: rgba(138, 150, 140, 0.55);
+  }
+}
