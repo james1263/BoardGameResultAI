@@ -69,9 +69,18 @@ function zhChipsFor(q: string): string[] {
     return out.slice(0, 5)
 }
 
-// 中文規則書的結果排在前面，同一語言內維持原本順序
-function zhFirst<T extends { doc_lang?: string }>(items: T[]): T[] {
-    return [...items.filter((c) => c.doc_lang === 'zh'), ...items.filter((c) => c.doc_lang !== 'zh')]
+// 結果顯示順序：中文規則書優先 → FAQ → 擴充 → 主遊戲 → 玩家整理；同組內維持原本（分數）順序
+const SCOPE_ORDER: Record<string, number> = { faq: 0, expansion: 1, main: 2, player_notes: 3 }
+function zhFirst<T extends { doc_lang?: string; doc_scope?: string }>(items: T[]): T[] {
+    return items
+        .map((c, i) => ({ c, i }))
+        .sort(
+            (a, b) =>
+                Number(b.c.doc_lang === 'zh') - Number(a.c.doc_lang === 'zh') ||
+                (SCOPE_ORDER[a.c.doc_scope ?? 'main'] ?? 2) - (SCOPE_ORDER[b.c.doc_scope ?? 'main'] ?? 2) ||
+                a.i - b.i,
+        )
+        .map(({ c }) => c)
 }
 
 // AI 回饋投稿：只收「複製給我的 AI」之後、帶著核對碼與頁碼的固定格式

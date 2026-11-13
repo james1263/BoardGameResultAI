@@ -835,6 +835,22 @@ export default function RulebookBatchUpload({
   const [docLangFilter, setDocLangFilter] = useState<string>('all')
   // 規則書子分頁：遊戲（以遊戲為單位）｜PDF 檔案（以檔案為單位）
   const [sub, setSub] = useState<'games' | 'files'>('games')
+  // 「缺少什麼」篩選：列出沒有某一類 PDF 的遊戲（none＝不啟用）
+  const [missingFilter, setMissingFilter] = useState<string>('none')
+  const [expansionGames, setExpansionGames] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    let cancelled = false
+    supabase
+      .from('game_expansions')
+      .select('bgg_name')
+      .then(({ data }) => {
+        if (cancelled) return
+        setExpansionGames(new Set(((data ?? []) as { bgg_name: string }[]).map((r) => r.bgg_name)))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const loadUsage = useCallback(async () => {
     const [usageResult, docsResult] = await Promise.all([
@@ -1273,6 +1289,26 @@ export default function RulebookBatchUpload({
     const scopeCount = (key: string) => docs.filter((d) => (d.content_scope ?? 'main') === key).length
     const langCount = (key: string) => docs.filter((d) => d.language === key).length
     const groups = buildGroups(shownDocs)
+    // 缺少什麼：以現有遊戲為單位（排除垃圾桶與僅供參考）；缺擴充只算有擴充資料的遊戲
+    const scopesByGame = new Map<string, Set<string>>()
+    for (const d of docs) {
+      const set = scopesByGame.get(d.bgg_name) ?? new Set<string>()
+      set.add(d.content_scope ?? 'main')
+      scopesByGame.set(d.bgg_name, set)
+    }
+    const missingOf = (key: string) =>
+      activeGames.filter(
+        (g) =>
+          !g.reference_only &&
+          (key !== 'expansion' || expansionGames.has(g.bgg_name)) &&
+          !scopesByGame.get(g.bgg_name)?.has(key),
+      )
+    const missingMode = isPdf && missingFilter !== 'none'
+    const missingRows = missingMode
+      ? missingOf(missingFilter).filter(
+          (g) => !listQuery || compact(`${g.bgg_name} ${g.name}`).includes(listQuery),
+        )
+      : []
     const trashedGroups = buildGroups(docs).filter((g) => g.trashed && g.bytes > 0)
     const trashedBytes = trashedGroups.reduce((sum, g) => sum + g.bytes, 0)
     const trashedGroupCount = trashedGroups.length
@@ -1341,6 +1377,23 @@ export default function RulebookBatchUpload({
                   ))}
               </div>
             </div>
+            <div className="rbv-filter">
+              <span className="rbv-filter-label">缺少</span>
+              <div className="rbv-chips" role="group" aria-label="依缺少的文件篩選">
+                {scopeKeys.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={missingFilter === key}
+                    className={`rbv-chip ${missingFilter === key ? 'active' : ''}`}
+                    onClick={() => setMissingFilter(missingFilter === key ? 'none' : key)}
+                  >
+                    {SCOPE_LABELS[key]}
+                    <small>{missingOf(key).length}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
         <input
@@ -1374,7 +1427,28 @@ export default function RulebookBatchUpload({
             {orphanMsg && <p className="rb-msg">{orphanMsg}</p>}
           </>
         )}
-        {groups.length === 0 ? (
+        {missingMode ? (
+          missingRows.length === 0 ? (
+            <p className="rb-hint">沒有缺少「{(SCOPE_LABELS as Record<string, string>)[missingFilter]}」的遊戲。</p>
+          ) : (
+            <>
+              <p className="rb-hint">
+                缺少「{(SCOPE_LABELS as Record<string, string>)[missingFilter]}」PDF 的遊戲，共 {missingRows.length} 款
+                {missingFilter === 'expansion' ? '（只列有擴充資料的遊戲）' : ''}。再點一次上方「缺少」標籤可取消。
+              </p>
+              <ul className="rbd-list">
+                {missingRows.map((g) => (
+                  <li className="rbd-group" key={g.bgg_name}>
+                    <div className="rbd-head">
+                      <span className="rbd-name">{g.name || g.bgg_name}</span>
+                      <span className="rbd-count">已有 {docs.filter((d) => d.bgg_name === g.bgg_name).length} 份</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )
+        ) : groups.length === 0 ? (
           <p className="rb-hint">
             {docs.length === 0 ? `還沒有任何${label}。` : '沒有符合的文件。'}
           </p>
