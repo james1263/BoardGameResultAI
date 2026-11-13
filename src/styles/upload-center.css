@@ -1,0 +1,11 @@
+/* 上傳檔案：四分頁（PDF／連結／玩錯紀錄／詞庫）排版；顏色沿用 rb-admin-v2.css 與深色檔 */
+.rb .rbv-subtabs.rbv-four {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.rb .rbv-subtabs.rbv-four button {
+  min-width: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+  white-space: nowrap;
+}

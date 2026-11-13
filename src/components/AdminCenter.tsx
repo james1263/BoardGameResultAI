@@ -6,13 +6,14 @@ import RulebookBatchUpload from './RulebookBatchUpload'
 import { OPEN_CSV_IMPORT_EVENT } from '../lib/adminEvents'
 import PendingBadge from './PendingBadge'
 import '../styles/rb-admin-v2.css'
+import '../styles/upload-center.css'
 
 type Tab = 'members' | 'gatherings' | 'rulebooks' | 'data'
 
 const TABS: { key: Tab; icon: string; label: string }[] = [
   { key: 'members', icon: '👥', label: '成員' },
   { key: 'gatherings', icon: '🎴', label: '集點聚會' },
-  { key: 'rulebooks', icon: '📚', label: '規則書' },
+  { key: 'rulebooks', icon: '📚', label: '上傳檔案' },
   { key: 'data', icon: '📦', label: '資料匯入' },
 ]
 
@@ -109,7 +110,7 @@ export default function AdminCenter({
                     <ul>
                       <li>上傳或更換封面、編輯簡介、移到垃圾桶：打開那款遊戲的「詳細資料」。</li>
                       <li>還原、編輯原因、永久刪除：頁面最下方的垃圾桶區。</li>
-                      <li>規則書 PDF、貼連結、刪除文件：本視窗的「規則書」分頁。</li>
+                      <li>規則書 PDF、貼連結、刪除文件：本視窗的「上傳檔案」分頁。</li>
                     </ul>
                   </div>
                 )}

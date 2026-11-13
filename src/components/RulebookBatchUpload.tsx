@@ -808,6 +808,8 @@ function PdfUploadModal({
   )
 }
 
+type UploadTab = 'pdf' | 'link' | 'errata' | 'glossary'
+
 export default function RulebookBatchUpload({
   pendingErrata = 0,
 }: {
@@ -834,7 +836,9 @@ export default function RulebookBatchUpload({
   const [scopeFilter, setScopeFilter] = useState<string>('all')
   const [docLangFilter, setDocLangFilter] = useState<string>('all')
   // 規則書子分頁：遊戲（以遊戲為單位）｜PDF 檔案（以檔案為單位）
-  const [sub, setSub] = useState<'games' | 'files'>('games')
+  const [tab, setTab] = useState<UploadTab>('pdf')
+  // 舊程式用 sub 分「PDF 檔案」與「遊戲總覽」：pdf 分頁＝files，其餘＝games
+  const sub = tab === 'pdf' ? 'files' : 'games'
   // 「缺少什麼」篩選：列出沒有某一類 PDF 的遊戲（none＝不啟用）
   const [missingFilter, setMissingFilter] = useState<string>('none')
   const [expansionGames, setExpansionGames] = useState<Set<string>>(new Set())
@@ -1522,15 +1526,43 @@ export default function RulebookBatchUpload({
     )
   }
 
+  // 切換分頁時，玩錯紀錄與詞庫直接顯示原表單；連結有待審投稿就自動展開
+  function selectTab(next: UploadTab) {
+    setTab(next)
+    setMode(
+      next === 'errata'
+        ? 'errata'
+        : next === 'glossary'
+          ? 'glossary'
+          : next === 'link' && linkPending > 0
+            ? 'link'
+            : null,
+    )
+  }
+
   return (
     <div className="rb">
-      <div className="rbv-subtabs" role="tablist" aria-label="規則書管理分頁">
-        <button type="button" role="tab" aria-selected={sub === 'games'} onClick={() => setSub('games')}>
-          遊戲
-        </button>
-        <button type="button" role="tab" aria-selected={sub === 'files'} onClick={() => setSub('files')}>
-          PDF 檔案
-        </button>
+      <div className="rbv-subtabs rbv-four" role="tablist" aria-label="上傳檔案分頁">
+        {(
+          [
+            ['pdf', 'PDF', 0],
+            ['link', '連結', linkPending],
+            ['errata', '玩錯紀錄', Math.max(0, pendingErrata - subs.rows.length)],
+            ['glossary', '詞庫', glossaryPending],
+          ] as const
+        ).map(([key, label, count]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            disabled={running}
+            onClick={() => selectTab(key)}
+          >
+            {label}
+            <PendingBadge count={count} />
+          </button>
+        ))}
       </div>
       {sub === 'files' && (
         <div className="rbv-stats rbv-stats-plain">
@@ -1545,7 +1577,7 @@ export default function RulebookBatchUpload({
           </span>
         </div>
       )}
-      {sub === 'games' && (
+      {tab === 'link' && (
       <OverviewCards
         usage={usage}
         error={usageError}
@@ -1559,47 +1591,31 @@ export default function RulebookBatchUpload({
         }}
       />
       )}
-      <div className="rb-seg" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-        <button
-          type="button"
-          aria-pressed={mode === 'pdf'}
-          className={mode === 'pdf' ? 'active' : ''}
-          disabled={running}
-          onClick={() => setMode(mode === 'pdf' ? null : 'pdf')}
-        >
-          ＋ 上傳 PDF
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === 'link'}
-          className={mode === 'link' ? 'active' : ''}
-          disabled={running}
-          onClick={() => setMode(mode === 'link' ? null : 'link')}
-        >
-          ＋ 貼連結
-          <PendingBadge count={linkPending} />
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === 'errata'}
-          className={mode === 'errata' ? 'active' : ''}
-          disabled={running}
-          onClick={() => setMode(mode === 'errata' ? null : 'errata')}
-        >
-          ＋ 玩錯紀錄
-          <PendingBadge count={Math.max(0, pendingErrata - subs.rows.length)} />
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === 'glossary'}
-          className={mode === 'glossary' ? 'active' : ''}
-          disabled={running}
-          onClick={() => setMode(mode === 'glossary' ? null : 'glossary')}
-        >
-          ＋ 詞庫
-          <PendingBadge count={glossaryPending} />
-        </button>
-      </div>
+      {(tab === 'pdf' || tab === 'link') && (
+        <div className="rb-seg" style={{ gridTemplateColumns: '1fr' }}>
+          {tab === 'pdf' ? (
+            <button
+              type="button"
+              aria-pressed={mode === 'pdf'}
+              className={mode === 'pdf' ? 'active' : ''}
+              disabled={running}
+              onClick={() => setMode(mode === 'pdf' ? null : 'pdf')}
+            >
+              ＋ 上傳 PDF
+            </button>
+          ) : (
+            <button
+              type="button"
+              aria-pressed={mode === 'link'}
+              className={mode === 'link' ? 'active' : ''}
+              disabled={running}
+              onClick={() => setMode(mode === 'link' ? null : 'link')}
+            >
+              ＋ 貼連結
+            </button>
+          )}
+        </div>
+      )}
 
       {gamesError && <p className="admin-error">{gamesError}</p>}
 
@@ -1870,7 +1886,7 @@ export default function RulebookBatchUpload({
 
       {mode === 'glossary' && <GlossaryMisses />}
 
-      {sub === 'games' && (
+      {tab === 'link' && (
       <RulebookOverviewList
         rows={coverRows}
         loaded={docsLoaded && games.length > 0}
@@ -1901,7 +1917,7 @@ export default function RulebookBatchUpload({
 
       {sub === 'files' &&
         renderDocList('PDF', pdfDocs, (d) => d.source_type === 'upload')}
-      {sub === 'games' && mode === 'link' &&
+      {tab === 'link' && mode === 'link' &&
         renderDocList('連結', linkDocs, (d) => d.source_type !== 'upload')}
       {mode === 'errata' && (
         <p className="rb-hint">
