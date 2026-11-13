@@ -79,6 +79,10 @@ export default function ScatterChart({
   const clipId = 'scclip' + useId().replace(/:/g, '')
   const [view, setView] = useState<Domain | null>(null)
   const [picked, setPicked] = useState('')
+  // 預設不攔截手勢，頁面可正常上下滑；打開「拖曳縮放」才能在圖上拖曳、雙指縮放
+  const [interactive, setInteractive] = useState(false)
+  const interactiveRef = useRef(false)
+  interactiveRef.current = interactive
   const svgRef = useRef<SVGSVGElement>(null)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
   const moved = useRef(false)
@@ -146,6 +150,7 @@ export default function ScatterChart({
     const el = svgRef.current
     if (!el) return
     function handleWheel(event: WheelEvent) {
+      if (!interactiveRef.current) return
       event.preventDefault()
       const p = toVb(event.clientX, event.clientY)
       transform(Math.exp(event.deltaY * 0.0015), p.x, p.y, 0, 0)
@@ -156,6 +161,10 @@ export default function ScatterChart({
   }, [])
 
   function handlePointerDown(event: ReactPointerEvent<SVGSVGElement>) {
+    if (!interactiveRef.current) {
+      moved.current = false
+      return
+    }
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
     if (pointers.current.size === 1) {
       moved.current = false
@@ -241,6 +250,14 @@ export default function ScatterChart({
           <button type="button" onClick={reset} disabled={view === null && picked === ''}>
             重設範圍
           </button>
+          <button
+            type="button"
+            className="sc-toggle"
+            aria-pressed={interactive}
+            onClick={() => setInteractive((on) => !on)}
+          >
+            ✋ 拖曳縮放：{interactive ? '開' : '關'}
+          </button>
         </div>
         <div className="sc-plot">
         {pickedGroup && (
@@ -265,7 +282,7 @@ export default function ScatterChart({
         )}
         <svg
           ref={svgRef}
-          className="sc-svg sc-zoomable"
+          className={`sc-svg ${interactive ? 'sc-zoomable' : 'sc-pan-y'}`}
           viewBox={`0 0 ${W} ${H}`}
           role="img"
           aria-label={`${xLabel}與${yLabel}的分布圖`}

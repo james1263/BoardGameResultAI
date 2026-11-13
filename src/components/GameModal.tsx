@@ -25,6 +25,7 @@ import GameErrata from './GameErrata'
 import GameExpansions from './GameExpansions'
 import GameBackground from './GameBackground'
 import GameInfoSheet from './GameInfoSheet'
+import { BrainIcon, PairIcon, PersonIcon } from './Icons'
 import { useGameExpansions } from '../lib/useGameExpansions'
 import { useGameBackground } from '../lib/useGameBackground'
 import { useGameErrata } from '../lib/useGameErrata'
@@ -232,7 +233,16 @@ export default function GameModal({
             </button>
           </div>
 
-          <div className="modal-head">
+          <div className="modal-head gm-hero">
+            <CoverImage
+              key={`bg-${game.coverSlug}-${coverVersion}`}
+              version={coverVersion}
+              slug={game.coverSlug}
+              alt=""
+              className="gm-hero-bg"
+              fallback={<span />}
+            />
+            <div className="gm-hero-shade" aria-hidden="true" />
             <CoverImage
               key={`${game.coverSlug}-${coverVersion}`}
               version={coverVersion}
@@ -273,6 +283,28 @@ export default function GameModal({
                   </>
                 )}
               </div>
+              <ul className="gm-facts" aria-label="基本資訊">
+                <li>
+                  <BrainIcon />
+                  <span>難度</span>
+                  <b>{difficultyText(game.bggDifficulty)}</b>
+                </li>
+                <li>
+                  <i aria-hidden="true">◷</i>
+                  <span>時間</span>
+                  <b>{game.bggTime == null ? '—' : `${game.bggTime} 分`}</b>
+                </li>
+                <li>
+                  <PairIcon />
+                  <span>最佳</span>
+                  <b>{bestText(game.bestPlayers)}</b>
+                </li>
+                <li>
+                  <PersonIcon />
+                  <span>推薦</span>
+                  <b>{bestText(game.recommendPlayers)}</b>
+                </li>
+              </ul>
             </div>
           </div>
 
@@ -297,25 +329,6 @@ export default function GameModal({
         <div className="modal-body" role="tabpanel" ref={bodyRef}>
           {activeTab === 'overview' && (
             <>
-              <div className="gm-info" aria-label="基本資訊">
-                <div className="gm-info-cell">
-                  <span>最佳人數</span>
-                  <b>{bestText(game.bestPlayers)}</b>
-                </div>
-                <div className="gm-info-cell">
-                  <span>推薦人數</span>
-                  <b>{bestText(game.recommendPlayers)}</b>
-                </div>
-                <div className="gm-info-cell">
-                  <span>時間</span>
-                  <b>{game.bggTime == null ? '—' : `${game.bggTime} 分鐘`}</b>
-                </div>
-                <div className="gm-info-cell">
-                  <span>難度</span>
-                  <b>{difficultyText(game.bggDifficulty)}</b>
-                </div>
-              </div>
-
               <DescriptionEditor
                 key={game.bggName}
                 value={game.description ?? ''}

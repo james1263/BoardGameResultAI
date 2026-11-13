@@ -1,0 +1,154 @@
+/* 深色模式第 2 批：俱樂部首頁、我的統計、統計中心、規則助手
+   做法：只在 :root[data-theme="dark"] 底下改寫各頁自己的顏色變數，原 CSS 不動，淺色零影響。
+   載入順序：放在 dark-theme.css 之後（App.tsx 最後一個 import）。 */
+
+/* ---------- 俱樂部首頁 ---------- */
+:root[data-theme="dark"] .mylist-drawer.club-home {
+  --ch-bg: #18211c;
+  --ch-card: #222d26;
+  --ch-line: rgba(236, 239, 230, 0.14);
+  --ch-ink: #ecefe6;
+  --ch-sub: #a3b1a7;
+  --ch-icon: #9cc9a8;
+  --ch-icon-bg: rgba(156, 201, 168, 0.14);
+  --ch-arrow: #7f8f85;
+  --ch-count: #9cc9a8;
+  --ch-pts-bg: #2a2a21;
+  --ch-pts-line: #4a4430;
+  --ch-pts-label: #c9b78f;
+  --ch-pts-ink: #f1ead7;
+  --ch-pts-arrow: #b59f76;
+  --ch-warn: #ee8f80;
+  color-scheme: dark;
+}
+
+/* ---------- 我的統計 ---------- */
+:root[data-theme="dark"] .mylist-drawer.club-stats {
+  --cs-bg: #18211c;
+  --cs-card: #222d26;
+  --cs-line: rgba(236, 239, 230, 0.14);
+  --cs-ink: #ecefe6;
+  --cs-sub: #a3b1a7;
+  --cs-accent: #9cc9a8;
+  --cs-accent-bg: rgba(156, 201, 168, 0.14);
+  --cs-tab-bg: #2b362f;
+  --cs-tab-on: #4a7a58;
+  --cs-tab-on-ink: #f5f1e4;
+  --cs-btn-bg: #2a352e;
+  --cs-input-bg: #2a352e;
+  --cs-warn: #ee8f80;
+  color-scheme: dark;
+}
+
+/* ---------- 統計中心 ---------- */
+:root[data-theme="dark"] .mylist-drawer.club-leaderboard {
+  --lc-bg: #18211c;
+  --lc-card: #222d26;
+  --lc-line: rgba(236, 239, 230, 0.14);
+  --lc-ink: #ecefe6;
+  --lc-sub: #a3b1a7;
+  --lc-accent: #9cc9a8;
+  --lc-accent-bg: rgba(156, 201, 168, 0.14);
+  --lc-tab-bg: #2b362f;
+  --lc-tab-on: #4a7a58;
+  --lc-tab-on-ink: #f5f1e4;
+  --lc-btn-bg: #2a352e;
+  --lc-input-bg: #2a352e;
+  --lc-panel-bg: #262f29;
+  --lc-gold: #e0b050;
+  color-scheme: dark;
+}
+
+/* ---------- 抽屜標題：vip.css 用 !important 鎖成深墨綠，深色要蓋掉 ---------- */
+:root[data-theme="dark"] .mylist-drawer .mylist-header h2 {
+  color: #ecefe6 !important;
+}
+:root[data-theme="dark"] .mylist-drawer .club-top h2 {
+  color: #fbf7ec !important; /* 俱樂部首頁深綠底，維持米白字 */
+}
+
+/* 抽屜內共用元素（vip.css／mylist.css 寫死淺色的部分，只在三個改版抽屜內覆蓋） */
+:root[data-theme="dark"] .mylist-drawer.club-stats .mylist-header,
+:root[data-theme="dark"] .mylist-drawer.club-leaderboard .mylist-header {
+  background: transparent;
+}
+:root[data-theme="dark"] .mylist-drawer.club-stats .mylist-close,
+:root[data-theme="dark"] .mylist-drawer.club-leaderboard .mylist-close {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-drawer.club-stats .lb-people-row,
+:root[data-theme="dark"] .mylist-drawer.club-leaderboard .lb-people-row {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-drawer.club-leaderboard .lb-people li {
+  border-color: rgba(236, 239, 230, 0.14);
+  background: #2a352e;
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-drawer.club-stats .cs-ctrl .pgr-open,
+:root[data-theme="dark"] .mylist-drawer.club-stats .cs-ctrl button {
+  color: #ecefe6;
+}
+
+/* ---------- 規則助手頁 ---------- */
+:root[data-theme="dark"] body .ra-backdrop.ra-v2,
+:root[data-theme="dark"] body .ra2-backdrop {
+  --ra-bg: #18211c;
+  --ra-surface: #222d26;
+  --ra-ink: #ecefe6;
+  --ra-soft: #a3b1a7;
+  --ra-line: #34413a;
+  --ra-accent: #7fb28c;
+  --ra-accent-ink: #a8d3b3;
+  --ra-accent-bg: #243a2c;
+  --ra-warm: #d9b27c;
+  --ra-warm-line: #a47a4a;
+  --ra-warm-bg: #33291b;
+  --ra-danger: #ee8f80;
+  --ra-focus: rgba(127, 178, 140, 0.35);
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] body .ra-backdrop.ra-v2 .ra-page {
+  background: var(--ra-bg);
+  color: var(--ra-ink);
+}
+
+/* 命中詞標黃：深色底改暗黃＋淺字，才讀得到 */
+:root[data-theme="dark"] body .ra-backdrop.ra-v2 .ra-mark {
+  background: #6b5a1f;
+  color: #fbf3d0;
+}
+
+/* 擴充徽章（藍灰）在深色下提亮 */
+:root[data-theme="dark"] body .ra-backdrop.ra-v2 .ra2 .ra2-badge-scope[data-scope='expansion'] {
+  border-color: #7d9db5;
+  background: rgba(125, 157, 181, 0.18);
+  color: #a9c6da;
+}
+
+/* 選中狀態：accent 變亮後白字對比不夠，改用深一點的綠底 */
+:root[data-theme="dark"] body .ra2-sheet .ra-chip[aria-pressed='true'],
+:root[data-theme="dark"] body .ra2-sheet .ra-btn[aria-pressed='true'] {
+  background: #4a7a58;
+  color: #f5f1e4;
+}
+
+/* 底部彈窗與輸入框 */
+:root[data-theme="dark"] body .ra2-sheet {
+  background: var(--ra-bg);
+  color: var(--ra-ink);
+}
+:root[data-theme="dark"] body .ra-backdrop.ra-v2 .ra-search,
+:root[data-theme="dark"] body .ra-backdrop.ra-v2 .ra2 .ra2-row input.ra2-input,
+:root[data-theme="dark"] body .ra-backdrop.ra-v2 .ra2-fb-text {
+  background: var(--ra-surface);
+  color: var(--ra-ink);
+  border-color: var(--ra-line);
+}
+
+/* 氣泡本身是深底淺字，深色下加細邊才分得出來 */
+:root[data-theme="dark"] body .ra-hold-tip-pop {
+  background: #3a4d41;
+  border: 1px solid rgba(236, 239, 230, 0.18);
+}

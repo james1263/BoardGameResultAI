@@ -1,0 +1,528 @@
+/* 深色模式第 3 批：管理中心、規則書管理、上傳視窗、統計表、留言／聚會心得等 vip.css 寫死淺色的區塊
+   另含：修正第 2 批俱樂部首頁頂部（淺色時是深綠底，深色下被變數改成米色，字看不到）
+   載入順序：放在 dark-theme-2.css 之後。全部以 :root[data-theme="dark"] 開頭，淺色零影響。 */
+
+:root[data-theme="dark"] {
+  --d3-bg: #18211c;
+  --d3-panel: #1d2822;
+  --d3-card: #222d26;
+  --d3-card2: #2a352e;
+  --d3-line: rgba(236, 239, 230, 0.16);
+  --d3-ink: #ecefe6;
+  --d3-sub: #a3b1a7;
+  --d3-accent: #9cc9a8;
+  --d3-accent-ink: #a8d3b3;
+  --d3-on: #4a7a58;
+  --d3-warn: #ee8f80;
+  --d3-warm: #d9b27c;
+}
+
+/* ---------- 修正：俱樂部首頁頂部（深綠底、米白字） ---------- */
+:root[data-theme="dark"] .mylist-drawer .club-top,
+:root[data-theme="dark"] .mylist-drawer .club-card {
+  background: #2c3f34 !important;
+  color: #fbf7ec;
+}
+:root[data-theme="dark"] .mylist-drawer .club-top h2,
+:root[data-theme="dark"] .mylist-drawer .club-card h2,
+:root[data-theme="dark"] .mylist-drawer .club-who b,
+:root[data-theme="dark"] .mylist-drawer .club-who strong {
+  color: #fbf7ec !important;
+}
+
+/* ---------- 管理中心外框、分頁 ---------- */
+:root[data-theme="dark"] .ac-modal {
+  background: var(--d3-panel);
+  color: var(--d3-ink);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+:root[data-theme="dark"] .ac-head h2,
+:root[data-theme="dark"] .ma-close {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ac-modal .ac-tabs {
+  background: transparent;
+}
+:root[data-theme="dark"] .ac-modal .ac-tabs .ac-tab {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ac-modal .ac-tabs .ac-tab.active {
+  background: var(--d3-on);
+  border-color: var(--d3-on);
+  color: #fff;
+  box-shadow: none;
+}
+:root[data-theme="dark"] .ac-data h3 {
+  color: var(--d3-ink);
+}
+
+/* ---------- 成員清單 ---------- */
+:root[data-theme="dark"] .ma-summary,
+:root[data-theme="dark"] .ma-note,
+:root[data-theme="dark"] .ma-who span,
+:root[data-theme="dark"] .ma-normal {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .ma-tools input,
+:root[data-theme="dark"] .ma-tools select,
+:root[data-theme="dark"] .ma-code-row input,
+:root[data-theme="dark"] .ma-body .cls-searchbox {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ma-tools input::placeholder,
+:root[data-theme="dark"] .ma-code-row input::placeholder,
+:root[data-theme="dark"] .cls-search-input::placeholder {
+  color: #7f8f85;
+}
+:root[data-theme="dark"] .ma-row {
+  border-bottom-color: var(--d3-line);
+}
+:root[data-theme="dark"] .ma-who b,
+:root[data-theme="dark"] .ma-who strong {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ma-btn {
+  background: var(--d3-card2);
+  border-color: #7fb28c;
+  color: var(--d3-accent-ink);
+}
+:root[data-theme="dark"] .ma-btn:hover {
+  background: #2f4a3a;
+}
+:root[data-theme="dark"] .ma-code {
+  border-top-color: var(--d3-line);
+}
+:root[data-theme="dark"] .ma-warn {
+  color: var(--d3-warn);
+}
+
+/* ---------- 集點聚會分頁（loy／lga） ---------- */
+:root[data-theme="dark"] .loy-tab {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .loy-tab.active {
+  background: var(--d3-on);
+  border-color: var(--d3-on);
+  color: #fff;
+}
+:root[data-theme="dark"] .lga-month-head {
+  background: var(--d3-card2);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .lga-month-head small,
+:root[data-theme="dark"] .lga-month-arrow {
+  color: var(--d3-sub);
+}
+
+/* ---------- 規則書管理（rb／rbv／rbu） ---------- */
+:root[data-theme="dark"] .rb,
+:root[data-theme="dark"] .rb h3,
+:root[data-theme="dark"] .rb .rbv-list-head h3 {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb-hint,
+:root[data-theme="dark"] .rb-file small,
+:root[data-theme="dark"] .rb .rbv-list-head small,
+:root[data-theme="dark"] .rb .rbv-count,
+:root[data-theme="dark"] .rb .rbv-note,
+:root[data-theme="dark"] .rb .rbv-row-tip,
+:root[data-theme="dark"] .rb .rbv-arrow,
+:root[data-theme="dark"] .rb .rbv-stats,
+:root[data-theme="dark"] .rb .rbv-stats-usage,
+:root[data-theme="dark"] .rb-usage small {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .rb .rbv-stats b,
+:root[data-theme="dark"] .rb .rbv-stats > button:hover {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb .rbv-stats > button.warn b {
+  color: #e6a15f;
+}
+:root[data-theme="dark"] .rb .rbv-stats > button.bad,
+:root[data-theme="dark"] .rb .rbv-stats > button.bad b {
+  color: var(--d3-warn);
+}
+
+/* 輸入框、下拉 */
+:root[data-theme="dark"] .rb-fields select,
+:root[data-theme="dark"] .rb-fields input,
+:root[data-theme="dark"] .rb-search,
+:root[data-theme="dark"] .rb-linkform input,
+:root[data-theme="dark"] .rb .rbv-search,
+:root[data-theme="dark"] .rb-picked {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb-suggest {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .rb-suggest button {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb-suggest button:hover,
+:root[data-theme="dark"] .rb-suggest button:active {
+  background: #33423a;
+}
+
+/* 列、卡片 */
+:root[data-theme="dark"] .rb-row,
+:root[data-theme="dark"] .rb .rbv-row {
+  background: var(--d3-card);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb .rbv-row.open {
+  border-color: #a47a4a;
+}
+:root[data-theme="dark"] .rb .rbv-row-head {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb .rbv-row-body {
+  border-top-color: var(--d3-line);
+}
+:root[data-theme="dark"] .rb-chip {
+  background: #33423a;
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb-warn {
+  color: #e6a15f;
+}
+:root[data-theme="dark"] .rb-x {
+  color: var(--d3-sub);
+}
+
+/* 按鈕：分段、子分頁、篩選、標籤 */
+:root[data-theme="dark"] .rb .rb-seg > button,
+:root[data-theme="dark"] .rb .rbv-subtabs > button,
+:root[data-theme="dark"] .rb .rbv-chip,
+:root[data-theme="dark"] .rb .rbv-filterbtn,
+:root[data-theme="dark"] .rb .rbv-info,
+:root[data-theme="dark"] .rb-seg button {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb .rb-seg > button.active,
+:root[data-theme="dark"] .rb .rbv-subtabs > button[aria-selected='true'],
+:root[data-theme="dark"] .rb .rbv-chip.active,
+:root[data-theme="dark"] .rb .rbv-filterbtn.on,
+:root[data-theme="dark"] .rb-seg button.active {
+  background: var(--d3-on);
+  border-color: var(--d3-on);
+  color: #fff;
+}
+:root[data-theme="dark"] .rb .rbv-chip small {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .rb .rbv-chip.active small {
+  color: #d9e8dc;
+}
+:root[data-theme="dark"] .rb .rbv-filters {
+  background: var(--d3-card);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .rb .rbv-filter-label {
+  color: var(--d3-warm);
+}
+:root[data-theme="dark"] .rb .rbv-clear {
+  background: var(--d3-card2);
+  border-color: rgba(238, 143, 128, 0.4);
+  color: var(--d3-warn);
+}
+:root[data-theme="dark"] .rb .rbv-mini,
+:root[data-theme="dark"] .rb .rbv-tag {
+  background: var(--d3-on);
+  color: #fff;
+}
+:root[data-theme="dark"] .rb .rbv-list {
+  border-top-color: var(--d3-line);
+}
+
+/* 小標籤 */
+:root[data-theme="dark"] .rb .rbv-badge.ok {
+  color: #a9d8b4;
+  background: rgba(106, 170, 122, 0.18);
+  border-color: rgba(106, 170, 122, 0.4);
+}
+:root[data-theme="dark"] .rb .rbv-badge.warn {
+  color: #f0b27a;
+  background: rgba(230, 161, 95, 0.16);
+  border-color: rgba(230, 161, 95, 0.4);
+}
+:root[data-theme="dark"] .rb .rbv-badge.bad {
+  color: var(--d3-warn);
+  background: rgba(238, 143, 128, 0.16);
+  border-color: rgba(238, 143, 128, 0.4);
+}
+:root[data-theme="dark"] .rb .rbv-badge.muted {
+  color: var(--d3-sub);
+  background: #2f3b34;
+  border-color: var(--d3-line);
+}
+
+/* 容量條 */
+:root[data-theme="dark"] .rb .rbv-bar {
+  background: #33423a;
+}
+:root[data-theme="dark"] .rb-usage-bar {
+  background: rgba(156, 201, 168, 0.18);
+}
+:root[data-theme="dark"] .rb-usage-bar > div,
+:root[data-theme="dark"] .rb .rbv-bar > span {
+  background: #7fb28c;
+}
+
+/* 上傳 PDF 視窗 */
+:root[data-theme="dark"] .rbu-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .rbu-modal {
+  background: var(--d3-panel);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rbu-head {
+  border-bottom-color: var(--d3-line);
+}
+:root[data-theme="dark"] .rbu-head h3 {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rbu-close {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rbu-body .rb-actions {
+  background: var(--d3-panel);
+  border-top-color: var(--d3-line);
+}
+
+/* ---------- VIP 鎖、報到、統計表（vip.css 內的部分） ---------- */
+:root[data-theme="dark"] .vip-lock {
+  background: var(--d3-card);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .vip-lock p {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ci-game {
+  border-bottom-color: var(--d3-line);
+}
+:root[data-theme="dark"] .ci-game-state {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .ci-game-state.done {
+  color: var(--d3-accent);
+}
+:root[data-theme="dark"] .st-modal {
+  background: var(--d3-panel);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .st-wrap {
+  background: var(--d3-card);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .st-table th,
+:root[data-theme="dark"] .st-table td {
+  border-bottom-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .st-table thead th,
+:root[data-theme="dark"] .st-table thead .st-sticky {
+  background: #2b362f;
+}
+:root[data-theme="dark"] .st-table .st-sticky {
+  background: var(--d3-card);
+}
+:root[data-theme="dark"] .st-table tfoot td {
+  background: #263029;
+}
+:root[data-theme="dark"] .st-table th small {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .st-sort {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .lb-table-btn {
+  background: var(--d3-card2);
+  border-color: #7fb28c;
+  color: var(--d3-accent-ink);
+}
+:root[data-theme="dark"] .lb-people-btn {
+  color: var(--d3-accent);
+}
+:root[data-theme="dark"] .lb-people-row {
+  background: var(--d3-card);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .lb-people-row p {
+  color: var(--d3-sub);
+}
+
+/* ---------- 規則助手頁舊樣式（.ra／.ra-results，用在管理者以外的彈窗內容） ---------- */
+:root[data-theme="dark"] .ra,
+:root[data-theme="dark"] .ra-field {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ra-field textarea,
+:root[data-theme="dark"] .ra-field input {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ra-results li {
+  background: var(--d3-card);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .ra-results p {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ra-source {
+  color: var(--d3-warm);
+}
+:root[data-theme="dark"] .ra-remaining,
+:root[data-theme="dark"] .ra-actions-note {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .ra-btn {
+  background: var(--d3-card2);
+  color: var(--d3-accent-ink);
+}
+:root[data-theme="dark"] .ra-btn-main {
+  background: var(--d3-on);
+  color: #fff;
+}
+
+/* ---------- 心得、留言、聚會（vip.css 內 gn2／gn3／gb／mg／np） ---------- */
+:root[data-theme="dark"] .mg-item,
+:root[data-theme="dark"] .mg-note,
+:root[data-theme="dark"] .mg-chip,
+:root[data-theme="dark"] .gb-item,
+:root[data-theme="dark"] .gb-mine-box,
+:root[data-theme="dark"] .gn-mine-list li,
+:root[data-theme="dark"] .gn3-people,
+:root[data-theme="dark"] .gn3-card {
+  background: var(--d3-card);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .mg-title,
+:root[data-theme="dark"] .mg-section-title,
+:root[data-theme="dark"] .gb-name,
+:root[data-theme="dark"] .gb-content,
+:root[data-theme="dark"] .gn3-summary h3,
+:root[data-theme="dark"] .gn3-people summary,
+:root[data-theme="dark"] .gn-mine summary,
+:root[data-theme="dark"] .gn-mine-head b,
+:root[data-theme="dark"] .gn-mine-list p,
+:root[data-theme="dark"] .gn2-check,
+:root[data-theme="dark"] .gn2-leave-text {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .mg-muted,
+:root[data-theme="dark"] .mg-sub,
+:root[data-theme="dark"] .mg-arrow,
+:root[data-theme="dark"] .mg-chip-sub,
+:root[data-theme="dark"] .gb-empty,
+:root[data-theme="dark"] .gb-count,
+:root[data-theme="dark"] .gb-hidden-toggle,
+:root[data-theme="dark"] .gn3-summary p,
+:root[data-theme="dark"] .gn-mine-head,
+:root[data-theme="dark"] .gn2-hint,
+:root[data-theme="dark"] .gn2-count,
+:root[data-theme="dark"] .gn2-check small,
+:root[data-theme="dark"] .mg-quiet,
+:root[data-theme="dark"] .club-pts-line,
+:root[data-theme="dark"] .cls-count {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .mg-date,
+:root[data-theme="dark"] .mg-month,
+:root[data-theme="dark"] .mg-chip.me,
+:root[data-theme="dark"] .ap-picked,
+:root[data-theme="dark"] .ap-ok {
+  background: #2f4a3a;
+  color: #dbe9de;
+}
+:root[data-theme="dark"] .gn2-textarea,
+:root[data-theme="dark"] .gb-textarea,
+:root[data-theme="dark"] .ap-search,
+:root[data-theme="dark"] .cls-search,
+:root[data-theme="dark"] .cls-sort {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .gn2-pane,
+:root[data-theme="dark"] .gn2-copy,
+:root[data-theme="dark"] .gn2-del,
+:root[data-theme="dark"] .gn2-ghost,
+:root[data-theme="dark"] .gn2-delpanel button,
+:root[data-theme="dark"] .ap-result {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .gn2-pane.active,
+:root[data-theme="dark"] .gn2-save,
+:root[data-theme="dark"] .gb-save {
+  background: var(--d3-on);
+  color: #fff;
+}
+:root[data-theme="dark"] .gn2-warn {
+  background: rgba(238, 143, 128, 0.16);
+  color: #f2b4a8;
+}
+:root[data-theme="dark"] .gn2-error,
+:root[data-theme="dark"] .gb-warn {
+  color: var(--d3-warn);
+}
+:root[data-theme="dark"] .gn2-info,
+:root[data-theme="dark"] .gn2-played,
+:root[data-theme="dark"] .gn3-open,
+:root[data-theme="dark"] .gn-mine-go,
+:root[data-theme="dark"] .gb-mine {
+  color: var(--d3-accent);
+}
+:root[data-theme="dark"] .gn3-foot {
+  background: var(--d3-panel);
+  border-top-color: var(--d3-line);
+}
+:root[data-theme="dark"] .gn3-cover {
+  background: #33423a;
+}
+:root[data-theme="dark"] .cls-searchbox {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .cls-search-input {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .cls-sort-field,
+:root[data-theme="dark"] .cls-sort-dir {
+  background-color: var(--d3-card2);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .mystat-topn-btn {
+  color: var(--d3-accent);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .mystat-topn-btn.active {
+  background: var(--d3-on);
+  color: #fff;
+}
+:root[data-theme="dark"] .search-filter-btn {
+  color: var(--d3-accent-ink);
+}
+:root[data-theme="dark"] .search-filter-btn.on {
+  background: var(--d3-on);
+  color: #fff;
+}

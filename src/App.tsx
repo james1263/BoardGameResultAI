@@ -46,7 +46,6 @@ import {
   getDifficultyLevel,
   getGroupRange,
   fitsGroupRange,
-  isNewGameAt,
   VIEW_MODE_STORAGE_KEY,
   loadViewMode,
   NEW_GAME_DAYS,
@@ -74,6 +73,15 @@ import PostGatheringNotes from './components/PostGatheringNotes'
 import { usePlannedUnseen } from './lib/usePlannedUnseen'
 import { useLoyaltyAlerts } from './lib/useLoyaltyAlerts'
 import { useNotesUnseen } from './lib/useNotesUnseen'
+import './styles/dark-theme.css'
+import './styles/dark-theme-2.css'
+import './styles/dark-theme-3.css'
+import './styles/dark-theme-4.css'
+import './styles/dark-theme-5.css'
+import './styles/dark-theme-6.css'
+import './styles/dark-theme-7.css'
+import './styles/dark-theme-8.css'
+import './styles/dark-theme-9.css';
 
 // 新遊戲置頂：上架 15 天內，而且還沒有排名（Ranking engine 空白或不是整數，例如 .5 結尾）
 // 兩個條件任一個先結束，就不再置頂
@@ -204,7 +212,7 @@ function Library({
   // 從遊戲視窗「前往我的評分」跳到俱樂部的我的評分頁
   const [jumpRatings, setJumpRatings] = useState<string | null>(null)
   // 從遊戲視窗「前往留言板／我的心得」跳到俱樂部對應子畫面（並帶入那款遊戲）
-  const [jumpView, setJumpView] = useState<{ view: 'board' | 'notes'; bggName: string | null; write?: boolean } | null>(null)
+  const [jumpView, setJumpView] = useState<{ view: 'board' | 'notes' | 'stats'; bggName: string | null; write?: boolean } | null>(null)
   // 從報到、集點卡連結、「去評分」進來：直接打開俱樂部裡的集點卡
   const [jumpCard, setJumpCard] = useState(false)
   // 從「聚會．留言」的留言板按「發表留言」進寫心得畫面：按 ✕ 或返回要回到留言板，不是俱樂部
@@ -422,6 +430,22 @@ function Library({
     setSelectedGame(game)
   }
 
+  // 主畫面「我的統計」：直接開俱樂部的我的統計（返回／✕ 回主畫面，不經過俱樂部首頁）
+  function openMyStats() {
+    setWriteFromBoard(false)
+    setReturnGame(null)
+    setJumpCard(false)
+    setJumpGatheringId(null)
+    setJumpRatings(null)
+    setSelectedGame(null)
+    setIsFilterOpen(false)
+    setInviteFocus(null)
+    setInviteKey((count) => count + 1)
+    setMyListMode('list')
+    setJumpView({ view: 'stats', bggName: null })
+    setActivePage('mylist')
+  }
+
   function goPage(page: NavPage) {
     setWriteFromBoard(false)
     setReturnGame(null)
@@ -527,7 +551,7 @@ function Library({
   const [recommendPlayerCount, setRecommendPlayerCount] =
     useState<NumericFilter>(saved.recommendPlayerCount)
   const [timeLimit, setTimeLimit] = useState<NumericFilter>(saved.timeLimit)
-  const [onlyNew, setOnlyNew] = useState(saved.onlyNew)
+  const [showNew, setShowNew] = useState(saved.showNew)
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>(
     saved.ratingFilter,
   )
@@ -577,13 +601,13 @@ function Library({
       bestPlayerCount,
       recommendPlayerCount,
       timeLimit,
-      onlyNew,
       ratingFilter,
       groupByMine,
       hiddenGroups,
       sortBy,
       sortDirection,
       showCardInfo,
+      showNew,
     })
   }, [
     selectedCategories,
@@ -593,13 +617,13 @@ function Library({
     bestPlayerCount,
     recommendPlayerCount,
     timeLimit,
-    onlyNew,
     ratingFilter,
     groupByMine,
     hiddenGroups,
     sortBy,
     sortDirection,
     showCardInfo,
+    showNew,
   ])
 
   const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode)
@@ -693,10 +717,6 @@ function Library({
         return false
       }
 
-      if (onlyNew && !isNewGameAt(game.createdAt, nowMs)) {
-        return false
-      }
-
       if (ratingFilterActive) {
         const rated = ratings.getMine(game.bggName) !== null
         if (ratingFilter === 'rated' ? !rated : rated) return false
@@ -777,7 +797,6 @@ function Library({
     bestPlayerCount,
     recommendPlayerCount,
     timeLimit,
-    onlyNew,
     nowMs,
     ratingFilter,
     ratingFilterActive,
@@ -875,10 +894,6 @@ function Library({
         return false
       }
 
-      if (onlyNew && !isNewGameAt(game.createdAt, nowMs)) {
-        return false
-      }
-
       if (ratingFilterActive) {
         const rated = ratings.getMine(game.bggName) !== null
         if (ratingFilter === 'rated' ? !rated : rated) return false
@@ -894,7 +909,6 @@ function Library({
     bestPlayerCount,
     recommendPlayerCount,
     timeLimit,
-    onlyNew,
     nowMs,
     ratingFilter,
     ratingFilterActive,
@@ -909,7 +923,6 @@ function Library({
     Number(bestPlayerCount !== '') +
     Number(recommendPlayerCount !== '') +
     Number(timeLimit !== '') +
-    Number(onlyNew) +
     Number(ratingFilterActive) +
     Number(groupByMine) +
     hiddenGroups.length
@@ -950,7 +963,6 @@ function Library({
     setBestPlayerCount('')
     setRecommendPlayerCount('')
     setTimeLimit('')
-    setOnlyNew(false)
     setRatingFilter('all')
     setGroupByMine(false)
     setHiddenGroups([])
@@ -1047,21 +1059,23 @@ function Library({
                 <button
                   type="button"
                   className="explore-mine-btn"
-                  onClick={() => goPage('mylist')}
+                  onClick={openMyStats}
                 >
-                  我的想玩與已玩 ›
+                  我的統計 ›
                 </button>
               </div>
             </div>
           </div>
         </section>
 
-        <NewArrivals
-          games={boardGames}
-          coverVersions={coverVersions}
-          nowMs={nowMs}
-          onOpen={openGame}
-        />
+        {showNew && (
+          <NewArrivals
+            games={boardGames}
+            coverVersions={coverVersions}
+            nowMs={nowMs}
+            onOpen={openGame}
+          />
+        )}
 
         <div className="explore-home explore-types">
           <div className="explore-types-row">
@@ -1118,8 +1132,8 @@ function Library({
             setTimeLimit={setTimeLimit}
             difficultyLevels={difficultyLevels}
             toggleDifficultyLevel={toggleDifficultyLevel}
-            onlyNew={onlyNew}
-            setOnlyNew={setOnlyNew}
+            showNew={showNew}
+            setShowNew={setShowNew}
             ratingFilter={ratingFilter}
             setRatingFilter={setRatingFilter}
             canFilterByRating={canFilterByRating}
@@ -1135,7 +1149,21 @@ function Library({
             </p>
           )}
           {displayedGameCount > 0 ? (
-            <div className={`game-grid view-${viewMode}`}>
+            <div
+              className={`game-grid view-${viewMode}${viewMode === 'list' ? (showCardInfo ? ' lv-info' : ' lv-noinfo') : ''
+                }${viewMode === 'list' && isAdmin ? ' lv-admin' : ''}`}
+            >
+              {viewMode === 'list' && showCardInfo && (
+                <div className="lv-head" aria-hidden="true">
+                  <span className="lv-h-name">桌遊</span>
+                  <span>最佳人數</span>
+                  <span>推薦人數</span>
+                  <span>時間</span>
+                  <span>難度</span>
+                  {isAdmin && <span>RE／綜合</span>}
+                  <span />
+                </div>
+              )}
               {displayedItems.map((item) => {
                 if (item.kind === 'header') {
                   return (

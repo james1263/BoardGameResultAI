@@ -18,7 +18,6 @@ export type SavedFilters = {
   bestPlayerCount: NumericFilter
   recommendPlayerCount: NumericFilter
   timeLimit: NumericFilter
-  onlyNew: boolean
   ratingFilter: RatingFilter
   groupByMine: boolean
   hiddenGroups: MineGroup[]
@@ -26,6 +25,8 @@ export type SavedFilters = {
   sortDirection: 'asc' | 'desc'
   // 顯示設定（不算篩選條件，清除篩選不會重設）
   showCardInfo: boolean
+  // 顯示「新加入桌遊」那一排（預設打勾；舊的「只看新遊戲」值已不使用）
+  showNew: boolean
 }
 
 export const DEFAULT_FILTERS: SavedFilters = {
@@ -36,13 +37,13 @@ export const DEFAULT_FILTERS: SavedFilters = {
   bestPlayerCount: '',
   recommendPlayerCount: '',
   timeLimit: '',
-  onlyNew: false,
   ratingFilter: 'all',
   groupByMine: false,
   hiddenGroups: [],
   sortBy: 'rankingEngine',
   sortDirection: 'asc',
   showCardInfo: true,
+  showNew: true,
 }
 
 const SORT_KEYS: SortKey[] = [
@@ -99,7 +100,6 @@ export function loadFilters(): SavedFilters {
       bestPlayerCount: asNumeric(f.bestPlayerCount),
       recommendPlayerCount: asNumeric(f.recommendPlayerCount),
       timeLimit: asNumeric(f.timeLimit),
-      onlyNew: asBool(f.onlyNew),
       ratingFilter: RATING_VALUES.includes(f.ratingFilter as RatingFilter)
         ? (f.ratingFilter as RatingFilter)
         : 'all',
@@ -115,6 +115,7 @@ export function loadFilters(): SavedFilters {
           : 'rankingEngine',
       sortDirection: f.sortDirection === 'desc' ? 'desc' : 'asc',
       showCardInfo: f.showCardInfo !== false,
+      showNew: f.showNew !== false,
     }
   } catch {
     return DEFAULT_FILTERS

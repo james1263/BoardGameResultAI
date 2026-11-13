@@ -6,6 +6,23 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>玩桌遊｜BoardGame</title>
+  <!-- 外觀：在載入 CSS 之前先設好，避免先閃一下淺色。
+       DEF 是「沒手動選過」時的預設值（深色模式三批做完前維持 light，做完改成 dark）。 -->
+  <script>
+    (function () {
+      var DEF = 'light';
+      var root = document.documentElement;
+      root.setAttribute('data-theme-default', DEF);
+      var pref = null;
+      try { pref = localStorage.getItem('boardgame-theme'); } catch (e) { }
+      if (pref !== 'dark' && pref !== 'light' && pref !== 'system') pref = DEF;
+      var theme = pref === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : pref;
+      root.setAttribute('data-theme', theme);
+      root.style.colorScheme = theme;
+    })();
+  </script>
 </head>
 
 <body>

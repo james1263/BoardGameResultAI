@@ -387,7 +387,7 @@ export default function MyList({
     // 從遊戲視窗「前往我的評分」進來，直接開在我的評分頁
     openRatings?: string | null
     // 從遊戲視窗「前往留言板／我的心得」進來：直接開在那個子畫面，並帶入遊戲
-    openView?: { view: 'board' | 'notes'; bggName: string | null; write?: boolean } | null
+    openView?: { view: 'board' | 'notes' | 'stats'; bggName: string | null; write?: boolean } | null
     // 從報到、集點卡連結、「去評分」進來：直接開在集點卡
     openCard?: boolean
     isAdmin: boolean
@@ -467,6 +467,9 @@ export default function MyList({
         } else if ((view === 'notes' || view === 'ratings') && cameFromGame.current && onReturnToGame) {
             cameFromGame.current = false
             onReturnToGame()
+        } else if (view === 'stats' && openView?.view === 'stats') {
+            // 從主畫面「我的統計」直接進來：回主畫面，不經過俱樂部首頁
+            onClose()
         } else {
             setView('home')
         }
@@ -954,7 +957,7 @@ export default function MyList({
                                 className={`cs-tab ${statsTab === 'score' ? 'active' : ''}`}
                                 onClick={() => switchStatsTab('score')}
                             >
-                                綜合評分
+                                評分
                             </button>
                         </div>
                         <button

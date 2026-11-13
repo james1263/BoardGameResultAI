@@ -1,0 +1,245 @@
+/* 深色模式第 8 批：規則書文件列、詞庫、規則助手舊規則、玩錯紀錄、詳細視窗彈窗內容、
+   統計中心舊規則、玩家榜，以及幾處行內 style 的顏色。
+   全部以 :root[data-theme="dark"] 開頭，淺色零影響。 */
+
+:root[data-theme="dark"] {
+  --d10-bg: #18211c;
+  --d10-raise: #202b25;
+  --d10-card: #263229;
+  --d10-line: #34463c;
+  --d10-line-2: #2b3a31;
+  --d10-text: #e8e2d0;
+  --d10-muted: #a9b3a8;
+  --d10-dim: #8a968c;
+  --d10-accent: #5f8f6d;
+  --d10-link: #8fc19e;
+  --d10-warn: #d9a45b;
+  --d10-red: #f0907f;
+  --d10-arrow: #8fc19e;
+}
+
+/* ===== 管理中心：規則書文件列 ===== */
+:root[data-theme="dark"] .rbd-title small,
+:root[data-theme="dark"] .rbd-count,
+:root[data-theme="dark"] .rbd-arrow,
+:root[data-theme="dark"] .rbd-size { color: var(--d10-dim); }
+:root[data-theme="dark"] .rbd-group { border-bottom-color: var(--d10-line); }
+:root[data-theme="dark"] .rbd-head { color: var(--d10-text); }
+:root[data-theme="dark"] .rbd-body .rb-docitem { border-bottom-color: var(--d10-line); }
+:root[data-theme="dark"] .rbd-body .rbd-docname,
+:root[data-theme="dark"] .rbd-body .rb-docitem > a.bgg-link { color: var(--d10-text); }
+:root[data-theme="dark"] .rbd-body .rbd-scope {
+  color: var(--d10-text);
+  background-color: var(--d10-raise);
+  border-color: var(--d10-line);
+  color-scheme: dark;
+  background-image: linear-gradient(45deg, transparent 50%, var(--d10-arrow) 50%),
+    linear-gradient(135deg, var(--d10-arrow) 50%, transparent 50%);
+}
+:root[data-theme="dark"] .rbd-body .rbd-del {
+  color: var(--d10-red);
+  background: var(--d10-raise);
+  border-color: #6b3f36;
+}
+:root[data-theme="dark"] .rbd-body .rbd-del:hover { background: #3a2824; }
+
+/* 詞庫：找不到英文的詞 */
+:root[data-theme="dark"] .gm-box { border-top-color: var(--d10-line); }
+:root[data-theme="dark"] .gm-box h4,
+:root[data-theme="dark"] .gm-game { color: var(--d10-text); }
+:root[data-theme="dark"] .gm-hint { color: var(--d10-muted); }
+:root[data-theme="dark"] .gm-btn {
+  color: var(--d10-text);
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+}
+:root[data-theme="dark"] .gm-btn.primary {
+  color: #fff;
+  background: var(--d10-accent);
+  border-color: var(--d10-accent);
+}
+:root[data-theme="dark"] .gm-btn.danger { color: var(--d10-red); border-color: #6b3f36; }
+:root[data-theme="dark"] .gm-row { border-bottom-color: var(--d10-line-2); }
+:root[data-theme="dark"] .gm-count { color: var(--d10-dim); }
+:root[data-theme="dark"] .gm-x { color: var(--d10-red); border-color: #6b3f36; }
+
+/* ===== 規則助手舊規則（顏色蓋成深色，版面不動） ===== */
+:root[data-theme="dark"] .ra2 .ra2-label { color: var(--d10-text); }
+:root[data-theme="dark"] .ra2 .ra2-row input.ra2-input {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .ra2 .ra2-row button.ra2-go { background: var(--d10-accent); color: #fff; }
+:root[data-theme="dark"] .ra2 .ra2-small,
+:root[data-theme="dark"] .ra2 .ra2-doc { color: var(--d10-muted); }
+:root[data-theme="dark"] .ra2 .ra2-status { color: var(--d10-muted); }
+:root[data-theme="dark"] .ra2 .ra2-pill {
+  border-color: var(--d10-accent);
+  color: var(--d10-link);
+}
+:root[data-theme="dark"] .ra2 .ra2-ocr { color: var(--d10-warn); }
+:root[data-theme="dark"] .ra2 .ra2-list > li { border-bottom-color: var(--d10-line); }
+:root[data-theme="dark"] .ra2 .ra2-page { color: var(--d10-link); }
+:root[data-theme="dark"] .ra2 .ra2-text { color: var(--d10-text); }
+:root[data-theme="dark"] .ra2 .ra2-link { color: var(--d10-link); }
+:root[data-theme="dark"] .ra2-backdrop { background: rgba(0, 0, 0, 0.6); }
+:root[data-theme="dark"] .ra2-sheet {
+  background: var(--d10-raise);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .ra2-sheet .ra2-x { color: var(--d10-text); }
+:root[data-theme="dark"] .ra2-sheet .ra2-sec-title { color: var(--d10-muted); }
+
+/* ===== 玩錯紀錄 ===== */
+:root[data-theme="dark"] .er-form textarea {
+  background: var(--d10-bg);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .er-count,
+:root[data-theme="dark"] .er-note { color: var(--d10-muted); }
+:root[data-theme="dark"] .er-count.over { color: var(--d10-red); }
+:root[data-theme="dark"] .er-list-title,
+:root[data-theme="dark"] .er-title,
+:root[data-theme="dark"] .er-body { color: var(--d10-text); }
+:root[data-theme="dark"] .er-list li {
+  background: var(--d10-raise);
+  border-color: rgba(183, 138, 90, 0.45);
+}
+:root[data-theme="dark"] .er-src,
+:root[data-theme="dark"] .er-box-title { color: var(--d10-warn); }
+:root[data-theme="dark"] .er-box {
+  background: #2c2619;
+  border-color: #8a6a43;
+}
+
+/* ===== 詳細視窗：規則連結、擴充、背景、討論按鈕 ===== */
+:root[data-theme="dark"] .game-docs .gd-label { color: var(--d10-dim); }
+:root[data-theme="dark"] .game-docs .gd-link {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .game-docs a.gd-link:hover,
+:root[data-theme="dark"] .game-docs a.gd-link:focus-visible {
+  background: var(--d10-card);
+  border-color: var(--d10-accent);
+}
+:root[data-theme="dark"] .game-docs .gd-plain { background: var(--d10-card); }
+:root[data-theme="dark"] .game-docs .gd-go { color: var(--d10-warn); }
+:root[data-theme="dark"] .game-docs .gd-del {
+  background: var(--d10-raise);
+  border-color: #6b3f36;
+  color: var(--d10-red);
+}
+
+:root[data-theme="dark"] .ge-thumb { background: var(--d10-card); }
+:root[data-theme="dark"] .ge-name { color: var(--d10-text); }
+:root[data-theme="dark"] .ge-actions button {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .ge-actions button.ge-danger { color: var(--d10-red); border-color: #6b3f36; }
+:root[data-theme="dark"] .ge-input {
+  background: var(--d10-bg);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .ge-file { border-color: var(--d10-line); color: var(--d10-muted); }
+:root[data-theme="dark"] .ge-add { background: var(--d10-accent); color: #fff; }
+:root[data-theme="dark"] .ge-empty,
+:root[data-theme="dark"] .ge-msg,
+:root[data-theme="dark"] .ge-note,
+:root[data-theme="dark"] .ge-hint { color: var(--d10-muted); }
+:root[data-theme="dark"] .ge-links a { color: var(--d10-link); }
+:root[data-theme="dark"] .ge-editor {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+}
+:root[data-theme="dark"] .gbg-text { color: var(--d10-text); }
+:root[data-theme="dark"] .gdl-btn {
+  background: var(--d10-raise);
+  border-color: var(--d10-accent);
+  color: var(--d10-link);
+}
+:root[data-theme="dark"] .gdl-btn:hover { background: var(--d10-card); }
+
+/* ===== 統計中心舊規則 ===== */
+:root[data-theme="dark"] .lb-rank { color: var(--d10-link); }
+:root[data-theme="dark"] .lb-rank.top { color: var(--d10-warn); }
+:root[data-theme="dark"] .lb-value span { color: var(--d10-dim); }
+:root[data-theme="dark"] .lb-empty {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+}
+:root[data-theme="dark"] .lb-empty b { color: var(--d10-text); }
+:root[data-theme="dark"] .lb-empty p { color: var(--d10-muted); }
+:root[data-theme="dark"] .lb-empty-btn { background: var(--d10-accent); color: #fff; }
+
+:root[data-theme="dark"] .lbs-bar {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+}
+:root[data-theme="dark"] .lbs-bar:focus-within { border-color: var(--d10-accent); }
+:root[data-theme="dark"] .lbs-input { color: var(--d10-text); }
+:root[data-theme="dark"] .lbs-clear { color: var(--d10-dim); }
+:root[data-theme="dark"] .lbs-filter {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .lbs-filter.on {
+  background: var(--d10-accent);
+  border-color: var(--d10-accent);
+  color: #fff;
+}
+:root[data-theme="dark"] .lbs-badge { background: var(--d10-bg); color: var(--d10-link); }
+:root[data-theme="dark"] .lbs-panel {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+}
+:root[data-theme="dark"] .lbs-label { color: var(--d10-muted); }
+:root[data-theme="dark"] .lbs-chips button,
+:root[data-theme="dark"] .lbs-seg button {
+  background: var(--d10-card);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .lbs-chips button.active,
+:root[data-theme="dark"] .lbs-seg button.active {
+  background: var(--d10-accent);
+  border-color: var(--d10-accent);
+  color: #fff;
+}
+:root[data-theme="dark"] .lbs-field select {
+  background: var(--d10-bg);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .lbs-reset { color: var(--d10-link); }
+
+/* ===== 玩家榜（每位玩家的最高／最低分遊戲） ===== */
+:root[data-theme="dark"] .pbg-row { border-bottom-color: var(--d10-line); }
+:root[data-theme="dark"] .pbg-who,
+:root[data-theme="dark"] .pbg-game { color: var(--d10-text); }
+:root[data-theme="dark"] .pbg-score { color: var(--d10-link); }
+:root[data-theme="dark"] .pbg-thumb { background: var(--d10-card); }
+
+/* ===== 行內 style 寫死的顏色（hex 與瀏覽器轉成的 rgb 兩種都蓋） ===== */
+/* PlannedGatheringsAdmin：#6b5a3c 咖啡字 */
+:root[data-theme="dark"] [style*="#6b5a3c"],
+:root[data-theme="dark"] [style*="107, 90, 60"] { color: var(--d10-warn) !important; }
+/* RatingSection：#456b50 綠字、#e3d9c4 虛線 */
+:root[data-theme="dark"] [style*="#456b50"],
+:root[data-theme="dark"] [style*="69, 107, 80"] { color: var(--d10-link) !important; }
+:root[data-theme="dark"] [style*="dashed #e3d9c4"],
+:root[data-theme="dark"] [style*="dashed rgb(227, 217, 196)"] { border-top-color: var(--d10-line) !important; }
+/* RatingSection、TodayRatingFlow：#b5483a 紅字 */
+:root[data-theme="dark"] [style*="#b5483a"],
+:root[data-theme="dark"] [style*="181, 72, 58"] { color: var(--d10-red) !important; }
+/* RulebookBatchUpload：#6b6a5c 灰字 */
+:root[data-theme="dark"] [style*="#6b6a5c"],
+:root[data-theme="dark"] [style*="107, 106, 92"] { color: var(--d10-muted) !important; }

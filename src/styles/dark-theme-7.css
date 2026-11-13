@@ -1,0 +1,53 @@
+/* 深色模式第 5 批：一般抽屜（留言板、我的心得、我的聚會、聚會．留言、集點卡）的底色與標題、
+   統計表上方的分頁列、分布圖的格線
+   載入順序：放在 dark-theme-6.css 之後。 */
+
+/* ---------- 一般抽屜：沒有 club-* 範圍 class 的那些頁面 ---------- */
+:root[data-theme="dark"] .mylist-drawer:not(.club-home):not(.club-stats):not(.club-leaderboard) {
+  background: #18211c;
+  color: #ecefe6;
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .mylist-drawer:not(.club-home):not(.club-stats):not(.club-leaderboard) .mylist-header {
+  background: #1d2822;
+  border-bottom: 1px solid rgba(236, 239, 230, 0.16);
+}
+:root[data-theme="dark"] .mylist-drawer:not(.club-home):not(.club-stats):not(.club-leaderboard) .mylist-close {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-drawer:not(.club-home):not(.club-stats):not(.club-leaderboard) .mylist-body {
+  background: transparent;
+}
+:root[data-theme="dark"] .mylist-drawer .mylist-empty {
+  color: #a3b1a7;
+}
+
+/* 「聚會．留言」上方的兩個分頁鈕 */
+:root[data-theme="dark"] .mylist-drawer .lb-tabs .lb-tab {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-drawer .lb-tabs .lb-tab.active {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+
+/* ---------- 統計表上方的分頁列（遊戲總表／分布圖／成員矩陣） ---------- */
+:root[data-theme="dark"] .ac-tabs {
+  background: #2b362f;
+}
+:root[data-theme="dark"] .ac-tab {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .ac-tab.active {
+  background: #4a7a58;
+  color: #fff;
+  box-shadow: none;
+}
+
+/* ---------- 分布圖：格線與座標軸原本是淺色，改成淡淡的亮線 ---------- */
+:root[data-theme="dark"] .sc-svg line {
+  stroke: rgba(236, 239, 230, 0.2) !important;
+}

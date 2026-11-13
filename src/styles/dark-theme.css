@@ -1,0 +1,1241 @@
+/* 深色模式（全站手動切換，第 1 批）
+   只在 <html data-theme="dark"> 時生效；淺色模式完全不受影響。
+   做法：①先改寫 tokens.css 的變數（用 var(--c-*) 的地方自動變深）
+        ②再用「:root[data-theme="dark"] + 原選擇器」覆蓋舊檔寫死的色碼（優先度比原規則高，不必動舊 CSS）
+   第 1 批範圍：全站底色與文字、頂端列與導覽列、首頁 hero／新加入／類型膠囊、桌遊卡片（4／9 欄與清單）、
+   篩選抽屜、詳細視窗（基本樣式、概覽、v2 變數、評分／討論／留言）、玩家選單與暱稱視窗、VIP 升級視窗
+   也含：詳細視窗分頁列與四個彈窗內容（規則連結、擴充、背景、玩錯紀錄）、垃圾桶、頁尾、回到頂端、圖例
+   還沒做：俱樂部／統計中心／規則助手（第 2 批）、管理中心／統計圖表／各種彈窗（第 3 批）
+   還原：App.tsx 拿掉 import './styles/dark-theme.css' 即可 */
+
+:root[data-theme="dark"] {
+  --dk-bg: #151b17;
+  --dk-surface: #1f2822;
+  --dk-surface-2: #29342c;
+  --dk-surface-3: #334038;
+  --dk-text: #ece7da;
+  --dk-text-soft: #aeb7ab;
+  --dk-line: rgba(236, 231, 218, 0.16);
+  --dk-accent: #d1a56f;
+  --dk-green: #5a8a68;
+
+  /* 改寫 tokens.css 的變數：用到 var(--c-*) 的地方自動變深 */
+  --c-cream: var(--dk-bg);
+  --c-paper: var(--dk-surface);
+  --c-forest: #4f7f5d;
+  --c-forest-dark: #3f6a4c;
+  --c-caramel: var(--dk-accent);
+  --c-ink: var(--dk-text);
+  --c-ink-soft: var(--dk-text-soft);
+  --c-line: var(--dk-line);
+  --c-danger: #e0786c;
+  --shadow-s: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-m: 0 10px 24px rgba(0, 0, 0, 0.5);
+
+  color: var(--dk-text);
+  background: var(--dk-bg);
+}
+
+:root[data-theme="dark"] body {
+  background: var(--dk-bg);
+  color: var(--dk-text);
+}
+
+/* ---------- 共用：輸入框提示字、焦點、選取 ---------- */
+:root[data-theme="dark"] ::placeholder {
+  color: var(--dk-text-soft);
+  opacity: 0.75;
+}
+
+:root[data-theme="dark"] button:focus-visible,
+:root[data-theme="dark"] input:focus-visible,
+:root[data-theme="dark"] select:focus-visible,
+:root[data-theme="dark"] a:focus-visible {
+  outline-color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .eyebrow {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .rule-button {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: #b9d3b9;
+}
+
+:root[data-theme="dark"] .rule-button:hover {
+  background: var(--dk-surface-3);
+}
+
+/* ---------- 頂端列（topbar.css） ---------- */
+:root[data-theme="dark"] .topbar {
+  background: var(--dk-surface);
+  border-bottom-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .brand {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .brand-icon {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .topbar-label {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .mylist-button,
+:root[data-theme="dark"] .topbar-actions .admin-link,
+:root[data-theme="dark"] .topbar-actions .player-chip {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+/* 玩家選單（含新的「外觀」項目）。account.css 沒看過，只依 class 名稱覆蓋 */
+:root[data-theme="dark"] .account-popover {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .account-popover button {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .account-popover button:hover {
+  background: var(--dk-surface-3);
+}
+
+/* 簡介編輯（topbar.css 後半） */
+:root[data-theme="dark"] .desc-link {
+  color: #a9cfa9;
+}
+
+:root[data-theme="dark"] .desc-link.danger {
+  color: var(--c-danger);
+}
+
+:root[data-theme="dark"] .desc-editor textarea {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .desc-count {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .desc-actions button.secondary {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+/* ---------- 桌遊卡片（cards.css） ---------- */
+:root[data-theme="dark"] .game-card {
+  border-color: var(--dk-line);
+  background: var(--dk-surface);
+}
+
+:root[data-theme="dark"] .game-art {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .game-art-2,
+:root[data-theme="dark"] .game-art-3,
+:root[data-theme="dark"] .game-art-4 {
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .game-emoji {
+  filter: drop-shadow(0 6px 4px rgba(0, 0, 0, 0.4));
+}
+
+:root[data-theme="dark"] .game-category {
+  background: rgba(21, 27, 23, 0.82);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-info h3 {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-meta {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .game-score-rank {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .game-card.is-new {
+  box-shadow: 0 0 0 2px #f0a22e, 0 6px 18px rgba(240, 162, 46, 0.2);
+}
+
+/* 想玩／已玩按鈕：未選時深底淺字，選中沿用 var(--c-forest) */
+:root[data-theme="dark"] .status-btn {
+  border-color: var(--dk-line);
+  background: rgba(21, 27, 23, 0.82);
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .status-btn.on {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+/* ---------- 清單檢視表格（card-list.css） ---------- */
+:root[data-theme="dark"] .game-grid.view-list {
+  --lv-line: rgba(209, 165, 111, 0.22);
+  border-color: var(--dk-line);
+  background: var(--dk-surface);
+}
+
+:root[data-theme="dark"] .game-grid.view-list .lv-head {
+  background: rgba(209, 165, 111, 0.12);
+  color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .game-grid.view-list .mine-group-heading {
+  background: rgba(209, 165, 111, 0.08);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-grid.view-list .game-card {
+  background: transparent;
+}
+
+:root[data-theme="dark"] .game-grid.view-list .game-card:hover {
+  background: rgba(209, 165, 111, 0.1);
+}
+
+:root[data-theme="dark"] .game-grid.view-list .game-card .game-art,
+:root[data-theme="dark"] .game-grid.view-list.lv-noinfo .game-card.no-info .game-art {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .game-grid.view-list.lv-info .game-card .game-facts > span > span {
+  color: var(--dk-text-soft);
+}
+
+/* 清單裡的想玩／已玩按鈕不疊在封面上，用表面色底 */
+:root[data-theme="dark"] .game-grid.view-list .lv-actions .status-btn,
+:root[data-theme="dark"] .game-grid.view-list .game-row .status-btn {
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .game-grid.view-list .lv-actions .status-btn.on,
+:root[data-theme="dark"] .game-grid.view-list .game-row .status-btn.on {
+  background: var(--c-forest);
+}
+
+/* ---------- 篩選抽屜（filter.css） ---------- */
+:root[data-theme="dark"] .filter-panel {
+  border-color: var(--dk-line);
+  background: var(--dk-surface);
+  box-shadow: none;
+}
+
+:root[data-theme="dark"] .filter-drawer {
+  background: var(--dk-surface);
+  color: var(--dk-text);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="dark"] .drawer-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="dark"] .drawer-header {
+  background: var(--dk-surface);
+}
+
+:root[data-theme="dark"] .drawer-close {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .clear-button,
+:root[data-theme="dark"] .sort-direction-button {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: #b9d3b9;
+}
+
+:root[data-theme="dark"] .clear-button:hover:not(:disabled),
+:root[data-theme="dark"] .sort-direction-button:hover {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .filter-field {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .filter-field select {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .filter-field select:focus {
+  border-color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .category-filter,
+:root[data-theme="dark"] .sort-row,
+:root[data-theme="dark"] .filter-drawer .filter-more {
+  border-top-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .category-hint,
+:root[data-theme="dark"] .category-empty,
+:root[data-theme="dark"] .mine-note {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .category-option {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .category-option:has(input:checked) {
+  border-color: var(--dk-green);
+  background: rgba(90, 138, 104, 0.28);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .category-chip.selected {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .mine-eye {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .mine-eye:hover {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .mine-eye svg {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .filter-pill {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .filter-pill:hover:not(:disabled) {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .filter-pill.on {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .filter-drawer .filter-more > summary {
+  color: #b9d3b9;
+}
+
+/* 搜尋欄裡的「篩選」鈕（vip.css） */
+:root[data-theme="dark"] .search-filter-btn {
+  background: rgba(90, 138, 104, 0.22);
+  color: #cfe5cf;
+}
+
+:root[data-theme="dark"] .search-filter-btn:hover {
+  background: rgba(90, 138, 104, 0.34);
+}
+
+:root[data-theme="dark"] .search-filter-btn.on {
+  background: var(--c-forest);
+  color: #fff;
+}
+
+/* ---------- 詳細視窗基本樣式（modal.css、overview.css） ----------
+   game-modal-v2.css（.gm-v2）、討論／評分／紀錄分頁還沒看過，第 1 批後半要先看那幾個檔 */
+:root[data-theme="dark"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+:root[data-theme="dark"] .game-modal,
+:root[data-theme="dark"] .game-modal.compact {
+  background: var(--dk-surface);
+  color: var(--dk-text);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="dark"] .modal-close,
+:root[data-theme="dark"] .game-modal.compact .modal-close {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+/* vip.css 用 !important 把標題鎖成深綠，深色要用 !important 蓋掉 */
+:root[data-theme="dark"] .game-modal .modal-head-info h2,
+:root[data-theme="dark"] #modal-title {
+  color: var(--dk-text) !important;
+}
+
+:root[data-theme="dark"] .game-modal h2 {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .modal-score,
+:root[data-theme="dark"] .game-modal.compact .modal-score,
+:root[data-theme="dark"] .modal-score-star {
+  color: #9fcaa7;
+}
+
+:root[data-theme="dark"] .modal-score-label,
+:root[data-theme="dark"] .modal-score-empty,
+:root[data-theme="dark"] .modal-section-title,
+:root[data-theme="dark"] .rating-empty,
+:root[data-theme="dark"] .personal-hint,
+:root[data-theme="dark"] .game-modal.compact .personal-hint,
+:root[data-theme="dark"] .play-counter-sub {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .bgg-link,
+:root[data-theme="dark"] .game-modal.compact .bgg-link {
+  color: #9fcaa7;
+}
+
+:root[data-theme="dark"] .rating-item,
+:root[data-theme="dark"] .modal-section {
+  border-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .rating-label,
+:root[data-theme="dark"] .game-modal.compact .rating-label,
+:root[data-theme="dark"] .play-counter-title,
+:root[data-theme="dark"] .play-counter-value,
+:root[data-theme="dark"] .note-label,
+:root[data-theme="dark"] .game-modal.compact .personal-note .note-label {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .modal-category,
+:root[data-theme="dark"] .game-modal.compact .modal-category {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .personal-note textarea,
+:root[data-theme="dark"] .game-modal.compact .personal-note textarea {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-modal.compact .status-buttons.inline .status-btn {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-modal.compact .status-buttons.inline .status-btn.on,
+:root[data-theme="dark"] .game-modal.compact .status-buttons.inline .status-btn.want.on,
+:root[data-theme="dark"] .game-modal.compact .status-buttons.inline .status-btn.played.on {
+  border-color: var(--dk-green);
+  background: rgba(90, 138, 104, 0.3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .play-counter-btn {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .ov-counts {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .ov-type {
+  border-color: rgba(209, 165, 111, 0.45);
+  background: rgba(209, 165, 111, 0.14);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .ov-type.is-active {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .ov-wall-title {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .ov-wall-item,
+:root[data-theme="dark"] .ov-wall-name {
+  color: var(--dk-text);
+}
+
+/* 封面周圍的底色（圖還沒載入或比例不同時露出來） */
+:root[data-theme="dark"] .ov-cover-img,
+:root[data-theme="dark"] .ov-cover-fallback {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .ov-more {
+  border-color: rgba(159, 202, 167, 0.5);
+  color: #9fcaa7;
+}
+
+:root[data-theme="dark"] .ov-fold {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .ov-fold > summary {
+  color: var(--dk-text);
+}
+
+/* ---------- VIP 升級視窗（vip-upgrade.css，原本刻意寫死顏色） ---------- */
+:root[data-theme="dark"] .vu-backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+:root[data-theme="dark"] .vu-card {
+  background: var(--dk-surface);
+  color: var(--dk-text);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="dark"] .vu-title {
+  color: #b9d3b9;
+}
+
+:root[data-theme="dark"] .vu-sub {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .vu-list li {
+  border-bottom-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .vu-note {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .vu-field input {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .vu-error {
+  color: var(--c-danger);
+}
+
+:root[data-theme="dark"] .vu-primary {
+  background: var(--c-forest);
+}
+
+:root[data-theme="dark"] .vu-secondary {
+  border-color: var(--c-forest);
+  background: transparent;
+  color: #b9d3b9;
+}
+
+/* =====================================================================
+   第 1 批（續）：首頁 hero／新加入／類型膠囊／標題列、導覽列、玩家選單與暱稱視窗、
+   詳細視窗 v2（.gm-v2 變數）、評分／討論／留言樣式
+   ===================================================================== */
+
+:root[data-theme="dark"] {
+  --dk-green-text: #9fcaa7;
+}
+
+/* ---------- 首頁 hero（hero.css、explore-home.css） ---------- */
+:root[data-theme="dark"] .hero {
+  background:
+    radial-gradient(ellipse at 50% 0%, #223027 0%, transparent 70%),
+    var(--dk-bg);
+}
+
+:root[data-theme="dark"] .hero h1 span {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .search-hint {
+  background: rgba(90, 138, 104, 0.22);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .quick-chip.more,
+:root[data-theme="dark"] .explore-mine-btn {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .quick-chip.on {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+/* 「更多類型」視窗：輸入框、按鈕原本寫死 #fff */
+:root[data-theme="dark"] .cat-backdrop {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+:root[data-theme="dark"] .cat-search,
+:root[data-theme="dark"] .cat-clear {
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .cat-close {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .explore-new-art {
+  background: var(--dk-surface-3);
+}
+
+/* ---------- 收藏區（library.css） ---------- */
+:root[data-theme="dark"] .game-count {
+  background: var(--dk-surface-3);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .empty-state {
+  border-color: var(--dk-line);
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .empty-state h3 {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .filter-toggle-button {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .filter-toggle-button:hover {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .filter-badge {
+  background: var(--c-forest);
+}
+
+:root[data-theme="dark"] .missing-data-note {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .view-toggle {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .view-toggle .view-btn {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .view-toggle .view-btn:hover {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .view-toggle .view-btn.active {
+  background: var(--dk-green);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .mine-group-heading {
+  border-bottom-color: var(--dk-line);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .status-legend,
+:root[data-theme="dark"] .status-legend-tip {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .personal-toast {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] main .library .section-heading.explore-head h2 {
+  color: var(--dk-text);
+}
+
+/* ---------- 導覽列（sitebar.css） ---------- */
+:root[data-theme="dark"] .sitebar {
+  background: var(--dk-surface);
+  border-bottom-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .sb-logo {
+  background: rgba(90, 138, 104, 0.25);
+}
+
+:root[data-theme="dark"] .sb-item.active {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .sb-item.active::after {
+  background: var(--dk-green-text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root[data-theme="dark"] .sb-item:hover {
+    background: rgba(90, 138, 104, 0.2);
+    color: var(--dk-text);
+  }
+}
+
+:root[data-theme="dark"] .sb-account .player-chip,
+:root[data-theme="dark"] .sb-account .admin-link,
+:root[data-theme="dark"] .sb-logout {
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+/* 手機底部導覽與「往下延伸補漏底」那塊都要同色 */
+@media (max-width: 760px) {
+  :root[data-theme="dark"] .sb-nav {
+    background: var(--dk-surface);
+    border-top-color: var(--dk-line);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.45);
+  }
+
+  :root[data-theme="dark"] .sb-nav::after {
+    background: var(--dk-surface);
+  }
+}
+
+/* ---------- 頂端列固定底色與暱稱視窗（account.css） ---------- */
+:root[data-theme="dark"] .topbar {
+  background: rgba(31, 40, 34, 0.98);
+}
+
+:root[data-theme="dark"] .admin-modal.player-dialog {
+  background: var(--dk-surface);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .pd-field input {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .pd-field input:focus {
+  border-color: var(--dk-green);
+  outline-color: rgba(90, 138, 104, 0.35);
+}
+
+:root[data-theme="dark"] .pd-hint {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .pd-error {
+  color: var(--c-danger);
+}
+
+:root[data-theme="dark"] .pd-save {
+  background: var(--c-forest);
+}
+
+:root[data-theme="dark"] .pd-secondary button {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .pd-secondary button:hover {
+  background: rgba(236, 231, 218, 0.08);
+}
+
+:root[data-theme="dark"] .pd-ok {
+  color: #8fd3a0;
+}
+
+:root[data-theme="dark"] .pd-warn {
+  color: var(--dk-accent);
+}
+
+/* ---------- 詳細視窗 v2：改寫它自己的變數（game-modal-v2.css 的 .gm-v2 用 --gm-*） ---------- */
+:root[data-theme="dark"] .modal-backdrop .game-modal.gm-v2 {
+  --gm-bg: var(--dk-surface);
+  --gm-fixed: var(--dk-surface-2);
+  --gm-card: var(--dk-surface-2);
+  --gm-line: rgba(209, 165, 111, 0.3);
+  --gm-ink: var(--dk-text);
+  --gm-soft: var(--dk-text-soft);
+  --gm-accent: #7fb08c;
+  --gm-caramel: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .gm-v2 .gm-sheet-close {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .gm-v2 .gm-sheet-dim {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- 評分分頁（ratings.css） ---------- */
+:root[data-theme="dark"] .rate-subtitle,
+:root[data-theme="dark"] .rate-note {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .rate-overall,
+:root[data-theme="dark"] .rate-grid-item {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .rate-overall strong {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .rate-grid-item strong,
+:root[data-theme="dark"] .rate-label {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .rate-scale button {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .rate-scale button.is-selected {
+  border-color: var(--dk-green);
+  background: var(--dk-green);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .rate-toggle {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .rate-save {
+  background: var(--c-forest);
+}
+
+:root[data-theme="dark"] .rate-delete {
+  color: var(--c-danger);
+}
+
+/* ---------- 討論分頁與留言列（vip.css 的 gb-*、note-list.css、note-likes.css、note-points.css、discussion-links.css） ---------- */
+:root[data-theme="dark"] .gb-item {
+  background: var(--dk-surface-2);
+  border-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .gb-name,
+:root[data-theme="dark"] .gb-content {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .gb-mine {
+  background: rgba(90, 138, 104, 0.25);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .gb-action,
+:root[data-theme="dark"] .gb-warn {
+  color: #e0976a;
+}
+
+:root[data-theme="dark"] .gb-empty,
+:root[data-theme="dark"] .gb-hidden-toggle,
+:root[data-theme="dark"] .gb-count {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .gb-mine-box {
+  background: var(--dk-surface-2);
+  border-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .gb-textarea {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .gb-save {
+  background: var(--c-forest);
+}
+
+:root[data-theme="dark"] .nl-item {
+  border-bottom-color: var(--dk-line);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .nl-item.is-open {
+  background: rgba(209, 165, 111, 0.08);
+}
+
+:root[data-theme="dark"] .nl-name,
+:root[data-theme="dark"] .nl-text {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .nl-date,
+:root[data-theme="dark"] .nl-caret,
+:root[data-theme="dark"] .nl-game-off {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .nl-thumb {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .nl-game {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-3);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .nl-tag {
+  border-color: rgba(209, 165, 111, 0.4);
+  background: rgba(209, 165, 111, 0.16);
+  color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .nl-like {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .nl-like.on {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .nl-like.off {
+  background: transparent;
+  border-color: transparent;
+}
+
+:root[data-theme="dark"] .nlk-list {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .np-btn {
+  border-color: var(--dk-accent);
+  color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .np-btn.on {
+  background: rgba(209, 165, 111, 0.18);
+}
+
+:root[data-theme="dark"] .np-count {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .np-like {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .np-dislike {
+  color: #e0976a;
+}
+
+:root[data-theme="dark"] .gdl-btn {
+  border-color: var(--dk-green);
+  background: var(--dk-surface-2);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .gdl-btn:hover {
+  background: var(--dk-surface-3);
+}
+
+/* =====================================================================
+   第 1 批（收尾）：詳細視窗分頁列與彈窗內容、垃圾桶、頁尾、回到頂端、圖例、小圖示
+   ===================================================================== */
+
+/* ---------- 詳細視窗分頁列（tabs.css） ---------- */
+:root[data-theme="dark"] .modal-fixed {
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .modal-tabs {
+  border-bottom-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .modal-tab {
+  border-color: var(--dk-line);
+  background: var(--dk-surface);
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .modal-tab.is-active {
+  border-color: var(--dk-green);
+  background: rgba(90, 138, 104, 0.28);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .modal-description,
+:root[data-theme="dark"] .stats-count {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .docs-group-title,
+:root[data-theme="dark"] .stats-new {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .stats-label {
+  color: var(--dk-text-soft);
+}
+
+/* ---------- 紀錄分頁（game-tabs.css） ---------- */
+:root[data-theme="dark"] .gb-head,
+:root[data-theme="dark"] .gh-head h3,
+:root[data-theme="dark"] .gh-total {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .gb-date {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .gh-item {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .gh-badge.played {
+  background: rgba(90, 138, 104, 0.28);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .gh-badge.planned {
+  background: rgba(209, 165, 111, 0.2);
+  color: var(--dk-accent);
+}
+
+/* ---------- 規則連結彈窗（game-docs.css） ---------- */
+:root[data-theme="dark"] .game-docs .gd-label {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .game-docs .gd-link {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-docs a.gd-link:hover,
+:root[data-theme="dark"] .game-docs a.gd-link:focus-visible {
+  border-color: var(--dk-green);
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .game-docs .gd-plain {
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .game-docs .gd-go {
+  color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .game-docs .gd-del {
+  border-color: rgba(224, 120, 108, 0.45);
+  background: var(--dk-surface-2);
+  color: var(--c-danger);
+}
+
+/* ---------- 擴充彈窗與「含擴」標籤（game-expansions.css） ---------- */
+:root[data-theme="dark"] .ge-thumb {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .ge-name {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .ge-actions button {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .ge-actions button.ge-danger {
+  border-color: rgba(224, 120, 108, 0.45);
+  color: var(--c-danger);
+}
+
+:root[data-theme="dark"] .ge-input {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .ge-file {
+  border-color: var(--dk-line);
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .ge-add {
+  background: var(--c-forest);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .ge-empty,
+:root[data-theme="dark"] .ge-msg,
+:root[data-theme="dark"] .ge-note,
+:root[data-theme="dark"] .ge-hint {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .ge-links a {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .ge-editor {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+}
+
+/* ---------- 遊戲背景（game-background.css） ---------- */
+:root[data-theme="dark"] .gbg-text {
+  color: var(--dk-text);
+}
+
+/* ---------- 玩錯紀錄（errata.css；規則助手也用，第 2 批再確認那邊） ---------- */
+:root[data-theme="dark"] .er-form textarea {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .er-count {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .er-count.over {
+  color: var(--c-danger);
+}
+
+:root[data-theme="dark"] .er-list-title,
+:root[data-theme="dark"] .er-title,
+:root[data-theme="dark"] .er-body {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .er-list li {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .er-src,
+:root[data-theme="dark"] .er-box-title {
+  color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .er-note {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .er-box {
+  border-color: var(--dk-accent);
+  background: rgba(209, 165, 111, 0.1);
+}
+
+/* ---------- 垃圾桶（trash.css） ---------- */
+:root[data-theme="dark"] .trash-toggle {
+  border-color: var(--dk-line);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .trash-toggle small,
+:root[data-theme="dark"] .trash-info small {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .trash-item {
+  border-color: var(--dk-line);
+  background: var(--dk-surface);
+}
+
+:root[data-theme="dark"] .trash-cover-wrap {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .trash-actions button {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .trash-actions .trash-delete {
+  border-color: rgba(224, 120, 108, 0.5);
+  color: var(--c-danger);
+}
+
+:root[data-theme="dark"] .modal-trash-btn {
+  color: #d49a9a;
+}
+
+:root[data-theme="dark"] .trash-reason {
+  color: var(--dk-accent);
+}
+
+/* ---------- 頁尾與預告橫幅（footer.css） ---------- */
+:root[data-theme="dark"] .assistant-banner {
+  border-color: var(--dk-line);
+  background: var(--dk-surface);
+}
+
+:root[data-theme="dark"] .assistant-icon {
+  background: var(--dk-surface-3);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .assistant-banner p:last-child {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .coming-soon {
+  border-color: var(--dk-line);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .footer {
+  border-top-color: var(--dk-line);
+  color: var(--dk-text-soft);
+}
+
+/* ---------- 回到頂端、圖例、小圖示 ---------- */
+:root[data-theme="dark"] .back-to-top {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="dark"] .sl-legend {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .sl-legend.is-open {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .filter-drawer svg.fact-icon {
+  color: var(--dk-green-text);
+}

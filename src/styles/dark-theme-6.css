@@ -1,0 +1,60 @@
+/* 深色模式第 4.5 批：補日期視窗內容（PlaySessions）與共用的 personal-hint
+   PlaySessions 沒有自己的 css，原本樣式在別的檔案；這裡只覆蓋顏色，不動版面。
+   載入順序：放在 dark-theme-5.css 之後。 */
+
+:root[data-theme="dark"] .personal-hint {
+  color: #a3b1a7;
+}
+
+:root[data-theme="dark"] .play-sessions,
+:root[data-theme="dark"] .play-sessions summary,
+:root[data-theme="dark"] .play-sessions-main,
+:root[data-theme="dark"] .play-sessions-main strong {
+  color: #ecefe6;
+}
+
+:root[data-theme="dark"] .play-sessions-list li {
+  border-color: rgba(236, 239, 230, 0.14);
+}
+:root[data-theme="dark"] .play-sessions-list p {
+  color: #a3b1a7;
+}
+
+/* 「＋ 補一個日期」與表單按鈕 */
+:root[data-theme="dark"] .play-sessions-add,
+:root[data-theme="dark"] .play-sessions-actions button.secondary {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .play-sessions-actions button:not(.secondary) {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .play-sessions-add:disabled {
+  opacity: 0.45;
+}
+
+/* 日期輸入框 */
+:root[data-theme="dark"] .play-sessions-form label,
+:root[data-theme="dark"] .play-sessions-form span {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .play-sessions-form input[type='date'] {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+  color-scheme: dark; /* 日期選擇器的小日曆也跟著變深色 */
+}
+
+/* 「刪除」「重試」文字連結 */
+:root[data-theme="dark"] .play-sessions-link {
+  color: #ee8f80;
+}
+
+/* 「自動」小標籤：原本是行內 style（淺綠底、深綠字），用屬性選擇器蓋掉 */
+:root[data-theme="dark"] .play-sessions-main span[style*='e6efe8'] {
+  background: rgba(106, 170, 122, 0.2) !important;
+  color: #a9d8b4 !important;
+}

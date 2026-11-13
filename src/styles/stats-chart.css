@@ -399,3 +399,15 @@
   line-height: 1;
   cursor: pointer;
 }
+
+/* 分布圖：預設只擋橫向手勢，縱向滑動交給頁面（打開「拖曳縮放」才整個接管） */
+.sc-svg.sc-pan-y {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sc-tools button.sc-toggle[aria-pressed='true'] {
+  border-color: #456b50;
+  background: #456b50;
+  color: #fbf7ec;
+}

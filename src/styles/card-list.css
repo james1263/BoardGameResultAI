@@ -1,0 +1,253 @@
+/* 清單檢視＝詳細資料表格（只作用在 .game-grid.view-list；4 欄、9 欄檢視不受影響）
+   顯示資訊（.lv-info）：封面＋名稱｜最佳｜推薦｜時間｜難度｜（管理者：RE／綜合）｜想玩／已玩，表頭與每列共用 --lv-cols
+   隱藏資訊（.lv-noinfo）：只留封面、名稱、想玩／已玩，名稱自然撐滿，不顯示表頭
+   還原：刪掉這個檔、GameCard.tsx 的 import／lv-tag／lv-actions，以及 App.tsx 的 lv-head 與 lv-* class */
+
+/* 非清單檢視不顯示這兩個清單專用元素 */
+.game-card .lv-actions,
+.game-info .lv-tag {
+  display: none;
+}
+
+/* ---------- 表格外框與欄寬 ---------- */
+.game-grid.view-list {
+  --lv-cols: 48px minmax(0, 1fr) 76px 76px 64px 60px 72px;
+  --lv-gap: 12px;
+  --lv-pl: 10px;
+  --lv-pr: 14px;
+  --lv-line: rgba(183, 138, 90, 0.28);
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--c-line, #e3d9c4);
+  border-radius: 14px;
+  background: var(--c-paper, #fbf7ec);
+}
+
+.game-grid.view-list.lv-admin {
+  --lv-cols: 48px minmax(0, 1fr) 76px 76px 64px 60px 116px 72px;
+}
+
+/* ---------- 表頭 ---------- */
+.game-grid.view-list .lv-head {
+  display: grid;
+  grid-template-columns: var(--lv-cols);
+  column-gap: var(--lv-gap);
+  align-items: center;
+  padding: 8px var(--lv-pr) 8px var(--lv-pl);
+  border-bottom: 1px solid var(--lv-line);
+  background: rgba(183, 138, 90, 0.12);
+  color: #7a6a52;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.game-grid.view-list .lv-head .lv-h-name {
+  grid-column: 1 / 3;
+}
+
+/* 分區標題（想玩／還沒玩過／已玩） */
+.game-grid.view-list .mine-group-heading {
+  margin: 0;
+  padding: 10px var(--lv-pr) 6px var(--lv-pl);
+  border-bottom: 1px solid var(--lv-line);
+  background: rgba(183, 138, 90, 0.08);
+  font-size: 14px;
+}
+
+/* ---------- 每一列：沒有外框的列，淡分隔線，滑過輕微變色 ---------- */
+.game-grid.view-list .game-card {
+  border: 0;
+  border-bottom: 1px solid var(--lv-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.game-grid.view-list .game-card:last-child {
+  border-bottom: 0;
+}
+
+.game-grid.view-list .game-card:hover {
+  background: rgba(183, 138, 90, 0.1);
+  box-shadow: none;
+}
+
+/* 新遊戲：左邊一條橘色細線（原本的橘色外框在表格裡會被切掉） */
+.game-grid.view-list .game-card.is-new,
+.game-grid.view-list .game-card.is-new:hover {
+  box-shadow: inset 3px 0 0 #f0a22e;
+}
+
+.game-grid.view-list .game-card:focus-visible {
+  outline-offset: -2px;
+}
+
+/* ---------- 封面：統一 48px，不裁切（留白用底色補） ---------- */
+.game-grid.view-list .game-card .game-art,
+.game-grid.view-list.lv-noinfo .game-card.no-info .game-art {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #efe7d3;
+}
+
+.game-grid.view-list .game-card .game-art .cover-image {
+  object-fit: contain;
+}
+
+.game-grid.view-list .game-card .game-emoji {
+  font-size: 26px;
+}
+
+.game-grid.view-list .game-card .game-art .new-badge,
+.game-grid.view-list .game-card .game-art .game-category,
+.game-grid.view-list .game-card .game-art .status-buttons {
+  display: none;
+}
+
+/* 想玩／已玩按鈕：在列的最右邊，不疊在封面上 */
+.game-grid.view-list .lv-actions .status-buttons.overlay,
+.game-grid.view-list .game-row .status-buttons.overlay {
+  position: static;
+  gap: 6px;
+}
+
+.game-grid.view-list .lv-actions .status-btn,
+.game-grid.view-list .game-row .status-btn {
+  width: 30px;
+  height: 30px;
+}
+
+.game-grid.view-list .lv-actions .status-btn svg,
+.game-grid.view-list .game-row .status-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- 顯示資訊：每列用同一組欄寬 ---------- */
+.game-grid.view-list.lv-info .game-card {
+  display: grid;
+  grid-template-columns: var(--lv-cols);
+  column-gap: var(--lv-gap);
+  align-items: center;
+  padding: 7px var(--lv-pr) 7px var(--lv-pl);
+}
+
+/* .game-info、.game-facts 與裡面的小 span 都不佔版面，名稱與四項資訊直接排進格線 */
+.game-grid.view-list.lv-info .game-card .game-info,
+.game-grid.view-list.lv-info .game-card .game-facts {
+  display: contents;
+}
+
+.game-grid.view-list.lv-info .game-card .game-info h3 {
+  min-height: 0;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.game-grid.view-list.lv-info .game-card .game-facts > span > span {
+  color: #5d6a60;
+  font-size: 12px;
+  text-align: left;
+}
+
+.game-grid.view-list.lv-info .game-card .game-admin-line {
+  margin: 0;
+  overflow: hidden;
+  font-size: 11px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-grid.view-list.lv-info .game-card .lv-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.game-grid.view-list.lv-info .game-card .game-info .lv-tag {
+  display: inline;
+}
+
+/* ---------- 隱藏資訊：只剩封面、名稱、按鈕，名稱欄自然撐滿 ---------- */
+.game-grid.view-list.lv-noinfo .game-card.no-info {
+  gap: 12px;
+  align-items: center;
+  padding: 7px var(--lv-pr) 7px var(--lv-pl);
+}
+
+.game-grid.view-list.lv-noinfo .game-card.no-info .game-row-facts {
+  display: none;
+}
+
+.game-grid.view-list.lv-noinfo .game-card.no-info .game-row-main h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 15px;
+  white-space: normal;
+}
+
+/* ---------- 手機：沒有表頭，封面｜名稱＋下方一行小字｜按鈕 ---------- */
+@media (max-width: 760px) {
+  .game-grid.view-list {
+    --lv-pl: 8px;
+    --lv-pr: 10px;
+  }
+
+  .game-grid.view-list .lv-head {
+    display: none;
+  }
+
+  .game-grid.view-list.lv-info .game-card {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    column-gap: 10px;
+    row-gap: 0;
+    padding: 8px var(--lv-pr) 8px var(--lv-pl);
+  }
+
+  .game-grid.view-list.lv-info .game-card .game-art {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+  }
+
+  .game-grid.view-list.lv-info .game-card .game-info h3 {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .game-grid.view-list.lv-info .game-card .game-facts {
+    display: flex;
+    grid-column: 2;
+    grid-row: 2;
+    flex-wrap: nowrap;
+    gap: 10px;
+    width: auto;
+    margin-top: 2px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .game-grid.view-list.lv-info .game-card .game-facts > span > span {
+    font-size: 11px;
+  }
+
+  .game-grid.view-list.lv-info .game-card .game-admin-line {
+    grid-column: 2;
+    grid-row: 3;
+    margin-top: 2px;
+  }
+
+  .game-grid.view-list.lv-info .game-card .lv-actions {
+    grid-column: 3;
+    grid-row: 1 / span 3;
+    align-self: center;
+  }
+}

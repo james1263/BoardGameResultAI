@@ -1,0 +1,254 @@
+/* 深色模式第 7 批：我的心得（遊戲管理／發表紀錄）、聚會後詢問卡與選擇視窗、我的聚會、
+   管理中心聚會列表與集點狀況、管理者登入／匯入小視窗、補日期視窗。
+   全部以 :root[data-theme="dark"] 開頭，淺色零影響。 */
+
+:root[data-theme="dark"] {
+  --d9-bg: #18211c;
+  --d9-raise: #202b25;
+  --d9-card: #263229;
+  --d9-line: #34463c;
+  --d9-line-2: #2b3a31;
+  --d9-text: #e8e2d0;
+  --d9-muted: #a9b3a8;
+  --d9-dim: #8a968c;
+  --d9-accent: #5f8f6d;
+  --d9-ok-bg: #28402f;
+  --d9-ok-tx: #a9d7b3;
+  --d9-todo-bg: #4a3326;
+  --d9-todo-tx: #efb894;
+  --d9-off-bg: #2f3a33;
+  --d9-warn: #d9a45b;
+}
+
+/* ===== 我的心得：遊戲管理 ===== */
+:root[data-theme="dark"] .mg-tabs { background: var(--d9-raise); }
+:root[data-theme="dark"] .mg-tabs button { color: var(--d9-text); }
+:root[data-theme="dark"] .mg-tabs button.on { background: var(--d9-accent); color: #fff; }
+
+:root[data-theme="dark"] .mg-search {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .mg-search::placeholder,
+:root[data-theme="dark"] .mr-search input::placeholder { color: var(--d9-dim); }
+
+:root[data-theme="dark"] .mg-chip {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .mg-chip.on {
+  background: var(--d9-accent);
+  border-color: var(--d9-accent);
+  color: #fff;
+}
+:root[data-theme="dark"] .mg-scope { color: var(--d9-muted); }
+:root[data-theme="dark"] .mg-scope-btns button {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-muted);
+}
+:root[data-theme="dark"] .mg-scope-btns button.on {
+  background: var(--d9-card);
+  color: var(--d9-text);
+}
+
+:root[data-theme="dark"] .mg-list {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+}
+:root[data-theme="dark"] .mg-list li + li { border-top-color: var(--d9-line-2); }
+:root[data-theme="dark"] .mg-row:active { background: var(--d9-card); }
+:root[data-theme="dark"] .mg-thumb { background: var(--d9-card); }
+:root[data-theme="dark"] .mg-name { color: var(--d9-text); }
+:root[data-theme="dark"] .mg-tag.ok { background: var(--d9-ok-bg); color: var(--d9-ok-tx); }
+:root[data-theme="dark"] .mg-tag.todo { background: var(--d9-todo-bg); color: var(--d9-todo-tx); }
+:root[data-theme="dark"] .mg-tag.off { background: var(--d9-off-bg); color: var(--d9-muted); }
+:root[data-theme="dark"] .mg-go,
+:root[data-theme="dark"] .mg-hint { color: var(--d9-dim); }
+
+/* 發表紀錄：搜尋／篩選／排序 */
+:root[data-theme="dark"] .mr-search {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+}
+:root[data-theme="dark"] .mr-search input { color: var(--d9-text); }
+:root[data-theme="dark"] .mr-filterbtn {
+  color: var(--d9-text);
+  border-left-color: var(--d9-line);
+}
+:root[data-theme="dark"] .mr-filterbtn.on { background: var(--d9-card); }
+:root[data-theme="dark"] .mr-filterbtn b { background: var(--d9-accent); color: #fff; }
+:root[data-theme="dark"] .mr-sort {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .mr-panel {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+}
+:root[data-theme="dark"] .mr-panel-title,
+:root[data-theme="dark"] .mr-active { color: var(--d9-muted); }
+:root[data-theme="dark"] .mr-panel-empty { color: var(--d9-dim); }
+:root[data-theme="dark"] .mr-pchip {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .mr-pchip.on {
+  background: var(--d9-accent);
+  border-color: var(--d9-accent);
+  color: #fff;
+}
+:root[data-theme="dark"] .mr-active button { background: var(--d9-card); color: var(--d9-text); }
+:root[data-theme="dark"] .nl-quick-del { color: #e58a78; }
+
+/* ===== 聚會後詢問卡與選擇視窗 ===== */
+:root[data-theme="dark"] .pg-ask {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+}
+:root[data-theme="dark"] .pg-ask-title { color: var(--d9-text); }
+:root[data-theme="dark"] .pg-ask-sub,
+:root[data-theme="dark"] .pg-sub,
+:root[data-theme="dark"] .pg-hint { color: var(--d9-muted); }
+:root[data-theme="dark"] .pg-ask-yes { background: var(--d9-accent); color: #fff; }
+:root[data-theme="dark"] .pg-ask-no,
+:root[data-theme="dark"] .pg-leave {
+  background: var(--d9-card);
+  border-color: var(--d9-line);
+  color: var(--d9-muted);
+}
+:root[data-theme="dark"] .pg-backdrop { background: rgba(0, 0, 0, 0.6); }
+:root[data-theme="dark"] .pg-sheet { background: var(--d9-bg); }
+:root[data-theme="dark"] .pg-head { border-bottom-color: var(--d9-line); }
+:root[data-theme="dark"] .pg-head h3,
+:root[data-theme="dark"] .pg-name,
+:root[data-theme="dark"] .pg-game-text b { color: var(--d9-text); }
+:root[data-theme="dark"] .pg-x,
+:root[data-theme="dark"] .pg-go,
+:root[data-theme="dark"] .pg-foot { color: var(--d9-dim); }
+:root[data-theme="dark"] .pg-saved,
+:root[data-theme="dark"] .pg-tag.ok,
+:root[data-theme="dark"] .pg-from { background: var(--d9-ok-bg); color: var(--d9-ok-tx); }
+:root[data-theme="dark"] .pg-tag.todo { background: var(--d9-todo-bg); color: var(--d9-todo-tx); }
+:root[data-theme="dark"] .pg-tag.off { background: var(--d9-off-bg); color: var(--d9-muted); }
+:root[data-theme="dark"] .pg-list {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+}
+:root[data-theme="dark"] .pg-list li + li { border-top-color: var(--d9-line-2); }
+:root[data-theme="dark"] .pg-thumb { background: var(--d9-card); }
+
+/* ===== 我的聚會 ===== */
+:root[data-theme="dark"] .mgc-card {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .mgc-title,
+:root[data-theme="dark"] .mgc-info b { color: var(--d9-text); }
+:root[data-theme="dark"] .mgc-arrow { color: var(--d9-dim); }
+:root[data-theme="dark"] .mgc-sub,
+:root[data-theme="dark"] .mgc-info small { color: var(--d9-muted); }
+:root[data-theme="dark"] .mgc-chip.done { background: var(--d9-ok-bg); color: var(--d9-ok-tx); }
+:root[data-theme="dark"] .mgc-chip.todo { background: var(--d9-todo-bg); color: var(--d9-todo-tx); }
+:root[data-theme="dark"] .mgc-foot { border-top-color: var(--d9-line); color: var(--d9-ok-tx); }
+:root[data-theme="dark"] .mg-write-btn {
+  color: var(--d9-ok-tx);
+  border-color: rgba(169, 215, 179, 0.4);
+}
+:root[data-theme="dark"] .mg-write-btn:hover { background: rgba(169, 215, 179, 0.12); }
+
+/* ===== 管理中心：集點狀況 ===== */
+:root[data-theme="dark"] .lgs-search {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .lgs-row { border-bottom-color: var(--d9-line); }
+:root[data-theme="dark"] .lgs-main strong { color: var(--d9-text); }
+:root[data-theme="dark"] .lgs-main small { color: var(--d9-dim); }
+:root[data-theme="dark"] .lgs-stats { color: var(--d9-muted); }
+:root[data-theme="dark"] .lgs-stats .ticket { color: var(--d9-warn); }
+:root[data-theme="dark"] .lgs-detail { background: var(--d9-card); color: var(--d9-text); }
+
+/* ===== 管理中心：指定遊戲與參加者 ===== */
+:root[data-theme="dark"] .lgp-game { border-top-color: var(--d9-line); }
+:root[data-theme="dark"] .lgp-game-name,
+:root[data-theme="dark"] .lgp-name { color: var(--d9-text); }
+:root[data-theme="dark"] .lgp-hint,
+:root[data-theme="dark"] .lgp-more,
+:root[data-theme="dark"] .lgp-unnamed,
+:root[data-theme="dark"] .lgp-want { color: var(--d9-warn); }
+:root[data-theme="dark"] .lgp-tag { background: var(--d9-card); color: var(--d9-muted); }
+:root[data-theme="dark"] .lgp-tag.on { background: var(--d9-ok-bg); color: var(--d9-ok-tx); }
+:root[data-theme="dark"] .lgp-list {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+}
+:root[data-theme="dark"] .lgp-row { border-top-color: var(--d9-line-2); }
+:root[data-theme="dark"] .lgp-row.on { background: #1f3326; }
+:root[data-theme="dark"] .lgp-check { border-color: #4a5a4f; }
+:root[data-theme="dark"] .lgp-row.on .lgp-check {
+  background: var(--d9-accent);
+  border-color: var(--d9-accent);
+}
+:root[data-theme="dark"] .lgp-sub { color: var(--d9-dim); }
+
+/* ===== 管理中心：聚會管理 ===== */
+:root[data-theme="dark"] .lga-manage .lga-title { color: var(--d9-text); }
+:root[data-theme="dark"] .lga-group-label { color: var(--d9-muted); }
+:root[data-theme="dark"] .lga-group-label small,
+:root[data-theme="dark"] .lga-hist-head small { color: var(--d9-dim); }
+:root[data-theme="dark"] .lga-manage .lga-status.warn {
+  background: rgba(217, 164, 91, 0.18);
+  color: var(--d9-warn);
+}
+:root[data-theme="dark"] .lga-hist-head {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+
+/* ===== 管理者登入／共用小視窗（含匯入 CSV 預覽若使用 admin-modal） ===== */
+:root[data-theme="dark"] .admin-modal {
+  background: var(--d9-raise);
+  color: var(--d9-text);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .admin-field input {
+  background: var(--d9-bg);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .admin-error { color: #f0907f; }
+:root[data-theme="dark"] .admin-cancel { color: var(--d9-muted); }
+
+/* ===== 補日期視窗內容 ===== */
+:root[data-theme="dark"] .play-sessions-add {
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .play-sessions-form { border-color: var(--d9-line); }
+:root[data-theme="dark"] .play-sessions-form input,
+:root[data-theme="dark"] .play-sessions-form textarea {
+  background: var(--d9-bg);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .play-sessions-actions button {
+  background: var(--d9-accent);
+  color: #fff;
+}
+:root[data-theme="dark"] .play-sessions-actions button.secondary {
+  background: var(--d9-card);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .play-sessions-list li { border-top-color: var(--d9-line-2); }
+:root[data-theme="dark"] .play-sessions-list p { color: var(--d9-muted); }
+:root[data-theme="dark"] .play-sessions-link { color: #e58a78; }

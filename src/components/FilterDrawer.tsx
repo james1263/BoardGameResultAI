@@ -79,8 +79,8 @@ export type FilterDrawerProps = {
   difficultyLevels: DifficultyLevel[]
   toggleDifficultyLevel: (level: DifficultyLevel) => void
 
-  onlyNew: boolean
-  setOnlyNew: (value: boolean) => void
+  showNew: boolean
+  setShowNew: (value: boolean) => void
 
   ratingFilter: RatingFilter
   setRatingFilter: (value: RatingFilter) => void
@@ -105,8 +105,8 @@ export default function FilterDrawer(props: FilterDrawerProps) {
     setTimeLimit,
     difficultyLevels,
     toggleDifficultyLevel,
-    onlyNew,
-    setOnlyNew,
+    showNew,
+    setShowNew,
     ratingFilter,
     setRatingFilter,
     canFilterByRating,
@@ -118,7 +118,7 @@ export default function FilterDrawer(props: FilterDrawerProps) {
 
   // 「更多篩選」裡有東西被套用時預設展開，避免使用者忘記自己開了什麼
   const hasMoreActive =
-    onlyNew || hiddenGroups.length > 0 || groupByMine || ratingFilter !== 'all'
+    hiddenGroups.length > 0 || groupByMine || ratingFilter !== 'all'
 
   return (
     <>
@@ -247,17 +247,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
 
           <details className="filter-more" open={hasMoreActive}>
             <summary>更多篩選</summary>
-            <div className="filter-group">
-              <label className="category-option">
-                <input
-                  type="checkbox"
-                  checked={onlyNew}
-                  onChange={(event) => setOnlyNew(event.target.checked)}
-                />
-                <span>只看新遊戲（{NEW_GAME_DAYS} 天內加入）</span>
-              </label>
-            </div>
-
             <div className="mine-filter">
               <div className="category-heading">
                 <span>
@@ -332,6 +321,14 @@ export default function FilterDrawer(props: FilterDrawerProps) {
                   gap: '10px 16px',
                 }}
               >
+                <label className="category-option">
+                  <input
+                    type="checkbox"
+                    checked={showNew}
+                    onChange={(event) => setShowNew(event.target.checked)}
+                  />
+                  <span>顯示新遊戲（{NEW_GAME_DAYS} 天內加入）</span>
+                </label>
                 <label className="category-option">
                   <input
                     type="checkbox"

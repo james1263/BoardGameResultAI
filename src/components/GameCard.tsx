@@ -9,6 +9,7 @@ import '../styles/card-compact.css'
 import '../styles/card-icons.css'
 import '../styles/game-expansions.css'
 import '../styles/card-row.css'
+import '../styles/card-list.css'
 import { useHasExpansion } from '../lib/useGameExpansions'
 
 function stop(event: MouseEvent | KeyboardEvent) {
@@ -129,6 +130,12 @@ function GameCard({
           <h3>
             {game.name}
             {hasExpansion && <span className="ge-badge">含擴</span>}
+            {game.referenceOnly && (
+              <span className="game-row-tag lv-tag">僅供參考</span>
+            )}
+            {!game.referenceOnly && isNew && (
+              <span className="game-row-tag new lv-tag">NEW</span>
+            )}
           </h3>
 
           <div className="game-facts">
@@ -155,6 +162,12 @@ function GameCard({
             </p>
           )}
         </div>
+      )}
+
+      {showInfo && !game.referenceOnly && (
+        <span className="lv-actions" onClick={stop} onKeyDown={stop}>
+          <StatusButtons bggName={game.bggName} personal={personal} />
+        </span>
       )}
     </article>
   )

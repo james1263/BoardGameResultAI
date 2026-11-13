@@ -304,3 +304,116 @@
   line-height: 1.3;
 }
 /* 第 3 批：深色模式區塊已移除，全站統一淺色 */
+
+/* ---------- 頂部改版：封面當背景（模糊＋暗角），白字，四項資訊放右下角小字 ---------- */
+.modal-backdrop .game-modal.gm-v2 .modal-head.gm-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  min-height: 150px;
+  margin: 4px 0 10px;
+  padding: 14px;
+  border-radius: 16px;
+  background: #34463c;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .gm-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(14px) saturate(1.15);
+  transform: scale(1.3);
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .gm-hero-shade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(18, 28, 22, 0.35) 0%, rgba(18, 28, 22, 0.78) 100%);
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .modal-cover {
+  flex: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .modal-head-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  gap: 6px;
+}
+
+/* 名稱與分數改白字（vip.css 用 !important 鎖了標題顏色，所以這裡也要 !important） */
+.modal-backdrop .game-modal.gm-v2 .gm-hero .modal-head-info h2,
+.modal-backdrop .game-modal.gm-v2 .gm-hero #modal-title,
+.modal-backdrop .game-modal.gm-v2 .gm-hero .ge-title-link {
+  color: #fff !important;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .ge-title-link {
+  border-bottom-color: rgba(255, 255, 255, 0.6);
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .modal-score,
+.modal-backdrop .game-modal.gm-v2 .gm-hero .modal-score-star {
+  color: #fff;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .modal-score-label,
+.modal-backdrop .game-modal.gm-v2 .gm-hero .modal-score-empty {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* 四項資訊：2×2 小字，在名稱與分數下方（右下角） */
+.modal-backdrop .game-modal.gm-v2 .gm-hero .gm-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, auto));
+  justify-content: start;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .gm-facts li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .gm-facts b {
+  font-weight: 700;
+  color: #fff;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .gm-facts i {
+  flex: none;
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .gm-facts svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .gm-facts .fact-emoji {
+  font-size: 11px;
+}

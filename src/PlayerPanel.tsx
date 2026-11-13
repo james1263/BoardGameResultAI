@@ -7,6 +7,13 @@ import { useAdminCheck } from './lib/useIsAdmin'
 import { useBackClose } from './lib/useBackClose'
 import { hasWelcomeFlag } from './components/VipGate'
 import { VIP_BENEFITS } from './components/VipUpgradeDialog'
+import {
+  THEME_LABELS,
+  loadThemePref,
+  nextThemePref,
+  saveThemePref,
+  type ThemePref,
+} from './lib/theme'
 
 type Profile = { nickname: string; public_id: string }
 
@@ -77,6 +84,22 @@ export default function PlayerPanel() {
   }, [userId, checked, isAdmin])
 
   const [hideInLists, setHideInLists] = useState(false)
+  const [themePref, setThemePref] = useState<ThemePref>(loadThemePref)
+
+  // 選了「跟隨系統」時，系統深淺色改變要即時跟著變
+  useEffect(() => {
+    if (themePref !== 'system') return
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = () => saveThemePref('system')
+    media.addEventListener('change', onChange)
+    return () => media.removeEventListener('change', onChange)
+  }, [themePref])
+
+  function cycleTheme() {
+    const next = nextThemePref(themePref)
+    setThemePref(next)
+    saveThemePref(next)
+  }
 
   useEffect(() => {
     if (!userId || !checked) return
@@ -215,6 +238,9 @@ export default function PlayerPanel() {
                 onClick={() => void toggleHideInLists()}
               >
                 {hideInLists ? '☐' : '☑'} 在 VIP 名單顯示我的暱稱
+              </button>
+              <button type="button" role="menuitem" onClick={cycleTheme}>
+                外觀：{THEME_LABELS[themePref]}
               </button>
               <button type="button" role="menuitem" onClick={openDialog}>
                 {profile ? '修改暱稱與聯絡方式' : '設定暱稱'}

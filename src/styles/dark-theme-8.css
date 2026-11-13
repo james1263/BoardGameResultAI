@@ -1,0 +1,363 @@
+/* 深色模式第 6 批：留言板、我的心得、留言列、心得表單、勾選刪除、集點卡月份摺疊、報到封面格、
+   一般抽屜清單（mylist.css）、管理中心「歷史聚會」列與集點狀況搜尋框
+   另含一條不分深淺的修正：「我的統計」展開的說明文字被固定搜尋列的陰影蓋住
+   載入順序：放在 dark-theme-7.css 之後。 */
+
+/* ---------- 不分深淺：說明文字下方留 20px，避開固定搜尋列往上 16px 的陰影 ---------- */
+.mylist-drawer.club-stats .ms-head + .st-tip {
+  margin-bottom: 20px;
+}
+
+/* ---------- 深色：固定搜尋列的底色與陰影要跟抽屜底色一致 ---------- */
+:root[data-theme="dark"] .mylist-drawer.club-stats .mylist-body .cls-searchbox.cls-sticky {
+  background: #18211c;
+  box-shadow: 0 -16px 0 #18211c;
+}
+
+/* ---------- 管理中心：歷史聚會列（用「含箭頭的按鈕」來選，不依賴 class 名稱） ---------- */
+:root[data-theme="dark"] button:has(> .lga-month-arrow) {
+  background: #2b362f !important;
+  border-color: rgba(236, 239, 230, 0.16) !important;
+  color: #ecefe6 !important;
+}
+:root[data-theme="dark"] button:has(> .lga-month-arrow) small,
+:root[data-theme="dark"] button:has(> .lga-month-arrow) .lga-month-arrow {
+  color: #a3b1a7 !important;
+}
+
+/* 集點狀況搜尋框 */
+:root[data-theme="dark"] input.lgs-search {
+  background: #2a352e !important;
+  border-color: rgba(236, 239, 230, 0.2) !important;
+  color: #ecefe6 !important;
+}
+:root[data-theme="dark"] input.lgs-search::placeholder {
+  color: #7f8f85;
+}
+
+/* ---------- 一般抽屜清單：mylist.css ---------- */
+:root[data-theme="dark"] .mylist-item {
+  border-bottom-color: rgba(236, 239, 230, 0.1);
+}
+:root[data-theme="dark"] .mylist-thumb {
+  background: #33423a;
+}
+:root[data-theme="dark"] .mylist-name,
+:root[data-theme="dark"] .club-menu-item {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-note,
+:root[data-theme="dark"] .mylist-hint {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .mylist-meta {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .mylist-remove {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-tab {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-tab.active {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .mylist-back {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .club-today {
+  background: #33291b;
+  border-color: #a47a4a;
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .club-today p {
+  color: #c9b78f;
+}
+
+/* ---------- 我的心得：my-notes.css ---------- */
+:root[data-theme="dark"] .mh-chip {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mh-chip.on {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .mh-add,
+:root[data-theme="dark"] .mh-save {
+  background: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .mh-badge.pub {
+  background: rgba(106, 170, 122, 0.2);
+  color: #a9d8b4;
+}
+:root[data-theme="dark"] .mh-badge.pri {
+  background: #33423a;
+  color: #c9d3cb;
+}
+:root[data-theme="dark"] .mh-error,
+:root[data-theme="dark"] .mh-hidden,
+:root[data-theme="dark"] .mh-danger {
+  color: #ee8f80;
+}
+:root[data-theme="dark"] .mh-fail {
+  color: #c9b78f;
+}
+:root[data-theme="dark"] .mh-source,
+:root[data-theme="dark"] .mh-count {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .mh-link {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .mh-textarea {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+
+/* ---------- 留言板：club-board.css ---------- */
+:root[data-theme="dark"] .club-menu-text .club-menu-sub {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .cb-btn {
+  color: #ecefe6;
+  border-color: rgba(217, 178, 124, 0.6);
+}
+:root[data-theme="dark"] .cb-compose,
+:root[data-theme="dark"] .cb-item {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.14);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .cb-input,
+:root[data-theme="dark"] .cb-pick-list button {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .cb-picked,
+:root[data-theme="dark"] .cb-meta {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .cb-date {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .cb-link {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .cb-danger {
+  color: #ee8f80;
+}
+:root[data-theme="dark"] .cb-chip {
+  background: rgba(156, 201, 168, 0.16);
+  color: #a8d3b3;
+}
+:root[data-theme="dark"] .cb-chip-off {
+  background: rgba(236, 239, 230, 0.08);
+  color: #a3b1a7;
+}
+
+/* ---------- 留言列：note-list／note-likes／note-points ---------- */
+:root[data-theme="dark"] .nl-item {
+  border-bottom-color: rgba(236, 239, 230, 0.14);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nl-item.is-open {
+  background: #222d26;
+}
+:root[data-theme="dark"] .nl-name,
+:root[data-theme="dark"] .nl-text {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nl-date,
+:root[data-theme="dark"] .nl-caret {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .nl-thumb {
+  background: #33423a;
+}
+:root[data-theme="dark"] .nl-game {
+  background: rgba(156, 201, 168, 0.14);
+  border-color: rgba(156, 201, 168, 0.3);
+  color: #a8d3b3;
+}
+:root[data-theme="dark"] .nl-game-off {
+  color: #8f9e94;
+}
+:root[data-theme="dark"] .nl-tag {
+  background: rgba(224, 176, 80, 0.16);
+  border-color: rgba(224, 176, 80, 0.35);
+  color: #e8c87a;
+}
+:root[data-theme="dark"] .nl-like {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #e8d3a8;
+}
+:root[data-theme="dark"] .nl-like.on {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .nl-like.off {
+  background: transparent;
+  border-color: transparent;
+}
+:root[data-theme="dark"] .nlk-list {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .np-btn {
+  color: #e8c87a;
+  border-color: #a47a4a;
+}
+:root[data-theme="dark"] .np-btn.on {
+  background: rgba(224, 176, 80, 0.18);
+}
+:root[data-theme="dark"] .np-count {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .np-like {
+  color: #a9d8b4;
+}
+:root[data-theme="dark"] .np-dislike {
+  color: #f0a898;
+}
+
+/* ---------- 心得表單：note-form／note-form-b2 ---------- */
+:root[data-theme="dark"] .nf {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.14);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nf-input,
+:root[data-theme="dark"] .nf-select,
+:root[data-theme="dark"] .nf-textarea {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nf-list button {
+  border-bottom-color: rgba(236, 239, 230, 0.12);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nf-tab,
+:root[data-theme="dark"] .nf-chip,
+:root[data-theme="dark"] .nf-copy,
+:root[data-theme="dark"] .nf-cancel {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nf-tab.on,
+:root[data-theme="dark"] .nf-chip.on,
+:root[data-theme="dark"] .nf-save {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .nf-label,
+:root[data-theme="dark"] .nf-hint,
+:root[data-theme="dark"] .nf-count {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .nf-taglabel {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nf-link {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .nf-warn {
+  color: #e8a070;
+}
+:root[data-theme="dark"] .nf-error {
+  color: #ee8f80;
+}
+:root[data-theme="dark"] .nf-info {
+  color: #7fd09b;
+}
+:root[data-theme="dark"] .nf-cover {
+  background: #2a352e;
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nf-cover.on {
+  background: #2f4a3a;
+  border-color: #7fb28c;
+}
+
+/* ---------- 勾選刪除：batch-select.css ---------- */
+:root[data-theme="dark"] .bs-bar .bs-count {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .bs-btn {
+  background: #2a352e;
+  border-color: #a47a4a;
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .bs-btn.danger {
+  background: #b5483a;
+  border-color: #b5483a;
+  color: #fff;
+}
+:root[data-theme="dark"] .bs-row {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.14);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .bs-row.on {
+  background: #3a2420;
+  border-color: #ee8f80;
+}
+:root[data-theme="dark"] .bs-check {
+  background: #2a352e;
+  border-color: #a47a4a;
+}
+:root[data-theme="dark"] .bs-row.on .bs-check {
+  background: #b5483a;
+  border-color: #b5483a;
+}
+:root[data-theme="dark"] .bs-sub {
+  color: #a3b1a7;
+}
+
+/* ---------- 集點卡月份摺疊：lc-months.css ---------- */
+:root[data-theme="dark"] .lcm-head {
+  background: #2b362f;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lcm-count {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .lcm-notice {
+  background: #33291b;
+  border-color: #a47a4a;
+  color: #ecefe6;
+}
+
+/* ---------- 報到：勾選今天玩的遊戲：checkin-pick.css ---------- */
+:root[data-theme="dark"] .cp-sub {
+  color: #c9b78f;
+}
+:root[data-theme="dark"] .cp-item,
+:root[data-theme="dark"] .cp-name {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .cp-cover {
+  background: #33423a;
+}
+:root[data-theme="dark"] .cp-item.on .cp-cover {
+  border-color: #ee8f80;
+}
+:root[data-theme="dark"] .cp-check {
+  background: #b5483a;
+}

@@ -1,0 +1,106 @@
+/* 深色模式第 3.5 批：全螢幕頁（統計表、分布圖）、fullscreen-page.css、stats-chart.css、scatter-list.css
+   載入順序：放在 dark-theme-3.css 之後。全部以 :root[data-theme="dark"] 開頭，淺色零影響。 */
+
+/* ---------- 全螢幕頁外框（原本寫死 color-scheme: light） ---------- */
+:root[data-theme="dark"] .fsp {
+  background: #18211c;
+  color: #ecefe6;
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .fsp-head {
+  background: #1d2822;
+  border-bottom-color: rgba(236, 239, 230, 0.16);
+}
+:root[data-theme="dark"] .fsp-head h2 {
+  color: #ecefe6 !important;
+}
+:root[data-theme="dark"] .fsp-close {
+  color: #ecefe6;
+}
+
+/* ---------- 切換列、說明字 ---------- */
+:root[data-theme="dark"] .lb-pages {
+  background: #2b362f;
+}
+:root[data-theme="dark"] .lb-pages button {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lb-pages button.active {
+  background: #4a7a58;
+  color: #f5f1e4;
+}
+:root[data-theme="dark"] .sc-note,
+:root[data-theme="dark"] .sc-hint,
+:root[data-theme="dark"] .pb-who,
+:root[data-theme="dark"] .st-tip,
+:root[data-theme="dark"] .sc-box .sc-pick-empty {
+  color: #a3b1a7;
+}
+
+/* ---------- 分布圖 ---------- */
+:root[data-theme="dark"] .sc-controls label {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .sc-controls select {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .sc-box,
+:root[data-theme="dark"] .sc-pick {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.16);
+}
+:root[data-theme="dark"] .sc-svg text {
+  fill: #a3b1a7;
+}
+:root[data-theme="dark"] .sc-svg .sc-axis-title {
+  fill: #ecefe6;
+}
+:root[data-theme="dark"] .sc-dot circle.sc-vis {
+  fill: #7fb28c;
+  stroke: #18211c;
+}
+:root[data-theme="dark"] .sc-dot.on circle.sc-vis {
+  fill: #e0b050;
+}
+:root[data-theme="dark"] .sc-svg .sc-label {
+  fill: #ecefe6;
+  stroke: #222d26;
+}
+:root[data-theme="dark"] .sc-num {
+  fill: #142019; /* 點變亮了，編號改深字 */
+}
+:root[data-theme="dark"] .sc-pick h4,
+:root[data-theme="dark"] .sc-pick li {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .sc-pick button,
+:root[data-theme="dark"] .sc-tools button,
+:root[data-theme="dark"] .ms-info {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .sc-tools button.sc-toggle[aria-pressed='true'] {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #f5f1e4;
+}
+:root[data-theme="dark"] .sc-box .sc-pick.sc-pick-float {
+  background: rgba(34, 45, 38, 0.97);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* 圖下方的名單 */
+:root[data-theme="dark"] .sc-names button {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .sc-names button b {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .sc-names button.on {
+  background: #2f4a3a;
+}
+
+/* 統計表 .st-modal.st-embedded 的 .ac-tabs 小分頁在第 3 批已處理 */
