@@ -921,6 +921,7 @@ export default function RulebookBatchUpload({
   const [openGames, setOpenGames] = useState<string[]>([])
   const [listTick, setListTick] = useState(0)
   const [sortBySize, setSortBySize] = useState(false)
+  const [pdfFiltOpen, setPdfFiltOpen] = useState(false)
   const [clearingGame, setClearingGame] = useState('')
   const [orphanMsg, setOrphanMsg] = useState('')
   const [errataCounts, setErrataCounts] = useState<Map<string, number>>(new Map())
@@ -1008,24 +1009,29 @@ export default function RulebookBatchUpload({
   const [titleLoading, setTitleLoading] = useState(false)
   const docsApi = useGameDocuments(linkGame)
 
-  // 貼 YouTube 連結時，自動試著抓影片名稱填進標題（抓不到就維持空白，可自己填）
+  // 貼 YouTube／Bilibili 連結時，自動試著抓影片名稱填進標題（抓不到就維持空白，可自己填）
+  // YouTube 走公開 oEmbed；Bilibili 走 Edge Function「video-title」（只有管理者能呼叫）
   useEffect(() => {
     const url = linkUrl.trim()
-    if (!/^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(url)) {
+    const isYoutube = /^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(url)
+    const isBilibili = /^https?:\/\/([a-z0-9-]+\.)*(bilibili\.com|b23\.tv)\//i.test(url)
+    if (!isYoutube && !isBilibili) {
       setTitleLoading(false)
       return
     }
     let cancelled = false
     setTitleLoading(true)
     const timer = window.setTimeout(() => {
-      fetch(
-        'https://www.youtube.com/oembed?format=json&url=' +
-        encodeURIComponent(url),
-      )
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
+      const request: Promise<string> = isYoutube
+        ? fetch('https://www.youtube.com/oembed?format=json&url=' + encodeURIComponent(url))
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => (data && typeof data.title === 'string' ? data.title : ''))
+        : supabase.functions
+            .invoke('video-title', { body: { url } })
+            .then(({ data }) => (data && typeof data.title === 'string' ? data.title : ''))
+      request
+        .then((title) => {
           if (cancelled) return
-          const title = data && typeof data.title === 'string' ? data.title : ''
           if (title) setLinkTitle((current) => current || title)
         })
         .catch(() => { })
@@ -1423,6 +1429,11 @@ export default function RulebookBatchUpload({
           !scopesByGame.get(g.bgg_name)?.has(key),
       )
     const missingMode = isPdf && missingFilter !== 'none'
+    const pdfFiltN =
+      (scopeFilter !== 'all' ? 1 : 0) +
+      (docLangFilter !== 'all' ? 1 : 0) +
+      (indexFilter !== 'all' ? 1 : 0) +
+      (missingMode ? 1 : 0)
     const missingRows = missingMode
       ? missingOf(missingFilter).filter(
           (g) => !listQuery || compact(`${g.bgg_name} ${g.name}`).includes(listQuery),
@@ -1441,6 +1452,16 @@ export default function RulebookBatchUpload({
           </small>
         </div>
         {isPdf && docs.length > 0 && (
+          <>
+          <button
+            type="button"
+            className={`rbv-filterbtn ${pdfFiltOpen || pdfFiltN > 0 ? 'on' : ''}`}
+            aria-expanded={pdfFiltOpen}
+            onClick={() => setPdfFiltOpen((v) => !v)}
+          >
+            篩選{pdfFiltN > 0 ? `（${pdfFiltN}）` : ''} {pdfFiltOpen ? '▴' : '▾'}
+          </button>
+          {pdfFiltOpen && (
           <div className="rbv-filters">
             <div className="rbv-filter">
               <span className="rbv-filter-label">範圍</span>
@@ -1533,6 +1554,8 @@ export default function RulebookBatchUpload({
               </div>
             </div>
           </div>
+          )}
+          </>
         )}
         <input
           type="search"
