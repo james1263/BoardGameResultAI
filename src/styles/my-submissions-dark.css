@@ -1,0 +1,21 @@
+/* 我的投稿：搜尋遊戲欄與候選清單在深色模式下的顏色（只作用在俱樂部抽屜內，不影響規則助手） */
+:root[data-theme="dark"] .mylist-drawer .ra-search {
+  background: #18211c;
+  color: #e8efe9;
+  border-color: rgba(232, 239, 233, 0.22);
+}
+:root[data-theme="dark"] .mylist-drawer .ra-search::placeholder {
+  color: rgba(232, 239, 233, 0.5);
+}
+:root[data-theme="dark"] .mylist-drawer .ra-search:focus {
+  border-color: #8fb79c;
+  outline: none;
+}
+:root[data-theme="dark"] .mylist-drawer .ra-game-list {
+  background: #18211c;
+  border-color: rgba(232, 239, 233, 0.22);
+}
+:root[data-theme="dark"] .mylist-drawer .ra-game-list button {
+  background: transparent;
+  color: #e8efe9;
+}
