@@ -5,7 +5,7 @@ import {
     searchRulebook,
     type RulebookChunk,
 } from '../lib/useRulebookSearch'
-import { suggestKeywords } from '../lib/zhEnGlossary'
+import { hasChinese, suggestKeywords } from '../lib/zhEnGlossary'
 import InfoHint from './InfoHint'
 import {
     ERRATA_MAX_CONTENT,
@@ -394,6 +394,30 @@ export default function RulebookAssistant({
     // 輸入內容的英文關鍵字建議（來自內建對照表）
     const suggestions = useMemo(() => suggestKeywords(query), [query])
 
+    // 搜尋框下方的英文詞建議：點一下加入／移除搜尋框內容，不會自動搜尋、不扣次數
+    const findWord = (text: string, word: string) => {
+        const tokens = text.split(/\s+/).filter(Boolean)
+        const target = word.toLowerCase().split(/\s+/).filter(Boolean)
+        if (target.length === 0) return { tokens, at: -1, len: 0 }
+        for (let i = 0; i + target.length <= tokens.length; i++) {
+            if (target.every((t, k) => tokens[i + k].toLowerCase() === t)) {
+                return { tokens, at: i, len: target.length }
+            }
+        }
+        return { tokens, at: -1, len: target.length }
+    }
+    const hasWord = (word: string) => findWord(query, word).at >= 0
+    const toggleSuggestion = (word: string) => {
+        const { tokens, at, len } = findWord(query, word)
+        if (at >= 0) {
+            tokens.splice(at, len)
+            setQuery(tokens.join(' '))
+        } else {
+            const base = query.trim()
+            setQuery(base ? `${base} ${word}` : word)
+        }
+    }
+
     useEffect(() => {
         setOpenSet(new Set())
     }, [chunks])
@@ -773,6 +797,29 @@ ${parts}${errataText}
                     {busy ? '搜尋中…' : '搜尋'}
                 </button>
             </div>
+
+            {hasChinese(query) && suggestions.length > 0 && (
+                <div className="ra2-sug">
+                    <p className="ra2-small">可能的英文詞（點擊加入搜尋框，尚未搜尋，不扣次數）</p>
+                    <div className="ra-chips">
+                        {suggestions.map((word) => {
+                            const picked = hasWord(word)
+                            return (
+                                <button
+                                    key={`sug-${word}`}
+                                    type="button"
+                                    className="ra-chip"
+                                    aria-pressed={picked}
+                                    onMouseDown={(event) => event.preventDefault()}
+                                    onClick={() => toggleSuggestion(word)}
+                                >
+                                    {picked ? `✓ ${word}` : word}
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
 
             {activeLabel === '' && remaining !== undefined && remaining !== null && (
                 <p className="ra2-small">今天還剩 {remaining} 次（找到結果才扣）</p>
