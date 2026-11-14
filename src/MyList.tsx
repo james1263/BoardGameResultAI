@@ -490,6 +490,8 @@ export default function MyList({
     const cameFromGame = useRef(returnToGame && !!(openView?.write || openRatings))
     // 從「已玩 → 補日期」補完選「好」進寫作畫面：✕／返回要回到「我的統計→已玩」並重新打開那款的補日期視窗
     const [recordReturn, setRecordReturn] = useState<string | null>(null)
+    // 從「我的聚會」點遊戲進寫作畫面：✕／返回要回到「我的聚會」清單
+    const [fromGatherings, setFromGatherings] = useState(false)
     const [reopenRecord, setReopenRecord] = useState<string | null>(null)
     // 回到統計時讓返回鍵的歷史紀錄重新登記一次（先關再開），避免之後多退一層
     const [backPaused, setBackPaused] = useState(false)
@@ -499,6 +501,11 @@ export default function MyList({
             setSearch('')
             setBackPaused(true)
             setView('stats')
+        } else if (view === 'notes' && fromGatherings) {
+            setFromGatherings(false)
+            setGatheringTarget(null)
+            setBackPaused(true)
+            setView('gatherings')
         } else if (view === 'notes' && writeFromBoard && onReturnToBoard) {
             onReturnToBoard()
         } else if ((view === 'notes' || view === 'ratings') && cameFromGame.current && onReturnToGame) {
@@ -603,6 +610,7 @@ export default function MyList({
         setViewFocus(bggName)
         setWriteReq({ bggName, gatheringId, sessionId })
         setRecordReturn(null)
+        setFromGatherings(false)
         setView('notes')
     }
 
@@ -911,7 +919,10 @@ export default function MyList({
                 ratings={ratings}
                 isAdmin={isAdmin}
                 initialGatheringId={gatheringTarget}
-                onWriteGathering={(id) => openWrite(null, id)}
+                onWriteGathering={(id, bggName) => {
+                    openWrite(bggName ?? null, id)
+                    setFromGatherings(true)
+                }}
                 onBack={() => setView('home')}
                 onClose={onClose}
                 onOpenGame={onOpenGame}

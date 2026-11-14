@@ -1,0 +1,62 @@
+/* 我的聚會：卡片只放遊戲封面（左）與出席者（右）。點遊戲直接寫心得 */
+.mgc-card.mgv-card {
+  cursor: default;
+  text-align: left;
+}
+.mgv-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 6px;
+  align-items: start;
+}
+.mgv-games {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.mgv-gamebtn {
+  all: unset;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  cursor: pointer;
+  border-radius: 10px;
+}
+.mgv-gamebtn.static {
+  cursor: default;
+}
+.mgv-gamebtn:focus-visible {
+  outline: 2px solid #6b9a78;
+  outline-offset: 2px;
+}
+.mgv-people {
+  min-width: 0;
+  padding-left: 10px;
+  border-left: 1px solid rgba(128, 128, 128, 0.3);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.mgv-people-title {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+.mgv-people ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.mgv-people li {
+  overflow-wrap: anywhere;
+}
+.mgv-people li.me {
+  font-weight: 700;
+}
+.mgv-people small {
+  display: block;
+  opacity: 0.65;
+  font-size: 11px;
+}

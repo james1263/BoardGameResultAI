@@ -15,6 +15,7 @@ import GatheringNotePanel, { type NoteGame } from './GatheringNotePanel'
 import { useBackClose } from '../lib/useBackClose'
 import '../styles/my-gatherings-write.css'
 import '../styles/my-gatherings-cards.css'
+import '../styles/my-gatherings-v2.css'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -38,6 +39,38 @@ function sourceLabel(person: GatheringAttendee): string | null {
   return null
 }
 
+function GatheringPeople({
+  gatheringId,
+  isAdmin,
+  count,
+}: {
+  gatheringId: string
+  isAdmin: boolean
+  count: number
+}) {
+  const d = useGatheringDetail(gatheringId)
+  const people = d.detail?.attendees ?? []
+  return (
+    <div className="mgv-people">
+      <b className="mgv-people-title">出席（{d.detail ? people.length : count}）</b>
+      {d.loading ? (
+        <small>讀取中…</small>
+      ) : d.error || !d.detail ? (
+        <small>—</small>
+      ) : (
+        <ul>
+          {people.map((person, index) => (
+            <li key={index} className={person.me ? 'me' : ''}>
+              {person.n}
+              {isAdmin && person.c ? <small>（{person.c}）</small> : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 export default function MyGatherings({
   boardGames,
   personal,
@@ -59,7 +92,7 @@ export default function MyGatherings({
   isAdmin: boolean
   initialGatheringId?: string | null
   // 點整張場次卡片：到「我的心得」寫這場的心得（有傳才會用；沒傳就進聚會詳情）
-  onWriteGathering?: (gatheringId: string) => void
+  onWriteGathering?: (gatheringId: string, bggName?: string) => void
   onBack: () => void
   onClose: () => void
   onOpenGame: (game: BoardGame) => void
@@ -240,94 +273,80 @@ export default function MyGatherings({
                               const parts = dateParts(row.gatheredOn)
                               return (
                                 <li key={row.id}>
-                                  <button
-                                    type="button"
-                                    className="mgc-card"
-                                    onClick={() => {
-                                      if (onWriteGathering && canWrite) {
-                                        onWriteGathering(row.id)
-                                        return
-                                      }
-                                      if (canWrite) setScrollToNotes(true)
-                                      setSelectedId(row.id)
-                                    }}
-                                  >
+                                  <div className="mgc-card mgv-card">
                                     <span className="mgc-head">
                                       <b className="mgc-title">
                                         {parts.full}（{parts.weekday.replace('週', '')}）
                                       </b>
-                                      <span className="mgc-arrow" aria-hidden="true">
-                                        ›
-                                      </span>
                                     </span>
-                                    <span className="mgc-sub">
-                                      {row.title}・{row.attendeeCount} 位玩家
-                                    </span>
-                                    {gameNames.length > 0 ? (
-                                      <span className="mgc-games">
-                                        {gameNames.map((bggName) => {
-                                          const game = gameByName.get(bggName) ?? null
-                                          const note = noteByKey.get(`${row.id}|${bggName}`)
-                                          const privateDone = (note?.privateNote ?? '').trim() !== ''
-                                          const publicDone = (note?.publicNote ?? '').trim() !== ''
-                                          const rated = ratings ? ratings.getMine(bggName) !== null : true
-                                          const showChip = canWrite && (!isAdmin || privateDone)
-                                          return (
-                                            <span
-                                              className={`mgc-game${rated ? '' : ' mgc-dim'}`}
-                                              key={bggName}
-                                            >
-                                              <span className="mgc-cover">
-                                                {game ? renderCover(game) : '🎲'}
-                                              </span>
-                                              <span className="mgc-info">
-                                                <b>{game?.name ?? bggName}</b>
-                                                {canWrite && (!isAdmin || privateDone) && (
-                                                  <small>
-                                                    私人心得：{privateDone ? '已填寫' : '尚未填寫'}
-                                                    {publicDone ? '・公開留言：已填寫' : ''}
-                                                  </small>
-                                                )}
-                                              </span>
-                                              {showChip && (
-                                                <span className={`mgc-chip ${privateDone ? 'done' : 'todo'}`}>
-                                                  {privateDone ? '已完成' : '待填寫'}
+                                    <span className="mgc-sub">{row.title}</span>
+                                    <div className="mgv-body">
+                                      <div className="mgv-games">
+                                        {gameNames.length > 0 ? (
+                                          gameNames.map((bggName) => {
+                                            const game = gameByName.get(bggName) ?? null
+                                            const note = noteByKey.get(`${row.id}|${bggName}`)
+                                            const privateDone = (note?.privateNote ?? '').trim() !== ''
+                                            const publicDone = (note?.publicNote ?? '').trim() !== ''
+                                            const rated = ratings ? ratings.getMine(bggName) !== null : true
+                                            const showChip = canWrite && (!isAdmin || privateDone)
+                                            const inner = (
+                                              <span className={`mgc-game${rated ? '' : ' mgc-dim'}`}>
+                                                <span className="mgc-cover">
+                                                  {game ? renderCover(game) : '🎲'}
                                                 </span>
-                                              )}
-                                            </span>
-                                          )
-                                        })}
-                                      </span>
-                                    ) : (
-                                      <span className="mgc-sub">
-                                        {gamesByGathering.loading
-                                          ? '讀取遊戲中…'
-                                          : '這場沒有指定遊戲。'}
-                                      </span>
+                                                <span className="mgc-info">
+                                                  <b>{game?.name ?? bggName}</b>
+                                                  {showChip && (
+                                                    <small>
+                                                      私人心得：{privateDone ? '已填寫' : '尚未填寫'}
+                                                      {publicDone ? '・公開留言：已填寫' : ''}
+                                                    </small>
+                                                  )}
+                                                </span>
+                                              </span>
+                                            )
+                                            return canWrite ? (
+                                              <button
+                                                type="button"
+                                                className="mgv-gamebtn"
+                                                key={bggName}
+                                                aria-label={`寫「${game?.name ?? bggName}」的心得`}
+                                                onClick={() => {
+                                                  if (onWriteGathering) {
+                                                    onWriteGathering(row.id, bggName)
+                                                    return
+                                                  }
+                                                  setScrollToNotes(true)
+                                                  setSelectedId(row.id)
+                                                }}
+                                              >
+                                                {inner}
+                                              </button>
+                                            ) : (
+                                              <span className="mgv-gamebtn static" key={bggName}>
+                                                {inner}
+                                              </span>
+                                            )
+                                          })
+                                        ) : (
+                                          <span className="mgc-sub">
+                                            {gamesByGathering.loading
+                                              ? '讀取遊戲中…'
+                                              : '這場沒有指定遊戲。'}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <GatheringPeople
+                                        gatheringId={row.id}
+                                        isAdmin={isAdmin}
+                                        count={row.attendeeCount}
+                                      />
+                                    </div>
+                                    {!canWrite && (
+                                      <span className="mgc-sub">聚會還沒到，當天之後才能寫心得。</span>
                                     )}
-                                    <span className="mgc-foot">
-                                      {canWrite
-                                        ? '點擊整張聚會卡片，前往填寫心得 →'
-                                        : '聚會還沒到，當天之後才能寫心得 →'}
-                                    </span>
-                                  </button>
-                                  {onWriteGathering && canWrite && (
-                                    <button
-                                      type="button"
-                                      onClick={() => setSelectedId(row.id)}
-                                      style={{
-                                        display: 'block',
-                                        margin: '4px 0 0 auto',
-                                        border: 'none',
-                                        background: 'none',
-                                        color: '#456b50',
-                                        fontSize: 13,
-                                        cursor: 'pointer',
-                                      }}
-                                    >
-                                      聚會詳情（出席者）›
-                                    </button>
-                                  )}
+                                  </div>
                                 </li>
                               )
                             })}
