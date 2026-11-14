@@ -16,7 +16,6 @@
 }
 .mgc-head { display: flex; align-items: center; justify-content: space-between; }
 .mgc-title { font-size: 16px; color: #34463c; }
-.mgc-arrow { color: #8a7a5c; font-size: 20px; }
 .mgc-sub { color: #6b6450; font-size: 12px; }
 .mgc-games { display: flex; flex-direction: column; gap: 8px; }
 .mgc-game { display: flex; align-items: center; gap: 10px; }
@@ -44,9 +43,3 @@
 }
 .mgc-chip.done { background: #d9efdc; color: #2d6a3e; }
 .mgc-chip.todo { background: #f7dfd0; color: #a4532c; }
-.mgc-foot {
-  padding-top: 8px;
-  border-top: 1px solid #e3d9c4;
-  color: #2d6a3e;
-  font-size: 13px;
-}

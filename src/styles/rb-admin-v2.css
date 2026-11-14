@@ -35,42 +35,7 @@
   .ac-modal .ac-tabs .ac-tab { flex-direction: row; gap: 8px; height: 46px; font-size: 14px; }
 }
 
-/* 統計卡 */
-.rb .rbv-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin: 4px 0 14px;
-}
-@media (min-width: 761px) {
-  .rb .rbv-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-.rb .rbv-card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  padding: 12px 14px;
-  text-align: left;
-  font: inherit;
-  color: #34463c;
-  background: #fbf7ec;
-  border: 1px solid #e3d9c4;
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(52, 70, 60, 0.06);
-  cursor: pointer;
-}
-.rb .rbv-card:hover { border-color: #b78a5a; }
-.rb .rbv-card-static { cursor: default; }
-.rb .rbv-card-static:hover { border-color: #e3d9c4; }
-.rb .rbv-card-warn { background: #fbefe9; border-color: #e8c7b8; }
-.rb .rbv-card-label { font-size: 12px; color: #7a6a4a; }
-.rb .rbv-card-num { font-size: 26px; font-weight: 700; line-height: 1.1; color: #34463c; }
-.rb .rbv-card-num small { font-size: 13px; font-weight: 500; color: #7a8a80; }
-.rb .rbv-card-num-sm { font-size: 17px; }
-.rb .rbv-card-warn .rbv-card-num { color: #a4432f; }
-.rb .rbv-card-sub { font-size: 12px; color: #7a8a80; }
-.rb .rbv-card-link { color: #b4541a; font-weight: 600; text-decoration: underline; cursor: pointer; }
+/* 容量條（統計卡已移除，容量條仍在用） */
 .rb .rbv-bar { display: block; height: 8px; overflow: hidden; background: #e8dfc9; border-radius: 99px; }
 .rb .rbv-bar > span { display: block; height: 100%; background: #456b50; border-radius: 99px; }
 

@@ -267,15 +267,7 @@
   gap: 10px;
 }
 
-.hero-tools-row .sort-control {
-  flex: 1;
-  min-width: 0;
-}
 
-.hero-tools-row .sort-control select {
-  flex: 1;
-  min-width: 0;
-}
 
 .hero-tools-row .status-legend {
   flex: none;
@@ -284,9 +276,4 @@
 
 .hero {
   padding-bottom: 8px;
-}
-
-.hero .quick-chips,
-.hero .category-chips {
-  margin-top: 10px;
 }
