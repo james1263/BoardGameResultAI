@@ -60,3 +60,41 @@
   opacity: 0.65;
   font-size: 11px;
 }
+
+/* 出席者：小圓角標籤、自動換行；超過 6 位收成「＋N」 */
+.mgv-people ul.mgv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.mgv-people ul.mgv-chips li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.mgv-people ul.mgv-chips li.me {
+  border-color: #6b9a78;
+  background: rgba(107, 154, 120, 0.18);
+}
+.mgv-people ul.mgv-chips li small {
+  display: inline;
+  font-size: 10px;
+  opacity: 0.6;
+}
+.mgv-people ul.mgv-chips li.more {
+  padding: 0;
+  border-style: dashed;
+}
+.mgv-people ul.mgv-chips li.more button {
+  all: unset;
+  box-sizing: border-box;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}

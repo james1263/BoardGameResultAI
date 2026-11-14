@@ -492,6 +492,8 @@ export default function MyList({
     const [recordReturn, setRecordReturn] = useState<string | null>(null)
     // 從「我的聚會」點遊戲進寫作畫面：✕／返回要回到「我的聚會」清單
     const [fromGatherings, setFromGatherings] = useState(false)
+    // 從「留言板」按「＋ 發表留言」進寫作畫面：✕／返回要回到留言板
+    const [fromBoard, setFromBoard] = useState(false)
     const [reopenRecord, setReopenRecord] = useState<string | null>(null)
     // 回到統計時讓返回鍵的歷史紀錄重新登記一次（先關再開），避免之後多退一層
     const [backPaused, setBackPaused] = useState(false)
@@ -506,6 +508,10 @@ export default function MyList({
             setGatheringTarget(null)
             setBackPaused(true)
             setView('gatherings')
+        } else if (view === 'notes' && fromBoard) {
+            setFromBoard(false)
+            setBackPaused(true)
+            setView('board')
         } else if (view === 'notes' && writeFromBoard && onReturnToBoard) {
             onReturnToBoard()
         } else if ((view === 'notes' || view === 'ratings') && cameFromGame.current && onReturnToGame) {
@@ -611,6 +617,7 @@ export default function MyList({
         setWriteReq({ bggName, gatheringId, sessionId })
         setRecordReturn(null)
         setFromGatherings(false)
+        setFromBoard(false)
         setView('notes')
     }
 
@@ -886,7 +893,10 @@ export default function MyList({
                 onBack={() => setView('home')}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
-                onWrite={() => openWrite(null)}
+                onWrite={() => {
+                    openWrite(null)
+                    setFromBoard(true)
+                }}
                 initialSearch={
                     viewFocus ? (lookupGames.find((g) => g.bggName === viewFocus)?.name ?? '') : ''
                 }

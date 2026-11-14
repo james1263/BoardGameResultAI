@@ -7,6 +7,7 @@ import {
   ERRATA_MAX_PAGE,
   ERRATA_MAX_SOURCE,
   ERRATA_MAX_TITLE,
+  saveErrata,
   submitErrata,
   useGameErrata,
   type Errata,
@@ -86,21 +87,29 @@ export default function GameErrata({
       return
     }
     setBusy(true)
-    const result = await submitErrata({
-      id: editId,
-      bggName,
-      title: title.trim(),
-      content: content.trim(),
-      sourceNote: source.trim(),
-      pageRef: page.trim(),
-      verified,
-    })
+    const result = isAdmin
+      ? await saveErrata({
+          id: editId,
+          bggName,
+          title: title.trim(),
+          content: content.trim(),
+          sourceNote: source.trim(),
+        })
+      : await submitErrata({
+          id: editId,
+          bggName,
+          title: title.trim(),
+          content: content.trim(),
+          sourceNote: source.trim(),
+          pageRef: page.trim(),
+          verified,
+        })
     setBusy(false)
     if (result) {
       setFormError(result)
       return
     }
-    setMessage('已送出，管理者審核通過後才會公開。')
+    setMessage(isAdmin ? '已新增。' : '已送出，管理者審核通過後才會公開。')
     resetForm()
     setFormOpen(false)
     reload()
@@ -118,11 +127,13 @@ export default function GameErrata({
   }
 
   const formBlock =
-    !isAdmin && formOpen ? (
+    formOpen ? (
           <div className="er-form">
-            <p className="er-note">
-              投稿要經管理者審核才會公開，公開時不顯示你的名字。請盡量對照規則書後再投稿。
-            </p>
+            {!isAdmin && (
+              <p className="er-note">
+                投稿要經管理者審核才會公開，公開時不顯示你的名字。請盡量對照規則書後再投稿。
+              </p>
+            )}
             <label className="admin-field">
               <span>問題（{title.length}/{ERRATA_MAX_TITLE}）</span>
               <input
@@ -143,6 +154,7 @@ export default function GameErrata({
                 onChange={(event) => setContent(event.target.value)}
               />
             </label>
+            {!isAdmin && (
             <label className="admin-field">
               <span>參考頁碼（選填，{page.length}/{ERRATA_MAX_PAGE}）</span>
               <input
@@ -153,6 +165,7 @@ export default function GameErrata({
                 onChange={(event) => setPage(event.target.value)}
               />
             </label>
+            )}
             <label className="admin-field">
               <span>來源說明（選填，{source.length}/{ERRATA_MAX_SOURCE}）</span>
               <input
@@ -163,6 +176,7 @@ export default function GameErrata({
                 onChange={(event) => setSource(event.target.value)}
               />
             </label>
+            {!isAdmin && (
             <label className="er-src" style={{ display: 'block', margin: '6px 0' }}>
               <input
                 type="checkbox"
@@ -171,6 +185,7 @@ export default function GameErrata({
               />{' '}
               我已對照規則書確認
             </label>
+            )}
             {formError && <p className="admin-error">{formError}</p>}
             <div className="rb-actions">
               <button type="button" className="ma-btn" disabled={busy} onClick={() => void submit()}>
@@ -192,9 +207,11 @@ export default function GameErrata({
 
   const body = (
     <>
-        <p className="er-note">
-          管理者記錄或玩家整理（管理者審核後公開）的玩錯經驗，不是官方規則；與規則書衝突時，以規則書為準。
-        </p>
+        {!embedded && (
+          <p className="er-note">
+            管理者記錄或玩家整理（管理者審核後公開）的玩錯經驗，不是官方規則；與規則書衝突時，以規則書為準。
+          </p>
+        )}
         {bigSubmit && !isAdmin && !formOpen && (
           <button
             type="button"
@@ -230,9 +247,7 @@ export default function GameErrata({
         {error && <p className="er-note">{error}</p>}
         {!loading && !error && approved.length === 0 && (
           <p className="er-note">
-            {isAdmin
-              ? '還沒有紀錄。到管理中心「規則書」→「＋ 玩錯紀錄」新增。'
-              : '這款還沒有玩錯紀錄。'}
+            {isAdmin ? '還沒有紀錄。' : '這款還沒有玩錯紀錄。'}
           </p>
         )}
         <ul className="er-list">
@@ -285,7 +300,7 @@ export default function GameErrata({
 
         {!bigSubmit && message && <p className="er-note">{message}</p>}
 
-        {!bigSubmit && !hideSubmit && !isAdmin && !formOpen && (
+        {!bigSubmit && !hideSubmit && !formOpen && (
           <div className="rb-actions">
             <button
               type="button"
@@ -296,7 +311,7 @@ export default function GameErrata({
                 setFormOpen(true)
               }}
             >
-              ＋ 我要投稿
+              {isAdmin ? '＋ 新增玩錯紀錄' : '＋ 我要投稿'}
             </button>
           </div>
         )}

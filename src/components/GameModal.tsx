@@ -629,7 +629,13 @@ export default function GameModal({
         {sheet && (
           <GameInfoSheet title={SHEET_TITLES[sheet]} onClose={closeSheet}>
             {sheet === 'rules' && (
-              <GameDocuments key={game.bggName} api={docsApi} isAdmin={isAdmin} />
+              <GameDocuments
+                key={game.bggName}
+                api={docsApi}
+                isAdmin={isAdmin}
+                bggName={game.bggName}
+                canSubmit={vip.isVip && !isAdmin && !game.referenceOnly}
+              />
             )}
             {sheet === 'background' && (
               <GameBackground

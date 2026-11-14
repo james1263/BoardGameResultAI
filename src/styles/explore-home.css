@@ -389,3 +389,29 @@ main .library .explore-head {
     background: rgba(138, 150, 140, 0.55);
   }
 }
+
+/* ---------- 新加入桌遊：名稱長短不一時卡片等高 ---------- */
+.explore-new-list > li {
+  display: flex;
+}
+
+.explore-home .explore-new-card {
+  height: 100%;
+}
+
+.explore-new-name {
+  min-height: calc(1.35em * 2 + 6px);
+}
+
+.explore-new-score {
+  margin-top: auto;
+}
+
+/* 新加入桌遊：名稱與分數置中，和下方卡片一致 */
+.explore-new-name,
+.explore-new-score {
+  text-align: center;
+}
+.explore-new-name {
+  display: -webkit-box;
+}

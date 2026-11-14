@@ -39,6 +39,8 @@ function sourceLabel(person: GatheringAttendee): string | null {
   return null
 }
 
+const PEOPLE_PREVIEW = 6
+
 function GatheringPeople({
   gatheringId,
   isAdmin,
@@ -49,7 +51,10 @@ function GatheringPeople({
   count: number
 }) {
   const d = useGatheringDetail(gatheringId)
+  const [expanded, setExpanded] = useState(false)
   const people = d.detail?.attendees ?? []
+  const shown = expanded ? people : people.slice(0, PEOPLE_PREVIEW)
+  const hidden = people.length - shown.length
   return (
     <div className="mgv-people">
       <b className="mgv-people-title">出席（{d.detail ? people.length : count}）</b>
@@ -58,13 +63,27 @@ function GatheringPeople({
       ) : d.error || !d.detail ? (
         <small>—</small>
       ) : (
-        <ul>
-          {people.map((person, index) => (
+        <ul className="mgv-chips">
+          {shown.map((person, index) => (
             <li key={index} className={person.me ? 'me' : ''}>
               {person.n}
-              {isAdmin && person.c ? <small>（{person.c}）</small> : null}
+              {isAdmin && person.c && person.c !== person.n ? <small>{person.c}</small> : null}
             </li>
           ))}
+          {hidden > 0 && (
+            <li className="more">
+              <button type="button" onClick={() => setExpanded(true)}>
+                ＋{hidden}
+              </button>
+            </li>
+          )}
+          {expanded && people.length > PEOPLE_PREVIEW && (
+            <li className="more">
+              <button type="button" onClick={() => setExpanded(false)}>
+                收起
+              </button>
+            </li>
+          )}
         </ul>
       )}
     </div>

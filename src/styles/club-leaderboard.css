@@ -420,3 +420,38 @@
   line-height: 1.6;
 }
 /* 第 3 批：深色模式區塊已移除，全站統一淺色 */
+
+/* 搜尋列：ⓘ 說明在搜尋框左邊同一排；評分類榜單的最高／最低收進搜尋框內 */
+.mylist-drawer.club-leaderboard .lbs-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mylist-drawer.club-leaderboard .lbs-row > .lbs-bar {
+  flex: 1;
+  min-width: 0;
+}
+.mylist-drawer.club-leaderboard .lbs-hl {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--lc-tab-bg);
+}
+.mylist-drawer.club-leaderboard .lbs-hl button {
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--lc-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mylist-drawer.club-leaderboard .lbs-hl button.active {
+  background: var(--lc-tab-on);
+  color: var(--lc-tab-on-ink);
+}

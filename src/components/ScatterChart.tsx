@@ -290,6 +290,11 @@ export default function ScatterChart({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerEnd}
           onPointerCancel={handlePointerEnd}
+          onClick={() => {
+            // 點圖的空白處：收起上方浮出的遊戲卡片（點到圓點的 onClick 會先擋下）
+            if (moved.current) return
+            setPicked('')
+          }}
         >
           <defs>
             <clipPath id={clipId}>
@@ -334,7 +339,8 @@ export default function ScatterChart({
               <g
                 key={group.key}
                 className={`sc-dot ${picked === group.key ? 'on' : ''}`}
-                onClick={() => {
+                onClick={(event) => {
+                  event.stopPropagation()
                   if (moved.current) return
                   setPicked(picked === group.key ? '' : group.key)
                 }}

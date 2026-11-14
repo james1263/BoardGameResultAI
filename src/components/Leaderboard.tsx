@@ -564,6 +564,8 @@ export default function Leaderboard({
                 </div>
 
                 <div className="lbs">
+                  <div className="lbs-row">
+                  <InfoHint text={note} />
                   <div className="lbs-bar">
                     <span className="lbs-icon" aria-hidden="true">🔍</span>
                     <input
@@ -584,6 +586,24 @@ export default function Leaderboard({
                         ×
                       </button>
                     )}
+                    {isRatingBoard && (
+                      <span className="lbs-hl" role="group" aria-label="排序方向">
+                        <button
+                          type="button"
+                          className={!ratingLow ? 'active' : ''}
+                          onClick={() => setRatingLow(false)}
+                        >
+                          最高
+                        </button>
+                        <button
+                          type="button"
+                          className={ratingLow ? 'active' : ''}
+                          onClick={() => setRatingLow(true)}
+                        >
+                          最低
+                        </button>
+                      </span>
+                    )}
                     {!isRatingBoard && (
                       <button
                         type="button"
@@ -597,6 +617,7 @@ export default function Leaderboard({
                         )}
                       </button>
                     )}
+                  </div>
                   </div>
 
                   {filterOpen && !isRatingBoard && (
@@ -713,28 +734,6 @@ export default function Leaderboard({
                 </div>
 
                 <div className="mylist-body">
-                  <div className="lb-hintrow">
-                    <InfoHint text={note} />
-                    {isRatingBoard && (
-                      <span className="lb-pages pb-toggle" style={{ marginLeft: 'auto' }}>
-                        <button
-                          type="button"
-                          className={!ratingLow ? 'active' : ''}
-                          onClick={() => setRatingLow(false)}
-                        >
-                          最高
-                        </button>
-                        <button
-                          type="button"
-                          className={ratingLow ? 'active' : ''}
-                          onClick={() => setRatingLow(true)}
-                        >
-                          最低
-                        </button>
-                      </span>
-                    )}
-                  </div>
-
                   {ranked.length === 0 ? (
                     renderEmpty()
                   ) : (

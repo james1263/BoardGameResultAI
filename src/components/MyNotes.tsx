@@ -5,6 +5,7 @@ import { askConfirm } from '../lib/askConfirm'
 import { useMyGatherings } from '../lib/useMyGatherings'
 import { supabase } from '../lib/supabase'
 import NoteListItem from './NoteListItem'
+import { useBackClose } from '../lib/useBackClose'
 import '../styles/my-notes.css'
 import '../styles/my-notes-manage.css'
 import '../styles/batch-select.css'
@@ -179,6 +180,7 @@ export default function MyNotes({
   const [newestFirst, setNewestFirst] = useState(true)
   const [filterOpen, setFilterOpen] = useState(false)
   const [focus, setFocus] = useState<string | null>(focusGame)
+  const [composeFromRequest, setComposeFromRequest] = useState(!!writeRequest)
   const [compose, setCompose] = useState<ComposeState | null>(
     writeRequest
       ? {
@@ -501,9 +503,14 @@ export default function MyNotes({
   }
 
   function openCompose(next: Omit<ComposeState, 'nonce'>) {
+    setComposeFromRequest(false)
     setCompose((current) => ({ ...next, nonce: (current?.nonce ?? 0) + 1 }))
     window.setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0)
   }
+
+  // 在「我的心得」裡自己打開的寫作畫面：✕／返回鍵只收起寫作畫面；從別處帶進來的仍回原處
+  const closeCompose = useCallback(() => setCompose(null), [])
+  useBackClose(closeCompose, compose !== null && !composeFromRequest)
 
   return (
     <>
@@ -531,7 +538,12 @@ export default function MyNotes({
               ＋ 寫心得／留言
             </button>
           )}
-          <button className="mylist-close" type="button" aria-label="關閉" onClick={onBack}>
+          <button
+            className="mylist-close"
+            type="button"
+            aria-label="關閉"
+            onClick={() => (compose !== null && !composeFromRequest ? setCompose(null) : onBack())}
+          >
             ×
           </button>
         </div>

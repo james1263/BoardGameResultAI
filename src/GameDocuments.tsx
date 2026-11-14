@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import {
   isSafeUrl,
+  type DocLanguage,
+  type DocType,
   type GameDocument,
   type GameDocumentsApi,
 } from './lib/useGameDocuments'
+import { submitRuleSubmission, SUB_LIMITS } from './lib/useRuleSubmissions'
 import {
   docIcon,
   docKind,
@@ -21,12 +24,127 @@ const GROUPS: { kind: DocKind3; title: string; adminOnly?: boolean }[] = [
   { kind: 'pdf', title: '規則書 PDF（只有管理者看得到，供搜尋用）', adminOnly: true },
 ]
 
-export default function GameDocuments({
+function isVideoUrl(url: string): boolean {
+  return /^https?:\/\/([a-z0-9-]+\.)*(youtube\.com|youtu\.be|bilibili\.com|b23\.tv|vimeo\.com)\//i.test(
+    url.trim(),
+  )
+}
+
+// 在彈窗內直接新增連結：管理者直接新增；VIP 送出投稿（管理者審核後才採用）
+function LinkAdd({
   api,
+  bggName,
   isAdmin,
 }: {
   api: GameDocumentsApi
+  bggName: string
   isAdmin: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const [url, setUrl] = useState('')
+  const [title, setTitle] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
+
+  async function send() {
+    setError('')
+    setMessage('')
+    if (!url.trim()) {
+      setError('請貼上網址。')
+      return
+    }
+    setBusy(true)
+    let result: string | null
+    if (isAdmin) {
+      const type: DocType = isVideoUrl(url) ? 'video' : 'other'
+      const lang: DocLanguage =
+        type === 'video' ? 'other' : /[\u4e00-\u9fff]/.test(title) ? 'zh' : 'en'
+      result = (await api.addDoc({ docType: type, language: lang, title: title.trim(), url: url.trim() })) || null
+    } else {
+      result = await submitRuleSubmission({
+        id: null,
+        kind: 'link',
+        bggName,
+        title: title.trim(),
+        value: url.trim(),
+        note: '',
+      })
+    }
+    setBusy(false)
+    if (result) {
+      setError(result)
+      return
+    }
+    setMessage(isAdmin ? '已新增連結。' : '已送出，管理者審核通過後才會出現在這裡。')
+    setUrl('')
+    setTitle('')
+    setOpen(false)
+  }
+
+  return (
+    <div className="er-form">
+      {message && <p className="er-note">{message}</p>}
+      {!open ? (
+        <button
+          type="button"
+          className="ma-btn"
+          style={{ width: '100%', padding: '12px' }}
+          onClick={() => {
+            setMessage('')
+            setOpen(true)
+          }}
+        >
+          {isAdmin ? '＋ 新增連結' : '＋ 投稿規則連結／影片'}
+        </button>
+      ) : (
+        <>
+          <label className="admin-field">
+            <span>網址</span>
+            <input
+              type="url"
+              value={url}
+              maxLength={SUB_LIMITS.url}
+              placeholder="https://…"
+              onChange={(e) => setUrl(e.target.value)}
+            />
+          </label>
+          <label className="admin-field">
+            <span>標題（{isAdmin ? '選填' : '建議填寫'}，{title.length}/{SUB_LIMITS.linkTitle}）</span>
+            <input
+              type="text"
+              value={title}
+              maxLength={SUB_LIMITS.linkTitle}
+              placeholder="例如：官方 FAQ、教學影片"
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </label>
+          {error && <p className="admin-error">{error}</p>}
+          <div className="rb-actions">
+            <button type="button" className="ma-btn" disabled={busy} onClick={() => void send()}>
+              {busy ? '送出中…' : isAdmin ? '新增連結' : '送出投稿'}
+            </button>
+            <button type="button" className="admin-link" onClick={() => setOpen(false)}>
+              取消
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+export default function GameDocuments({
+  api,
+  isAdmin,
+  bggName,
+  canSubmit = false,
+}: {
+  api: GameDocumentsApi
+  isAdmin: boolean
+  bggName: string
+  // VIP（非管理者）可投稿連結
+  canSubmit?: boolean
 }) {
   const { docs, isLoading, loadError, deleteDoc } = api
   const [error, setError] = useState('')
@@ -115,11 +233,7 @@ export default function GameDocuments({
         )
       })}
 
-      {isAdmin && (
-        <p className="game-docs-empty">
-          要新增規則書 PDF 或貼連結，請到「管理」→「規則書」。
-        </p>
-      )}
+      {(isAdmin || canSubmit) && <LinkAdd api={api} bggName={bggName} isAdmin={isAdmin} />}
     </div>
   )
 }
