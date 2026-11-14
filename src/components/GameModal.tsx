@@ -1,4 +1,5 @@
 import { useBackClose } from '../lib/useBackClose'
+import { askConfirm } from '../lib/askConfirm'
 import {
   useCallback,
   useEffect,
@@ -47,13 +48,14 @@ type TabKey = (typeof TABS)[number]['key']
 // 舊的「規則」分頁已併進概覽；外部仍可傳 'rules'，會開到概覽並直接開「規則連結」彈窗
 const WALL_PREVIEW = 12
 
-type SheetKey = 'rules' | 'background' | 'expansions' | 'errata'
+type SheetKey = 'rules' | 'background' | 'expansions' | 'errata' | 'rating'
 
 const SHEET_TITLES: Record<SheetKey, string> = {
   rules: '規則連結與影片',
   background: '遊戲背景',
   expansions: '擴充',
   errata: '玩錯紀錄・AI 回饋',
+  rating: '我的評分',
 }
 
 function difficultyText(value: number | null | undefined): string {
@@ -562,7 +564,7 @@ export default function GameModal({
                   type="button"
                   className="ma-btn"
                   style={{ marginTop: 12 }}
-                  onClick={onOpenMyRatings}
+                  onClick={() => setSheet('rating')}
                 >
                   前往我的評分 ›
                 </button>
@@ -653,6 +655,19 @@ export default function GameModal({
                 isAdmin={isAdmin}
                 embedded
                 api={expApi}
+              />
+            )}
+            {sheet === 'rating' && (
+              <RatingSection
+                key={`${game.bggName}-${ratings.status}`}
+                bggName={game.bggName}
+                api={ratings}
+                beforeSave={
+                  personal.getEntry(game.bggName).played || ratings.getMine(game.bggName)
+                    ? undefined
+                    : () =>
+                        askConfirm('這款你還沒標為「已玩」。儲存評分會同時把它標為已玩，確定要儲存嗎？')
+                }
               />
             )}
             {sheet === 'errata' && (
