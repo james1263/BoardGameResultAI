@@ -415,6 +415,59 @@ function GameDocGroup({
 }) {
   const docsApi = useGameDocuments(bggName)
   const [error, setError] = useState('')
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editUrl, setEditUrl] = useState('')
+  const [editBusy, setEditBusy] = useState(false)
+
+  function startEdit(doc: GameDocument) {
+    setEditId(doc.id)
+    setEditTitle(doc.title ?? '')
+    setEditUrl(doc.external_url ?? '')
+    setError('')
+  }
+
+  async function saveLink(doc: GameDocument) {
+    setError('')
+    const title = editTitle.trim()
+    const url = editUrl.trim()
+    if (!title) {
+      setError('標題要填。')
+      return
+    }
+    if (!isSafeUrl(url)) {
+      setError('網址要以 http:// 或 https:// 開頭。')
+      return
+    }
+    const type: DocType =
+      doc.doc_type === 'video' || doc.doc_type === 'other'
+        ? isVideoUrl(url)
+          ? 'video'
+          : 'other'
+        : doc.doc_type
+    setEditBusy(true)
+    const { data, error: updateError } = await supabase
+      .from('game_documents')
+      .update({
+        title,
+        external_url: url,
+        doc_type: type,
+        language: guessLinkLanguage(type, title),
+      })
+      .eq('id', doc.id)
+      .select('id')
+    setEditBusy(false)
+    if (updateError) {
+      setError(updateError.message)
+      return
+    }
+    if (!data || data.length === 0) {
+      setError('沒有更新到這筆連結，請確認是用管理者帳號登入。')
+      return
+    }
+    setEditId(null)
+    onChanged()
+  }
 
   async function remove(doc: GameDocument) {
     const text =
@@ -454,7 +507,39 @@ function GameDocGroup({
             doc.source_type === 'upload' ? sizeByName.get(`${doc.id}.pdf`) : undefined
           return (
             <li key={doc.id} className="rb-docitem">
-              {doc.source_type === 'external' && isSafeUrl(doc.external_url) ? (
+              {editId === doc.id ? (
+                <div className="rb-fields rb-linkform">
+                  <label className="admin-field">
+                    <span>標題</span>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(event) => setEditTitle(event.target.value)}
+                    />
+                  </label>
+                  <label className="admin-field">
+                    <span>網址</span>
+                    <input
+                      type="url"
+                      value={editUrl}
+                      onChange={(event) => setEditUrl(event.target.value)}
+                    />
+                  </label>
+                  <div className="rb-actions">
+                    <button
+                      type="button"
+                      className="ma-btn"
+                      disabled={editBusy}
+                      onClick={() => void saveLink(doc)}
+                    >
+                      {editBusy ? '儲存中…' : '儲存'}
+                    </button>
+                    <button type="button" className="admin-link" onClick={() => setEditId(null)}>
+                      取消
+                    </button>
+                  </div>
+                </div>
+              ) : doc.source_type === 'external' && isSafeUrl(doc.external_url) ? (
                 <a
                   className="bgg-link"
                   href={doc.external_url}
@@ -473,7 +558,13 @@ function GameDocGroup({
                   {size != null && <span className="rbd-size">　{formatMb(size)}</span>}
                 </span>
               )}
+              {editId !== doc.id && (
               <div className="rbd-actions">
+              {doc.source_type === 'external' && (
+                <button type="button" className="rbd-del" onClick={() => startEdit(doc)}>
+                  編輯
+                </button>
+              )}
               {doc.source_type === 'upload' && (
                 <select
                   className="rbd-scope"
@@ -498,6 +589,7 @@ function GameDocGroup({
                 刪除
               </button>
               </div>
+              )}
             </li>
           )
         })}
