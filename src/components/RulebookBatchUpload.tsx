@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { askConfirm, askInput } from '../lib/askConfirm'
 import { sniffPdfLanguage, takeEmptyPageNote } from '../lib/extractPdfText'
@@ -971,17 +971,35 @@ export default function RulebookBatchUpload({
   const [linkError, setLinkError] = useState('')
   const [linkDone, setLinkDone] = useState('')
   const [titleLoading, setTitleLoading] = useState(false)
+  // 記住「自動帶入」的標題：換貼別的連結時可以覆蓋，自己改過的標題則不動
+  const autoTitleRef = useRef('')
   const docsApi = useGameDocuments(linkGame)
 
-  // 貼 YouTube／Bilibili 連結時，自動試著抓影片名稱填進標題（抓不到就維持空白，可自己填）
+  const activeGamesRef = useRef<GameOption[]>([])
+  activeGamesRef.current = activeGames
+  const [titleHint, setTitleHint] = useState('')
+
+  // 貼 YouTube／Bilibili 連結時，自動帶入影片名稱，並用名稱猜遊戲（猜得出唯一一款才自動選）
   // YouTube 走公開 oEmbed；Bilibili 走 Edge Function「video-title」（只有管理者能呼叫）
   useEffect(() => {
     const url = linkUrl.trim()
     const isYoutube = /^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(url)
     const isBilibili = /^https?:\/\/([a-z0-9-]+\.)*(bilibili\.com|b23\.tv)\//i.test(url)
+    setTitleHint('')
     if (!isYoutube && !isBilibili) {
       setTitleLoading(false)
       return
+    }
+    // Bilibili 網址常帶一長串追蹤參數，只留分 P（?p=）
+    let cleanUrl = url
+    if (isBilibili && !/b23\.tv/i.test(url)) {
+      try {
+        const parsed = new URL(url)
+        const part = parsed.searchParams.get('p')
+        cleanUrl = parsed.origin + parsed.pathname + (part ? `?p=${part}` : '')
+      } catch {
+        cleanUrl = url
+      }
     }
     let cancelled = false
     setTitleLoading(true)
@@ -991,18 +1009,35 @@ export default function RulebookBatchUpload({
             .then((res) => (res.ok ? res.json() : null))
             .then((data) => (data && typeof data.title === 'string' ? data.title : ''))
         : supabase.functions
-            .invoke('video-title', { body: { url } })
-            .then(({ data }) => (data && typeof data.title === 'string' ? data.title : ''))
+            .invoke('video-title', { body: { url: cleanUrl } })
+            .then(({ data, error }) => {
+              if (error) throw new Error(error.message || '呼叫失敗')
+              return data && typeof data.title === 'string' ? data.title : ''
+            })
       request
         .then((title) => {
           if (cancelled) return
-          if (title) setLinkTitle((current) => current || title)
+          if (!title) {
+            setTitleHint('抓不到影片名稱，請自己填標題。')
+            return
+          }
+          setLinkTitle((current) =>
+            !current || current === autoTitleRef.current ? title : current,
+          )
+          autoTitleRef.current = title
+          const guess = guessGame(title, activeGamesRef.current)
+          if (guess) setLinkGame((current) => current || guess)
         })
-        .catch(() => { })
+        .catch((err: unknown) => {
+          if (cancelled) return
+          setTitleHint(
+            `抓不到影片名稱（${err instanceof Error ? err.message : '未知錯誤'}），請自己填標題。`,
+          )
+        })
         .finally(() => {
           if (!cancelled) setTitleLoading(false)
         })
-    }, 500)
+    }, 250)
     return () => {
       cancelled = true
       window.clearTimeout(timer)
@@ -1215,6 +1250,7 @@ export default function RulebookBatchUpload({
       setLinkError(message)
       return
     }
+    autoTitleRef.current = ''
     setLinkTitle('')
     setLinkUrl('')
     setLinkDone('已新增連結，可在下方文件列表看到。')
@@ -1407,13 +1443,6 @@ export default function RulebookBatchUpload({
     const trashedGroupCount = trashedGroups.length
     return (
       <>
-        <div className="rbd-title">
-          <h3>已上傳的{label}</h3>
-          <small>
-            共 {docs.length} 份
-            {isPdf && shownDocs.length !== docs.length ? `（目前顯示 ${shownDocs.length} 份）` : ''}
-          </small>
-        </div>
         <div className="rbv-searchrow">
           {isPdf && (
             <button
@@ -1451,14 +1480,6 @@ export default function RulebookBatchUpload({
             <div className="rbv-filter">
               <span className="rbv-filter-label">範圍</span>
               <div className="rbv-chips" role="group" aria-label="依範圍篩選">
-                <button
-                  type="button"
-                  aria-pressed={scopeFilter === 'all'}
-                  className={`rbv-chip ${scopeFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setScopeFilter('all')}
-                >
-                  全部<small>{docs.length}</small>
-                </button>
                 {scopeKeys
                   .filter((key) => scopeCount(key) > 0 || scopeFilter === key)
                   .map((key) => (
@@ -1478,14 +1499,6 @@ export default function RulebookBatchUpload({
             <div className="rbv-filter">
               <span className="rbv-filter-label">語言</span>
               <div className="rbv-chips" role="group" aria-label="依語言篩選">
-                <button
-                  type="button"
-                  aria-pressed={docLangFilter === 'all'}
-                  className={`rbv-chip ${docLangFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setDocLangFilter('all')}
-                >
-                  全部<small>{docs.length}</small>
-                </button>
                 {(['zh', 'en', 'other'] as const)
                   .filter((key) => langCount(key) > 0 || docLangFilter === key)
                   .map((key) => (
@@ -1522,6 +1535,27 @@ export default function RulebookBatchUpload({
               </div>
             </div>
             <div className="rbv-filter">
+              <span className="rbv-filter-label">排序</span>
+              <div className="rbv-chips" role="group" aria-label="排序方式">
+                <button
+                  type="button"
+                  aria-pressed={!sortBySize}
+                  className={`rbv-chip ${!sortBySize ? 'active' : ''}`}
+                  onClick={() => setSortBySize(false)}
+                >
+                  依名稱
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={sortBySize}
+                  className={`rbv-chip ${sortBySize ? 'active' : ''}`}
+                  onClick={() => setSortBySize(true)}
+                >
+                  依大小（大 → 小）
+                </button>
+              </div>
+            </div>
+            <div className="rbv-filter">
               <span className="rbv-filter-label">缺少</span>
               <div className="rbv-chips" role="group" aria-label="依缺少的文件篩選">
                 {scopeKeys.map((key) => (
@@ -1544,11 +1578,6 @@ export default function RulebookBatchUpload({
         )}
         {label === 'PDF' && (
           <>
-            <p className="rb-hint">
-              <button type="button" className="admin-link" onClick={() => setSortBySize((v) => !v)}>
-                排序：{sortBySize ? '依大小（大 → 小）' : '依名稱'}（點一下切換）
-              </button>
-            </p>
             {trashedBytes > 0 && (
               <p className="rb-warn">
                 垃圾桶裡的遊戲還有 {trashedGroupCount} 款留著規則書，共 {formatMb(trashedBytes)}。
@@ -1895,27 +1924,33 @@ export default function RulebookBatchUpload({
 
       {mode === 'link' && (
         <UploadModal title="貼連結" locked={linkBusy} onClose={() => setMode(null)}>
-          <p className="rb-hint">
-            先選遊戲，再貼影片或網頁連結。網址是 YouTube、bilibili、vimeo 會自動當影片，其他當網頁。
-            新增後會出現在下方文件列表。
-          </p>
-
-          <SubmissionsAdmin
-            kind="link"
-            rows={subs.rows}
-            error={subs.error}
-            onChanged={() => void subs.reload()}
-            onUseLink={(row: AdminSubmission) => {
-              setLinkFromSub(row.id)
-              setLinkGame(row.bgg_name)
-              setLinkTitle(row.title)
-              setLinkUrl(row.value)
-              setLinkError('')
-              setLinkDone('')
-            }}
-          />
-
           <form className="rb-fields rb-linkform" onSubmit={submitLink}>
+            <label className="admin-field">
+              <span>連結（YouTube、bilibili 會自動帶入標題）</span>
+              <input
+                type="url"
+                placeholder="貼上 https://…"
+                value={linkUrl}
+                autoFocus
+                onChange={(event) => {
+                  setLinkUrl(event.target.value)
+                  setLinkError('')
+                  setLinkDone('')
+                }}
+              />
+            </label>
+            <label className="admin-field">
+              <span>
+                標題（選填）
+                {titleLoading && '　正在讀取影片名稱…'}
+              </span>
+              <input
+                type="text"
+                placeholder="例如：官方 FAQ"
+                value={linkTitle}
+                onChange={(event) => setLinkTitle(event.target.value)}
+              />
+            </label>
             <GamePicker
               games={activeGames}
               value={linkGame}
@@ -1925,43 +1960,19 @@ export default function RulebookBatchUpload({
                 setLinkDone('')
               }}
             />
-
-            {linkGame && (
-              <>
-                <label className="admin-field">
-                  <span>
-                    標題（選填，例如：官方 FAQ）
-                    {titleLoading && '　正在讀取影片名稱…'}
-                  </span>
-                  <input
-                    type="text"
-                    value={linkTitle}
-                    onChange={(event) => setLinkTitle(event.target.value)}
-                  />
-                </label>
-                <label className="admin-field">
-                  <span>網址</span>
-                  <input
-                    type="url"
-                    placeholder="https://"
-                    value={linkUrl}
-                    onChange={(event) => setLinkUrl(event.target.value)}
-                  />
-                </label>
-                {linkUrl.trim() !== '' && (
-                  <p className="rb-hint">
-                    將新增為：{isVideoUrl(linkUrl) ? '▶ 影片' : '🔗 網頁'}
-                  </p>
-                )}
-
-                {linkError && <p className="admin-error">{linkError}</p>}
-                {linkDone && <p className="rb-msg">{linkDone}</p>}
-
-                <button className="ma-btn" type="submit" disabled={linkBusy}>
-                  {linkBusy ? '新增中…' : '新增連結'}
-                </button>
-              </>
+            {titleHint && <p className="rb-hint">{titleHint}</p>}
+            {linkUrl.trim() !== '' && (
+              <p className="rb-hint">
+                將新增為：{isVideoUrl(linkUrl) ? '▶ 影片' : '🔗 網頁'}
+              </p>
             )}
+
+            {linkError && <p className="admin-error">{linkError}</p>}
+            {linkDone && <p className="rb-msg">{linkDone}</p>}
+
+            <button className="ma-btn" type="submit" disabled={linkBusy || !linkGame}>
+              {linkBusy ? '新增中…' : linkGame ? '新增連結' : '請先選遊戲'}
+            </button>
           </form>
         </UploadModal>
       )}
@@ -1986,6 +1997,7 @@ export default function RulebookBatchUpload({
 
       {mode === 'glossary' && (
         <GlossaryAdmin
+          games={activeGames}
           renderPicker={(value, onChange) => (
             <GamePicker games={activeGames} value={value} onChange={onChange} />
           )}
@@ -1993,6 +2005,25 @@ export default function RulebookBatchUpload({
       )}
 
       {mode === 'glossary' && <GlossaryMisses />}
+
+      {tab === 'link' && (
+        <SubmissionsAdmin
+          kind="link"
+          rows={subs.rows}
+          error={subs.error}
+          onChanged={() => void subs.reload()}
+          onUseLink={(row: AdminSubmission) => {
+            setLinkFromSub(row.id)
+            setLinkGame(row.bgg_name)
+            autoTitleRef.current = ''
+            setLinkTitle(row.title)
+            setLinkUrl(row.value)
+            setLinkError('')
+            setLinkDone('')
+            setMode('link')
+          }}
+        />
+      )}
 
       {tab === 'link' && (
       <RulebookOverviewList

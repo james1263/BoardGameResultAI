@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { askConfirm } from '../lib/askConfirm'
+import UploadModal from './UploadModal'
 
 type Entry = {
   id: string
@@ -16,12 +17,16 @@ type Entry = {
 // 上方新增，下方是全部詞庫（依遊戲分組、原地編輯、AI 建議的詞可一鍵確認）
 export default function GlossaryAdmin({
   renderPicker,
+  games,
   onChanged,
 }: {
   renderPicker: (value: string, onChange: (bggName: string) => void) => ReactNode
+  // 貼上 AI 回覆時，用來把遊戲名稱對應回遊戲
+  games: { bgg_name: string; name: string }[]
   onChanged?: () => void
 }) {
   const [bggName, setBggName] = useState('')
+  const [formOpen, setFormOpen] = useState(false)
   const [all, setAll] = useState<Entry[]>([])
   const [loading, setLoading] = useState(false)
   const [zh, setZh] = useState('')
@@ -36,6 +41,7 @@ export default function GlossaryAdmin({
   const [dZh, setDZh] = useState('')
   const [dEn, setDEn] = useState('')
   const [dNote, setDNote] = useState('')
+  const [pasteText, setPasteText] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -169,6 +175,67 @@ export default function GlossaryAdmin({
     onChanged?.()
   }
 
+  // 貼上 AI 回覆：每行「遊戲名｜中文詞｜對應詞」，可以一次含好幾款遊戲；匯入的一律標為「AI 建議」
+  async function importPasted() {
+    setError('')
+    setMessage('')
+    const key = (text: string) => text.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '')
+    const byName = new Map<string, string>()
+    for (const game of games) {
+      byName.set(key(game.bgg_name), game.bgg_name)
+      if (game.name.trim()) byName.set(key(game.name), game.bgg_name)
+    }
+    const items: { game: string; zh: string; en: string }[] = []
+    const unknownGames = new Set<string>()
+    let skipped = 0
+    for (const raw of pasteText.split(/\r?\n/)) {
+      const line = raw.trim().replace(/^([-*•]\s+|\d+[.)、]\s*)/, '')
+      if (!line) continue
+      const parts = line.split(/\s*[｜|\t]\s*/).map((part) => part.trim())
+      if (parts.length < 3) {
+        skipped += 1
+        continue
+      }
+      const [gameText, zhTerm, enTerm] = parts
+      const game = byName.get(key(gameText))
+      if (!game) {
+        unknownGames.add(gameText)
+        continue
+      }
+      if (!zhTerm || !enTerm || /^(無|不確定|\?|？|-|—)$/.test(enTerm)) {
+        skipped += 1
+        continue
+      }
+      items.push({ game, zh: zhTerm.slice(0, 30), en: enTerm.slice(0, 60) })
+    }
+    if (items.length === 0) {
+      setError(
+        unknownGames.size > 0
+          ? `對不到遊戲：${[...unknownGames].join('、')}。請確認第一欄是遊戲名稱。`
+          : '沒有讀到任何「遊戲名｜中文詞｜對應詞」的行。',
+      )
+      return
+    }
+    if (items.length > 300) return setError('一次最多 300 行，請分批貼。')
+    if (!(await askConfirm(`要匯入 ${items.length} 組詞嗎？會標為「AI 建議」待你確認。`))) return
+    setBusy(true)
+    let failed = 0
+    for (const item of items) {
+      const { error: err } = await saveRpc(null, item.game, item.zh, item.en, '', false)
+      if (err) failed += 1
+    }
+    setBusy(false)
+    const notes = [
+      failed ? `失敗 ${failed} 組` : '',
+      skipped ? `略過 ${skipped} 行` : '',
+      unknownGames.size ? `對不到遊戲：${[...unknownGames].join('、')}` : '',
+    ].filter(Boolean)
+    setMessage(`匯入完成：成功 ${items.length - failed} 組${notes.length ? `（${notes.join('；')}）` : ''}。已標為「AI 建議」，請在下方確認。`)
+    if (failed === 0 && unknownGames.size === 0) setPasteText('')
+    await load()
+    onChanged?.()
+  }
+
   // .txt：每行「中文=對應詞」（也接受 ＝、Tab、逗號）；匯入的一律標為「AI 建議」，等你確認
   async function importFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -199,13 +266,43 @@ export default function GlossaryAdmin({
 
   return (
     <>
-      <h3>詞庫</h3>
-      <p className="rb-hint">
-        每款遊戲各自的「中文詞 → 對應搜尋詞」。玩家在規則助手輸入中文口語（例如「生兵」），系統會自動加上對應詞去搜尋規則書。
-        英文規則書填英文，中文規則書填規則書實際用的中文（例如 股票=股份）。詞庫只幫忙搜尋，不會顯示成規則內容。
-        從 .txt 匯入的詞會標為「AI 建議」，不影響搜尋，只是提醒你還沒人工確認。
-      </p>
+      <div className="rbv-searchrow">
+        <button type="button" className="rbv-add" aria-label="新增詞庫" onClick={() => setFormOpen(true)}>
+          ＋
+        </button>
+        <input
+          type="search"
+          className="rbv-search"
+          placeholder="搜尋遊戲、中文詞或對應詞"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </div>
 
+      {formOpen && (
+        <UploadModal title="新增詞庫" locked={busy} onClose={() => setFormOpen(false)}>
+      <div className="er-form">
+        <label className="admin-field">
+          <span>貼上 AI 回覆（每行：遊戲名｜中文詞｜對應詞）</span>
+          <textarea
+            rows={5}
+            value={pasteText}
+            placeholder={'Rising Sun｜算分｜scoring\nSkymines｜股份｜shares'}
+            onChange={(event) => setPasteText(event.target.value)}
+          />
+        </label>
+        <div>
+          <button
+            type="button"
+            className="ma-btn"
+            disabled={busy || !pasteText.trim()}
+            onClick={() => void importPasted()}
+          >
+            {busy ? '處理中…' : '匯入貼上的內容'}
+          </button>
+        </div>
+      </div>
+      <p className="rb-hint">或選一款遊戲，手動新增單筆：</p>
       {renderPicker(bggName, (next) => {
         setBggName(next)
         resetForm()
@@ -248,17 +345,15 @@ export default function GlossaryAdmin({
 
       {error && <p className="admin-error">{error}</p>}
       {message && <p className="rb-msg">{message}</p>}
+        </UploadModal>
+      )}
+
+      {!formOpen && error && <p className="admin-error">{error}</p>}
+      {!formOpen && message && <p className="rb-msg">{message}</p>}
 
       <h4 className="er-list-title">
         全部詞庫（{all.length}）{pendingTotal > 0 ? `・AI 建議待確認 ${pendingTotal}` : ''}
       </h4>
-      <input
-        type="search"
-        className="rb-search"
-        placeholder="搜尋遊戲、中文詞或對應詞"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-      />
       {pendingTotal > 0 && (
         <p className="rb-hint">
           <button type="button" className="admin-link" onClick={() => setOnlyPending((v) => !v)}>

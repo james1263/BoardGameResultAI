@@ -11,6 +11,7 @@ import {
   useGameErrata,
   type Errata,
 } from '../lib/useGameErrata'
+import ErrataBody from './ErrataBody'
 import '../styles/errata.css'
 
 export type GameErrataApi = ReturnType<typeof useGameErrata>
@@ -243,7 +244,7 @@ export default function GameErrata({
                   <small className="er-src"> ・{errataTag(item)}</small>
                 )}
               </div>
-              <p className="er-body">{item.content}</p>
+              <ErrataBody content={item.content} />
               {item.page_ref && <small className="er-src">參考頁碼：{item.page_ref}　</small>}
               {item.source_note && (
                 <small className="er-src">來源：{item.source_note}</small>
@@ -264,7 +265,7 @@ export default function GameErrata({
                       {' '}・{item.status === 'pending' ? '審核中' : '已退回'}
                     </small>
                   </div>
-                  <p className="er-body">{item.content}</p>
+                  <ErrataBody content={item.content} />
                   {item.status === 'rejected' && item.reject_reason && (
                     <small className="er-src">退回原因：{item.reject_reason}</small>
                   )}

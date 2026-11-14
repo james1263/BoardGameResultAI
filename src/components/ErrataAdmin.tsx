@@ -17,6 +17,7 @@ import {
 } from '../lib/useGameErrata'
 import { PENDING_CHANGED_EVENT } from '../lib/useAdminPending'
 import UploadModal from './UploadModal'
+import ErrataBody from './ErrataBody'
 import '../styles/errata.css'
 
 // 管理中心「規則書」分頁 →「＋ 玩錯紀錄」：直接打字，或讀入 .txt 後修改再儲存
@@ -244,11 +245,46 @@ export default function ErrataAdmin({
 
   return (
     <>
-      <h3>玩錯紀錄</h3>
-      <p className="rb-hint">
-        記錄玩家玩錯過的規則。VIP 與管理者能在遊戲詳細資料與規則助手看到，一律標示為「管理者記錄、非官方規則」，不會和規則書混在一起。
-        一筆內容最多 {ERRATA_MAX_CONTENT} 字；一個 .txt 檔就是一筆。
-      </p>
+      <details
+        key={pending.items.length > 0 ? 'has-pending' : 'no-pending'}
+        className="ov-fold"
+        open={pending.items.length > 0}
+      >
+        <summary>待審核的玩家投稿（{pending.items.length}）</summary>
+      {pending.loading && <p className="rb-hint">載入中…</p>}
+      {pending.error && <p className="admin-error">{pending.error}</p>}
+      {!pending.loading && !pending.error && pending.items.length === 0 && (
+        <p className="rb-hint">目前沒有待審的投稿。</p>
+      )}
+      <ul className="er-list">
+        {pending.items.map((item) => (
+          <li key={item.id}>
+            <div className="er-title">
+              《{item.game_name || item.bgg_name}》{item.title}
+              {item.kind === 'ai_answer' && (
+                <small className="er-src"> ・AI 回饋（請回規則書核對頁碼與答案）</small>
+              )}
+            </div>
+            <ErrataBody content={item.content} />
+            <small className="er-src">
+              投稿者：{item.nickname || '（未設暱稱）'}
+              {item.contact_name ? `（${item.contact_name}）` : ''}
+              {item.page_ref ? `　頁碼：${item.page_ref}` : ''}
+              {item.source_note ? `　來源：${item.source_note}` : ''}
+              {item.verified ? '　已對照規則書' : '　未對照規則書'}
+            </small>
+            <div className="rb-actions">
+              <button type="button" className="admin-link" onClick={() => void review(item, true)}>
+                核准
+              </button>
+              <button type="button" className="admin-link" onClick={() => void review(item, false)}>
+                退回
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      </details>
 
       <div className="rbv-searchrow">
         <button
@@ -353,7 +389,7 @@ export default function ErrataAdmin({
                     </small>
                   )}
                 </div>
-                <p className="er-body">{item.content}</p>
+                <ErrataBody content={item.content} />
                 {item.source_note && (
                   <small className="er-src">來源：{item.source_note}</small>
                 )}
@@ -381,46 +417,6 @@ export default function ErrataAdmin({
         </UploadModal>
       )}
 
-      <details
-        key={pending.items.length > 0 ? 'has-pending' : 'no-pending'}
-        className="ov-fold"
-        open={pending.items.length > 0}
-      >
-        <summary>待審核的玩家投稿（{pending.items.length}）</summary>
-      {pending.loading && <p className="rb-hint">載入中…</p>}
-      {pending.error && <p className="admin-error">{pending.error}</p>}
-      {!pending.loading && !pending.error && pending.items.length === 0 && (
-        <p className="rb-hint">目前沒有待審的投稿。</p>
-      )}
-      <ul className="er-list">
-        {pending.items.map((item) => (
-          <li key={item.id}>
-            <div className="er-title">
-              《{item.game_name || item.bgg_name}》{item.title}
-              {item.kind === 'ai_answer' && (
-                <small className="er-src"> ・AI 回饋（請回規則書核對頁碼與答案）</small>
-              )}
-            </div>
-            <p className="er-body">{item.content}</p>
-            <small className="er-src">
-              投稿者：{item.nickname || '（未設暱稱）'}
-              {item.contact_name ? `（${item.contact_name}）` : ''}
-              {item.page_ref ? `　頁碼：${item.page_ref}` : ''}
-              {item.source_note ? `　來源：${item.source_note}` : ''}
-              {item.verified ? '　已對照規則書' : '　未對照規則書'}
-            </small>
-            <div className="rb-actions">
-              <button type="button" className="admin-link" onClick={() => void review(item, true)}>
-                核准
-              </button>
-              <button type="button" className="admin-link" onClick={() => void review(item, false)}>
-                退回
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-      </details>
 
       <h4 className="er-list-title">全部玩錯紀錄（{all.items.length}）</h4>
       {all.loading && <p className="rb-hint">載入中…</p>}
@@ -495,7 +491,7 @@ export default function ErrataAdmin({
                         {row.status === 'pending' ? '待審核' : row.status === 'rejected' ? '已退回' : '已核准'}
                       </small>
                     </div>
-                    <p className="er-body">{row.content}</p>
+                    <ErrataBody content={row.content} />
                     <small className="er-src">
                       {row.nickname ? `投稿者：${row.nickname}　` : ''}
                       {row.page_ref ? `頁碼：${row.page_ref}　` : ''}

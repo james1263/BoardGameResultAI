@@ -52,9 +52,16 @@
 }
 
 .er-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
+  line-height: 1.4;
   color: #34463c;
+}
+
+/* 標籤（管理者記錄、狀態…）放標題下一行，標題才清楚 */
+.er-title small.er-src {
+  margin-top: 2px;
+  font-weight: 400;
 }
 
 .er-body {
@@ -93,5 +100,24 @@
   margin: 0;
   font-size: 13px;
   font-weight: 700;
+  color: #8a6a43;
+}
+
+/* 內容預設只顯示前幾個字，點一下展開 */
+.er-body.er-toggle {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.er-more {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
   color: #8a6a43;
 }

@@ -9,3 +9,38 @@
   padding-right: 4px;
   white-space: nowrap;
 }
+
+/* PDF 篩選：一個類別一排，選項太多時在該排內左右滑動 */
+.rb .rbv-filters { gap: 6px; padding: 8px 10px; }
+.rb .rbv-filter .rbv-chips {
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.rb .rbv-filter .rbv-chips::-webkit-scrollbar { display: none; }
+.rb .rbv-filter .rbv-chip { flex: 0 0 auto; white-space: nowrap; }
+
+/* ＋PDF／＋連結／＋玩錯紀錄／＋詞庫 視窗：減少留白 */
+.rbu-modal .rbu-head { padding: 8px 12px; }
+.rbu-modal .rbu-body { padding: 8px 12px 0; }
+.rbu-modal .rbu-body > .rb-hint,
+.rbu-modal .rbu-body .rb-fields > .rb-hint { margin: 0 0 6px; }
+.rbu-modal .rbu-body .rb-fields { display: grid; gap: 8px; }
+.rbu-modal .rbu-body .rb-fields > * { margin-top: 0; margin-bottom: 0; }
+.rbu-modal .rbu-body .admin-field { margin: 0; gap: 4px; }
+.rbu-modal .rbu-body .rb-pick { margin: 0 0 6px; }
+.rbu-modal .rbu-body .er-form { gap: 8px; margin-top: 8px; }
+.rbu-modal .rbu-body .rb-actions { margin: 8px -12px 0; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); }
+
+/* 搜尋欄上方的留白再縮小 */
+.rb .rbv-subtabs { margin-bottom: 8px; }
+.rb .rbv-stats { margin-bottom: 6px; }
+.rb .rbv-list { margin-top: 4px; }
+.rb .rbv-searchrow { margin-top: 0; }
+
+/* 上傳檔案各分頁：待審核摺疊列與周圍的間距縮小 */
+.rb .rbv-subtabs ~ details.ov-fold { margin: 6px 0; }
+.rb .rbv-subtabs ~ details.ov-fold > summary { padding-top: 8px; padding-bottom: 8px; }
