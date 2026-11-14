@@ -84,6 +84,7 @@ import './styles/dark-theme-8.css'
 import './styles/dark-theme-9.css'
 import './styles/dark-theme-10.css'
 import './styles/dark-theme-11.css'
+import './styles/dark-theme-12.css'
 
 // 新遊戲置頂：上架 15 天內，而且還沒有排名（Ranking engine 空白或不是整數，例如 .5 結尾）
 // 兩個條件任一個先結束，就不再置頂

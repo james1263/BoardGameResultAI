@@ -131,6 +131,15 @@ function SubPanel({
   const mine = rows.filter((r) => r.kind === kind)
   const [titleHint, setTitleHint] = useState('')
 
+  // 規則連結：標題（自動帶入或自己打）含遊戲名稱時，自動選遊戲（已經選了就不動）
+  useEffect(() => {
+    if (!isLink || !open || bgg) return
+    const guessed = guessGameFromTitle(title, games)
+    if (guessed) setBgg(guessed.bggName)
+    // 只在標題變動時判斷；按「換一款」之後不會又被自動選回來
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title])
+
   // 規則連結：貼 YouTube 網址時自動帶入影片標題（只在標題還是空的時候帶入）
   useEffect(() => {
     if (!isLink || !open) {
@@ -257,33 +266,53 @@ function SubPanel({
       )}
       {open && (
         <div className="er-form">
-          <GamePick games={games} value={bgg} onChange={setBgg} />
-          <label className="admin-field">
-            <span>
-              {isLink ? '標題' : '中文詞'}（{title.length}/{isLink ? SUB_LIMITS.linkTitle : SUB_LIMITS.zh}）
-            </span>
-            <input
-              type="text"
-              value={title}
-              maxLength={isLink ? SUB_LIMITS.linkTitle : SUB_LIMITS.zh}
-              placeholder={isLink ? '例如：旭日戰魂 教學影片' : '例如：福祿壽'}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </label>
-          <label className="admin-field">
-            <span>
-              {isLink ? '網址' : '對應詞（英文，或規則書用的中文同義詞）'}（{value.length}/
-              {isLink ? SUB_LIMITS.url : SUB_LIMITS.en}）
-            </span>
-            <input
-              type="text"
-              value={value}
-              maxLength={isLink ? SUB_LIMITS.url : SUB_LIMITS.en}
-              placeholder={isLink ? 'https://…' : '例如：Fukurokuju'}
-              onChange={(e) => setValue(e.target.value)}
-            />
-          </label>
-          {isLink && titleHint && <p className="er-note">{titleHint}</p>}
+          {(() => {
+            const gameBlock = <GamePick games={games} value={bgg} onChange={setBgg} />
+            const titleBlock = (
+              <label className="admin-field">
+                <span>
+                  {isLink ? '影片標題' : '中文詞'}（{title.length}/{isLink ? SUB_LIMITS.linkTitle : SUB_LIMITS.zh}）
+                </span>
+                <input
+                  type="text"
+                  value={title}
+                  maxLength={isLink ? SUB_LIMITS.linkTitle : SUB_LIMITS.zh}
+                  placeholder={isLink ? '貼上 YouTube 網址會自動帶入；也可以自己填' : '例如：福祿壽'}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </label>
+            )
+            const urlBlock = (
+              <label className="admin-field">
+                <span>
+                  {isLink ? '網址' : '對應詞（英文，或規則書用的中文同義詞）'}（{value.length}/
+                  {isLink ? SUB_LIMITS.url : SUB_LIMITS.en}）
+                </span>
+                <input
+                  type="text"
+                  value={value}
+                  maxLength={isLink ? SUB_LIMITS.url : SUB_LIMITS.en}
+                  placeholder={isLink ? 'https://…' : '例如：Fukurokuju'}
+                  onChange={(e) => setValue(e.target.value)}
+                />
+              </label>
+            )
+            // 規則連結：網址 → 影片標題 → 遊戲（貼網址後標題與遊戲會自動帶入）；詞庫維持原順序
+            return isLink ? (
+              <>
+                {urlBlock}
+                {titleHint && <p className="er-note">{titleHint}</p>}
+                {titleBlock}
+                {gameBlock}
+              </>
+            ) : (
+              <>
+                {gameBlock}
+                {titleBlock}
+                {urlBlock}
+              </>
+            )
+          })()}
           <label className="admin-field">
             <span>備註（選填，{note.length}/{SUB_LIMITS.note}）</span>
             <input type="text" value={note} maxLength={SUB_LIMITS.note} onChange={(e) => setNote(e.target.value)} />

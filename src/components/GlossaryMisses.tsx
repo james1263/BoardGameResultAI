@@ -17,9 +17,12 @@ function buildTxt(rows: MissRow[]): string {
 // 複製給 AI 的說明＋清單；AI 回覆的格式剛好可以貼進詞庫「新增詞庫」視窗
 const AI_PROMPT = [
   '這是桌遊規則助手的「找不到英文的詞」清單。清單每行格式：遊戲英文名｜玩家輸入的中文詞｜出現次數。',
-  '請依該遊戲「英文規則書」常用的術語，替每個中文詞找最可能的英文對應詞。',
+  '請依該遊戲「英文規則書」實際使用的術語，替每個中文詞找最可能的英文對應詞，單複數與大小寫照規則書用法。',
   '回覆只輸出純文字，每行一筆，格式固定為：遊戲英文名｜中文詞｜英文對應詞',
-  '不要加編號、標題、說明或程式碼框；沒把握的詞請直接略過，不要亂猜。',
+  '範例：Skymines｜股份｜Shares',
+  '不要加編號、標題、說明、備註或程式碼框，也不要輸出出現次數。',
+  '下列情況請直接略過該行，不要輸出：沒把握的詞、太泛用的詞（例如「行動」「能力」）、明顯不屬於該遊戲的詞、本身已是英文的詞。',
+  '每個中文詞只給一個最適合的英文對應詞。',
   '',
   '（以下是清單）',
 ].join('\n')
@@ -48,7 +51,9 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
     const text = AI_PROMPT + '\n' + buildTxt(rows)
     try {
       await navigator.clipboard.writeText(text)
-      await showNotice('已複製（含給 AI 的說明），貼給 AI 後，把它的回覆貼進接下來的「新增詞庫」視窗。')
+      await showNotice(
+        '已複製（含給 AI 的說明），貼給 AI 後，把它的回覆貼進接下來的「新增詞庫」視窗。AI 沒回的詞表示沒把握，之後仍會留在這份清單裡。',
+      )
       onCopied?.()
     } catch {
       await showNotice('複製失敗，請改用「下載 .txt」。')

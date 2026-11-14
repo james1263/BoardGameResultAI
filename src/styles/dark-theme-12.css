@@ -1,0 +1,19 @@
+/* 首頁卡片（4 欄、9 欄、清單）的小字在深色模式下太暗：把寫死的灰字改成深色模式的柔和文字色 */
+:root[data-theme="dark"] .game-facts,
+:root[data-theme="dark"] .game-row-facts {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .game-admin-line {
+  color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .game-row-tag {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-row-tag.new {
+  background: #f0a22e;
+  color: #fff;
+}
