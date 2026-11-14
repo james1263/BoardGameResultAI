@@ -1,0 +1,45 @@
+/* 首次進站的外觀提示：小卡片，浮在底部導覽列上方，不擋住操作 */
+.theme-hint {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--nav-h, 0px) + 12px + env(safe-area-inset-bottom, 0px));
+  z-index: 1300;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #2b3a31;
+  color: #f3efe4;
+  border: 1px solid rgba(243, 239, 228, 0.25);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.theme-hint p {
+  margin: 0 0 10px;
+}
+
+.theme-hint-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.theme-hint-actions button {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 0;
+  background: #f3efe4;
+  color: #2b3a31;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.theme-hint-actions button.plain {
+  background: transparent;
+  color: #f3efe4;
+  border: 1px solid rgba(243, 239, 228, 0.4);
+}

@@ -70,6 +70,7 @@ import BackToTop from './components/BackToTop'
 import { useTrashActions } from './lib/useTrashActions'
 import { updateDescription } from './lib/saveDescription'
 import PostGatheringNotes from './components/PostGatheringNotes'
+import ThemeHint from './components/ThemeHint'
 import { usePlannedUnseen } from './lib/usePlannedUnseen'
 import { useLoyaltyAlerts } from './lib/useLoyaltyAlerts'
 import { useNotesUnseen } from './lib/useNotesUnseen'
@@ -1383,6 +1384,7 @@ function Library({
         canPublic={vip.isVip || isAdmin}
       />
       <BackToTop />
+      <ThemeHint />
       {personal.needsMerge && <MergeDialog personal={personal} />}
 
       {personal.errorMessage && !personal.needsMerge && (
