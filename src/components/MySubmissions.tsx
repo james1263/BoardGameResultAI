@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { askConfirm } from '../lib/askConfirm'
 import {
   deleteMySubmission,
@@ -103,6 +103,49 @@ function SubPanel({
   const [message, setMessage] = useState('')
   const isLink = kind === 'link'
   const mine = rows.filter((r) => r.kind === kind)
+  const [titleHint, setTitleHint] = useState('')
+
+  // 規則連結：貼 YouTube 網址時自動帶入影片標題（只在標題還是空的時候帶入）
+  useEffect(() => {
+    if (!isLink || !open) {
+      setTitleHint('')
+      return
+    }
+    const url = value.trim()
+    if (/bilibili\.com|b23\.tv/i.test(url)) {
+      setTitleHint('Bilibili 不開放自動抓標題，請自己填。')
+      return
+    }
+    if (!/^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(url) || title.trim() !== '') {
+      setTitleHint('')
+      return
+    }
+    let cancelled = false
+    setTitleHint('讀取影片標題中…')
+    const timer = window.setTimeout(() => {
+      fetch('https://www.youtube.com/oembed?format=json&url=' + encodeURIComponent(url))
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (cancelled) return
+          const name = typeof j?.title === 'string' ? j.title.trim() : ''
+          if (name) {
+            setTitle((cur) => (cur.trim() === '' ? name.slice(0, SUB_LIMITS.linkTitle) : cur))
+            setTitleHint('已自動帶入影片標題，可修改。')
+          } else {
+            setTitleHint('抓不到標題，請自己填。')
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setTitleHint('抓不到標題，請自己填。')
+        })
+    }, 500)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+    // 只在網址或開關變動時判斷；標題由使用者自己改不會重抓
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLink, open, value])
 
   function reset() {
     setEditId(null)
@@ -207,6 +250,7 @@ function SubPanel({
               onChange={(e) => setValue(e.target.value)}
             />
           </label>
+          {isLink && titleHint && <p className="er-note">{titleHint}</p>}
           <label className="admin-field">
             <span>備註（選填，{note.length}/{SUB_LIMITS.note}）</span>
             <input type="text" value={note} maxLength={SUB_LIMITS.note} onChange={(e) => setNote(e.target.value)} />
