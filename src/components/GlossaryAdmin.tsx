@@ -19,11 +19,14 @@ export default function GlossaryAdmin({
   renderPicker,
   games,
   onChanged,
+  openSignal = 0,
 }: {
   renderPicker: (value: string, onChange: (bggName: string) => void) => ReactNode
   // 貼上 AI 回覆時，用來把遊戲名稱對應回遊戲
   games: { bgg_name: string; name: string }[]
   onChanged?: () => void
+  // 外面數字變大就打開「新增詞庫」視窗（複製未對應詞清單後使用）
+  openSignal?: number
 }) {
   const [bggName, setBggName] = useState('')
   const [formOpen, setFormOpen] = useState(false)
@@ -42,6 +45,10 @@ export default function GlossaryAdmin({
   const [dEn, setDEn] = useState('')
   const [dNote, setDNote] = useState('')
   const [pasteText, setPasteText] = useState('')
+
+  useEffect(() => {
+    if (openSignal > 0) setFormOpen(true)
+  }, [openSignal])
 
   const load = useCallback(async () => {
     setLoading(true)

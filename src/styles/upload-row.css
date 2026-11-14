@@ -1,0 +1,27 @@
+/* 上傳檔案：搜尋列（＋按鈕、搜尋框、篩選鈕同一排） */
+.rb .rbv-searchrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+.rb .rbv-searchrow .rbv-search {
+  flex: 1;
+  min-width: 0;
+}
+.rb .rbv-add {
+  flex: none;
+  white-space: nowrap;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid #cfd8c8;
+  background: #edf1e8;
+  color: #34463c;
+  font-weight: 700;
+}
+:root[data-theme="dark"] .rb .rbv-add {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: #2a332e;
+  color: #e6ede7;
+}

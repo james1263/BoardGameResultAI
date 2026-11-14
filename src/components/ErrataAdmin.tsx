@@ -250,7 +250,7 @@ export default function ErrataAdmin({
         className="ov-fold"
         open={pending.items.length > 0}
       >
-        <summary>待審核的玩家投稿（{pending.items.length}）</summary>
+        <summary>待審核（{pending.items.length}）</summary>
       {pending.loading && <p className="rb-hint">載入中…</p>}
       {pending.error && <p className="admin-error">{pending.error}</p>}
       {!pending.loading && !pending.error && pending.items.length === 0 && (

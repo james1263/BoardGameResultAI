@@ -14,7 +14,17 @@ function buildTxt(rows: MissRow[]): string {
   return rows.map((r) => `${r.bgg_name}｜${r.zh_term}｜${r.hit_count}`).join('\n')
 }
 
-export default function GlossaryMisses() {
+// 複製給 AI 的說明＋清單；AI 回覆的格式剛好可以貼進詞庫「新增詞庫」視窗
+const AI_PROMPT = [
+  '這是桌遊規則助手的「找不到英文的詞」清單。清單每行格式：遊戲英文名｜玩家輸入的中文詞｜出現次數。',
+  '請依該遊戲「英文規則書」常用的術語，替每個中文詞找最可能的英文對應詞。',
+  '回覆只輸出純文字，每行一筆，格式固定為：遊戲英文名｜中文詞｜英文對應詞',
+  '不要加編號、標題、說明或程式碼框；沒把握的詞請直接略過，不要亂猜。',
+  '',
+  '（以下是清單）',
+].join('\n')
+
+export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) {
   const [rows, setRows] = useState<MissRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -35,10 +45,11 @@ export default function GlossaryMisses() {
   }, [load])
 
   async function copyTxt() {
-    const text = buildTxt(rows)
+    const text = AI_PROMPT + '\n' + buildTxt(rows)
     try {
       await navigator.clipboard.writeText(text)
-      await showNotice('已複製，直接貼給 AI 就可以了。')
+      await showNotice('已複製（含給 AI 的說明），貼給 AI 後，把它的回覆貼進接下來的「新增詞庫」視窗。')
+      onCopied?.()
     } catch {
       await showNotice('複製失敗，請改用「下載 .txt」。')
     }

@@ -70,9 +70,6 @@ type AllDoc = {
   page_count?: number | null
 }
 
-// 免費方案的檔案儲存額度。請對照 Supabase 後台 Usage，數字不對就改這裡
-const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024
-
 // ── 從檔名猜遊戲／類型／語言 ──────────────────────────────
 
 function normalize(text: string): string {
@@ -230,57 +227,6 @@ function CountLine({ shown, total, note }: { shown: number; total: number; note:
       </div>
       {open && <p className="rbv-note">{note}</p>}
     </>
-  )
-}
-
-// ── 統計卡（可點：直接套用下方篩選）─────────────────────────
-function OverviewCards({
-  usage,
-  error,
-  rows,
-  loaded,
-  onApply,
-}: {
-  usage: StorageUsage | null
-  error: string
-  rows: CoverRow[]
-  loaded: boolean
-  onApply: (pdf: YesNo, link: YesNo, pendingOnly: boolean) => void
-}) {
-  const total = usage ? usage.buckets.reduce((sum, b) => sum + b.total_bytes, 0) : 0
-  const uploaded = rows.filter((r) => r.uploads > 0).length
-  const pending = rows.filter((r) => r.uploads > 0 && r.indexed === 0).length
-  const linked = rows.filter((r) => r.links > 0).length
-  const none = rows.filter((r) => r.uploads === 0 && r.links === 0).length
-  const dash = (value: string | number) => (loaded ? value : '—')
-  return (
-    <div className="rbv-stats" role="group" aria-label="規則書統計">
-      <button type="button" onClick={() => onApply('yes', 'all', false)}>
-        已上傳 <b>{dash(uploaded)}</b>/{dash(rows.length)}
-      </button>
-      {pending > 0 && (
-        <button type="button" className="warn" onClick={() => onApply('yes', 'all', true)}>
-          索引未完成 <b>{pending}</b>
-        </button>
-      )}
-      <button type="button" onClick={() => onApply('all', 'yes', false)}>
-        有連結 <b>{dash(linked)}</b>
-      </button>
-      <button
-        type="button"
-        className={loaded && none > 0 ? 'bad' : ''}
-        onClick={() => onApply('no', 'no', false)}
-      >
-        沒資料 <b>{dash(none)}</b>
-      </button>
-      <span className="rbv-stats-usage">
-        {error
-          ? error
-          : usage
-            ? `${(total / 1024 / 1024).toFixed(1)} / ${Math.round(STORAGE_LIMIT_BYTES / 1024 / 1024)} MB`
-            : '讀取中…'}
-      </span>
-    </div>
   )
 }
 
@@ -878,7 +824,9 @@ export default function RulebookBatchUpload({
   // 從玩家投稿帶進「貼連結」表單時，記下投稿 id，新增成功後才標成已核准
   const [linkFromSub, setLinkFromSub] = useState<string | null>(null)
   const [usage, setUsage] = useState<StorageUsage | null>(null)
-  const [usageError, setUsageError] = useState('')
+  // 複製未對應詞清單後，自動打開詞庫「＋」視窗（數字變動就開一次）
+  const [glossOpenTick, setGlossOpenTick] = useState(0)
+  const [, setUsageError] = useState('')
   const [allDocs, setAllDocs] = useState<AllDoc[]>([])
   const [docsLoaded, setDocsLoaded] = useState(false)
   const [listSearch, setListSearch] = useState('')
@@ -1473,6 +1421,19 @@ export default function RulebookBatchUpload({
             </button>
           )}
         </div>
+        {isPdf && (
+          <div className="rbv-stats rbv-stats-plain">
+            <span>
+              PDF 檔案 <b>{docs.length}</b> 份
+            </span>
+            <span className="rbv-stats-usage">
+              總容量{' '}
+              {usage
+                ? formatMb(usage.buckets.find((b) => b.bucket_id === 'rulebooks')?.total_bytes ?? 0)
+                : '讀取中…'}
+            </span>
+          </div>
+        )}
         {isPdf && docs.length > 0 && (
           <>
           {pdfFiltOpen && (
@@ -1728,33 +1689,6 @@ export default function RulebookBatchUpload({
           </button>
         ))}
       </div>
-      {sub === 'files' && (
-        <div className="rbv-stats rbv-stats-plain">
-          <span>
-            PDF 檔案 <b>{pdfDocs.length}</b> 份
-          </span>
-          <span className="rbv-stats-usage">
-            總容量{' '}
-            {usage
-              ? formatMb(usage.buckets.find((b) => b.bucket_id === 'rulebooks')?.total_bytes ?? 0)
-              : '讀取中…'}
-          </span>
-        </div>
-      )}
-      {tab === 'link' && (
-      <OverviewCards
-        usage={usage}
-        error={usageError}
-        rows={coverRows}
-        loaded={docsLoaded && games.length > 0}
-        onApply={(pdf, link, pending) => {
-          setPdfFilter(pdf)
-          setLinkFilter(link)
-          setPendingOnly(pending)
-          setOvQuery('')
-        }}
-      />
-      )}
       {gamesError && <p className="admin-error">{gamesError}</p>}
 
       {mode === 'pdf' && (
@@ -1998,13 +1932,14 @@ export default function RulebookBatchUpload({
       {mode === 'glossary' && (
         <GlossaryAdmin
           games={activeGames}
+          openSignal={glossOpenTick}
           renderPicker={(value, onChange) => (
             <GamePicker games={activeGames} value={value} onChange={onChange} />
           )}
         />
       )}
 
-      {mode === 'glossary' && <GlossaryMisses />}
+      {mode === 'glossary' && <GlossaryMisses onCopied={() => setGlossOpenTick((n) => n + 1)} />}
 
       {tab === 'link' && (
         <SubmissionsAdmin
