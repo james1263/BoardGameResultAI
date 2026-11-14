@@ -288,6 +288,9 @@ export type SniffedLanguage = {
   // null＝讀不到足夠的文字（掃描檔、讀取失敗），呼叫端要退回用檔名猜
   lang: 'zh' | 'en' | 'other' | null
   letters: number
+  // 內容猜類型用：總頁數與開頭文字（小寫、前 600 字）
+  pages?: number
+  head?: string
 }
 
 const SNIFF_MAX_PAGES = 12
@@ -320,16 +323,17 @@ export async function sniffPdfLanguage(file: File): Promise<SniffedLanguage> {
           .join(' ') + '\n'
       page.cleanup()
     }
+    const head = text.slice(0, 600).toLowerCase()
     const cjk = (text.match(/[\u4e00-\u9fff]/g) ?? []).length
     const latin = (text.match(/[A-Za-z\u00C0-\u024F]/g) ?? []).length
     const ext = (text.match(/[\u00C0-\u024F]/g) ?? []).length
     const letters = cjk + latin
-    if (letters < SNIFF_MIN_LETTERS) return { lang: null, letters }
+    if (letters < SNIFF_MIN_LETTERS) return { lang: null, letters, pages: pdf.numPages, head }
     // 中文字少量出現在英文書（浮水印、書名）不算中文：要占字母 20% 以上
-    if (cjk / letters >= 0.2) return { lang: 'zh', letters }
+    if (cjk / letters >= 0.2) return { lang: 'zh', letters, pages: pdf.numPages, head }
     // 帶重音的拉丁字母（波蘭文、德文、法文…）占 1.5% 以上 → 其他語言
-    if (latin > 0 && ext / latin >= 0.015) return { lang: 'other', letters }
-    return { lang: 'en', letters }
+    if (latin > 0 && ext / latin >= 0.015) return { lang: 'other', letters, pages: pdf.numPages, head }
+    return { lang: 'en', letters, pages: pdf.numPages, head }
   } catch {
     return { lang: null, letters: 0 }
   } finally {

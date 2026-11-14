@@ -49,6 +49,8 @@ type Row = {
   message: string
   guessed: boolean
   scope: DocScope
+  // 範圍是系統猜的（使用者沒改過）；改過就不再覆蓋
+  scopeManual: boolean
   expansionName: string
 }
 type StorageUsage = {
@@ -167,6 +169,16 @@ function guessScope(fileName: string): DocScope {
   return 'main'
 }
 
+// 讀完 PDF 前幾頁後，依內容再猜一次範圍（只在檔名猜不出來、還是「主遊戲」時用）
+function guessScopeByContent(head: string, pages: number): DocScope | null {
+  const top = head.slice(0, 400)
+  if (/\bfaq\b|frequently asked|\berrata\b|常見問題|勘誤/.test(top) && pages <= 24) return 'faq'
+  if (/player aid|cheat ?sheet|quick ?(reference|start|guide)|summary|懶人包|速查|玩家整理/.test(top) && pages <= 8)
+    return 'player_notes' as DocScope
+  if (/\bexpansion\b|擴充/.test(top)) return 'expansion'
+  return null
+}
+
 function formatMb(bytes: number): string {
   return (bytes / 1024 / 1024).toFixed(1) + ' MB'
 }
@@ -177,6 +189,7 @@ type CoverRow = {
   indexed: number
   links: number
   pages: number
+  linkTitles: string[]
 }
 type YesNo = 'all' | 'yes' | 'no'
 
@@ -197,7 +210,8 @@ function buildCoverRows(games: GameOption[], docs: AllDoc[]): CoverRow[] {
       const indexed = uploads.filter((d) => d.ai_indexed && d.index_status === 'completed')
       const links = list.filter((d) => d.source_type !== 'upload')
       const pages = indexed.reduce((sum, d) => sum + (d.page_count ?? 0), 0)
-      return { game, uploads: uploads.length, indexed: indexed.length, links: links.length, pages }
+      return { game, uploads: uploads.length, indexed: indexed.length, links: links.length, pages,
+        linkTitles: links.map((d) => (d.title ?? '').trim()).filter((t) => t !== '') }
     })
     .sort(
       (a, b) =>
@@ -765,7 +779,15 @@ function RulebookOverviewList({
                   aria-expanded={open}
                   onClick={() => onToggle(id)}
                 >
-                  <span className="rbv-row-name">{r.game.name || id}</span>
+                  <span className="rbv-row-name">
+                    {r.game.name || id}
+                    {r.linkTitles.length > 0 && (
+                      <small className="rbv-row-links">
+                        ▶ {r.linkTitles[0]}
+                        {r.linkTitles.length > 1 ? `　等 ${r.linkTitles.length} 筆` : ''}
+                      </small>
+                    )}
+                  </span>
                   <span className="rbv-badges">
                     <span className={`rbv-badge ${pdfBadge.cls}`}>{pdfBadge.text}</span>
                     <span className={`rbv-badge ${linkBadge.cls}`}>{linkBadge.text}</span>
@@ -933,8 +955,9 @@ export default function RulebookBatchUpload({
     const url = linkUrl.trim()
     const isYoutube = /^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(url)
     const isBilibili = /^https?:\/\/([a-z0-9-]+\.)*(bilibili\.com|b23\.tv)\//i.test(url)
-    setTitleHint('')
-    if (!isYoutube && !isBilibili) {
+    // Bilibili 會封鎖伺服器抓標題（-412），所以只提示自己填；YouTube 走公開 oEmbed 仍可自動帶入
+    setTitleHint(isBilibili ? 'Bilibili 不開放自動抓標題，請自己填影片標題。' : '')
+    if (!isYoutube) {
       setTitleLoading(false)
       return
     }
@@ -1027,10 +1050,16 @@ export default function RulebookBatchUpload({
       const result = await sniffPdfLanguage(item.file)
       setRows((current) =>
         current.map((row) => {
-          if (row.id !== item.id || row.langManual) return row
+          if (row.id !== item.id) return row
+          const byContent =
+            !row.scopeManual && row.scope === 'main' && result.head
+              ? guessScopeByContent(result.head, result.pages ?? 0)
+              : null
+          const scopePatch = byContent ? { scope: byContent } : {}
+          if (row.langManual) return { ...row, ...scopePatch }
           return result.lang
-            ? { ...row, language: result.lang, langStatus: 'detected' }
-            : { ...row, langStatus: 'unknown' }
+            ? { ...row, ...scopePatch, language: result.lang, langStatus: 'detected' }
+            : { ...row, ...scopePatch, langStatus: 'unknown' }
         }),
       )
     }
@@ -1066,6 +1095,7 @@ export default function RulebookBatchUpload({
         message: '',
         guessed: guess !== '',
         scope: guessScope(file.name),
+        scopeManual: false,
         expansionName: '',
       })
     }
@@ -1778,7 +1808,10 @@ export default function RulebookBatchUpload({
                             value={row.scope}
                             disabled={locked}
                             onChange={(event) =>
-                              updateRow(row.id, { scope: event.target.value as DocScope })
+                              updateRow(row.id, {
+                                scope: event.target.value as DocScope,
+                                scopeManual: true,
+                              })
                             }
                           >
                             {(Object.keys(SCOPE_LABELS) as DocScope[]).map((key) => (
@@ -1787,6 +1820,9 @@ export default function RulebookBatchUpload({
                               </option>
                             ))}
                           </select>
+                          {!row.scopeManual && (
+                            <small className="rb-guess">範圍是系統猜的（依檔名與內容），不對請直接改</small>
+                          )}
                           {row.scope === 'expansion' && (
                             <input
                               type="text"
@@ -1860,7 +1896,7 @@ export default function RulebookBatchUpload({
         <UploadModal title="貼連結" locked={linkBusy} onClose={() => setMode(null)}>
           <form className="rb-fields rb-linkform" onSubmit={submitLink}>
             <label className="admin-field">
-              <span>連結（YouTube、bilibili 會自動帶入標題）</span>
+              <span>連結（YouTube 會自動帶入標題；bilibili 請自己填）</span>
               <input
                 type="url"
                 placeholder="貼上 https://…"
@@ -1898,6 +1934,8 @@ export default function RulebookBatchUpload({
             {linkUrl.trim() !== '' && (
               <p className="rb-hint">
                 將新增為：{isVideoUrl(linkUrl) ? '▶ 影片' : '🔗 網頁'}
+                ｜遊戲：{activeGames.find((g) => g.bgg_name === linkGame)?.name || '（尚未選）'}
+                ｜{isVideoUrl(linkUrl) ? '影片名稱' : '標題'}：{linkTitle.trim() || '（尚未填）'}
               </p>
             )}
 

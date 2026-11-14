@@ -60,8 +60,9 @@ function LinkAdd({
     const raw = url.trim()
     const isYoutube = /^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(raw)
     const isBilibili = /^https?:\/\/([a-z0-9-]+\.)*(bilibili\.com|b23\.tv)\//i.test(raw)
-    setTitleHint('')
-    if (!isYoutube && !(isBilibili && isAdmin)) {
+    // Bilibili 會封鎖伺服器抓標題（-412），只提示自己填；YouTube 仍可自動帶入
+    setTitleHint(isBilibili ? 'Bilibili 不開放自動抓標題，請自己填標題。' : '')
+    if (!isYoutube) {
       setTitleLoading(false)
       return
     }

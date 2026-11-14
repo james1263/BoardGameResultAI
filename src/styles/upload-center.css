@@ -39,7 +39,29 @@
 .rb .rbv-subtabs { margin-bottom: 8px; }
 .rb .rbv-stats { margin-bottom: 6px; }
 .rb .rbv-list { margin-top: 4px; }
-.rb .rbv-searchrow { margin-top: 0; }
+/* ＋按鈕與搜尋列置頂：往下滑也看得到（PDF／連結／玩錯紀錄／詞庫四個分頁共用） */
+.rb .rbv-searchrow {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  margin: 0;
+  padding: 6px 0;
+  background: var(--c-paper, #fbf8f0);
+}
+:root[data-theme="dark"] .rb .rbv-searchrow { background: #1b241f; }
+
+/* 連結清單列：遊戲名稱下方顯示影片／連結名稱 */
+.rb .rbv-row-name { min-width: 0; }
+.rb .rbv-row-links {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* 上傳檔案各分頁：待審核摺疊列與周圍的間距縮小 */
 .rb .rbv-subtabs ~ details.ov-fold { margin: 6px 0; }
