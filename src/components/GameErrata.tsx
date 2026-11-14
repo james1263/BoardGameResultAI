@@ -13,6 +13,7 @@ import {
   type Errata,
 } from '../lib/useGameErrata'
 import ErrataBody from './ErrataBody'
+import UploadModal from './UploadModal'
 import '../styles/errata.css'
 
 export type GameErrataApi = ReturnType<typeof useGameErrata>
@@ -300,7 +301,21 @@ export default function GameErrata({
 
         {!bigSubmit && message && <p className="er-note">{message}</p>}
 
-        {!bigSubmit && !hideSubmit && !formOpen && (
+        {!bigSubmit && !hideSubmit && embedded && (
+          <button
+            type="button"
+            className="ma-btn"
+            style={{ width: '100%', padding: '12px', marginTop: 8 }}
+            onClick={() => {
+              resetForm()
+              setMessage('')
+              setFormOpen(true)
+            }}
+          >
+            {isAdmin ? '＋ 新增玩錯紀錄' : '＋ 我要投稿玩錯紀錄'}
+          </button>
+        )}
+        {!bigSubmit && !hideSubmit && !embedded && !formOpen && (
           <div className="rb-actions">
             <button
               type="button"
@@ -316,7 +331,19 @@ export default function GameErrata({
           </div>
         )}
 
-        {!bigSubmit && formBlock}
+        {!bigSubmit && !embedded && formBlock}
+        {!bigSubmit && embedded && formOpen && (
+          <UploadModal
+            title={editId ? '修改玩錯紀錄' : isAdmin ? '新增玩錯紀錄' : '投稿玩錯紀錄'}
+            locked={busy}
+            onClose={() => {
+              resetForm()
+              setFormOpen(false)
+            }}
+          >
+            {formBlock}
+          </UploadModal>
+        )}
     </>
   )
 

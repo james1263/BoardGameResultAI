@@ -60,19 +60,57 @@ Deno.serve(async (req) => {
   }
   if (!allowedHost(current.hostname)) return json({ title: '' })
 
-  // 4) 取 BV 或 av 編號，向 Bilibili 查標題
+  // 4) 取 BV 或 av 編號，查標題：先問 Bilibili API，失敗再讀網頁標題
   const bv = current.pathname.match(/BV[0-9A-Za-z]{10}/)?.[0]
   const av = current.pathname.match(/\/av(\d+)/i)?.[1]
   const query = bv ? `bvid=${bv}` : av ? `aid=${av}` : ''
-  if (!query) return json({ title: '' })
+  if (!query) {
+    console.log('video-title: 網址裡找不到 BV 或 av 編號', current.toString())
+    return json({ title: '', reason: 'no-id' })
+  }
+  const headers = {
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+    Referer: 'https://www.bilibili.com/',
+    Accept: 'application/json, text/html;q=0.9, */*;q=0.8',
+    'Accept-Language': 'zh-TW,zh;q=0.9',
+  }
+
+  let reason = ''
   try {
-    const res = await fetch(`https://api.bilibili.com/x/web-interface/view?${query}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0', Referer: 'https://www.bilibili.com/' },
-    })
+    const res = await fetch(`https://api.bilibili.com/x/web-interface/view?${query}`, { headers })
     const data = await res.json()
     const title = typeof data?.data?.title === 'string' ? data.data.title : ''
-    return json({ title })
-  } catch {
-    return json({ title: '' })
+    if (title) return json({ title })
+    reason = `api http ${res.status} code ${data?.code} ${data?.message ?? ''}`
+  } catch (error) {
+    reason = 'api error ' + (error instanceof Error ? error.message : String(error))
+  }
+  console.log('video-title: API 沒拿到標題 →', reason)
+
+  try {
+    const page = bv ? `https://www.bilibili.com/video/${bv}/` : `https://www.bilibili.com/video/av${av}/`
+    const res = await fetch(page, { headers })
+    const html = await res.text()
+    const raw =
+      html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i)?.[1] ??
+      html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] ??
+      ''
+    const title = raw
+      .replace(/_哔哩哔哩.*$/u, '')
+      .replace(/_bilibili.*$/i, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim()
+    if (title) return json({ title })
+    console.log('video-title: 網頁也沒拿到標題，http', res.status)
+    return json({ title: '', reason: reason + ' / html http ' + res.status })
+  } catch (error) {
+    const text = error instanceof Error ? error.message : String(error)
+    console.log('video-title: 網頁讀取失敗 →', text)
+    return json({ title: '', reason: reason + ' / html error ' + text })
   }
 })

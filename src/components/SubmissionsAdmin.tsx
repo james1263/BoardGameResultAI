@@ -37,7 +37,7 @@ export default function SubmissionsAdmin({
 
   return (
     <details className="ov-fold" key={rows.length > 0 ? 'has' : 'none'} open={rows.length > 0} style={{ marginTop: 10 }}>
-      <summary>待審核的玩家{label}投稿（{rows.length}）</summary>
+      <summary>待審核（{rows.length}）</summary>
       <div className="er-board">
         {error && <p className="admin-error">{error}</p>}
         {message && <p className="er-note">{message}</p>}

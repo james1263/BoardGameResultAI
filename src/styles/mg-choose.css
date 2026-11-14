@@ -1,0 +1,21 @@
+/* 我的聚會：卡片右上角的「寫心得 ›」文字連結（與日期同一排） */
+.mgc-card .mgc-head.mgz-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.mgc-card .mgz-link {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 4px 2px;
+  font: inherit;
+  font-size: 14px;
+  color: inherit;
+  opacity: 0.85;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

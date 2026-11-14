@@ -16,6 +16,7 @@ import { useBackClose } from '../lib/useBackClose'
 import '../styles/my-gatherings-write.css'
 import '../styles/my-gatherings-cards.css'
 import '../styles/my-gatherings-v2.css'
+import '../styles/mg-choose.css'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -247,8 +248,8 @@ export default function MyGatherings({
           {/* ---------- 場次清單（依月份摺疊） ---------- */}
           {!selectedId && (
             <>
-              {ratings && (
-                <p className="mg-muted">封面變淡的遊戲，代表你還沒評分。</p>
+              {ratings && !isAdmin && (
+                <p className="mg-muted">只列出你有出席、且有評分的遊戲。</p>
               )}
               {list.loading ? (
                 <p className="mylist-empty">讀取中…</p>
@@ -288,15 +289,36 @@ export default function MyGatherings({
                           <ul className="mg-list">
                             {group.rows.map((row) => {
                               const canWrite = row.gatheredOn <= today
-                              const gameNames = gamesByGathering.games.get(row.id) ?? []
+                              const allNames = gamesByGathering.games.get(row.id) ?? []
+                              // 只列出我有評分的遊戲（管理者的評分是 CSV 換算，列全部）
+                              const gameNames =
+                                ratings && !isAdmin
+                                  ? allNames.filter((name) => ratings.getMine(name) !== null)
+                                  : allNames
                               const parts = dateParts(row.gatheredOn)
                               return (
                                 <li key={row.id}>
                                   <div className="mgc-card mgv-card">
-                                    <span className="mgc-head">
+                                    <span className="mgc-head mgz-head">
                                       <b className="mgc-title">
                                         {parts.full}（{parts.weekday.replace('週', '')}）
                                       </b>
+                                      {canWrite && gameNames.length > 0 && (
+                                        <button
+                                          type="button"
+                                          className="mgz-link"
+                                          onClick={() => {
+                                            if (onWriteGathering) {
+                                              onWriteGathering(row.id, gameNames[0])
+                                              return
+                                            }
+                                            setScrollToNotes(true)
+                                            setSelectedId(row.id)
+                                          }}
+                                        >
+                                          寫心得 ›
+                                        </button>
+                                      )}
                                     </span>
                                     <span className="mgc-sub">{row.title}</span>
                                     <div className="mgv-body">
@@ -352,7 +374,9 @@ export default function MyGatherings({
                                           <span className="mgc-sub">
                                             {gamesByGathering.loading
                                               ? '讀取遊戲中…'
-                                              : '這場沒有指定遊戲。'}
+                                              : allNames.length > 0
+                                                ? '這場還沒有你評分的遊戲。'
+                                                : '這場沒有指定遊戲。'}
                                           </span>
                                         )}
                                       </div>

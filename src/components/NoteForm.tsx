@@ -203,10 +203,12 @@ export default function NoteForm({
   const contextGames = useMemo(() => {
     if (!lockedGid) return []
     const names = gatheringGames.games.get(lockedGid) ?? []
+    // 只列出我有評分的遊戲（管理者的評分是 CSV 換算，不限制；已選中的遊戲一律保留）
     return names
+      .filter((name) => isAdmin || ratings.getMine(name) !== null || name === picked?.bggName)
       .map((name) => games.find((game) => game.bggName === name))
       .filter((game): game is ListedGame => !!game)
-  }, [lockedGid, gatheringGames.games, games])
+  }, [lockedGid, gatheringGames.games, games, isAdmin, ratings, picked?.bggName])
 
   const existing = picked && gid ? noteMap.get(`${gid}|${picked.bggName}`) : undefined
   const willUpdatePublic = kind === 'public' && gid !== '' && (existing?.publicNote ?? '').trim() !== ''
@@ -548,7 +550,7 @@ export default function NoteForm({
             ・點一款遊戲來寫
           </p>
           {contextGames.length === 0 ? (
-            <p className="nf-hint">{gatheringGames.loading ? '讀取中…' : '這場沒有指定遊戲。'}</p>
+            <p className="nf-hint">{gatheringGames.loading ? '讀取中…' : '這場沒有你評分過的遊戲。'}</p>
           ) : (
             <div className="nf-covers">
               {contextGames.map((game) => (
