@@ -35,6 +35,7 @@ import { useAdminRatings } from '../lib/useGamePeople'
 import { RATING_FIELDS } from '../lib/useGameRatings'
 import '../styles/overview.css'
 import '../styles/game-modal-v2.css'
+import '../styles/game-rate-sheet.css'
 
 const TABS = [
   { key: 'overview', label: '概覽' },
@@ -658,10 +659,27 @@ export default function GameModal({
               />
             )}
             {sheet === 'rating' && (
+              <div className="grs">
+                <div className="grs-head">
+                  <CoverImage
+                    key={`grs-${game.coverSlug}-${coverVersion}`}
+                    version={coverVersion}
+                    slug={game.coverSlug}
+                    alt={game.name}
+                    className="grs-cover"
+                    fallback={
+                      <div className="grs-fallback" aria-hidden="true">
+                        🎲
+                      </div>
+                    }
+                  />
+                  <strong className="grs-name">{game.name}</strong>
+                </div>
               <RatingSection
                 key={`${game.bggName}-${ratings.status}`}
                 bggName={game.bggName}
                 api={ratings}
+                hideCommunity
                 beforeSave={
                   personal.getEntry(game.bggName).played || ratings.getMine(game.bggName)
                     ? undefined
@@ -669,6 +687,7 @@ export default function GameModal({
                         askConfirm('這款你還沒標為「已玩」。儲存評分會同時把它標為已玩，確定要儲存嗎？')
                 }
               />
+              </div>
             )}
             {sheet === 'errata' && (
               <GameErrata

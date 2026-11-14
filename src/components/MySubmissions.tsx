@@ -82,6 +82,31 @@ function GamePick({
   )
 }
 
+// 依影片標題猜遊戲：標題含遊戲中文名或英文名（取最長的一個；同長度有兩款以上就不猜）
+function guessGameFromTitle(title: string, games: GameLite[]): GameLite | null {
+  const norm = (t: string) => t.toLocaleLowerCase().replace(/[\s\p{P}\p{S}]/gu, '')
+  const hay = norm(title)
+  let best: GameLite | null = null
+  let bestLen = 0
+  let tie = false
+  for (const g of games) {
+    if (g.referenceOnly) continue
+    for (const raw of [g.name, g.bggName]) {
+      const n = norm(raw || '')
+      const ascii = /^[\x00-\x7f]*$/.test(n)
+      if (n.length < (ascii ? 4 : 2) || !hay.includes(n)) continue
+      if (n.length > bestLen) {
+        best = g
+        bestLen = n.length
+        tie = false
+      } else if (n.length === bestLen && best && best.bggName !== g.bggName) {
+        tie = true
+      }
+    }
+  }
+  return tie ? null : best
+}
+
 function SubPanel({
   kind,
   games,
@@ -131,7 +156,14 @@ function SubPanel({
           const name = typeof j?.title === 'string' ? j.title.trim() : ''
           if (name) {
             setTitle((cur) => (cur.trim() === '' ? name.slice(0, SUB_LIMITS.linkTitle) : cur))
-            setTitleHint('已自動帶入影片標題，可修改。')
+            // 還沒選遊戲才自動選；已經選了就不動
+            const guessed = guessGameFromTitle(name, games)
+            if (guessed) setBgg((cur) => (cur ? cur : guessed.bggName))
+            setTitleHint(
+              guessed
+                ? `已自動帶入影片標題，並選擇遊戲《${guessed.name}》，不對請按「換一款」。`
+                : '已自動帶入影片標題，可修改。請自己選擇遊戲。',
+            )
           } else {
             setTitleHint('抓不到標題，請自己填。')
           }
