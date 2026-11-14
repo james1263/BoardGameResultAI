@@ -411,7 +411,7 @@ export default function PlannedGatheringsAdmin({
           )}
         </div>
 
-        <h4 className="lga-sub">目前的預計聚會（含最近 30 天內）</h4>
+        <h4 className="lga-sub">目前的預計聚會</h4>
         {loading ? (
           <p className="loy-admin-note">讀取中…</p>
         ) : rows.length === 0 ? (

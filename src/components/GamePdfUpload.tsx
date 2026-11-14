@@ -19,6 +19,7 @@ type Row = {
   language: Lang
   langStatus: LangStatus
   langManual: boolean
+  scopeManual: boolean
   status: RowStatus
   message: string
   scope: DocScope
@@ -58,6 +59,16 @@ function guessScope(fileName: string): DocScope {
   return 'main'
 }
 
+// 讀完 PDF 前幾頁後，依內容再猜一次範圍（只在檔名猜不出來、還是「主遊戲」時用）
+function guessScopeByContent(head: string, pages: number): DocScope | null {
+  const top = head.slice(0, 400)
+  if (/\bfaq\b|frequently asked|\berrata\b|常見問題|勘誤/.test(top) && pages <= 24) return 'faq'
+  if (/player aid|cheat ?sheet|quick ?(reference|start|guide)|summary|懶人包|速查|玩家整理/.test(top) && pages <= 8)
+    return 'player_notes' as DocScope
+  if (/\bexpansion\b|擴充/.test(top)) return 'expansion'
+  return null
+}
+
 function langText(lang: string): string {
   if (lang === 'zh') return '中文'
   if (lang === 'en') return '英文'
@@ -92,10 +103,16 @@ export default function GamePdfUpload({
       const result = await sniffPdfLanguage(item.file)
       setRows((current) =>
         current.map((row) => {
-          if (row.id !== item.id || row.langManual) return row
+          if (row.id !== item.id) return row
+          const byContent =
+            !row.scopeManual && row.scope === 'main' && result.head
+              ? guessScopeByContent(result.head, result.pages ?? 0)
+              : null
+          const scopePatch = byContent ? { scope: byContent } : {}
+          if (row.langManual) return { ...row, ...scopePatch }
           return result.lang
-            ? { ...row, language: result.lang, langStatus: 'detected' }
-            : { ...row, langStatus: 'unknown' }
+            ? { ...row, ...scopePatch, language: result.lang, langStatus: 'detected' }
+            : { ...row, ...scopePatch, langStatus: 'unknown' }
         }),
       )
     }
@@ -122,6 +139,7 @@ export default function GamePdfUpload({
         language: guessLanguage(file.name),
         langStatus: 'detecting',
         langManual: false,
+        scopeManual: false,
         status: 'ready',
         message: '',
         scope: guessScope(file.name),
@@ -293,7 +311,9 @@ export default function GamePdfUpload({
                       <select
                         value={row.scope}
                         disabled={locked}
-                        onChange={(event) => updateRow(row.id, { scope: event.target.value as DocScope })}
+                        onChange={(event) =>
+                          updateRow(row.id, { scope: event.target.value as DocScope, scopeManual: true })
+                        }
                       >
                         {(Object.keys(SCOPE_LABELS) as DocScope[]).map((key) => (
                           <option key={key} value={key}>
@@ -301,6 +321,9 @@ export default function GamePdfUpload({
                           </option>
                         ))}
                       </select>
+                      {!row.scopeManual && (
+                        <small className="rb-guess">範圍是系統猜的（依檔名與內容），不對請直接改</small>
+                      )}
                       {row.scope === 'expansion' && (
                         <input
                           type="text"
