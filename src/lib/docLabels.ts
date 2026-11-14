@@ -73,5 +73,6 @@ export function indexSuffix(doc: GameDocument): string {
   if (doc.index_status === 'failed') {
     return `｜索引失敗${doc.index_error_code ? '（' + doc.index_error_code + '）' : ''}`
   }
-  return '｜索引處理中'
+  if (doc.index_status === 'processing') return '｜索引中'
+  return '｜尚未索引'
 }

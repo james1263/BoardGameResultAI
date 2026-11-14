@@ -835,6 +835,7 @@ export default function RulebookBatchUpload({
   // 已上傳的 PDF 清單：依範圍／語言篩選
   const [scopeFilter, setScopeFilter] = useState<string>('all')
   const [docLangFilter, setDocLangFilter] = useState<string>('all')
+  const [indexFilter, setIndexFilter] = useState<string>('all')
   // 規則書子分頁：遊戲（以遊戲為單位）｜PDF 檔案（以檔案為單位）
   const [tab, setTab] = useState<UploadTab>('pdf')
   // 舊程式用 sub 分「PDF 檔案」與「遊戲總覽」：pdf 分頁＝files，其餘＝games
@@ -1284,10 +1285,32 @@ export default function RulebookBatchUpload({
     filter: (doc: GameDocument) => boolean,
   ) {
     const isPdf = label === 'PDF'
-    const matchesFilter = (d: { content_scope?: string | null; language?: string | null }) =>
+    // 索引四態：尚未索引／索引中／索引成功／索引失敗（資料庫目前只有 none 與 completed）
+    const indexKeyOf = (d: { ai_indexed?: boolean | null; index_status?: string | null }) =>
+      d.index_status === 'completed' && d.ai_indexed
+        ? 'completed'
+        : d.index_status === 'failed'
+          ? 'failed'
+          : d.index_status === 'processing'
+            ? 'processing'
+            : 'none'
+    const matchesFilter = (d: {
+      content_scope?: string | null
+      language?: string | null
+      ai_indexed?: boolean | null
+      index_status?: string | null
+    }) =>
       !isPdf ||
       ((scopeFilter === 'all' || (d.content_scope ?? 'main') === scopeFilter) &&
-        (docLangFilter === 'all' || d.language === docLangFilter))
+        (docLangFilter === 'all' || d.language === docLangFilter) &&
+        (indexFilter === 'all' || indexKeyOf(d) === indexFilter))
+    const INDEX_CHIPS: { key: string; label: string }[] = [
+      { key: 'completed', label: '索引成功' },
+      { key: 'processing', label: '索引中' },
+      { key: 'failed', label: '索引失敗' },
+      { key: 'none', label: '尚未索引' },
+    ]
+    const indexCount = (key: string) => docs.filter((d) => indexKeyOf(d) === key).length
     const shownDocs = docs.filter(matchesFilter)
     const scopeKeys = Object.keys(SCOPE_LABELS) as DocScope[]
     const scopeCount = (key: string) => docs.filter((d) => (d.content_scope ?? 'main') === key).length
@@ -1379,6 +1402,25 @@ export default function RulebookBatchUpload({
                       <small>{langCount(key)}</small>
                     </button>
                   ))}
+              </div>
+            </div>
+            <div className="rbv-filter">
+              <span className="rbv-filter-label">索引</span>
+              <div className="rbv-chips" role="group" aria-label="依索引狀態篩選">
+                {INDEX_CHIPS.filter((item) => indexCount(item.key) > 0 || indexFilter === item.key).map(
+                  (item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      aria-pressed={indexFilter === item.key}
+                      className={`rbv-chip ${indexFilter === item.key ? 'active' : ''}`}
+                      onClick={() => setIndexFilter(indexFilter === item.key ? 'all' : item.key)}
+                    >
+                      {item.label}
+                      <small>{indexCount(item.key)}</small>
+                    </button>
+                  ),
+                )}
               </div>
             </div>
             <div className="rbv-filter">
