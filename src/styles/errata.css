@@ -121,3 +121,20 @@
   white-space: nowrap;
   color: #8a6a43;
 }
+
+
+/* 玩錯紀錄：標題放大、說明縮小（點一下才展開全文） */
+.er-list li .er-title {
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.er-list li .er-body {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6b7a70;
+}
+
+.er-list li .er-src {
+  font-size: 11px;
+}

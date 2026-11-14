@@ -478,3 +478,31 @@
 .lc-today-ticket {
   border-color: var(--c-caramel, #b78a5a);
 }
+
+/* 人數上限：數字框不要撐滿整列（手機與電腦都一樣） */
+.lga-new.lga-cap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.lga-new.lga-cap > span {
+  flex: none;
+  font-size: 0.9rem;
+}
+
+.lga-new.lga-cap input[type='number'] {
+  flex: none;
+  width: 9em;
+  max-width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  font-size: 16px;
+}
+
+.lga-new.lga-cap button {
+  grid-column: auto;
+  flex: none;
+}

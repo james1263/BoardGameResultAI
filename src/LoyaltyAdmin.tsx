@@ -849,13 +849,18 @@ export default function LoyaltyAdmin() {
         effectiveCapacity !== null && manualCount >= effectiveCapacity
 
     const playerQuery = playerSearch.trim().toLocaleLowerCase()
-    const visiblePlayers = playerQuery
+    // 已勾選出席的玩家排最前面（其餘維持原順序）
+    const matchedPlayers = playerQuery
         ? players.filter(
             (player) =>
                 player.nickname.toLocaleLowerCase().includes(playerQuery) ||
                 (contacts[player.id] ?? '').toLocaleLowerCase().includes(playerQuery),
         )
         : players
+    const visiblePlayers = [...matchedPlayers].sort(
+        (x, y) =>
+            Number(selectedAttendees.includes(y.id)) - Number(selectedAttendees.includes(x.id)),
+    )
 
     // 想玩提示（只是參考，不自動選人或選遊戲）
     const hasSelectedAttendees = selectedAttendees.length > 0
