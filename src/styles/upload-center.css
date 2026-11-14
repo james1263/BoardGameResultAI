@@ -66,3 +66,34 @@
 /* 上傳檔案各分頁：待審核摺疊列與周圍的間距縮小 */
 .rb .rbv-subtabs ~ details.ov-fold { margin: 6px 0; }
 .rb .rbv-subtabs ~ details.ov-fold > summary { padding-top: 8px; padding-bottom: 8px; }
+
+/* 玩錯紀錄／詞庫分頁：縮小留白 */
+.rb .er-list { gap: 5px; margin-top: 5px; }
+.rb .er-list li { padding: 6px 10px; border-radius: 10px; }
+.rb .er-list li .er-title { font-size: 16px; line-height: 1.3; }
+.rb .er-list li .er-body { margin-top: 2px; line-height: 1.45; }
+.rb .er-list li .er-src { margin-top: 2px; }
+.rb .er-list li .rb-actions { margin: 2px 0 0; padding: 0; gap: 4px; }
+.rb .er-list li .rb-actions .admin-link { padding: 2px 6px; min-height: 0; }
+.rb .er-list-title { margin: 8px 0 0; }
+.rb .rbv-subtabs ~ .rb-hint { margin: 4px 0; }
+.rb details.ov-fold > .rb-hint { margin: 2px 0 4px; }
+.rb .gm-box { padding: 8px 10px; margin: 6px 0; }
+.rb .gm-box h4 { margin: 0 0 4px; }
+.rb .gm-box .gm-hint { margin: 0 0 6px; }
+.rb .gm-box .gm-actions { margin: 0 0 6px; gap: 6px; }
+.rb .gm-game { margin: 6px 0 2px; }
+
+/* 上傳檔案：收合的遊戲列（玩錯紀錄、詞庫）縮小留白 */
+.rb details.ov-fold[open] > summary { padding-bottom: 5px !important; }
+.rb .er-list-title { margin: 6px 0 2px !important; }
+.rb .rbv-searchrow { padding: 4px 0 !important; }
+.rb .rbv-searchrow .rbv-add { min-height: 36px !important; }
+.rb .rbv-searchrow .rbv-search { min-height: 36px !important; }
+.rb .rbv-subtabs { margin-bottom: 4px !important; }
+.rb .gm-box { margin-top: 6px !important; padding: 6px 4px !important; }
+
+/* 收合的遊戲列：抵銷外層容器的 gap */
+.rb details.ov-fold {
+  margin: -5px 0 !important;
+}
