@@ -1,0 +1,4 @@
+/* 深色模式：頁面兩側的白色細線（#root 的 border-inline 用 var(--border)，深色下仍偏白） */
+:root[data-theme="dark"] #root {
+  border-inline-color: rgba(255, 255, 255, 0.08) !important;
+}

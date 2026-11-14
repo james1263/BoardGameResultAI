@@ -16,6 +16,7 @@ import {
   type Errata,
 } from '../lib/useGameErrata'
 import { PENDING_CHANGED_EVENT } from '../lib/useAdminPending'
+import UploadModal from './UploadModal'
 import '../styles/errata.css'
 
 // 管理中心「規則書」分頁 →「＋ 玩錯紀錄」：直接打字，或讀入 .txt 後修改再儲存
@@ -38,6 +39,7 @@ export default function ErrataAdmin({
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [q, setQ] = useState('')
+  const [formOpen, setFormOpen] = useState(false)
   const [rowEditId, setRowEditId] = useState<string | null>(null)
   const [rowTitle, setRowTitle] = useState('')
   const [rowContent, setRowContent] = useState('')
@@ -248,160 +250,32 @@ export default function ErrataAdmin({
         一筆內容最多 {ERRATA_MAX_CONTENT} 字；一個 .txt 檔就是一筆。
       </p>
 
+      <div className="rbv-searchrow">
+        <button
+          type="button"
+          className="rbv-add"
+          aria-label="新增玩錯紀錄"
+          onClick={() => setFormOpen(true)}
+        >
+          ＋
+        </button>
+        <input
+          type="search"
+          className="rbv-search"
+          value={q}
+          placeholder="搜尋遊戲、標題或內容"
+          onChange={(event) => setQ(event.target.value)}
+        />
+      </div>
+
+      {formOpen && (
+        <UploadModal title="新增玩錯紀錄" locked={busy} onClose={() => setFormOpen(false)}>
       {renderPicker(bggName, (next) => {
         setBggName(next)
         resetForm()
         setError('')
         setMessage('')
       })}
-
-      <details
-        key={pending.items.length > 0 ? 'has-pending' : 'no-pending'}
-        className="ov-fold"
-        open={pending.items.length > 0}
-      >
-        <summary>待審核的玩家投稿（{pending.items.length}）</summary>
-      {pending.loading && <p className="rb-hint">載入中…</p>}
-      {pending.error && <p className="admin-error">{pending.error}</p>}
-      {!pending.loading && !pending.error && pending.items.length === 0 && (
-        <p className="rb-hint">目前沒有待審的投稿。</p>
-      )}
-      <ul className="er-list">
-        {pending.items.map((item) => (
-          <li key={item.id}>
-            <div className="er-title">
-              《{item.game_name || item.bgg_name}》{item.title}
-              {item.kind === 'ai_answer' && (
-                <small className="er-src"> ・AI 回饋（請回規則書核對頁碼與答案）</small>
-              )}
-            </div>
-            <p className="er-body">{item.content}</p>
-            <small className="er-src">
-              投稿者：{item.nickname || '（未設暱稱）'}
-              {item.contact_name ? `（${item.contact_name}）` : ''}
-              {item.page_ref ? `　頁碼：${item.page_ref}` : ''}
-              {item.source_note ? `　來源：${item.source_note}` : ''}
-              {item.verified ? '　已對照規則書' : '　未對照規則書'}
-            </small>
-            <div className="rb-actions">
-              <button type="button" className="admin-link" onClick={() => void review(item, true)}>
-                核准
-              </button>
-              <button type="button" className="admin-link" onClick={() => void review(item, false)}>
-                退回
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-      </details>
-
-      <h4 className="er-list-title">全部玩錯紀錄（{all.items.length}）</h4>
-      {all.items.length > 0 && (
-        <input
-          type="search"
-          className="admin-input"
-          style={{ width: '100%', fontSize: 16, margin: '4px 0 8px' }}
-          value={q}
-          placeholder="搜尋遊戲、標題或內容"
-          onChange={(event) => setQ(event.target.value)}
-        />
-      )}
-      {all.loading && <p className="rb-hint">載入中…</p>}
-      {all.error && <p className="admin-error">{all.error}</p>}
-      {!all.loading && !all.error && all.items.length === 0 && (
-        <p className="rb-hint">目前還沒有任何玩錯紀錄。</p>
-      )}
-      {keyword && shownRows.length === 0 && all.items.length > 0 && (
-        <p className="rb-hint">找不到符合的玩錯紀錄。</p>
-      )}
-      {[...grouped.entries()].map(([name, rows]) => (
-        <details key={name + (keyword ? '-s' : '')} className="ov-fold" open={keyword !== ''}>
-          <summary>
-            {rows[0].game_name || name}（{rows.length}）
-          </summary>
-          <ul className="er-list">
-            {rows.map((row) => (
-              <li key={row.id}>
-                {rowEditId === row.id ? (
-                  <div className="er-form">
-                    <label className="admin-field">
-                      <span>標題（{rowTitle.length}/{ERRATA_MAX_TITLE}）</span>
-                      <input
-                        type="text"
-                        value={rowTitle}
-                        maxLength={ERRATA_MAX_TITLE}
-                        onChange={(event) => setRowTitle(event.target.value)}
-                      />
-                    </label>
-                    <label className="admin-field">
-                      <span>
-                        內容{' '}
-                        <span className={rowContent.length > ERRATA_MAX_CONTENT ? 'er-count over' : 'er-count'}>
-                          {rowContent.length}/{ERRATA_MAX_CONTENT}
-                        </span>
-                      </span>
-                      <textarea
-                        rows={6}
-                        value={rowContent}
-                        onChange={(event) => setRowContent(event.target.value)}
-                      />
-                    </label>
-                    <label className="admin-field">
-                      <span>來源說明（選填，{rowSource.length}/{ERRATA_MAX_SOURCE}）</span>
-                      <input
-                        type="text"
-                        value={rowSource}
-                        maxLength={ERRATA_MAX_SOURCE}
-                        onChange={(event) => setRowSource(event.target.value)}
-                      />
-                    </label>
-                    <div className="rb-actions">
-                      <button
-                        type="button"
-                        className="ma-btn"
-                        disabled={rowBusy || rowContent.length > ERRATA_MAX_CONTENT}
-                        onClick={() => void saveRowEdit(row)}
-                      >
-                        {rowBusy ? '儲存中…' : '儲存'}
-                      </button>
-                      <button type="button" className="admin-link" onClick={() => setRowEditId(null)}>
-                        取消
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="er-title">
-                      {row.title}
-                      <small className="er-src">
-                        {' '}・{row.from_player ? (row.kind === 'ai_answer' ? '玩家投稿（AI 回饋）' : '玩家投稿') : '管理者記錄'}・
-                        {row.status === 'pending' ? '待審核' : row.status === 'rejected' ? '已退回' : '已核准'}
-                      </small>
-                    </div>
-                    <p className="er-body">{row.content}</p>
-                    <small className="er-src">
-                      {row.nickname ? `投稿者：${row.nickname}　` : ''}
-                      {row.page_ref ? `頁碼：${row.page_ref}　` : ''}
-                      {row.source_note ? `來源：${row.source_note}　` : ''}
-                      {row.status === 'rejected' && row.reject_reason ? `退回原因：${row.reject_reason}` : ''}
-                    </small>
-                    <div className="rb-actions">
-                      <button type="button" className="admin-link" onClick={() => startRowEdit(row)}>
-                        編輯
-                      </button>
-                      <button type="button" className="admin-link" onClick={() => void removeRow(row)}>
-                        刪除
-                      </button>
-                    </div>
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
-        </details>
-      ))}
-
       {bggName && (
         <div className="er-form">
           <label className="admin-field">
@@ -504,6 +378,146 @@ export default function ErrataAdmin({
           </ul>
         </div>
       )}
+        </UploadModal>
+      )}
+
+      <details
+        key={pending.items.length > 0 ? 'has-pending' : 'no-pending'}
+        className="ov-fold"
+        open={pending.items.length > 0}
+      >
+        <summary>待審核的玩家投稿（{pending.items.length}）</summary>
+      {pending.loading && <p className="rb-hint">載入中…</p>}
+      {pending.error && <p className="admin-error">{pending.error}</p>}
+      {!pending.loading && !pending.error && pending.items.length === 0 && (
+        <p className="rb-hint">目前沒有待審的投稿。</p>
+      )}
+      <ul className="er-list">
+        {pending.items.map((item) => (
+          <li key={item.id}>
+            <div className="er-title">
+              《{item.game_name || item.bgg_name}》{item.title}
+              {item.kind === 'ai_answer' && (
+                <small className="er-src"> ・AI 回饋（請回規則書核對頁碼與答案）</small>
+              )}
+            </div>
+            <p className="er-body">{item.content}</p>
+            <small className="er-src">
+              投稿者：{item.nickname || '（未設暱稱）'}
+              {item.contact_name ? `（${item.contact_name}）` : ''}
+              {item.page_ref ? `　頁碼：${item.page_ref}` : ''}
+              {item.source_note ? `　來源：${item.source_note}` : ''}
+              {item.verified ? '　已對照規則書' : '　未對照規則書'}
+            </small>
+            <div className="rb-actions">
+              <button type="button" className="admin-link" onClick={() => void review(item, true)}>
+                核准
+              </button>
+              <button type="button" className="admin-link" onClick={() => void review(item, false)}>
+                退回
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      </details>
+
+      <h4 className="er-list-title">全部玩錯紀錄（{all.items.length}）</h4>
+      {all.loading && <p className="rb-hint">載入中…</p>}
+      {all.error && <p className="admin-error">{all.error}</p>}
+      {!all.loading && !all.error && all.items.length === 0 && (
+        <p className="rb-hint">目前還沒有任何玩錯紀錄。</p>
+      )}
+      {keyword && shownRows.length === 0 && all.items.length > 0 && (
+        <p className="rb-hint">找不到符合的玩錯紀錄。</p>
+      )}
+      {[...grouped.entries()].map(([name, rows]) => (
+        <details key={name + (keyword ? '-s' : '')} className="ov-fold" open={keyword !== ''}>
+          <summary>
+            {rows[0].game_name || name}（{rows.length}）
+          </summary>
+          <ul className="er-list">
+            {rows.map((row) => (
+              <li key={row.id}>
+                {rowEditId === row.id ? (
+                  <div className="er-form">
+                    <label className="admin-field">
+                      <span>標題（{rowTitle.length}/{ERRATA_MAX_TITLE}）</span>
+                      <input
+                        type="text"
+                        value={rowTitle}
+                        maxLength={ERRATA_MAX_TITLE}
+                        onChange={(event) => setRowTitle(event.target.value)}
+                      />
+                    </label>
+                    <label className="admin-field">
+                      <span>
+                        內容{' '}
+                        <span className={rowContent.length > ERRATA_MAX_CONTENT ? 'er-count over' : 'er-count'}>
+                          {rowContent.length}/{ERRATA_MAX_CONTENT}
+                        </span>
+                      </span>
+                      <textarea
+                        rows={6}
+                        value={rowContent}
+                        onChange={(event) => setRowContent(event.target.value)}
+                      />
+                    </label>
+                    <label className="admin-field">
+                      <span>來源說明（選填，{rowSource.length}/{ERRATA_MAX_SOURCE}）</span>
+                      <input
+                        type="text"
+                        value={rowSource}
+                        maxLength={ERRATA_MAX_SOURCE}
+                        onChange={(event) => setRowSource(event.target.value)}
+                      />
+                    </label>
+                    <div className="rb-actions">
+                      <button
+                        type="button"
+                        className="ma-btn"
+                        disabled={rowBusy || rowContent.length > ERRATA_MAX_CONTENT}
+                        onClick={() => void saveRowEdit(row)}
+                      >
+                        {rowBusy ? '儲存中…' : '儲存'}
+                      </button>
+                      <button type="button" className="admin-link" onClick={() => setRowEditId(null)}>
+                        取消
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="er-title">
+                      {row.title}
+                      <small className="er-src">
+                        {' '}・{row.from_player ? (row.kind === 'ai_answer' ? '玩家投稿（AI 回饋）' : '玩家投稿') : '管理者記錄'}・
+                        {row.status === 'pending' ? '待審核' : row.status === 'rejected' ? '已退回' : '已核准'}
+                      </small>
+                    </div>
+                    <p className="er-body">{row.content}</p>
+                    <small className="er-src">
+                      {row.nickname ? `投稿者：${row.nickname}　` : ''}
+                      {row.page_ref ? `頁碼：${row.page_ref}　` : ''}
+                      {row.source_note ? `來源：${row.source_note}　` : ''}
+                      {row.status === 'rejected' && row.reject_reason ? `退回原因：${row.reject_reason}` : ''}
+                    </small>
+                    <div className="rb-actions">
+                      <button type="button" className="admin-link" onClick={() => startRowEdit(row)}>
+                        編輯
+                      </button>
+                      <button type="button" className="admin-link" onClick={() => void removeRow(row)}>
+                        刪除
+                      </button>
+                    </div>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ))}
+
     </>
   )
 }

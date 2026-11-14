@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
-import { useBackClose } from '../lib/useBackClose'
 import { askConfirm, askInput } from '../lib/askConfirm'
 import { sniffPdfLanguage, takeEmptyPageNote } from '../lib/extractPdfText'
 import {
@@ -19,7 +17,9 @@ import { docIcon, docLabel, indexSuffix, scopeLabel, SCOPE_LABELS } from '../lib
 import '../styles/rb-docs.css'
 import '../styles/rb-docs-tidy.css'
 import '../styles/rb-admin-v2.css'
+import '../styles/upload-row.css'
 import ErrataAdmin from './ErrataAdmin'
+import UploadModal from './UploadModal'
 import GlossaryAdmin from './GlossaryAdmin'
 import GlossaryMisses from './GlossaryMisses'
 import PendingBadge from './PendingBadge'
@@ -652,6 +652,7 @@ function RulebookOverviewList({
   onChanged,
   onDeleted,
   onAddLink,
+  leading,
 }: {
   rows: CoverRow[]
   loaded: boolean
@@ -670,6 +671,7 @@ function RulebookOverviewList({
   onChanged: () => void
   onDeleted: () => void
   onAddLink: (bggName: string) => void
+  leading?: ReactNode
 }) {
   const [filtOpen, setFiltOpen] = useState(false)
   const q = query.trim().toLocaleLowerCase()
@@ -732,6 +734,7 @@ function RulebookOverviewList({
       )}
 
       <div className="rbv-searchrow">
+        {leading}
         <input
           className="rbv-search"
           type="search"
@@ -861,45 +864,6 @@ function RulebookOverviewList({
 
 // 上傳 PDF 的視窗：桌面置中、手機接近全螢幕；「全部上傳」鈕固定在底部（樣式見 rb-admin-v2.css）
 // 上傳中（locked）不能關閉，避免中途關掉
-function PdfUploadModal({
-  locked,
-  onClose,
-  children,
-}: {
-  locked: boolean
-  onClose: () => void
-  children: ReactNode
-}) {
-  useBackClose(() => {
-    if (!locked) onClose()
-  })
-  return createPortal(
-    <div
-      className="rb rbu-backdrop"
-      onClick={() => {
-        if (!locked) onClose()
-      }}
-    >
-      <div
-        className="rbu-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label="批次上傳規則書"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="rbu-head">
-          <h3>批次上傳規則書</h3>
-          <button type="button" className="rbu-close" aria-label="關閉" disabled={locked} onClick={onClose}>
-            ✕
-          </button>
-        </div>
-        <div className="rbu-body">{children}</div>
-      </div>
-    </div>,
-    document.body,
-  )
-}
-
 type UploadTab = 'pdf' | 'link' | 'errata' | 'glossary'
 
 export default function RulebookBatchUpload({
@@ -1314,7 +1278,6 @@ export default function RulebookBatchUpload({
     return [scopeParts.join('・'), langParts.join('・')].filter(Boolean).join('　')
   }
   const pdfDocs = allDocs.filter((d) => d.source_type === 'upload')
-  const linkDocs = allDocs.filter((d) => d.source_type !== 'upload')
   const errataTotal = [...errataCounts.values()].reduce((sum, n) => sum + n, 0)
 
   // 清掉某款遊戲的所有文件（PDF 原檔＋索引＋連結）；遊戲本身不動
@@ -1451,16 +1414,38 @@ export default function RulebookBatchUpload({
             {isPdf && shownDocs.length !== docs.length ? `（目前顯示 ${shownDocs.length} 份）` : ''}
           </small>
         </div>
+        <div className="rbv-searchrow">
+          {isPdf && (
+            <button
+              type="button"
+              className="rbv-add"
+              aria-label="上傳 PDF"
+              disabled={running}
+              onClick={() => setMode(mode === 'pdf' ? null : 'pdf')}
+            >
+              ＋
+            </button>
+          )}
+          <input
+            type="search"
+            className="rbv-search"
+            placeholder="搜尋遊戲名稱或文件名"
+            value={listSearch}
+            onChange={(event) => setListSearch(event.target.value)}
+          />
+          {isPdf && docs.length > 0 && (
+            <button
+              type="button"
+              className={`rbv-filterbtn ${pdfFiltOpen || pdfFiltN > 0 ? 'on' : ''}`}
+              aria-expanded={pdfFiltOpen}
+              onClick={() => setPdfFiltOpen((v) => !v)}
+            >
+              篩選{pdfFiltN > 0 && <small>{pdfFiltN}</small>}
+            </button>
+          )}
+        </div>
         {isPdf && docs.length > 0 && (
           <>
-          <button
-            type="button"
-            className={`rbv-filterbtn ${pdfFiltOpen || pdfFiltN > 0 ? 'on' : ''}`}
-            aria-expanded={pdfFiltOpen}
-            onClick={() => setPdfFiltOpen((v) => !v)}
-          >
-            篩選{pdfFiltN > 0 ? `（${pdfFiltN}）` : ''} {pdfFiltOpen ? '▴' : '▾'}
-          </button>
           {pdfFiltOpen && (
           <div className="rbv-filters">
             <div className="rbv-filter">
@@ -1557,13 +1542,6 @@ export default function RulebookBatchUpload({
           )}
           </>
         )}
-        <input
-          type="search"
-          className="rb-search"
-          placeholder="搜尋遊戲名稱或文件名"
-          value={listSearch}
-          onChange={(event) => setListSearch(event.target.value)}
-        />
         {label === 'PDF' && (
           <>
             <p className="rb-hint">
@@ -1748,36 +1726,10 @@ export default function RulebookBatchUpload({
         }}
       />
       )}
-      {(tab === 'pdf' || tab === 'link') && (
-        <div className="rb-seg" style={{ gridTemplateColumns: '1fr' }}>
-          {tab === 'pdf' ? (
-            <button
-              type="button"
-              aria-pressed={mode === 'pdf'}
-              className={mode === 'pdf' ? 'active' : ''}
-              disabled={running}
-              onClick={() => setMode(mode === 'pdf' ? null : 'pdf')}
-            >
-              ＋ 上傳 PDF
-            </button>
-          ) : (
-            <button
-              type="button"
-              aria-pressed={mode === 'link'}
-              className={mode === 'link' ? 'active' : ''}
-              disabled={running}
-              onClick={() => setMode(mode === 'link' ? null : 'link')}
-            >
-              ＋ 貼連結
-            </button>
-          )}
-        </div>
-      )}
-
       {gamesError && <p className="admin-error">{gamesError}</p>}
 
       {mode === 'pdf' && (
-        <PdfUploadModal locked={running} onClose={() => setMode(null)}>
+        <UploadModal title="批次上傳規則書" locked={running} onClose={() => setMode(null)}>
           <p className="rb-hint">
             一次選多個 PDF（文字版，每個最大 50 MB）。用瀏覽器開啟能選取文字或按 Ctrl+F 搜尋，才算可用的文字版。系統會從檔名猜遊戲，猜不到的請自己選。
             檔名含 faq 或 errata／勘誤會自動歸類，其餘當規則書。確認後按「全部上傳」，
@@ -1938,12 +1890,11 @@ export default function RulebookBatchUpload({
               )}
             </>
           )}
-        </PdfUploadModal>
+        </UploadModal>
       )}
 
       {mode === 'link' && (
-        <>
-          <h3>貼連結</h3>
+        <UploadModal title="貼連結" locked={linkBusy} onClose={() => setMode(null)}>
           <p className="rb-hint">
             先選遊戲，再貼影片或網頁連結。網址是 YouTube、bilibili、vimeo 會自動當影片，其他當網頁。
             新增後會出現在下方文件列表。
@@ -2012,7 +1963,7 @@ export default function RulebookBatchUpload({
               </>
             )}
           </form>
-        </>
+        </UploadModal>
       )}
 
       {mode === 'errata' && (
@@ -2063,6 +2014,17 @@ export default function RulebookBatchUpload({
         listTick={listTick}
         onChanged={() => setListTick((n) => n + 1)}
         onDeleted={() => void loadUsage()}
+        leading={
+          <button
+            type="button"
+            className="rbv-add"
+            aria-label="貼連結"
+            disabled={running}
+            onClick={() => setMode(mode === 'link' ? null : 'link')}
+          >
+            ＋
+          </button>
+        }
         onAddLink={(id) => {
           setLinkGame(id)
           setLinkDone('')
@@ -2074,8 +2036,6 @@ export default function RulebookBatchUpload({
 
       {sub === 'files' &&
         renderDocList('PDF', pdfDocs, (d) => d.source_type === 'upload')}
-      {tab === 'link' && mode === 'link' &&
-        renderDocList('連結', linkDocs, (d) => d.source_type !== 'upload')}
       {mode === 'errata' && (
         <p className="rb-hint">
           玩錯紀錄共 {errataTotal} 份（{errataCounts.size} 款遊戲）。
