@@ -145,6 +145,10 @@ export default function MyGatherings({
     return map
   }, [boardGames])
 
+  // 已進垃圾桶的遊戲：仍顯示封面，但不能評分、不能寫心得
+  const isTrashed = (bggName: string) =>
+    !!(gameByName.get(bggName) as { removedAt?: string | null } | undefined)?.removedAt
+
   const noteGames = useMemo<NoteGame[]>(
     () =>
       (detail.detail?.games ?? []).map((g) => ({
@@ -293,8 +297,10 @@ export default function MyGatherings({
                               // 只列出我有評分的遊戲（管理者的評分是 CSV 換算，列全部）
                               const gameNames =
                                 ratings && !isAdmin
-                                  ? allNames.filter((name) => ratings.getMine(name) !== null)
+                                  ? allNames.filter((name) => ratings.getMine(name) !== null || isTrashed(name))
                                   : allNames
+                              // 寫心得連結只帶入還在架上的遊戲
+                              const writableNames = gameNames.filter((name) => !isTrashed(name))
                               const parts = dateParts(row.gatheredOn)
                               return (
                                 <li key={row.id}>
@@ -303,13 +309,13 @@ export default function MyGatherings({
                                       <b className="mgc-title">
                                         {parts.full}（{parts.weekday.replace('週', '')}）
                                       </b>
-                                      {canWrite && gameNames.length > 0 && (
+                                      {canWrite && writableNames.length > 0 && (
                                         <button
                                           type="button"
                                           className="mgz-link"
                                           onClick={() => {
                                             if (onWriteGathering) {
-                                              onWriteGathering(row.id, gameNames[0])
+                                              onWriteGathering(row.id, writableNames[0])
                                               return
                                             }
                                             setScrollToNotes(true)
@@ -329,8 +335,9 @@ export default function MyGatherings({
                                             const note = noteByKey.get(`${row.id}|${bggName}`)
                                             const privateDone = (note?.privateNote ?? '').trim() !== ''
                                             const publicDone = (note?.publicNote ?? '').trim() !== ''
-                                            const rated = ratings ? ratings.getMine(bggName) !== null : true
-                                            const showChip = canWrite && (!isAdmin || privateDone)
+                                            const trashed = isTrashed(bggName)
+                                            const rated = !trashed && (ratings ? ratings.getMine(bggName) !== null : true)
+                                            const showChip = !trashed && canWrite && (!isAdmin || privateDone)
                                             const inner = (
                                               <span className={`mgc-game${rated ? '' : ' mgc-dim'}`}>
                                                 <span className="mgc-cover">
@@ -338,6 +345,7 @@ export default function MyGatherings({
                                                 </span>
                                                 <span className="mgc-info">
                                                   <b>{game?.name ?? bggName}</b>
+                                                  {trashed && <small>已從收藏移除</small>}
                                                   {showChip && (
                                                     <small>
                                                       私人心得：{privateDone ? '已填寫' : '尚未填寫'}
@@ -347,7 +355,7 @@ export default function MyGatherings({
                                                 </span>
                                               </span>
                                             )
-                                            return canWrite ? (
+                                            return canWrite && !trashed ? (
                                               <button
                                                 type="button"
                                                 className="mgv-gamebtn"
