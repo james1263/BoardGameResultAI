@@ -40,6 +40,7 @@ function Dialog({
       }}
     >
       <div
+        className="ac-box"
         onClick={(event) => event.stopPropagation()}
         style={{
           width: '100%',
@@ -66,6 +67,7 @@ function Dialog({
         </p>
         {input && (
           <input
+            className="ac-input"
             type="text"
             value={text}
             autoFocus
@@ -88,6 +90,7 @@ function Dialog({
           {cancelText !== null && (
             <button
               type="button"
+              className="ac-cancel"
               onClick={() => onDone(false, '')}
               style={{
                 padding: '9px 16px',
