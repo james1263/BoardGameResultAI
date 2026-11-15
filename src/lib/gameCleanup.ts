@@ -129,6 +129,34 @@ export async function cleanupGameData(bggName: string): Promise<CleanupResult> {
   } catch (error) {
     warnings.push('清理未對應詞時發生錯誤：' + (error instanceof Error ? error.message : '未知'))
   }
+  // 5.5 搜尋零結果的詞（同一個詞可能有 user／admin 兩個來源，刪除函式會一起刪，所以先去重）
+  try {
+    const list = await supabase.rpc('admin_get_search_misses', { p_bgg_name: bggName })
+    if (list.error) {
+      warnings.push('讀取零結果詞失敗：' + list.error.message)
+    } else {
+      const terms = Array.from(
+        new Set(
+          ((list.data ?? []) as { zh_term: string; kind: string }[])
+            .filter((row) => row.kind === 'search_zero_result')
+            .map((row) => row.zh_term),
+        ),
+      )
+      for (const term of terms) {
+        const del = await supabase.rpc('admin_delete_search_miss', {
+          p_bgg_name: bggName,
+          p_zh_term: term,
+          p_kind: 'search_zero_result',
+        })
+        if (del.error) {
+          warnings.push('刪除零結果詞失敗：' + del.error.message)
+          break
+        }
+      }
+    }
+  } catch (error) {
+    warnings.push('清理零結果詞時發生錯誤：' + (error instanceof Error ? error.message : '未知'))
+  }
   // 6. 玩錯紀錄
   try {
     const list = await supabase.rpc('get_game_errata', { p_bgg_name: bggName })
