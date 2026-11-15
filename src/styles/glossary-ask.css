@@ -1,0 +1,78 @@
+/* 詞庫頁「複製給我的 AI」：按鈕與投稿視窗（顏色用全站變數，深色模式自動跟著變） */
+.gm-ask {
+  margin-left: 8px;
+  padding: 3px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--c-caramel, #b78a5a);
+  background: transparent;
+  color: var(--c-ink, #34463c);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gm-ask:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.gma-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1280;
+  background: rgba(20, 28, 23, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.gma-sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 14px 14px 18px;
+  border-radius: 16px 16px 0 0;
+  background: var(--c-paper, #fbf7ec);
+  color: var(--c-ink, #34463c);
+}
+.gma-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.gma-close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+  cursor: pointer;
+}
+.gma-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--c-ink-soft, #66756b);
+}
+@media (min-width: 700px) {
+  .gma-backdrop {
+    align-items: center;
+  }
+  .gma-sheet {
+    border-radius: 16px;
+  }
+}
+
+/* 投稿框：撐滿視窗寬度、夠高；16px 避免 iPhone 輸入時自動放大 */
+.gma-sheet .er-box {
+  width: 100%;
+  box-sizing: border-box;
+}
+.gma-sheet .ra2-fb-text {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 180px;
+  font-size: 16px;
+  resize: vertical;
+}

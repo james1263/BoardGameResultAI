@@ -3672,3 +3672,19 @@
   background: #26302a;
 }
 
+/* askConfirm／showNotice／askInput 的視窗 */
+:root[data-theme="dark"] .ac-box {
+  background: var(--dk-surface-2) !important;
+  color: var(--dk-text) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+:root[data-theme="dark"] .ac-input {
+  background: var(--dk-bg) !important;
+  color: var(--dk-text) !important;
+  border-color: var(--dk-line) !important;
+}
+:root[data-theme="dark"] .ac-cancel {
+  background: var(--dk-surface-3) !important;
+  color: var(--dk-text) !important;
+  border-color: var(--dk-line) !important;
+}

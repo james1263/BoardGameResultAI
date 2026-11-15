@@ -125,16 +125,12 @@ export default function ErrataAdmin({
     setMessage('')
     let reason = ''
     if (!approve) {
-      const input = await askInput('請寫退回原因（投稿者看得到，最多 ' + ERRATA_MAX_REASON + ' 字）', {
-        placeholder: '例如：和規則書第 7 頁不符',
+      const input = await askInput('退回原因（選填，投稿者看得到，最多 ' + ERRATA_MAX_REASON + ' 字）', {
+        placeholder: '選填，例如：和規則書第 7 頁不符',
         confirmText: '退回',
       })
       if (input === null) return
       reason = input.trim().slice(0, ERRATA_MAX_REASON)
-      if (!reason) {
-        setError('退回時必須寫原因。')
-        return
-      }
     }
     const result = await reviewErrata(item.id, approve, reason)
     if (result) {

@@ -146,8 +146,9 @@ export async function submitErrata(input: {
   pageRef: string
   verified: boolean
   kind?: 'errata' | 'ai_answer'
+  autoApprove?: boolean
 }): Promise<string> {
-  const { error } = await supabase.rpc('submit_game_errata', {
+  const { data, error } = await supabase.rpc('submit_game_errata', {
     p_id: input.id,
     p_bgg_name: input.bggName,
     p_title: input.title,
@@ -157,7 +158,11 @@ export async function submitErrata(input: {
     p_verified: input.verified,
     p_kind: input.kind ?? 'errata',
   })
-  return error ? errataErrorText(error.message ?? '') : ''
+  if (error) return errataErrorText(error.message ?? '')
+  if (input.autoApprove && typeof data === 'string') {
+    return reviewErrata(data, true, '')
+  }
+  return ''
 }
 
 // VIP：刪除自己審核中／被退回的投稿

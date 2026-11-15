@@ -1,13 +1,49 @@
 import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { askConfirm, showNotice } from '../lib/askConfirm'
+import { searchRulebook } from '../lib/useRulebookSearch'
+import { searchErrata } from '../lib/useGameErrata'
+import { toSimplified } from '../lib/toSimplified'
+import { useBackClose } from '../lib/useBackClose'
+import { buildAnswerPrompt, copyText, saveFeedbackCtx, type FeedbackCtx } from '../lib/aiAnswer'
+import AiFeedbackBox from './AiFeedbackBox'
 import '../styles/rb-docs-tidy.css'
+import '../styles/errata.css'
+import '../styles/glossary-ask.css'
 
 type MissRow = {
   bgg_name: string
   zh_term: string
   hit_count: number
   last_seen: string
+}
+
+type Candidate = { bgg_name: string; zh_term: string; en_term: string; status: string }
+type AskState = { bggName: string; zh: string; en: string[]; ctx: FeedbackCtx }
+
+// 複製成功後跳出的投稿視窗（疊在管理中心上面；返回鍵／✕ 只關這一層）
+function AskModal({ state, onClose }: { state: AskState; onClose: () => void }) {
+  useBackClose(onClose, true)
+  return createPortal(
+    <div className="gma-backdrop" onClick={onClose}>
+      <div className="gma-sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+        <div className="gma-head">
+          <strong>
+            {state.bggName}｜{state.zh}
+          </strong>
+          <button type="button" className="gma-close" aria-label="關閉" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+        <p className="gma-hint">
+          已複製給 AI 的內容（搜尋詞：{[state.zh, ...state.en].join('、')}）。貼給 AI 後，把它回覆最後的回饋區塊貼在下面投稿；管理員投稿會直接核准。
+        </p>
+        <AiFeedbackBox key={state.ctx.code} bggName={state.bggName} ctx={state.ctx} onDismiss={onClose} />
+      </div>
+    </div>,
+    document.body,
+  )
 }
 
 function buildTxt(rows: MissRow[]): string {
@@ -31,6 +67,8 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
   const [rows, setRows] = useState<MissRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [askBusy, setAskBusy] = useState('')
+  const [ask, setAsk] = useState<AskState | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -72,6 +110,50 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
+  }
+
+  // 用「中文詞＋這款遊戲累積過的英文候選詞」以管理者身分搜尋，複製給 AI 並開投稿視窗
+  async function askAi(r: MissRow) {
+    const key = r.bgg_name + '|' + r.zh_term
+    if (askBusy) return
+    setAskBusy(key)
+    setError('')
+    try {
+      const { data } = await supabase.rpc('admin_get_term_candidates')
+      const en = Array.from(
+        new Set(
+          ((data ?? []) as Candidate[])
+            .filter((c) => c.bgg_name === r.bgg_name && c.zh_term === r.zh_term && c.status !== 'rejected')
+            .map((c) => c.en_term),
+        ),
+      )
+      const q = [r.zh_term, ...en].join(' ')
+      const simp = await toSimplified(q)
+      const result = await searchRulebook(r.bgg_name, q, simp !== q ? simp : undefined)
+      if (result.error) {
+        setError(result.error)
+        return
+      }
+      if (result.chunks.length === 0) {
+        await showNotice('沒有找到相關段落，所以沒有複製。')
+        return
+      }
+      const errata = (await searchErrata(r.bgg_name, q)).items
+      const { text, ctx } = buildAnswerPrompt({
+        gameName: r.bgg_name,
+        question: `「${r.zh_term}」在這款遊戲的規則裡是什麼意思？怎麼運作？`,
+        chunks: result.chunks,
+        errata,
+      })
+      if (!(await copyText(text))) {
+        setError('複製失敗，請稍後再試。')
+        return
+      }
+      saveFeedbackCtx(r.bgg_name, ctx)
+      setAsk({ bggName: r.bgg_name, zh: r.zh_term, en, ctx })
+    } finally {
+      setAskBusy('')
+    }
   }
 
   async function removeOne(r: MissRow) {
@@ -133,6 +215,14 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
                 <span className="gm-count">{r.hit_count} 次</span>
                 <button
                   type="button"
+                  className="gm-ask"
+                  disabled={askBusy !== ''}
+                  onClick={() => void askAi(r)}
+                >
+                  {askBusy === r.bgg_name + '|' + r.zh_term ? '搜尋中…' : '複製給我的 AI'}
+                </button>
+                <button
+                  type="button"
                   className="gm-x"
                   aria-label={`刪除 ${r.zh_term}`}
                   onClick={() => void removeOne(r)}
@@ -144,6 +234,7 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
           </ul>
         </div>
       ))}
+      {ask && <AskModal state={ask} onClose={() => setAsk(null)} />}
     </div>
   )
 }
