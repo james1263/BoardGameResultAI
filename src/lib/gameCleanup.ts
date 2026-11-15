@@ -153,6 +153,13 @@ export async function cleanupGameData(bggName: string): Promise<CleanupResult> {
     warnings.push('清理搜尋統計時發生錯誤：' + (error instanceof Error ? error.message : '未知'))
   }
 
+  // 8. 英文詞候選
+  try {
+    const del = await supabase.rpc('admin_delete_term_candidates', { p_bgg_name: bggName })
+    if (del.error) warnings.push('刪除英文詞候選失敗：' + del.error.message)
+  } catch (error) {
+    warnings.push('清理英文詞候選時發生錯誤：' + (error instanceof Error ? error.message : '未知'))
+  }
   return { errors, warnings }
 }
 

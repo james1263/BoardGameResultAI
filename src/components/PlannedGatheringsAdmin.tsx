@@ -432,7 +432,6 @@ export default function PlannedGatheringsAdmin({
                     <div>
                       <p className="pg-when">
                         {formatPlannedWhen(row.plannedOn, row.startTime)}
-                        {row.plannedOn < today ? '（已過）' : ''}
                       </p>
                       <b className="pg-title-sm">{row.title}</b>
                     </div>
