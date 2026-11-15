@@ -1,0 +1,3674 @@
+/* ======== 原 dark-theme.css ======== */
+/* 深色模式（全站手動切換，第 1 批）
+   只在 <html data-theme="dark"> 時生效；淺色模式完全不受影響。
+   做法：①先改寫 tokens.css 的變數（用 var(--c-*) 的地方自動變深）
+        ②再用「:root[data-theme="dark"] + 原選擇器」覆蓋舊檔寫死的色碼（優先度比原規則高，不必動舊 CSS）
+   第 1 批範圍：全站底色與文字、頂端列與導覽列、首頁 hero／新加入／類型膠囊、桌遊卡片（4／9 欄與清單）、
+   篩選抽屜、詳細視窗（基本樣式、概覽、v2 變數、評分／討論／留言）、玩家選單與暱稱視窗、VIP 升級視窗
+   也含：詳細視窗分頁列與四個彈窗內容（規則連結、擴充、背景、玩錯紀錄）、垃圾桶、頁尾、回到頂端、圖例
+   還沒做：俱樂部／統計中心／規則助手（第 2 批）、管理中心／統計圖表／各種彈窗（第 3 批）
+   還原：App.tsx 拿掉 import './styles/dark-theme.css' 即可 */
+
+:root[data-theme="dark"] {
+  --dk-bg: #151b17;
+  --dk-surface: #1f2822;
+  --dk-surface-2: #29342c;
+  --dk-surface-3: #334038;
+  --dk-text: #ece7da;
+  --dk-text-soft: #aeb7ab;
+  --dk-line: rgba(236, 231, 218, 0.16);
+  --dk-accent: #d1a56f;
+  --dk-green: #5a8a68;
+
+  /* 改寫 tokens.css 的變數：用到 var(--c-*) 的地方自動變深 */
+  --c-cream: var(--dk-bg);
+  --c-paper: var(--dk-surface);
+  --c-forest: #4f7f5d;
+  --c-forest-dark: #3f6a4c;
+  --c-caramel: var(--dk-accent);
+  --c-ink: var(--dk-text);
+  --c-ink-soft: var(--dk-text-soft);
+  --c-line: var(--dk-line);
+  --c-danger: #e0786c;
+  --shadow-s: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-m: 0 10px 24px rgba(0, 0, 0, 0.5);
+
+  color: var(--dk-text);
+  background: var(--dk-bg);
+}
+
+:root[data-theme="dark"] body {
+  background: var(--dk-bg);
+  color: var(--dk-text);
+}
+
+/* ---------- 共用：輸入框提示字、焦點、選取 ---------- */
+:root[data-theme="dark"] ::placeholder {
+  color: var(--dk-text-soft);
+  opacity: 0.75;
+}
+
+:root[data-theme="dark"] button:focus-visible,
+:root[data-theme="dark"] input:focus-visible,
+:root[data-theme="dark"] select:focus-visible,
+:root[data-theme="dark"] a:focus-visible {
+  outline-color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .eyebrow {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .rule-button {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: #b9d3b9;
+}
+
+:root[data-theme="dark"] .rule-button:hover {
+  background: var(--dk-surface-3);
+}
+
+/* ---------- 頂端列（topbar.css） ---------- */
+:root[data-theme="dark"] .topbar {
+  background: var(--dk-surface);
+  border-bottom-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .brand {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .brand-icon {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .topbar-label {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .mylist-button,
+:root[data-theme="dark"] .topbar-actions .admin-link,
+:root[data-theme="dark"] .topbar-actions .player-chip {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+/* 玩家選單（含新的「外觀」項目）。account.css 沒看過，只依 class 名稱覆蓋 */
+:root[data-theme="dark"] .account-popover {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .account-popover button {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .account-popover button:hover {
+  background: var(--dk-surface-3);
+}
+
+/* 簡介編輯（topbar.css 後半） */
+:root[data-theme="dark"] .desc-link {
+  color: #a9cfa9;
+}
+
+:root[data-theme="dark"] .desc-link.danger {
+  color: var(--c-danger);
+}
+
+:root[data-theme="dark"] .desc-editor textarea {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .desc-count {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .desc-actions button.secondary {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+/* ---------- 桌遊卡片（cards.css） ---------- */
+:root[data-theme="dark"] .game-card {
+  border-color: var(--dk-line);
+  background: var(--dk-surface);
+}
+
+:root[data-theme="dark"] .game-art {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .game-art-2,
+:root[data-theme="dark"] .game-art-3,
+:root[data-theme="dark"] .game-art-4 {
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .game-emoji {
+  filter: drop-shadow(0 6px 4px rgba(0, 0, 0, 0.4));
+}
+
+:root[data-theme="dark"] .game-category {
+  background: rgba(21, 27, 23, 0.82);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-info h3 {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-meta {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .game-score-rank {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .game-card.is-new {
+  box-shadow: 0 0 0 2px #f0a22e, 0 6px 18px rgba(240, 162, 46, 0.2);
+}
+
+/* 想玩／已玩按鈕：未選時深底淺字，選中沿用 var(--c-forest) */
+:root[data-theme="dark"] .status-btn {
+  border-color: var(--dk-line);
+  background: rgba(21, 27, 23, 0.82);
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .status-btn.on {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+/* ---------- 清單檢視表格（card-list.css） ---------- */
+:root[data-theme="dark"] .game-grid.view-list {
+  --lv-line: rgba(209, 165, 111, 0.22);
+  border-color: var(--dk-line);
+  background: var(--dk-surface);
+}
+
+:root[data-theme="dark"] .game-grid.view-list .lv-head {
+  background: rgba(209, 165, 111, 0.12);
+  color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .game-grid.view-list .mine-group-heading {
+  background: rgba(209, 165, 111, 0.08);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-grid.view-list .game-card {
+  background: transparent;
+}
+
+:root[data-theme="dark"] .game-grid.view-list .game-card:hover {
+  background: rgba(209, 165, 111, 0.1);
+}
+
+:root[data-theme="dark"] .game-grid.view-list .game-card .game-art,
+:root[data-theme="dark"] .game-grid.view-list.lv-noinfo .game-card.no-info .game-art {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .game-grid.view-list.lv-info .game-card .game-facts > span > span {
+  color: var(--dk-text-soft);
+}
+
+/* 清單裡的想玩／已玩按鈕不疊在封面上，用表面色底 */
+:root[data-theme="dark"] .game-grid.view-list .lv-actions .status-btn,
+:root[data-theme="dark"] .game-grid.view-list .game-row .status-btn {
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .game-grid.view-list .lv-actions .status-btn.on,
+:root[data-theme="dark"] .game-grid.view-list .game-row .status-btn.on {
+  background: var(--c-forest);
+}
+
+/* ---------- 篩選抽屜（filter.css） ---------- */
+:root[data-theme="dark"] .filter-panel {
+  border-color: var(--dk-line);
+  background: var(--dk-surface);
+  box-shadow: none;
+}
+
+:root[data-theme="dark"] .filter-drawer {
+  background: var(--dk-surface);
+  color: var(--dk-text);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="dark"] .drawer-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="dark"] .drawer-header {
+  background: var(--dk-surface);
+}
+
+:root[data-theme="dark"] .drawer-close {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .clear-button,
+:root[data-theme="dark"] .sort-direction-button {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: #b9d3b9;
+}
+
+:root[data-theme="dark"] .clear-button:hover:not(:disabled),
+:root[data-theme="dark"] .sort-direction-button:hover {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .filter-field {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .filter-field select {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .filter-field select:focus {
+  border-color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .category-filter,
+:root[data-theme="dark"] .sort-row,
+:root[data-theme="dark"] .filter-drawer .filter-more {
+  border-top-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .category-hint,
+:root[data-theme="dark"] .category-empty,
+:root[data-theme="dark"] .mine-note {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .category-option {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .category-option:has(input:checked) {
+  border-color: var(--dk-green);
+  background: rgba(90, 138, 104, 0.28);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .category-chip.selected {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .mine-eye {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .mine-eye:hover {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .mine-eye svg {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .filter-pill {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .filter-pill:hover:not(:disabled) {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .filter-pill.on {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .filter-drawer .filter-more > summary {
+  color: #b9d3b9;
+}
+
+/* 搜尋欄裡的「篩選」鈕（vip.css） */
+:root[data-theme="dark"] .search-filter-btn {
+  background: rgba(90, 138, 104, 0.22);
+  color: #cfe5cf;
+}
+
+:root[data-theme="dark"] .search-filter-btn:hover {
+  background: rgba(90, 138, 104, 0.34);
+}
+
+:root[data-theme="dark"] .search-filter-btn.on {
+  background: var(--c-forest);
+  color: #fff;
+}
+
+/* ---------- 詳細視窗基本樣式（modal.css、overview.css） ----------
+   game-modal-v2.css（.gm-v2）、討論／評分／紀錄分頁還沒看過，第 1 批後半要先看那幾個檔 */
+:root[data-theme="dark"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+:root[data-theme="dark"] .game-modal,
+:root[data-theme="dark"] .game-modal.compact {
+  background: var(--dk-surface);
+  color: var(--dk-text);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="dark"] .modal-close,
+:root[data-theme="dark"] .game-modal.compact .modal-close {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+/* vip.css 用 !important 把標題鎖成深綠，深色要用 !important 蓋掉 */
+:root[data-theme="dark"] .game-modal .modal-head-info h2,
+:root[data-theme="dark"] #modal-title {
+  color: var(--dk-text) !important;
+}
+
+:root[data-theme="dark"] .game-modal h2 {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .modal-score,
+:root[data-theme="dark"] .game-modal.compact .modal-score,
+:root[data-theme="dark"] .modal-score-star {
+  color: #9fcaa7;
+}
+
+:root[data-theme="dark"] .modal-score-label,
+:root[data-theme="dark"] .modal-score-empty,
+:root[data-theme="dark"] .modal-section-title,
+:root[data-theme="dark"] .rating-empty,
+:root[data-theme="dark"] .personal-hint,
+:root[data-theme="dark"] .game-modal.compact .personal-hint,
+:root[data-theme="dark"] .play-counter-sub {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .bgg-link,
+:root[data-theme="dark"] .game-modal.compact .bgg-link {
+  color: #9fcaa7;
+}
+
+:root[data-theme="dark"] .rating-item,
+:root[data-theme="dark"] .modal-section {
+  border-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .rating-label,
+:root[data-theme="dark"] .game-modal.compact .rating-label,
+:root[data-theme="dark"] .play-counter-title,
+:root[data-theme="dark"] .play-counter-value,
+:root[data-theme="dark"] .note-label,
+:root[data-theme="dark"] .game-modal.compact .personal-note .note-label {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .modal-category,
+:root[data-theme="dark"] .game-modal.compact .modal-category {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .personal-note textarea,
+:root[data-theme="dark"] .game-modal.compact .personal-note textarea {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-modal.compact .status-buttons.inline .status-btn {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-modal.compact .status-buttons.inline .status-btn.on,
+:root[data-theme="dark"] .game-modal.compact .status-buttons.inline .status-btn.want.on,
+:root[data-theme="dark"] .game-modal.compact .status-buttons.inline .status-btn.played.on {
+  border-color: var(--dk-green);
+  background: rgba(90, 138, 104, 0.3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .play-counter-btn {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .ov-counts {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .ov-type {
+  border-color: rgba(209, 165, 111, 0.45);
+  background: rgba(209, 165, 111, 0.14);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .ov-type.is-active {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .ov-wall-title {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .ov-wall-item,
+:root[data-theme="dark"] .ov-wall-name {
+  color: var(--dk-text);
+}
+
+/* 封面周圍的底色（圖還沒載入或比例不同時露出來） */
+:root[data-theme="dark"] .ov-cover-img,
+:root[data-theme="dark"] .ov-cover-fallback {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .ov-more {
+  border-color: rgba(159, 202, 167, 0.5);
+  color: #9fcaa7;
+}
+
+:root[data-theme="dark"] .ov-fold {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .ov-fold > summary {
+  color: var(--dk-text);
+}
+
+/* ---------- VIP 升級視窗（vip-upgrade.css，原本刻意寫死顏色） ---------- */
+:root[data-theme="dark"] .vu-backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+:root[data-theme="dark"] .vu-card {
+  background: var(--dk-surface);
+  color: var(--dk-text);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="dark"] .vu-title {
+  color: #b9d3b9;
+}
+
+:root[data-theme="dark"] .vu-sub {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .vu-list li {
+  border-bottom-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .vu-note {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .vu-field input {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .vu-error {
+  color: var(--c-danger);
+}
+
+:root[data-theme="dark"] .vu-primary {
+  background: var(--c-forest);
+}
+
+:root[data-theme="dark"] .vu-secondary {
+  border-color: var(--c-forest);
+  background: transparent;
+  color: #b9d3b9;
+}
+
+/* =====================================================================
+   第 1 批（續）：首頁 hero／新加入／類型膠囊／標題列、導覽列、玩家選單與暱稱視窗、
+   詳細視窗 v2（.gm-v2 變數）、評分／討論／留言樣式
+   ===================================================================== */
+
+:root[data-theme="dark"] {
+  --dk-green-text: #9fcaa7;
+}
+
+/* ---------- 首頁 hero（hero.css、explore-home.css） ---------- */
+:root[data-theme="dark"] .hero {
+  background:
+    radial-gradient(ellipse at 50% 0%, #223027 0%, transparent 70%),
+    var(--dk-bg);
+}
+
+:root[data-theme="dark"] .hero h1 span {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .search-hint {
+  background: rgba(90, 138, 104, 0.22);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .quick-chip.more,
+:root[data-theme="dark"] .explore-mine-btn {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .quick-chip.on {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+/* 「更多類型」視窗：輸入框、按鈕原本寫死 #fff */
+:root[data-theme="dark"] .cat-backdrop {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+:root[data-theme="dark"] .cat-search,
+:root[data-theme="dark"] .cat-clear {
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .cat-close {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .explore-new-art {
+  background: var(--dk-surface-3);
+}
+
+/* ---------- 收藏區（library.css） ---------- */
+:root[data-theme="dark"] .game-count {
+  background: var(--dk-surface-3);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .empty-state {
+  border-color: var(--dk-line);
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .empty-state h3 {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .filter-toggle-button {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .filter-toggle-button:hover {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .filter-badge {
+  background: var(--c-forest);
+}
+
+:root[data-theme="dark"] .missing-data-note {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .view-toggle {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .view-toggle .view-btn {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .view-toggle .view-btn:hover {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .view-toggle .view-btn.active {
+  background: var(--dk-green);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .mine-group-heading {
+  border-bottom-color: var(--dk-line);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .status-legend,
+:root[data-theme="dark"] .status-legend-tip {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .personal-toast {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] main .library .section-heading.explore-head h2 {
+  color: var(--dk-text);
+}
+
+/* ---------- 導覽列（sitebar.css） ---------- */
+:root[data-theme="dark"] .sitebar {
+  background: var(--dk-surface);
+  border-bottom-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .sb-logo {
+  background: rgba(90, 138, 104, 0.25);
+}
+
+:root[data-theme="dark"] .sb-item.active {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .sb-item.active::after {
+  background: var(--dk-green-text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root[data-theme="dark"] .sb-item:hover {
+    background: rgba(90, 138, 104, 0.2);
+    color: var(--dk-text);
+  }
+}
+
+:root[data-theme="dark"] .sb-account .player-chip,
+:root[data-theme="dark"] .sb-account .admin-link,
+:root[data-theme="dark"] .sb-logout {
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+/* 手機底部導覽與「往下延伸補漏底」那塊都要同色 */
+@media (max-width: 760px) {
+  :root[data-theme="dark"] .sb-nav {
+    background: var(--dk-surface);
+    border-top-color: var(--dk-line);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.45);
+  }
+
+  :root[data-theme="dark"] .sb-nav::after {
+    background: var(--dk-surface);
+  }
+}
+
+/* ---------- 頂端列固定底色與暱稱視窗（account.css） ---------- */
+:root[data-theme="dark"] .topbar {
+  background: rgba(31, 40, 34, 0.98);
+}
+
+:root[data-theme="dark"] .admin-modal.player-dialog {
+  background: var(--dk-surface);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .pd-field input {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .pd-field input:focus {
+  border-color: var(--dk-green);
+  outline-color: rgba(90, 138, 104, 0.35);
+}
+
+:root[data-theme="dark"] .pd-hint {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .pd-error {
+  color: var(--c-danger);
+}
+
+:root[data-theme="dark"] .pd-save {
+  background: var(--c-forest);
+}
+
+:root[data-theme="dark"] .pd-secondary button {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .pd-secondary button:hover {
+  background: rgba(236, 231, 218, 0.08);
+}
+
+:root[data-theme="dark"] .pd-ok {
+  color: #8fd3a0;
+}
+
+:root[data-theme="dark"] .pd-warn {
+  color: var(--dk-accent);
+}
+
+/* ---------- 詳細視窗 v2：改寫它自己的變數（game-modal-v2.css 的 .gm-v2 用 --gm-*） ---------- */
+:root[data-theme="dark"] .modal-backdrop .game-modal.gm-v2 {
+  --gm-bg: var(--dk-surface);
+  --gm-fixed: var(--dk-surface-2);
+  --gm-card: var(--dk-surface-2);
+  --gm-line: rgba(209, 165, 111, 0.3);
+  --gm-ink: var(--dk-text);
+  --gm-soft: var(--dk-text-soft);
+  --gm-accent: #7fb08c;
+  --gm-caramel: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .gm-v2 .gm-sheet-close {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .gm-v2 .gm-sheet-dim {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- 評分分頁（ratings.css） ---------- */
+:root[data-theme="dark"] .rate-subtitle,
+:root[data-theme="dark"] .rate-note {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .rate-overall,
+:root[data-theme="dark"] .rate-grid-item {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .rate-overall strong {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .rate-grid-item strong,
+:root[data-theme="dark"] .rate-label {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .rate-scale button {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .rate-scale button.is-selected {
+  border-color: var(--dk-green);
+  background: var(--dk-green);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .rate-toggle {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .rate-save {
+  background: var(--c-forest);
+}
+
+:root[data-theme="dark"] .rate-delete {
+  color: var(--c-danger);
+}
+
+/* ---------- 討論分頁與留言列（vip.css 的 gb-*、note-list.css、note-likes.css、note-points.css、discussion-links.css） ---------- */
+:root[data-theme="dark"] .gb-item {
+  background: var(--dk-surface-2);
+  border-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .gb-name,
+:root[data-theme="dark"] .gb-content {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .gb-mine {
+  background: rgba(90, 138, 104, 0.25);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .gb-action,
+:root[data-theme="dark"] .gb-warn {
+  color: #e0976a;
+}
+
+:root[data-theme="dark"] .gb-empty,
+:root[data-theme="dark"] .gb-hidden-toggle,
+:root[data-theme="dark"] .gb-count {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .gb-mine-box {
+  background: var(--dk-surface-2);
+  border-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .gb-textarea {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .gb-save {
+  background: var(--c-forest);
+}
+
+:root[data-theme="dark"] .nl-item {
+  border-bottom-color: var(--dk-line);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .nl-item.is-open {
+  background: rgba(209, 165, 111, 0.08);
+}
+
+:root[data-theme="dark"] .nl-name,
+:root[data-theme="dark"] .nl-text {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .nl-date,
+:root[data-theme="dark"] .nl-caret,
+:root[data-theme="dark"] .nl-game-off {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .nl-thumb {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .nl-game {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-3);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .nl-tag {
+  border-color: rgba(209, 165, 111, 0.4);
+  background: rgba(209, 165, 111, 0.16);
+  color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .nl-like {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .nl-like.on {
+  border-color: var(--c-forest);
+  background: var(--c-forest);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .nl-like.off {
+  background: transparent;
+  border-color: transparent;
+}
+
+:root[data-theme="dark"] .nlk-list {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .np-btn {
+  border-color: var(--dk-accent);
+  color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .np-btn.on {
+  background: rgba(209, 165, 111, 0.18);
+}
+
+:root[data-theme="dark"] .np-count {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .np-like {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .np-dislike {
+  color: #e0976a;
+}
+
+:root[data-theme="dark"] .gdl-btn {
+  border-color: var(--dk-green);
+  background: var(--dk-surface-2);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .gdl-btn:hover {
+  background: var(--dk-surface-3);
+}
+
+/* =====================================================================
+   第 1 批（收尾）：詳細視窗分頁列與彈窗內容、垃圾桶、頁尾、回到頂端、圖例、小圖示
+   ===================================================================== */
+
+/* ---------- 詳細視窗分頁列（tabs.css） ---------- */
+:root[data-theme="dark"] .modal-fixed {
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .modal-tabs {
+  border-bottom-color: var(--dk-line);
+}
+
+:root[data-theme="dark"] .modal-tab {
+  border-color: var(--dk-line);
+  background: var(--dk-surface);
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .modal-tab.is-active {
+  border-color: var(--dk-green);
+  background: rgba(90, 138, 104, 0.28);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .modal-description,
+:root[data-theme="dark"] .stats-count {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .docs-group-title,
+:root[data-theme="dark"] .stats-new {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .stats-label {
+  color: var(--dk-text-soft);
+}
+
+/* ---------- 紀錄分頁（game-tabs.css） ---------- */
+:root[data-theme="dark"] .gb-head,
+:root[data-theme="dark"] .gh-head h3,
+:root[data-theme="dark"] .gh-total {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .gb-date {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .gh-item {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .gh-badge.played {
+  background: rgba(90, 138, 104, 0.28);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .gh-badge.planned {
+  background: rgba(209, 165, 111, 0.2);
+  color: var(--dk-accent);
+}
+
+/* ---------- 規則連結彈窗（game-docs.css） ---------- */
+:root[data-theme="dark"] .game-docs .gd-label {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .game-docs .gd-link {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-docs a.gd-link:hover,
+:root[data-theme="dark"] .game-docs a.gd-link:focus-visible {
+  border-color: var(--dk-green);
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .game-docs .gd-plain {
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .game-docs .gd-go {
+  color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .game-docs .gd-del {
+  border-color: rgba(224, 120, 108, 0.45);
+  background: var(--dk-surface-2);
+  color: var(--c-danger);
+}
+
+/* ---------- 擴充彈窗與「含擴」標籤（game-expansions.css） ---------- */
+:root[data-theme="dark"] .ge-thumb {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .ge-name {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .ge-actions button {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .ge-actions button.ge-danger {
+  border-color: rgba(224, 120, 108, 0.45);
+  color: var(--c-danger);
+}
+
+:root[data-theme="dark"] .ge-input {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .ge-file {
+  border-color: var(--dk-line);
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .ge-add {
+  background: var(--c-forest);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .ge-empty,
+:root[data-theme="dark"] .ge-msg,
+:root[data-theme="dark"] .ge-note,
+:root[data-theme="dark"] .ge-hint {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .ge-links a {
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .ge-editor {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+}
+
+/* ---------- 遊戲背景（game-background.css） ---------- */
+:root[data-theme="dark"] .gbg-text {
+  color: var(--dk-text);
+}
+
+/* ---------- 玩錯紀錄（errata.css；規則助手也用，第 2 批再確認那邊） ---------- */
+:root[data-theme="dark"] .er-form textarea {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .er-count {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .er-count.over {
+  color: var(--c-danger);
+}
+
+:root[data-theme="dark"] .er-list-title,
+:root[data-theme="dark"] .er-title,
+:root[data-theme="dark"] .er-body {
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .er-list li {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+}
+
+:root[data-theme="dark"] .er-src,
+:root[data-theme="dark"] .er-box-title {
+  color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .er-note {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .er-box {
+  border-color: var(--dk-accent);
+  background: rgba(209, 165, 111, 0.1);
+}
+
+/* ---------- 垃圾桶（trash.css） ---------- */
+:root[data-theme="dark"] .trash-toggle {
+  border-color: var(--dk-line);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .trash-toggle small,
+:root[data-theme="dark"] .trash-info small {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .trash-item {
+  border-color: var(--dk-line);
+  background: var(--dk-surface);
+}
+
+:root[data-theme="dark"] .trash-cover-wrap {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .trash-actions button {
+  border-color: var(--dk-line);
+  background: var(--dk-surface-2);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .trash-actions .trash-delete {
+  border-color: rgba(224, 120, 108, 0.5);
+  color: var(--c-danger);
+}
+
+:root[data-theme="dark"] .modal-trash-btn {
+  color: #d49a9a;
+}
+
+:root[data-theme="dark"] .trash-reason {
+  color: var(--dk-accent);
+}
+
+/* ---------- 頁尾與預告橫幅（footer.css） ---------- */
+:root[data-theme="dark"] .assistant-banner {
+  border-color: var(--dk-line);
+  background: var(--dk-surface);
+}
+
+:root[data-theme="dark"] .assistant-icon {
+  background: var(--dk-surface-3);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .assistant-banner p:last-child {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .coming-soon {
+  border-color: var(--dk-line);
+  color: var(--dk-green-text);
+}
+
+:root[data-theme="dark"] .footer {
+  border-top-color: var(--dk-line);
+  color: var(--dk-text-soft);
+}
+
+/* ---------- 回到頂端、圖例、小圖示 ---------- */
+:root[data-theme="dark"] .back-to-top {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="dark"] .sl-legend {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .sl-legend.is-open {
+  background: var(--dk-surface-3);
+}
+
+:root[data-theme="dark"] .filter-drawer svg.fact-icon {
+  color: var(--dk-green-text);
+}
+
+/* ======== 原 dark-theme-2.css ======== */
+/* 深色模式第 2 批：俱樂部首頁、我的統計、統計中心、規則助手
+   做法：只在 :root[data-theme="dark"] 底下改寫各頁自己的顏色變數，原 CSS 不動，淺色零影響。
+   載入順序：放在 dark-theme.css 之後（App.tsx 最後一個 import）。 */
+
+/* ---------- 俱樂部首頁 ---------- */
+:root[data-theme="dark"] .mylist-drawer.club-home {
+  --ch-bg: #18211c;
+  --ch-card: #222d26;
+  --ch-line: rgba(236, 239, 230, 0.14);
+  --ch-ink: #ecefe6;
+  --ch-sub: #a3b1a7;
+  --ch-icon: #9cc9a8;
+  --ch-icon-bg: rgba(156, 201, 168, 0.14);
+  --ch-arrow: #7f8f85;
+  --ch-count: #9cc9a8;
+  --ch-pts-bg: #2a2a21;
+  --ch-pts-line: #4a4430;
+  --ch-pts-label: #c9b78f;
+  --ch-pts-ink: #f1ead7;
+  --ch-pts-arrow: #b59f76;
+  --ch-warn: #ee8f80;
+  color-scheme: dark;
+}
+
+/* ---------- 我的統計 ---------- */
+:root[data-theme="dark"] .mylist-drawer.club-stats {
+  --cs-bg: #18211c;
+  --cs-card: #222d26;
+  --cs-line: rgba(236, 239, 230, 0.14);
+  --cs-ink: #ecefe6;
+  --cs-sub: #a3b1a7;
+  --cs-accent: #9cc9a8;
+  --cs-accent-bg: rgba(156, 201, 168, 0.14);
+  --cs-tab-bg: #2b362f;
+  --cs-tab-on: #4a7a58;
+  --cs-tab-on-ink: #f5f1e4;
+  --cs-btn-bg: #2a352e;
+  --cs-input-bg: #2a352e;
+  --cs-warn: #ee8f80;
+  color-scheme: dark;
+}
+
+/* ---------- 統計中心 ---------- */
+:root[data-theme="dark"] .mylist-drawer.club-leaderboard {
+  --lc-bg: #18211c;
+  --lc-card: #222d26;
+  --lc-line: rgba(236, 239, 230, 0.14);
+  --lc-ink: #ecefe6;
+  --lc-sub: #a3b1a7;
+  --lc-accent: #9cc9a8;
+  --lc-accent-bg: rgba(156, 201, 168, 0.14);
+  --lc-tab-bg: #2b362f;
+  --lc-tab-on: #4a7a58;
+  --lc-tab-on-ink: #f5f1e4;
+  --lc-btn-bg: #2a352e;
+  --lc-input-bg: #2a352e;
+  --lc-panel-bg: #262f29;
+  --lc-gold: #e0b050;
+  color-scheme: dark;
+}
+
+/* ---------- 抽屜標題：vip.css 用 !important 鎖成深墨綠，深色要蓋掉 ---------- */
+:root[data-theme="dark"] .mylist-drawer .mylist-header h2 {
+  color: #ecefe6 !important;
+}
+:root[data-theme="dark"] .mylist-drawer .club-top h2 {
+  color: #fbf7ec !important; /* 俱樂部首頁深綠底，維持米白字 */
+}
+
+/* 抽屜內共用元素（vip.css／mylist.css 寫死淺色的部分，只在三個改版抽屜內覆蓋） */
+:root[data-theme="dark"] .mylist-drawer.club-stats .mylist-header,
+:root[data-theme="dark"] .mylist-drawer.club-leaderboard .mylist-header {
+  background: transparent;
+}
+:root[data-theme="dark"] .mylist-drawer.club-stats .mylist-close,
+:root[data-theme="dark"] .mylist-drawer.club-leaderboard .mylist-close {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-drawer.club-stats .lb-people-row,
+:root[data-theme="dark"] .mylist-drawer.club-leaderboard .lb-people-row {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-drawer.club-leaderboard .lb-people li {
+  border-color: rgba(236, 239, 230, 0.14);
+  background: #2a352e;
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-drawer.club-stats .cs-ctrl .pgr-open,
+:root[data-theme="dark"] .mylist-drawer.club-stats .cs-ctrl button {
+  color: #ecefe6;
+}
+
+/* ---------- 規則助手頁 ---------- */
+:root[data-theme="dark"] body .ra-backdrop.ra-v2,
+:root[data-theme="dark"] body .ra2-backdrop {
+  --ra-bg: #18211c;
+  --ra-surface: #222d26;
+  --ra-ink: #ecefe6;
+  --ra-soft: #a3b1a7;
+  --ra-line: #34413a;
+  --ra-accent: #7fb28c;
+  --ra-accent-ink: #a8d3b3;
+  --ra-accent-bg: #243a2c;
+  --ra-warm: #d9b27c;
+  --ra-warm-line: #a47a4a;
+  --ra-warm-bg: #33291b;
+  --ra-danger: #ee8f80;
+  --ra-focus: rgba(127, 178, 140, 0.35);
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] body .ra-backdrop.ra-v2 .ra-page {
+  background: var(--ra-bg);
+  color: var(--ra-ink);
+}
+
+/* 命中詞標黃：深色底改暗黃＋淺字，才讀得到 */
+:root[data-theme="dark"] body .ra-backdrop.ra-v2 .ra-mark {
+  background: #6b5a1f;
+  color: #fbf3d0;
+}
+
+/* 擴充徽章（藍灰）在深色下提亮 */
+:root[data-theme="dark"] body .ra-backdrop.ra-v2 .ra2 .ra2-badge-scope[data-scope='expansion'] {
+  border-color: #7d9db5;
+  background: rgba(125, 157, 181, 0.18);
+  color: #a9c6da;
+}
+
+/* 選中狀態：accent 變亮後白字對比不夠，改用深一點的綠底 */
+:root[data-theme="dark"] body .ra2-sheet .ra-chip[aria-pressed='true'],
+:root[data-theme="dark"] body .ra2-sheet .ra-btn[aria-pressed='true'] {
+  background: #4a7a58;
+  color: #f5f1e4;
+}
+
+/* 底部彈窗與輸入框 */
+:root[data-theme="dark"] body .ra2-sheet {
+  background: var(--ra-bg);
+  color: var(--ra-ink);
+}
+:root[data-theme="dark"] body .ra-backdrop.ra-v2 .ra-search,
+:root[data-theme="dark"] body .ra-backdrop.ra-v2 .ra2 .ra2-row input.ra2-input,
+:root[data-theme="dark"] body .ra-backdrop.ra-v2 .ra2-fb-text {
+  background: var(--ra-surface);
+  color: var(--ra-ink);
+  border-color: var(--ra-line);
+}
+
+/* 氣泡本身是深底淺字，深色下加細邊才分得出來 */
+:root[data-theme="dark"] body .ra-hold-tip-pop {
+  background: #3a4d41;
+  border: 1px solid rgba(236, 239, 230, 0.18);
+}
+
+/* ======== 原 dark-theme-3.css ======== */
+/* 深色模式第 3 批：管理中心、規則書管理、上傳視窗、統計表、留言／聚會心得等 vip.css 寫死淺色的區塊
+   另含：修正第 2 批俱樂部首頁頂部（淺色時是深綠底，深色下被變數改成米色，字看不到）
+   載入順序：放在 dark-theme-2.css 之後。全部以 :root[data-theme="dark"] 開頭，淺色零影響。 */
+
+:root[data-theme="dark"] {
+  --d3-bg: #18211c;
+  --d3-panel: #1d2822;
+  --d3-card: #222d26;
+  --d3-card2: #2a352e;
+  --d3-line: rgba(236, 239, 230, 0.16);
+  --d3-ink: #ecefe6;
+  --d3-sub: #a3b1a7;
+  --d3-accent: #9cc9a8;
+  --d3-accent-ink: #a8d3b3;
+  --d3-on: #4a7a58;
+  --d3-warn: #ee8f80;
+  --d3-warm: #d9b27c;
+}
+
+/* ---------- 修正：俱樂部首頁頂部（深綠底、米白字） ---------- */
+:root[data-theme="dark"] .mylist-drawer .club-top,
+:root[data-theme="dark"] .mylist-drawer .club-card {
+  background: #2c3f34 !important;
+  color: #fbf7ec;
+}
+:root[data-theme="dark"] .mylist-drawer .club-top h2,
+:root[data-theme="dark"] .mylist-drawer .club-card h2,
+:root[data-theme="dark"] .mylist-drawer .club-who b,
+:root[data-theme="dark"] .mylist-drawer .club-who strong {
+  color: #fbf7ec !important;
+}
+
+/* ---------- 管理中心外框、分頁 ---------- */
+:root[data-theme="dark"] .ac-modal {
+  background: var(--d3-panel);
+  color: var(--d3-ink);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+:root[data-theme="dark"] .ac-head h2,
+:root[data-theme="dark"] .ma-close {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ac-modal .ac-tabs {
+  background: transparent;
+}
+:root[data-theme="dark"] .ac-modal .ac-tabs .ac-tab {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ac-modal .ac-tabs .ac-tab.active {
+  background: var(--d3-on);
+  border-color: var(--d3-on);
+  color: #fff;
+  box-shadow: none;
+}
+:root[data-theme="dark"] .ac-data h3 {
+  color: var(--d3-ink);
+}
+
+/* ---------- 成員清單 ---------- */
+:root[data-theme="dark"] .ma-summary,
+:root[data-theme="dark"] .ma-note,
+:root[data-theme="dark"] .ma-who span,
+:root[data-theme="dark"] .ma-normal {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .ma-tools input,
+:root[data-theme="dark"] .ma-tools select,
+:root[data-theme="dark"] .ma-code-row input,
+:root[data-theme="dark"] .ma-body .cls-searchbox {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ma-tools input::placeholder,
+:root[data-theme="dark"] .ma-code-row input::placeholder,
+:root[data-theme="dark"] .cls-search-input::placeholder {
+  color: #7f8f85;
+}
+:root[data-theme="dark"] .ma-row {
+  border-bottom-color: var(--d3-line);
+}
+:root[data-theme="dark"] .ma-who b,
+:root[data-theme="dark"] .ma-who strong {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ma-btn {
+  background: var(--d3-card2);
+  border-color: #7fb28c;
+  color: var(--d3-accent-ink);
+}
+:root[data-theme="dark"] .ma-btn:hover {
+  background: #2f4a3a;
+}
+:root[data-theme="dark"] .ma-code {
+  border-top-color: var(--d3-line);
+}
+:root[data-theme="dark"] .ma-warn {
+  color: var(--d3-warn);
+}
+
+/* ---------- 集點聚會分頁（loy／lga） ---------- */
+:root[data-theme="dark"] .loy-tab {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .loy-tab.active {
+  background: var(--d3-on);
+  border-color: var(--d3-on);
+  color: #fff;
+}
+:root[data-theme="dark"] .lga-month-head {
+  background: var(--d3-card2);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .lga-month-head small,
+:root[data-theme="dark"] .lga-month-arrow {
+  color: var(--d3-sub);
+}
+
+/* ---------- 規則書管理（rb／rbv／rbu） ---------- */
+:root[data-theme="dark"] .rb,
+:root[data-theme="dark"] .rb h3,
+:root[data-theme="dark"] .rb .rbv-list-head h3 {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb-hint,
+:root[data-theme="dark"] .rb-file small,
+:root[data-theme="dark"] .rb .rbv-list-head small,
+:root[data-theme="dark"] .rb .rbv-count,
+:root[data-theme="dark"] .rb .rbv-note,
+:root[data-theme="dark"] .rb .rbv-row-tip,
+:root[data-theme="dark"] .rb .rbv-arrow,
+:root[data-theme="dark"] .rb .rbv-stats,
+:root[data-theme="dark"] .rb .rbv-stats-usage,
+:root[data-theme="dark"] .rb-usage small {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .rb .rbv-stats b,
+:root[data-theme="dark"] .rb .rbv-stats > button:hover {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb .rbv-stats > button.warn b {
+  color: #e6a15f;
+}
+:root[data-theme="dark"] .rb .rbv-stats > button.bad,
+:root[data-theme="dark"] .rb .rbv-stats > button.bad b {
+  color: var(--d3-warn);
+}
+
+/* 輸入框、下拉 */
+:root[data-theme="dark"] .rb-fields select,
+:root[data-theme="dark"] .rb-fields input,
+:root[data-theme="dark"] .rb-search,
+:root[data-theme="dark"] .rb-linkform input,
+:root[data-theme="dark"] .rb .rbv-search,
+:root[data-theme="dark"] .rb-picked {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb-suggest {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .rb-suggest button {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb-suggest button:hover,
+:root[data-theme="dark"] .rb-suggest button:active {
+  background: #33423a;
+}
+
+/* 列、卡片 */
+:root[data-theme="dark"] .rb-row,
+:root[data-theme="dark"] .rb .rbv-row {
+  background: var(--d3-card);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb .rbv-row.open {
+  border-color: #a47a4a;
+}
+:root[data-theme="dark"] .rb .rbv-row-head {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb .rbv-row-body {
+  border-top-color: var(--d3-line);
+}
+:root[data-theme="dark"] .rb-chip {
+  background: #33423a;
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb-warn {
+  color: #e6a15f;
+}
+:root[data-theme="dark"] .rb-x {
+  color: var(--d3-sub);
+}
+
+/* 按鈕：分段、子分頁、篩選、標籤 */
+:root[data-theme="dark"] .rb .rb-seg > button,
+:root[data-theme="dark"] .rb .rbv-subtabs > button,
+:root[data-theme="dark"] .rb .rbv-chip,
+:root[data-theme="dark"] .rb .rbv-filterbtn,
+:root[data-theme="dark"] .rb .rbv-info,
+:root[data-theme="dark"] .rb-seg button {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rb .rb-seg > button.active,
+:root[data-theme="dark"] .rb .rbv-subtabs > button[aria-selected='true'],
+:root[data-theme="dark"] .rb .rbv-chip.active,
+:root[data-theme="dark"] .rb .rbv-filterbtn.on,
+:root[data-theme="dark"] .rb-seg button.active {
+  background: var(--d3-on);
+  border-color: var(--d3-on);
+  color: #fff;
+}
+:root[data-theme="dark"] .rb .rbv-chip small {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .rb .rbv-chip.active small {
+  color: #d9e8dc;
+}
+:root[data-theme="dark"] .rb .rbv-filters {
+  background: var(--d3-card);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .rb .rbv-filter-label {
+  color: var(--d3-warm);
+}
+:root[data-theme="dark"] .rb .rbv-clear {
+  background: var(--d3-card2);
+  border-color: rgba(238, 143, 128, 0.4);
+  color: var(--d3-warn);
+}
+:root[data-theme="dark"] .rb .rbv-mini,
+:root[data-theme="dark"] .rb .rbv-tag {
+  background: var(--d3-on);
+  color: #fff;
+}
+:root[data-theme="dark"] .rb .rbv-list {
+  border-top-color: var(--d3-line);
+}
+
+/* 小標籤 */
+:root[data-theme="dark"] .rb .rbv-badge.ok {
+  color: #a9d8b4;
+  background: rgba(106, 170, 122, 0.18);
+  border-color: rgba(106, 170, 122, 0.4);
+}
+:root[data-theme="dark"] .rb .rbv-badge.warn {
+  color: #f0b27a;
+  background: rgba(230, 161, 95, 0.16);
+  border-color: rgba(230, 161, 95, 0.4);
+}
+:root[data-theme="dark"] .rb .rbv-badge.bad {
+  color: var(--d3-warn);
+  background: rgba(238, 143, 128, 0.16);
+  border-color: rgba(238, 143, 128, 0.4);
+}
+:root[data-theme="dark"] .rb .rbv-badge.muted {
+  color: var(--d3-sub);
+  background: #2f3b34;
+  border-color: var(--d3-line);
+}
+
+/* 容量條 */
+:root[data-theme="dark"] .rb .rbv-bar {
+  background: #33423a;
+}
+:root[data-theme="dark"] .rb-usage-bar {
+  background: rgba(156, 201, 168, 0.18);
+}
+:root[data-theme="dark"] .rb-usage-bar > div,
+:root[data-theme="dark"] .rb .rbv-bar > span {
+  background: #7fb28c;
+}
+
+/* 上傳 PDF 視窗 */
+:root[data-theme="dark"] .rbu-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .rbu-modal {
+  background: var(--d3-panel);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rbu-head {
+  border-bottom-color: var(--d3-line);
+}
+:root[data-theme="dark"] .rbu-head h3 {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rbu-close {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .rbu-body .rb-actions {
+  background: var(--d3-panel);
+  border-top-color: var(--d3-line);
+}
+
+/* ---------- VIP 鎖、報到、統計表（vip.css 內的部分） ---------- */
+:root[data-theme="dark"] .vip-lock {
+  background: var(--d3-card);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .vip-lock p {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ci-game {
+  border-bottom-color: var(--d3-line);
+}
+:root[data-theme="dark"] .ci-game-state {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .ci-game-state.done {
+  color: var(--d3-accent);
+}
+:root[data-theme="dark"] .st-modal {
+  background: var(--d3-panel);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .st-wrap {
+  background: var(--d3-card);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .st-table th,
+:root[data-theme="dark"] .st-table td {
+  border-bottom-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .st-table thead th,
+:root[data-theme="dark"] .st-table thead .st-sticky {
+  background: #2b362f;
+}
+:root[data-theme="dark"] .st-table .st-sticky {
+  background: var(--d3-card);
+}
+:root[data-theme="dark"] .st-table tfoot td {
+  background: #263029;
+}
+:root[data-theme="dark"] .st-table th small {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .st-sort {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .lb-table-btn {
+  background: var(--d3-card2);
+  border-color: #7fb28c;
+  color: var(--d3-accent-ink);
+}
+:root[data-theme="dark"] .lb-people-btn {
+  color: var(--d3-accent);
+}
+:root[data-theme="dark"] .lb-people-row {
+  background: var(--d3-card);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .lb-people-row p {
+  color: var(--d3-sub);
+}
+
+/* ---------- 規則助手頁舊樣式（.ra／.ra-results，用在管理者以外的彈窗內容） ---------- */
+:root[data-theme="dark"] .ra,
+:root[data-theme="dark"] .ra-field {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ra-field textarea,
+:root[data-theme="dark"] .ra-field input {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ra-results li {
+  background: var(--d3-card);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .ra-results p {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .ra-source {
+  color: var(--d3-warm);
+}
+:root[data-theme="dark"] .ra-remaining,
+:root[data-theme="dark"] .ra-actions-note {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .ra-btn {
+  background: var(--d3-card2);
+  color: var(--d3-accent-ink);
+}
+:root[data-theme="dark"] .ra-btn-main {
+  background: var(--d3-on);
+  color: #fff;
+}
+
+/* ---------- 心得、留言、聚會（vip.css 內 gn2／gn3／gb／mg／np） ---------- */
+:root[data-theme="dark"] .mg-item,
+:root[data-theme="dark"] .mg-note,
+:root[data-theme="dark"] .mg-chip,
+:root[data-theme="dark"] .gb-item,
+:root[data-theme="dark"] .gb-mine-box,
+:root[data-theme="dark"] .gn-mine-list li,
+:root[data-theme="dark"] .gn3-people,
+:root[data-theme="dark"] .gn3-card {
+  background: var(--d3-card);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .mg-title,
+:root[data-theme="dark"] .mg-section-title,
+:root[data-theme="dark"] .gb-name,
+:root[data-theme="dark"] .gb-content,
+:root[data-theme="dark"] .gn3-summary h3,
+:root[data-theme="dark"] .gn3-people summary,
+:root[data-theme="dark"] .gn-mine summary,
+:root[data-theme="dark"] .gn-mine-head b,
+:root[data-theme="dark"] .gn-mine-list p,
+:root[data-theme="dark"] .gn2-check,
+:root[data-theme="dark"] .gn2-leave-text {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .mg-muted,
+:root[data-theme="dark"] .mg-sub,
+:root[data-theme="dark"] .mg-arrow,
+:root[data-theme="dark"] .mg-chip-sub,
+:root[data-theme="dark"] .gb-empty,
+:root[data-theme="dark"] .gb-count,
+:root[data-theme="dark"] .gb-hidden-toggle,
+:root[data-theme="dark"] .gn3-summary p,
+:root[data-theme="dark"] .gn-mine-head,
+:root[data-theme="dark"] .gn2-hint,
+:root[data-theme="dark"] .gn2-count,
+:root[data-theme="dark"] .gn2-check small,
+:root[data-theme="dark"] .mg-quiet,
+:root[data-theme="dark"] .club-pts-line,
+:root[data-theme="dark"] .cls-count {
+  color: var(--d3-sub);
+}
+:root[data-theme="dark"] .mg-date,
+:root[data-theme="dark"] .mg-month,
+:root[data-theme="dark"] .mg-chip.me,
+:root[data-theme="dark"] .ap-picked,
+:root[data-theme="dark"] .ap-ok {
+  background: #2f4a3a;
+  color: #dbe9de;
+}
+:root[data-theme="dark"] .gn2-textarea,
+:root[data-theme="dark"] .gb-textarea,
+:root[data-theme="dark"] .ap-search,
+:root[data-theme="dark"] .cls-search,
+:root[data-theme="dark"] .cls-sort {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .gn2-pane,
+:root[data-theme="dark"] .gn2-copy,
+:root[data-theme="dark"] .gn2-del,
+:root[data-theme="dark"] .gn2-ghost,
+:root[data-theme="dark"] .gn2-delpanel button,
+:root[data-theme="dark"] .ap-result {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .gn2-pane.active,
+:root[data-theme="dark"] .gn2-save,
+:root[data-theme="dark"] .gb-save {
+  background: var(--d3-on);
+  color: #fff;
+}
+:root[data-theme="dark"] .gn2-warn {
+  background: rgba(238, 143, 128, 0.16);
+  color: #f2b4a8;
+}
+:root[data-theme="dark"] .gn2-error,
+:root[data-theme="dark"] .gb-warn {
+  color: var(--d3-warn);
+}
+:root[data-theme="dark"] .gn2-info,
+:root[data-theme="dark"] .gn2-played,
+:root[data-theme="dark"] .gn3-open,
+:root[data-theme="dark"] .gn-mine-go,
+:root[data-theme="dark"] .gb-mine {
+  color: var(--d3-accent);
+}
+:root[data-theme="dark"] .gn3-foot {
+  background: var(--d3-panel);
+  border-top-color: var(--d3-line);
+}
+:root[data-theme="dark"] .gn3-cover {
+  background: #33423a;
+}
+:root[data-theme="dark"] .cls-searchbox {
+  background: var(--d3-card2);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .cls-search-input {
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .cls-sort-field,
+:root[data-theme="dark"] .cls-sort-dir {
+  background-color: var(--d3-card2);
+  color: var(--d3-ink);
+}
+:root[data-theme="dark"] .mystat-topn-btn {
+  color: var(--d3-accent);
+  border-color: var(--d3-line);
+}
+:root[data-theme="dark"] .mystat-topn-btn.active {
+  background: var(--d3-on);
+  color: #fff;
+}
+:root[data-theme="dark"] .search-filter-btn {
+  color: var(--d3-accent-ink);
+}
+:root[data-theme="dark"] .search-filter-btn.on {
+  background: var(--d3-on);
+  color: #fff;
+}
+
+/* ======== 原 dark-theme-4.css ======== */
+/* 深色模式第 3.5 批：全螢幕頁（統計表、分布圖）、fullscreen-page.css、stats-chart.css、scatter-list.css
+   載入順序：放在 dark-theme-3.css 之後。全部以 :root[data-theme="dark"] 開頭，淺色零影響。 */
+
+/* ---------- 全螢幕頁外框（原本寫死 color-scheme: light） ---------- */
+:root[data-theme="dark"] .fsp {
+  background: #18211c;
+  color: #ecefe6;
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .fsp-head {
+  background: #1d2822;
+  border-bottom-color: rgba(236, 239, 230, 0.16);
+}
+:root[data-theme="dark"] .fsp-head h2 {
+  color: #ecefe6 !important;
+}
+:root[data-theme="dark"] .fsp-close {
+  color: #ecefe6;
+}
+
+/* ---------- 切換列、說明字 ---------- */
+:root[data-theme="dark"] .lb-pages {
+  background: #2b362f;
+}
+:root[data-theme="dark"] .lb-pages button {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lb-pages button.active {
+  background: #4a7a58;
+  color: #f5f1e4;
+}
+:root[data-theme="dark"] .sc-note,
+:root[data-theme="dark"] .sc-hint,
+:root[data-theme="dark"] .pb-who,
+:root[data-theme="dark"] .st-tip,
+:root[data-theme="dark"] .sc-box .sc-pick-empty {
+  color: #a3b1a7;
+}
+
+/* ---------- 分布圖 ---------- */
+:root[data-theme="dark"] .sc-controls label {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .sc-controls select {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .sc-box,
+:root[data-theme="dark"] .sc-pick {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.16);
+}
+:root[data-theme="dark"] .sc-svg text {
+  fill: #a3b1a7;
+}
+:root[data-theme="dark"] .sc-svg .sc-axis-title {
+  fill: #ecefe6;
+}
+:root[data-theme="dark"] .sc-dot circle.sc-vis {
+  fill: #7fb28c;
+  stroke: #18211c;
+}
+:root[data-theme="dark"] .sc-dot.on circle.sc-vis {
+  fill: #e0b050;
+}
+:root[data-theme="dark"] .sc-svg .sc-label {
+  fill: #ecefe6;
+  stroke: #222d26;
+}
+:root[data-theme="dark"] .sc-num {
+  fill: #142019; /* 點變亮了，編號改深字 */
+}
+:root[data-theme="dark"] .sc-pick h4,
+:root[data-theme="dark"] .sc-pick li {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .sc-pick button,
+:root[data-theme="dark"] .sc-tools button,
+:root[data-theme="dark"] .ms-info {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .sc-tools button.sc-toggle[aria-pressed='true'] {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #f5f1e4;
+}
+:root[data-theme="dark"] .sc-box .sc-pick.sc-pick-float {
+  background: rgba(34, 45, 38, 0.97);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* 圖下方的名單 */
+:root[data-theme="dark"] .sc-names button {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .sc-names button b {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .sc-names button.on {
+  background: #2f4a3a;
+}
+
+/* 統計表 .st-modal.st-embedded 的 .ac-tabs 小分頁在第 3 批已處理 */
+
+/* ======== 原 dark-theme-5.css ======== */
+/* 深色模式第 4 批：歡迎／VIP 升級／獎勵視窗、評分（我的評分、ratings、今日流程）、補日期視窗外框、
+   集點卡、管理者集點聚會（loyalty-admin）、新增聚會精靈、預計聚會
+   載入順序：放在 dark-theme-4.css 之後。全部以 :root[data-theme="dark"] 開頭，淺色零影響。 */
+
+/* ===================== 歡迎、VIP 升級、獎勵 ===================== */
+:root[data-theme="dark"] .wd-card,
+:root[data-theme="dark"] .vu-card,
+:root[data-theme="dark"] .rw-card {
+  background: #222d26;
+  color: #ecefe6;
+  color-scheme: dark;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+:root[data-theme="dark"] .wd-brand,
+:root[data-theme="dark"] .vu-title {
+  color: #a8d3b3;
+}
+:root[data-theme="dark"] .wd-tag {
+  color: #d9b27c;
+}
+:root[data-theme="dark"] .wd-title,
+:root[data-theme="dark"] .rw-title {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .wd-sub,
+:root[data-theme="dark"] .vu-sub,
+:root[data-theme="dark"] .rw-text {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .wd-foot,
+:root[data-theme="dark"] .vu-note,
+:root[data-theme="dark"] .rw-never {
+  color: #8f9e94;
+}
+:root[data-theme="dark"] .wd-warn {
+  background: #3a3020;
+  color: #e8d3a8;
+}
+:root[data-theme="dark"] .wd-copy,
+:root[data-theme="dark"] .wd-secondary,
+:root[data-theme="dark"] .vu-secondary {
+  background: #2a352e;
+  border-color: #7fb28c;
+  color: #a8d3b3;
+}
+:root[data-theme="dark"] .wd-copy {
+  border-color: #a47a4a;
+  color: #e8d3a8;
+}
+:root[data-theme="dark"] .wd-primary,
+:root[data-theme="dark"] .vu-primary,
+:root[data-theme="dark"] .rw-ok {
+  background: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .vu-primary:disabled {
+  background: #33423a;
+  color: #7f8f85;
+}
+:root[data-theme="dark"] .vu-list li {
+  border-bottom-color: rgba(236, 239, 230, 0.14);
+}
+:root[data-theme="dark"] .vu-field input {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .vu-error {
+  color: #ee8f80;
+}
+:root[data-theme="dark"] .rw-row {
+  color: #e0b050;
+}
+
+/* ===================== 評分：ratings.css ===================== */
+:root[data-theme="dark"] .rate-subtitle,
+:root[data-theme="dark"] .rate-note {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .rate-overall,
+:root[data-theme="dark"] .rate-grid-item {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .rate-overall strong {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .rate-grid-item strong,
+:root[data-theme="dark"] .rate-label {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .rate-scale button {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .rate-scale button.is-selected {
+  background: #4a7a58;
+  border-color: #7fb28c;
+  color: #fff;
+}
+:root[data-theme="dark"] .rate-toggle {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .rate-save {
+  background: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .rate-delete {
+  color: #ee8f80;
+}
+
+/* ===================== 我的評分：my-ratings-hub.css ===================== */
+:root[data-theme="dark"] .mrh-summary > div,
+:root[data-theme="dark"] .mrh-item {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.14);
+}
+:root[data-theme="dark"] .mrh-item.open {
+  border-color: #7fb28c;
+}
+:root[data-theme="dark"] .mrh-summary strong,
+:root[data-theme="dark"] .mrh-name,
+:root[data-theme="dark"] .mrh-score {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mrh-summary span,
+:root[data-theme="dark"] .mrh-help,
+:root[data-theme="dark"] .mrh-count,
+:root[data-theme="dark"] .mrh-unplayed,
+:root[data-theme="dark"] .mrh-date,
+:root[data-theme="dark"] .mrh-chev {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .mrh-seg {
+  background: #2b362f;
+}
+:root[data-theme="dark"] .mrh-seg button {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mrh-seg button.active {
+  background: #4a7a58;
+  color: #f5f1e4;
+}
+:root[data-theme="dark"] .mrh-filter,
+:root[data-theme="dark"] .mrh-sort,
+:root[data-theme="dark"] .mrh-search,
+:root[data-theme="dark"] .mrh-dir {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mrh-filter.active {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .mrh-detail {
+  background: #1d2822;
+  border-top-color: rgba(236, 239, 230, 0.14);
+}
+:root[data-theme="dark"] .mrh-none {
+  background: rgba(230, 150, 110, 0.18);
+  color: #f0b290;
+}
+:root[data-theme="dark"] .mrh-partial,
+:root[data-theme="dark"] .mrh-note {
+  background: rgba(224, 176, 80, 0.18);
+  color: #e8c87a;
+}
+:root[data-theme="dark"] .mrh-full {
+  background: rgba(106, 170, 122, 0.2);
+  color: #a9d8b4;
+}
+:root[data-theme="dark"] .mrh-link {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .mrh-helpfold summary,
+:root[data-theme="dark"] .mrh-helpfold .mrh-help {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .mrh-helpfold[open] summary {
+  background: #33423a;
+  color: #ecefe6;
+}
+
+/* ===================== 今日遊戲評分流程：today-flow.css ===================== */
+:root[data-theme="dark"] .tf-sheet {
+  background: #1d2822;
+  color: #ecefe6;
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .tf-title,
+:root[data-theme="dark"] .tf-count,
+:root[data-theme="dark"] .tf-gname,
+:root[data-theme="dark"] .tf-reward,
+:root[data-theme="dark"] .tf-sheet-head h3,
+:root[data-theme="dark"] .tf-x {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .tf-sheet-head {
+  border-bottom-color: rgba(236, 239, 230, 0.16);
+}
+:root[data-theme="dark"] .tf-sub,
+:root[data-theme="dark"] .tf-step {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .tf-primary,
+:root[data-theme="dark"] .tf-flow-actions .tf-next {
+  background: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .tf-primary:disabled,
+:root[data-theme="dark"] .tf-flow-actions .tf-next:disabled {
+  background: #33423a;
+  color: #7f8f85;
+}
+:root[data-theme="dark"] .tf-done-tag {
+  background: rgba(106, 170, 122, 0.2);
+  color: #a9d8b4;
+}
+:root[data-theme="dark"] .tf-thumb {
+  background: #33423a;
+}
+:root[data-theme="dark"] .tf-progress {
+  background: #33423a;
+}
+:root[data-theme="dark"] .tf-progress > span {
+  background: #7fb28c;
+}
+:root[data-theme="dark"] .tf-flow-actions {
+  background: linear-gradient(to bottom, rgba(29, 40, 34, 0), #1d2822 30%);
+}
+:root[data-theme="dark"] .tf-flow-actions .tf-prev {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .tf-flow-hint {
+  color: #ee8f80;
+}
+
+/* ===================== 補日期視窗外框：played-record.css ===================== */
+:root[data-theme="dark"] .pgr-sheet {
+  background: #1d2822;
+  color: #ecefe6;
+  color-scheme: dark;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+:root[data-theme="dark"] .pgr-head h3,
+:root[data-theme="dark"] .pgr-close,
+:root[data-theme="dark"] .pgr-total {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .pgr-open {
+  color: #ecefe6;
+}
+
+/* ===================== 集點卡：loyalty-card.css（變數都在 .lc 上） ===================== */
+:root[data-theme="dark"] .lc {
+  --lc-paper: #1d2822;
+  --lc-paper-2: #2a352e;
+  --lc-ink: #ecefe6;
+  --lc-muted: #a3b1a7;
+  --lc-green: #7fb28c;
+  --lc-green-dark: #a8d3b3; /* 作文字色用；橫幅底色另外指定 */
+  --lc-stamp: #ee8f80;
+  --lc-kraft: #6b5e40;
+  --lc-line: rgba(236, 239, 230, 0.16);
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .lc-banner {
+  background: #2c3f34;
+  color: #f6efd9;
+}
+:root[data-theme="dark"] .lc-stat,
+:root[data-theme="dark"] .lc-day,
+:root[data-theme="dark"] .lc-ticket,
+:root[data-theme="dark"] .lc-wallet {
+  background: #222d26;
+}
+:root[data-theme="dark"] .lc-wallet .lc-stat {
+  background: #1d2822;
+}
+:root[data-theme="dark"] .lc-steps b {
+  background: #4a7a58;
+}
+:root[data-theme="dark"] .lc-btn:hover,
+:root[data-theme="dark"] .lc-refresh:hover {
+  background: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .lc-today {
+  background: #3a2420;
+  border-color: #ee8f80;
+}
+:root[data-theme="dark"] .lc-today-kicker {
+  color: #ee8f80;
+}
+:root[data-theme="dark"] .lc-today-ticket {
+  background: #33291b;
+  border-color: #6b5e40;
+}
+:root[data-theme="dark"] .lc-today-ticket .lc-today-kicker {
+  color: #e0b050;
+}
+:root[data-theme="dark"] .lc-today-title {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lc-error,
+:root[data-theme="dark"] .lc-warning {
+  color: #f2b4a8;
+}
+
+/* ===================== 集點狀況（loyalty.css 少數寫死色） ===================== */
+:root[data-theme="dark"] .loy-day-ok .loy-day-text,
+:root[data-theme="dark"] .loy-game-done {
+  color: #7fd09b;
+}
+
+/* ===================== 管理者集點聚會：loyalty-admin.css ===================== */
+:root[data-theme="dark"] .admin-modal.loy-admin {
+  background: #18211c;
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .loy-admin h2,
+:root[data-theme="dark"] .loy-admin h3,
+:root[data-theme="dark"] .lga-head-text h2,
+:root[data-theme="dark"] .lga-step,
+:root[data-theme="dark"] .lga-sub,
+:root[data-theme="dark"] .lga-detail-head h3 {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lga-head-text p,
+:root[data-theme="dark"] .lga-row-main small,
+:root[data-theme="dark"] .lga-contact {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .lga-head-icon {
+  background: rgba(156, 201, 168, 0.16);
+}
+:root[data-theme="dark"] .lga-close {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lga-close:hover {
+  background: rgba(236, 239, 230, 0.1);
+}
+:root[data-theme="dark"] .lga-badge,
+:root[data-theme="dark"] .lga-status {
+  background: rgba(156, 201, 168, 0.18);
+  color: #a8d3b3;
+}
+:root[data-theme="dark"] .lga-status.done {
+  background: rgba(236, 239, 230, 0.1);
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .lga-card,
+:root[data-theme="dark"] .lga-row {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.14);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lga-row.active {
+  border-color: #7fb28c;
+  box-shadow: 0 0 0 2px rgba(127, 178, 140, 0.25);
+}
+:root[data-theme="dark"] .lga-date {
+  background: rgba(224, 176, 80, 0.16);
+  color: #e8c87a;
+}
+:root[data-theme="dark"] .lga-new input {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lga-primary {
+  background: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .lga-outline {
+  border-color: #7fb28c;
+  color: #a8d3b3;
+}
+:root[data-theme="dark"] .lga-danger {
+  border-color: rgba(238, 143, 128, 0.5);
+  color: #ee8f80;
+}
+:root[data-theme="dark"] .lga-chip {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.16);
+}
+:root[data-theme="dark"] .lga-chip.on {
+  background: rgba(106, 170, 122, 0.16);
+  border-color: #7fb28c;
+}
+:root[data-theme="dark"] .lga-chip-main {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lga-chip.on .lga-avatar {
+  background: #4a7a58;
+}
+:root[data-theme="dark"] .lga-check {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .lga-exempt {
+  color: #e8c87a;
+}
+:root[data-theme="dark"] .lga-exempt.on {
+  background: rgba(224, 176, 80, 0.2);
+}
+:root[data-theme="dark"] .lga-toggle {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .lga-toggle.on {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .lga-self {
+  background: rgba(224, 176, 80, 0.18);
+  color: #e8c87a;
+}
+:root[data-theme="dark"] .lga-filter {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lga-pcard {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.14);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lga-pcard.has-ticket {
+  background: #33291b;
+  border-color: #a47a4a;
+}
+:root[data-theme="dark"] .lga-pcard.dim {
+  opacity: 0.75;
+}
+:root[data-theme="dark"] .lga-pinfo b,
+:root[data-theme="dark"] .lga-pinfo strong {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lga-pill {
+  background: #33423a;
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lga-pill.ticket {
+  background: #a47a4a;
+  color: #fff;
+}
+/* 歷史聚會等收合標題（原本是淺色底）：只作用在管理者集點聚會頁內 */
+:root[data-theme="dark"] .loy-admin details > summary {
+  background: #2b362f;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .loy-admin details > summary small {
+  color: #a3b1a7;
+}
+
+/* ===================== 新增聚會精靈：new-gathering.css ===================== */
+:root[data-theme="dark"] .ngw-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .ngw-panel {
+  background: #18211c;
+  color: #ecefe6;
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .ngw-header,
+:root[data-theme="dark"] .ngw-footer {
+  background: #1d2822;
+  border-color: rgba(236, 239, 230, 0.16);
+}
+:root[data-theme="dark"] .ngw-header h2,
+:root[data-theme="dark"] .ngw-sec h3,
+:root[data-theme="dark"] .ngw-close,
+:root[data-theme="dark"] .ngw-testbox,
+:root[data-theme="dark"] .ngw-title-ok,
+:root[data-theme="dark"] .ngw-exempt {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .ngw-sec {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.14);
+}
+:root[data-theme="dark"] .ngw-field span,
+:root[data-theme="dark"] .ngw-hint,
+:root[data-theme="dark"] .ngw-count,
+:root[data-theme="dark"] .ngw-wanters,
+:root[data-theme="dark"] .ngw-wantlist,
+:root[data-theme="dark"] .ngw-pname small {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .ngw-field input,
+:root[data-theme="dark"] .ngw-search {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .ngw-field input::placeholder,
+:root[data-theme="dark"] .ngw-search::placeholder {
+  color: #7f8f85;
+}
+:root[data-theme="dark"] .ngw-results {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+}
+:root[data-theme="dark"] .ngw-results button {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .ngw-results li + li,
+:root[data-theme="dark"] .ngw-game,
+:root[data-theme="dark"] .ngw-player {
+  border-top-color: rgba(236, 239, 230, 0.12);
+}
+:root[data-theme="dark"] .ngw-check {
+  background: #2a352e;
+  border-color: #a47a4a;
+}
+:root[data-theme="dark"] .ngw-player.on .ngw-check {
+  background: #4a7a58;
+  border-color: #4a7a58;
+}
+:root[data-theme="dark"] .ngw-wanters .on,
+:root[data-theme="dark"] .ngw-wantlist .on,
+:root[data-theme="dark"] .ngw-wantbtn {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .ngw-x {
+  color: #ee8f80;
+}
+:root[data-theme="dark"] .ngw-linkopt.off {
+  color: #7f8f85;
+}
+:root[data-theme="dark"] .ngw-error {
+  background: rgba(238, 143, 128, 0.16);
+  color: #f2b4a8;
+}
+:root[data-theme="dark"] .ngw-warn {
+  color: #f2b4a8;
+}
+:root[data-theme="dark"] .ngw-test-hint {
+  color: #e8c87a;
+}
+:root[data-theme="dark"] .ngw-primary {
+  background: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .ngw-cancel {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+
+/* ===================== 預計聚會：planned.css ===================== */
+:root[data-theme="dark"] .pg-hint,
+:root[data-theme="dark"] .pg-when,
+:root[data-theme="dark"] .pg-closed {
+  color: #c9b78f;
+}
+:root[data-theme="dark"] .pg-sub {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .pg-msg {
+  background: rgba(224, 176, 80, 0.16);
+  color: #e8c87a;
+}
+:root[data-theme="dark"] .pg-card,
+:root[data-theme="dark"] .pg-admin-item {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.14);
+}
+:root[data-theme="dark"] .pg-title,
+:root[data-theme="dark"] .pg-title-sm,
+:root[data-theme="dark"] .pg-fold > summary,
+:root[data-theme="dark"] .pg-voters {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .pg-note {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .pg-badge {
+  background: rgba(224, 176, 80, 0.2);
+  color: #e8c87a;
+}
+:root[data-theme="dark"] .pg-badge.ok {
+  background: rgba(106, 170, 122, 0.2);
+  color: #a9d8b4;
+}
+:root[data-theme="dark"] .pg-game {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .pg-thumb {
+  background: #33423a;
+}
+:root[data-theme="dark"] .pg-count {
+  color: #a8d3b3;
+}
+:root[data-theme="dark"] .pg-go {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .pg-go.on {
+  background: transparent;
+  border-color: #7fb28c;
+  color: #a8d3b3;
+}
+:root[data-theme="dark"] .pg-form input,
+:root[data-theme="dark"] .pg-convert select {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+
+/* ======== 原 dark-theme-6.css ======== */
+/* 深色模式第 4.5 批：補日期視窗內容（PlaySessions）與共用的 personal-hint
+   PlaySessions 沒有自己的 css，原本樣式在別的檔案；這裡只覆蓋顏色，不動版面。
+   載入順序：放在 dark-theme-5.css 之後。 */
+
+:root[data-theme="dark"] .personal-hint {
+  color: #a3b1a7;
+}
+
+:root[data-theme="dark"] .play-sessions,
+:root[data-theme="dark"] .play-sessions summary,
+:root[data-theme="dark"] .play-sessions-main,
+:root[data-theme="dark"] .play-sessions-main strong {
+  color: #ecefe6;
+}
+
+:root[data-theme="dark"] .play-sessions-list li {
+  border-color: rgba(236, 239, 230, 0.14);
+}
+:root[data-theme="dark"] .play-sessions-list p {
+  color: #a3b1a7;
+}
+
+/* 「＋ 補一個日期」與表單按鈕 */
+:root[data-theme="dark"] .play-sessions-add,
+:root[data-theme="dark"] .play-sessions-actions button.secondary {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .play-sessions-actions button:not(.secondary) {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .play-sessions-add:disabled {
+  opacity: 0.45;
+}
+
+/* 日期輸入框 */
+:root[data-theme="dark"] .play-sessions-form label,
+:root[data-theme="dark"] .play-sessions-form span {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .play-sessions-form input[type='date'] {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+  color-scheme: dark; /* 日期選擇器的小日曆也跟著變深色 */
+}
+
+/* 「刪除」「重試」文字連結 */
+:root[data-theme="dark"] .play-sessions-link {
+  color: #ee8f80;
+}
+
+/* 「自動」小標籤：原本是行內 style（淺綠底、深綠字），用屬性選擇器蓋掉 */
+:root[data-theme="dark"] .play-sessions-main span[style*='e6efe8'] {
+  background: rgba(106, 170, 122, 0.2) !important;
+  color: #a9d8b4 !important;
+}
+
+/* ======== 原 dark-theme-7.css ======== */
+/* 深色模式第 5 批：一般抽屜（留言板、我的心得、我的聚會、聚會．留言、集點卡）的底色與標題、
+   統計表上方的分頁列、分布圖的格線
+   載入順序：放在 dark-theme-6.css 之後。 */
+
+/* ---------- 一般抽屜：沒有 club-* 範圍 class 的那些頁面 ---------- */
+:root[data-theme="dark"] .mylist-drawer:not(.club-home):not(.club-stats):not(.club-leaderboard) {
+  background: #18211c;
+  color: #ecefe6;
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .mylist-drawer:not(.club-home):not(.club-stats):not(.club-leaderboard) .mylist-header {
+  background: #1d2822;
+  border-bottom: 1px solid rgba(236, 239, 230, 0.16);
+}
+:root[data-theme="dark"] .mylist-drawer:not(.club-home):not(.club-stats):not(.club-leaderboard) .mylist-close {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-drawer:not(.club-home):not(.club-stats):not(.club-leaderboard) .mylist-body {
+  background: transparent;
+}
+:root[data-theme="dark"] .mylist-drawer .mylist-empty {
+  color: #a3b1a7;
+}
+
+/* 「聚會．留言」上方的兩個分頁鈕 */
+:root[data-theme="dark"] .mylist-drawer .lb-tabs .lb-tab {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-drawer .lb-tabs .lb-tab.active {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+
+/* ---------- 統計表上方的分頁列（遊戲總表／分布圖／成員矩陣） ---------- */
+:root[data-theme="dark"] .ac-tabs {
+  background: #2b362f;
+}
+:root[data-theme="dark"] .ac-tab {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .ac-tab.active {
+  background: #4a7a58;
+  color: #fff;
+  box-shadow: none;
+}
+
+/* ---------- 分布圖：格線與座標軸原本是淺色，改成淡淡的亮線 ---------- */
+:root[data-theme="dark"] .sc-svg line {
+  stroke: rgba(236, 239, 230, 0.2) !important;
+}
+
+/* ======== 原 dark-theme-8.css ======== */
+/* 深色模式第 6 批：留言板、我的心得、留言列、心得表單、勾選刪除、集點卡月份摺疊、報到封面格、
+   一般抽屜清單（mylist.css）、管理中心「歷史聚會」列與集點狀況搜尋框
+   另含一條不分深淺的修正：「我的統計」展開的說明文字被固定搜尋列的陰影蓋住
+   載入順序：放在 dark-theme-7.css 之後。 */
+
+/* ---------- 不分深淺：說明文字下方留 20px，避開固定搜尋列往上 16px 的陰影 ---------- */
+.mylist-drawer.club-stats .ms-head + .st-tip {
+  margin-bottom: 20px;
+}
+
+/* ---------- 深色：固定搜尋列的底色與陰影要跟抽屜底色一致 ---------- */
+:root[data-theme="dark"] .mylist-drawer.club-stats .mylist-body .cls-searchbox.cls-sticky {
+  background: #18211c;
+  box-shadow: 0 -16px 0 #18211c;
+}
+
+/* ---------- 管理中心：歷史聚會列（用「含箭頭的按鈕」來選，不依賴 class 名稱） ---------- */
+:root[data-theme="dark"] button:has(> .lga-month-arrow) {
+  background: #2b362f !important;
+  border-color: rgba(236, 239, 230, 0.16) !important;
+  color: #ecefe6 !important;
+}
+:root[data-theme="dark"] button:has(> .lga-month-arrow) small,
+:root[data-theme="dark"] button:has(> .lga-month-arrow) .lga-month-arrow {
+  color: #a3b1a7 !important;
+}
+
+/* 集點狀況搜尋框 */
+:root[data-theme="dark"] input.lgs-search {
+  background: #2a352e !important;
+  border-color: rgba(236, 239, 230, 0.2) !important;
+  color: #ecefe6 !important;
+}
+:root[data-theme="dark"] input.lgs-search::placeholder {
+  color: #7f8f85;
+}
+
+/* ---------- 一般抽屜清單：mylist.css ---------- */
+:root[data-theme="dark"] .mylist-item {
+  border-bottom-color: rgba(236, 239, 230, 0.1);
+}
+:root[data-theme="dark"] .mylist-thumb {
+  background: #33423a;
+}
+:root[data-theme="dark"] .mylist-name,
+:root[data-theme="dark"] .club-menu-item {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-note,
+:root[data-theme="dark"] .mylist-hint {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .mylist-meta {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .mylist-remove {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-tab {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mylist-tab.active {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .mylist-back {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .club-today {
+  background: #33291b;
+  border-color: #a47a4a;
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .club-today p {
+  color: #c9b78f;
+}
+
+/* ---------- 我的心得：my-notes.css ---------- */
+:root[data-theme="dark"] .mh-chip {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .mh-chip.on {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .mh-add,
+:root[data-theme="dark"] .mh-save {
+  background: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .mh-badge.pub {
+  background: rgba(106, 170, 122, 0.2);
+  color: #a9d8b4;
+}
+:root[data-theme="dark"] .mh-badge.pri {
+  background: #33423a;
+  color: #c9d3cb;
+}
+:root[data-theme="dark"] .mh-error,
+:root[data-theme="dark"] .mh-hidden,
+:root[data-theme="dark"] .mh-danger {
+  color: #ee8f80;
+}
+:root[data-theme="dark"] .mh-fail {
+  color: #c9b78f;
+}
+:root[data-theme="dark"] .mh-source,
+:root[data-theme="dark"] .mh-count {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .mh-link {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .mh-textarea {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+
+/* ---------- 留言板：club-board.css ---------- */
+:root[data-theme="dark"] .club-menu-text .club-menu-sub {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .cb-btn {
+  color: #ecefe6;
+  border-color: rgba(217, 178, 124, 0.6);
+}
+:root[data-theme="dark"] .cb-compose,
+:root[data-theme="dark"] .cb-item {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.14);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .cb-input,
+:root[data-theme="dark"] .cb-pick-list button {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .cb-picked,
+:root[data-theme="dark"] .cb-meta {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .cb-date {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .cb-link {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .cb-danger {
+  color: #ee8f80;
+}
+:root[data-theme="dark"] .cb-chip {
+  background: rgba(156, 201, 168, 0.16);
+  color: #a8d3b3;
+}
+:root[data-theme="dark"] .cb-chip-off {
+  background: rgba(236, 239, 230, 0.08);
+  color: #a3b1a7;
+}
+
+/* ---------- 留言列：note-list／note-likes／note-points ---------- */
+:root[data-theme="dark"] .nl-item {
+  border-bottom-color: rgba(236, 239, 230, 0.14);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nl-item.is-open {
+  background: #222d26;
+}
+:root[data-theme="dark"] .nl-name,
+:root[data-theme="dark"] .nl-text {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nl-date,
+:root[data-theme="dark"] .nl-caret {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .nl-thumb {
+  background: #33423a;
+}
+:root[data-theme="dark"] .nl-game {
+  background: rgba(156, 201, 168, 0.14);
+  border-color: rgba(156, 201, 168, 0.3);
+  color: #a8d3b3;
+}
+:root[data-theme="dark"] .nl-game-off {
+  color: #8f9e94;
+}
+:root[data-theme="dark"] .nl-tag {
+  background: rgba(224, 176, 80, 0.16);
+  border-color: rgba(224, 176, 80, 0.35);
+  color: #e8c87a;
+}
+:root[data-theme="dark"] .nl-like {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #e8d3a8;
+}
+:root[data-theme="dark"] .nl-like.on {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .nl-like.off {
+  background: transparent;
+  border-color: transparent;
+}
+:root[data-theme="dark"] .nlk-list {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .np-btn {
+  color: #e8c87a;
+  border-color: #a47a4a;
+}
+:root[data-theme="dark"] .np-btn.on {
+  background: rgba(224, 176, 80, 0.18);
+}
+:root[data-theme="dark"] .np-count {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .np-like {
+  color: #a9d8b4;
+}
+:root[data-theme="dark"] .np-dislike {
+  color: #f0a898;
+}
+
+/* ---------- 心得表單：note-form／note-form-b2 ---------- */
+:root[data-theme="dark"] .nf {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.14);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nf-input,
+:root[data-theme="dark"] .nf-select,
+:root[data-theme="dark"] .nf-textarea {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nf-list button {
+  border-bottom-color: rgba(236, 239, 230, 0.12);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nf-tab,
+:root[data-theme="dark"] .nf-chip,
+:root[data-theme="dark"] .nf-copy,
+:root[data-theme="dark"] .nf-cancel {
+  background: #2a352e;
+  border-color: rgba(236, 239, 230, 0.2);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nf-tab.on,
+:root[data-theme="dark"] .nf-chip.on,
+:root[data-theme="dark"] .nf-save {
+  background: #4a7a58;
+  border-color: #4a7a58;
+  color: #fff;
+}
+:root[data-theme="dark"] .nf-label,
+:root[data-theme="dark"] .nf-hint,
+:root[data-theme="dark"] .nf-count {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .nf-taglabel {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nf-link {
+  color: #9cc9a8;
+}
+:root[data-theme="dark"] .nf-warn {
+  color: #e8a070;
+}
+:root[data-theme="dark"] .nf-error {
+  color: #ee8f80;
+}
+:root[data-theme="dark"] .nf-info {
+  color: #7fd09b;
+}
+:root[data-theme="dark"] .nf-cover {
+  background: #2a352e;
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .nf-cover.on {
+  background: #2f4a3a;
+  border-color: #7fb28c;
+}
+
+/* ---------- 勾選刪除：batch-select.css ---------- */
+:root[data-theme="dark"] .bs-bar .bs-count {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .bs-btn {
+  background: #2a352e;
+  border-color: #a47a4a;
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .bs-btn.danger {
+  background: #b5483a;
+  border-color: #b5483a;
+  color: #fff;
+}
+:root[data-theme="dark"] .bs-row {
+  background: #222d26;
+  border-color: rgba(236, 239, 230, 0.14);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .bs-row.on {
+  background: #3a2420;
+  border-color: #ee8f80;
+}
+:root[data-theme="dark"] .bs-check {
+  background: #2a352e;
+  border-color: #a47a4a;
+}
+:root[data-theme="dark"] .bs-row.on .bs-check {
+  background: #b5483a;
+  border-color: #b5483a;
+}
+:root[data-theme="dark"] .bs-sub {
+  color: #a3b1a7;
+}
+
+/* ---------- 集點卡月份摺疊：lc-months.css ---------- */
+:root[data-theme="dark"] .lcm-head {
+  background: #2b362f;
+  border-color: rgba(236, 239, 230, 0.16);
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .lcm-count {
+  color: #a3b1a7;
+}
+:root[data-theme="dark"] .lcm-notice {
+  background: #33291b;
+  border-color: #a47a4a;
+  color: #ecefe6;
+}
+
+/* ---------- 報到：勾選今天玩的遊戲：checkin-pick.css ---------- */
+:root[data-theme="dark"] .cp-sub {
+  color: #c9b78f;
+}
+:root[data-theme="dark"] .cp-item,
+:root[data-theme="dark"] .cp-name {
+  color: #ecefe6;
+}
+:root[data-theme="dark"] .cp-cover {
+  background: #33423a;
+}
+:root[data-theme="dark"] .cp-item.on .cp-cover {
+  border-color: #ee8f80;
+}
+:root[data-theme="dark"] .cp-check {
+  background: #b5483a;
+}
+
+/* ======== 原 dark-theme-9.css ======== */
+/* 深色模式第 7 批：我的心得（遊戲管理／發表紀錄）、聚會後詢問卡與選擇視窗、我的聚會、
+   管理中心聚會列表與集點狀況、管理者登入／匯入小視窗、補日期視窗。
+   全部以 :root[data-theme="dark"] 開頭，淺色零影響。 */
+
+:root[data-theme="dark"] {
+  --d9-bg: #18211c;
+  --d9-raise: #202b25;
+  --d9-card: #263229;
+  --d9-line: #34463c;
+  --d9-line-2: #2b3a31;
+  --d9-text: #e8e2d0;
+  --d9-muted: #a9b3a8;
+  --d9-dim: #8a968c;
+  --d9-accent: #5f8f6d;
+  --d9-ok-bg: #28402f;
+  --d9-ok-tx: #a9d7b3;
+  --d9-todo-bg: #4a3326;
+  --d9-todo-tx: #efb894;
+  --d9-off-bg: #2f3a33;
+  --d9-warn: #d9a45b;
+}
+
+/* ===== 我的心得：遊戲管理 ===== */
+:root[data-theme="dark"] .mg-tabs { background: var(--d9-raise); }
+:root[data-theme="dark"] .mg-tabs button { color: var(--d9-text); }
+:root[data-theme="dark"] .mg-tabs button.on { background: var(--d9-accent); color: #fff; }
+
+:root[data-theme="dark"] .mg-search {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .mg-search::placeholder,
+:root[data-theme="dark"] .mr-search input::placeholder { color: var(--d9-dim); }
+
+:root[data-theme="dark"] .mg-chip {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .mg-chip.on {
+  background: var(--d9-accent);
+  border-color: var(--d9-accent);
+  color: #fff;
+}
+:root[data-theme="dark"] .mg-scope { color: var(--d9-muted); }
+:root[data-theme="dark"] .mg-scope-btns button {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-muted);
+}
+:root[data-theme="dark"] .mg-scope-btns button.on {
+  background: var(--d9-card);
+  color: var(--d9-text);
+}
+
+:root[data-theme="dark"] .mg-list {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+}
+:root[data-theme="dark"] .mg-list li + li { border-top-color: var(--d9-line-2); }
+:root[data-theme="dark"] .mg-row:active { background: var(--d9-card); }
+:root[data-theme="dark"] .mg-thumb { background: var(--d9-card); }
+:root[data-theme="dark"] .mg-name { color: var(--d9-text); }
+:root[data-theme="dark"] .mg-tag.ok { background: var(--d9-ok-bg); color: var(--d9-ok-tx); }
+:root[data-theme="dark"] .mg-tag.todo { background: var(--d9-todo-bg); color: var(--d9-todo-tx); }
+:root[data-theme="dark"] .mg-tag.off { background: var(--d9-off-bg); color: var(--d9-muted); }
+:root[data-theme="dark"] .mg-go,
+:root[data-theme="dark"] .mg-hint { color: var(--d9-dim); }
+
+/* 發表紀錄：搜尋／篩選／排序 */
+:root[data-theme="dark"] .mr-search {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+}
+:root[data-theme="dark"] .mr-search input { color: var(--d9-text); }
+:root[data-theme="dark"] .mr-filterbtn {
+  color: var(--d9-text);
+  border-left-color: var(--d9-line);
+}
+:root[data-theme="dark"] .mr-filterbtn.on { background: var(--d9-card); }
+:root[data-theme="dark"] .mr-filterbtn b { background: var(--d9-accent); color: #fff; }
+:root[data-theme="dark"] .mr-sort {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .mr-panel {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+}
+:root[data-theme="dark"] .mr-panel-title,
+:root[data-theme="dark"] .mr-active { color: var(--d9-muted); }
+:root[data-theme="dark"] .mr-panel-empty { color: var(--d9-dim); }
+:root[data-theme="dark"] .mr-pchip {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .mr-pchip.on {
+  background: var(--d9-accent);
+  border-color: var(--d9-accent);
+  color: #fff;
+}
+:root[data-theme="dark"] .mr-active button { background: var(--d9-card); color: var(--d9-text); }
+:root[data-theme="dark"] .nl-quick-del { color: #e58a78; }
+
+/* ===== 聚會後詢問卡與選擇視窗 ===== */
+:root[data-theme="dark"] .pg-ask {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+}
+:root[data-theme="dark"] .pg-ask-title { color: var(--d9-text); }
+:root[data-theme="dark"] .pg-ask-sub,
+:root[data-theme="dark"] .pg-sub,
+:root[data-theme="dark"] .pg-hint { color: var(--d9-muted); }
+:root[data-theme="dark"] .pg-ask-yes { background: var(--d9-accent); color: #fff; }
+:root[data-theme="dark"] .pg-ask-no,
+:root[data-theme="dark"] .pg-leave {
+  background: var(--d9-card);
+  border-color: var(--d9-line);
+  color: var(--d9-muted);
+}
+:root[data-theme="dark"] .pg-backdrop { background: rgba(0, 0, 0, 0.6); }
+:root[data-theme="dark"] .pg-sheet { background: var(--d9-bg); }
+:root[data-theme="dark"] .pg-head { border-bottom-color: var(--d9-line); }
+:root[data-theme="dark"] .pg-head h3,
+:root[data-theme="dark"] .pg-name,
+:root[data-theme="dark"] .pg-game-text b { color: var(--d9-text); }
+:root[data-theme="dark"] .pg-x,
+:root[data-theme="dark"] .pg-go,
+:root[data-theme="dark"] .pg-foot { color: var(--d9-dim); }
+:root[data-theme="dark"] .pg-saved,
+:root[data-theme="dark"] .pg-tag.ok,
+:root[data-theme="dark"] .pg-from { background: var(--d9-ok-bg); color: var(--d9-ok-tx); }
+:root[data-theme="dark"] .pg-tag.todo { background: var(--d9-todo-bg); color: var(--d9-todo-tx); }
+:root[data-theme="dark"] .pg-tag.off { background: var(--d9-off-bg); color: var(--d9-muted); }
+:root[data-theme="dark"] .pg-list {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+}
+:root[data-theme="dark"] .pg-list li + li { border-top-color: var(--d9-line-2); }
+:root[data-theme="dark"] .pg-thumb { background: var(--d9-card); }
+
+/* ===== 我的聚會 ===== */
+:root[data-theme="dark"] .mgc-card {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .mgc-title,
+:root[data-theme="dark"] .mgc-info b { color: var(--d9-text); }
+:root[data-theme="dark"] .mgc-arrow { color: var(--d9-dim); }
+:root[data-theme="dark"] .mgc-sub,
+:root[data-theme="dark"] .mgc-info small { color: var(--d9-muted); }
+:root[data-theme="dark"] .mgc-chip.done { background: var(--d9-ok-bg); color: var(--d9-ok-tx); }
+:root[data-theme="dark"] .mgc-chip.todo { background: var(--d9-todo-bg); color: var(--d9-todo-tx); }
+:root[data-theme="dark"] .mgc-foot { border-top-color: var(--d9-line); color: var(--d9-ok-tx); }
+:root[data-theme="dark"] .mg-write-btn {
+  color: var(--d9-ok-tx);
+  border-color: rgba(169, 215, 179, 0.4);
+}
+:root[data-theme="dark"] .mg-write-btn:hover { background: rgba(169, 215, 179, 0.12); }
+
+/* ===== 管理中心：集點狀況 ===== */
+:root[data-theme="dark"] .lgs-search {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .lgs-row { border-bottom-color: var(--d9-line); }
+:root[data-theme="dark"] .lgs-main strong { color: var(--d9-text); }
+:root[data-theme="dark"] .lgs-main small { color: var(--d9-dim); }
+:root[data-theme="dark"] .lgs-stats { color: var(--d9-muted); }
+:root[data-theme="dark"] .lgs-stats .ticket { color: var(--d9-warn); }
+:root[data-theme="dark"] .lgs-detail { background: var(--d9-card); color: var(--d9-text); }
+
+/* ===== 管理中心：指定遊戲與參加者 ===== */
+:root[data-theme="dark"] .lgp-game { border-top-color: var(--d9-line); }
+:root[data-theme="dark"] .lgp-game-name,
+:root[data-theme="dark"] .lgp-name { color: var(--d9-text); }
+:root[data-theme="dark"] .lgp-hint,
+:root[data-theme="dark"] .lgp-more,
+:root[data-theme="dark"] .lgp-unnamed,
+:root[data-theme="dark"] .lgp-want { color: var(--d9-warn); }
+:root[data-theme="dark"] .lgp-tag { background: var(--d9-card); color: var(--d9-muted); }
+:root[data-theme="dark"] .lgp-tag.on { background: var(--d9-ok-bg); color: var(--d9-ok-tx); }
+:root[data-theme="dark"] .lgp-list {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+}
+:root[data-theme="dark"] .lgp-row { border-top-color: var(--d9-line-2); }
+:root[data-theme="dark"] .lgp-row.on { background: #1f3326; }
+:root[data-theme="dark"] .lgp-check { border-color: #4a5a4f; }
+:root[data-theme="dark"] .lgp-row.on .lgp-check {
+  background: var(--d9-accent);
+  border-color: var(--d9-accent);
+}
+:root[data-theme="dark"] .lgp-sub { color: var(--d9-dim); }
+
+/* ===== 管理中心：聚會管理 ===== */
+:root[data-theme="dark"] .lga-manage .lga-title { color: var(--d9-text); }
+:root[data-theme="dark"] .lga-group-label { color: var(--d9-muted); }
+:root[data-theme="dark"] .lga-group-label small,
+:root[data-theme="dark"] .lga-hist-head small { color: var(--d9-dim); }
+:root[data-theme="dark"] .lga-manage .lga-status.warn {
+  background: rgba(217, 164, 91, 0.18);
+  color: var(--d9-warn);
+}
+:root[data-theme="dark"] .lga-hist-head {
+  background: var(--d9-raise);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+
+/* ===== 管理者登入／共用小視窗（含匯入 CSV 預覽若使用 admin-modal） ===== */
+:root[data-theme="dark"] .admin-modal {
+  background: var(--d9-raise);
+  color: var(--d9-text);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="dark"] .admin-field input {
+  background: var(--d9-bg);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .admin-error { color: #f0907f; }
+:root[data-theme="dark"] .admin-cancel { color: var(--d9-muted); }
+
+/* ===== 補日期視窗內容 ===== */
+:root[data-theme="dark"] .play-sessions-add {
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .play-sessions-form { border-color: var(--d9-line); }
+:root[data-theme="dark"] .play-sessions-form input,
+:root[data-theme="dark"] .play-sessions-form textarea {
+  background: var(--d9-bg);
+  border-color: var(--d9-line);
+  color: var(--d9-text);
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .play-sessions-actions button {
+  background: var(--d9-accent);
+  color: #fff;
+}
+:root[data-theme="dark"] .play-sessions-actions button.secondary {
+  background: var(--d9-card);
+  color: var(--d9-text);
+}
+:root[data-theme="dark"] .play-sessions-list li { border-top-color: var(--d9-line-2); }
+:root[data-theme="dark"] .play-sessions-list p { color: var(--d9-muted); }
+:root[data-theme="dark"] .play-sessions-link { color: #e58a78; }
+
+/* ======== 原 dark-theme-10.css ======== */
+/* 深色模式第 8 批：規則書文件列、詞庫、規則助手舊規則、玩錯紀錄、詳細視窗彈窗內容、
+   統計中心舊規則、玩家榜，以及幾處行內 style 的顏色。
+   全部以 :root[data-theme="dark"] 開頭，淺色零影響。 */
+
+:root[data-theme="dark"] {
+  --d10-bg: #18211c;
+  --d10-raise: #202b25;
+  --d10-card: #263229;
+  --d10-line: #34463c;
+  --d10-line-2: #2b3a31;
+  --d10-text: #e8e2d0;
+  --d10-muted: #a9b3a8;
+  --d10-dim: #8a968c;
+  --d10-accent: #5f8f6d;
+  --d10-link: #8fc19e;
+  --d10-warn: #d9a45b;
+  --d10-red: #f0907f;
+  --d10-arrow: #8fc19e;
+}
+
+/* ===== 管理中心：規則書文件列 ===== */
+:root[data-theme="dark"] .rbd-title small,
+:root[data-theme="dark"] .rbd-count,
+:root[data-theme="dark"] .rbd-arrow,
+:root[data-theme="dark"] .rbd-size { color: var(--d10-dim); }
+:root[data-theme="dark"] .rbd-group { border-bottom-color: var(--d10-line); }
+:root[data-theme="dark"] .rbd-head { color: var(--d10-text); }
+:root[data-theme="dark"] .rbd-body .rb-docitem { border-bottom-color: var(--d10-line); }
+:root[data-theme="dark"] .rbd-body .rbd-docname,
+:root[data-theme="dark"] .rbd-body .rb-docitem > a.bgg-link { color: var(--d10-text); }
+:root[data-theme="dark"] .rbd-body .rbd-scope {
+  color: var(--d10-text);
+  background-color: var(--d10-raise);
+  border-color: var(--d10-line);
+  color-scheme: dark;
+  background-image: linear-gradient(45deg, transparent 50%, var(--d10-arrow) 50%),
+    linear-gradient(135deg, var(--d10-arrow) 50%, transparent 50%);
+}
+:root[data-theme="dark"] .rbd-body .rbd-del {
+  color: var(--d10-red);
+  background: var(--d10-raise);
+  border-color: #6b3f36;
+}
+:root[data-theme="dark"] .rbd-body .rbd-del:hover { background: #3a2824; }
+
+/* 詞庫：找不到英文的詞 */
+:root[data-theme="dark"] .gm-box { border-top-color: var(--d10-line); }
+:root[data-theme="dark"] .gm-box h4,
+:root[data-theme="dark"] .gm-game { color: var(--d10-text); }
+:root[data-theme="dark"] .gm-hint { color: var(--d10-muted); }
+:root[data-theme="dark"] .gm-btn {
+  color: var(--d10-text);
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+}
+:root[data-theme="dark"] .gm-btn.primary {
+  color: #fff;
+  background: var(--d10-accent);
+  border-color: var(--d10-accent);
+}
+:root[data-theme="dark"] .gm-btn.danger { color: var(--d10-red); border-color: #6b3f36; }
+:root[data-theme="dark"] .gm-row { border-bottom-color: var(--d10-line-2); }
+:root[data-theme="dark"] .gm-count { color: var(--d10-dim); }
+:root[data-theme="dark"] .gm-x { color: var(--d10-red); border-color: #6b3f36; }
+
+/* ===== 規則助手舊規則（顏色蓋成深色，版面不動） ===== */
+:root[data-theme="dark"] .ra2 .ra2-label { color: var(--d10-text); }
+:root[data-theme="dark"] .ra2 .ra2-row input.ra2-input {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .ra2 .ra2-row button.ra2-go { background: var(--d10-accent); color: #fff; }
+:root[data-theme="dark"] .ra2 .ra2-small,
+:root[data-theme="dark"] .ra2 .ra2-doc { color: var(--d10-muted); }
+:root[data-theme="dark"] .ra2 .ra2-status { color: var(--d10-muted); }
+:root[data-theme="dark"] .ra2 .ra2-pill {
+  border-color: var(--d10-accent);
+  color: var(--d10-link);
+}
+:root[data-theme="dark"] .ra2 .ra2-ocr { color: var(--d10-warn); }
+:root[data-theme="dark"] .ra2 .ra2-list > li { border-bottom-color: var(--d10-line); }
+:root[data-theme="dark"] .ra2 .ra2-page { color: var(--d10-link); }
+:root[data-theme="dark"] .ra2 .ra2-text { color: var(--d10-text); }
+:root[data-theme="dark"] .ra2 .ra2-link { color: var(--d10-link); }
+:root[data-theme="dark"] .ra2-backdrop { background: rgba(0, 0, 0, 0.6); }
+:root[data-theme="dark"] .ra2-sheet {
+  background: var(--d10-raise);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .ra2-sheet .ra2-x { color: var(--d10-text); }
+:root[data-theme="dark"] .ra2-sheet .ra2-sec-title { color: var(--d10-muted); }
+
+/* ===== 玩錯紀錄 ===== */
+:root[data-theme="dark"] .er-form textarea {
+  background: var(--d10-bg);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .er-count,
+:root[data-theme="dark"] .er-note { color: var(--d10-muted); }
+:root[data-theme="dark"] .er-count.over { color: var(--d10-red); }
+:root[data-theme="dark"] .er-list-title,
+:root[data-theme="dark"] .er-title,
+:root[data-theme="dark"] .er-body { color: var(--d10-text); }
+:root[data-theme="dark"] .er-list li {
+  background: var(--d10-raise);
+  border-color: rgba(183, 138, 90, 0.45);
+}
+:root[data-theme="dark"] .er-src,
+:root[data-theme="dark"] .er-box-title { color: var(--d10-warn); }
+:root[data-theme="dark"] .er-box {
+  background: #2c2619;
+  border-color: #8a6a43;
+}
+
+/* ===== 詳細視窗：規則連結、擴充、背景、討論按鈕 ===== */
+:root[data-theme="dark"] .game-docs .gd-label { color: var(--d10-dim); }
+:root[data-theme="dark"] .game-docs .gd-link {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .game-docs a.gd-link:hover,
+:root[data-theme="dark"] .game-docs a.gd-link:focus-visible {
+  background: var(--d10-card);
+  border-color: var(--d10-accent);
+}
+:root[data-theme="dark"] .game-docs .gd-plain { background: var(--d10-card); }
+:root[data-theme="dark"] .game-docs .gd-go { color: var(--d10-warn); }
+:root[data-theme="dark"] .game-docs .gd-del {
+  background: var(--d10-raise);
+  border-color: #6b3f36;
+  color: var(--d10-red);
+}
+
+:root[data-theme="dark"] .ge-thumb { background: var(--d10-card); }
+:root[data-theme="dark"] .ge-name { color: var(--d10-text); }
+:root[data-theme="dark"] .ge-actions button {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .ge-actions button.ge-danger { color: var(--d10-red); border-color: #6b3f36; }
+:root[data-theme="dark"] .ge-input {
+  background: var(--d10-bg);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .ge-file { border-color: var(--d10-line); color: var(--d10-muted); }
+:root[data-theme="dark"] .ge-add { background: var(--d10-accent); color: #fff; }
+:root[data-theme="dark"] .ge-empty,
+:root[data-theme="dark"] .ge-msg,
+:root[data-theme="dark"] .ge-note,
+:root[data-theme="dark"] .ge-hint { color: var(--d10-muted); }
+:root[data-theme="dark"] .ge-links a { color: var(--d10-link); }
+:root[data-theme="dark"] .ge-editor {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+}
+:root[data-theme="dark"] .gbg-text { color: var(--d10-text); }
+:root[data-theme="dark"] .gdl-btn {
+  background: var(--d10-raise);
+  border-color: var(--d10-accent);
+  color: var(--d10-link);
+}
+:root[data-theme="dark"] .gdl-btn:hover { background: var(--d10-card); }
+
+/* ===== 統計中心舊規則 ===== */
+:root[data-theme="dark"] .lb-rank { color: var(--d10-link); }
+:root[data-theme="dark"] .lb-rank.top { color: var(--d10-warn); }
+:root[data-theme="dark"] .lb-value span { color: var(--d10-dim); }
+:root[data-theme="dark"] .lb-empty {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+}
+:root[data-theme="dark"] .lb-empty b { color: var(--d10-text); }
+:root[data-theme="dark"] .lb-empty p { color: var(--d10-muted); }
+:root[data-theme="dark"] .lb-empty-btn { background: var(--d10-accent); color: #fff; }
+
+:root[data-theme="dark"] .lbs-bar {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+}
+:root[data-theme="dark"] .lbs-bar:focus-within { border-color: var(--d10-accent); }
+:root[data-theme="dark"] .lbs-input { color: var(--d10-text); }
+:root[data-theme="dark"] .lbs-clear { color: var(--d10-dim); }
+:root[data-theme="dark"] .lbs-filter {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .lbs-filter.on {
+  background: var(--d10-accent);
+  border-color: var(--d10-accent);
+  color: #fff;
+}
+:root[data-theme="dark"] .lbs-badge { background: var(--d10-bg); color: var(--d10-link); }
+:root[data-theme="dark"] .lbs-panel {
+  background: var(--d10-raise);
+  border-color: var(--d10-line);
+}
+:root[data-theme="dark"] .lbs-label { color: var(--d10-muted); }
+:root[data-theme="dark"] .lbs-chips button,
+:root[data-theme="dark"] .lbs-seg button {
+  background: var(--d10-card);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+}
+:root[data-theme="dark"] .lbs-chips button.active,
+:root[data-theme="dark"] .lbs-seg button.active {
+  background: var(--d10-accent);
+  border-color: var(--d10-accent);
+  color: #fff;
+}
+:root[data-theme="dark"] .lbs-field select {
+  background: var(--d10-bg);
+  border-color: var(--d10-line);
+  color: var(--d10-text);
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .lbs-reset { color: var(--d10-link); }
+
+/* ===== 玩家榜（每位玩家的最高／最低分遊戲） ===== */
+:root[data-theme="dark"] .pbg-row { border-bottom-color: var(--d10-line); }
+:root[data-theme="dark"] .pbg-who,
+:root[data-theme="dark"] .pbg-game { color: var(--d10-text); }
+:root[data-theme="dark"] .pbg-score { color: var(--d10-link); }
+:root[data-theme="dark"] .pbg-thumb { background: var(--d10-card); }
+
+/* ===== 行內 style 寫死的顏色（hex 與瀏覽器轉成的 rgb 兩種都蓋） ===== */
+/* PlannedGatheringsAdmin：#6b5a3c 咖啡字 */
+:root[data-theme="dark"] [style*="#6b5a3c"],
+:root[data-theme="dark"] [style*="107, 90, 60"] { color: var(--d10-warn) !important; }
+/* RatingSection：#456b50 綠字、#e3d9c4 虛線 */
+:root[data-theme="dark"] [style*="#456b50"],
+:root[data-theme="dark"] [style*="69, 107, 80"] { color: var(--d10-link) !important; }
+:root[data-theme="dark"] [style*="dashed #e3d9c4"],
+:root[data-theme="dark"] [style*="dashed rgb(227, 217, 196)"] { border-top-color: var(--d10-line) !important; }
+/* RatingSection、TodayRatingFlow：#b5483a 紅字 */
+:root[data-theme="dark"] [style*="#b5483a"],
+:root[data-theme="dark"] [style*="181, 72, 58"] { color: var(--d10-red) !important; }
+/* RulebookBatchUpload：#6b6a5c 灰字 */
+:root[data-theme="dark"] [style*="#6b6a5c"],
+:root[data-theme="dark"] [style*="107, 106, 92"] { color: var(--d10-muted) !important; }
+
+/* ======== 原 dark-theme-11.css ======== */
+/* 深色模式：頁面兩側的白色細線（#root 的 border-inline 用 var(--border)，深色下仍偏白） */
+:root[data-theme="dark"] #root {
+  border-inline-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ======== 原 dark-theme-12.css ======== */
+/* 首頁卡片（4 欄、9 欄、清單）的小字在深色模式下太暗：把寫死的灰字改成深色模式的柔和文字色 */
+:root[data-theme="dark"] .game-facts,
+:root[data-theme="dark"] .game-row-facts {
+  color: var(--dk-text-soft);
+}
+
+:root[data-theme="dark"] .game-admin-line {
+  color: var(--dk-accent);
+}
+
+:root[data-theme="dark"] .game-row-tag {
+  background: var(--dk-surface-3);
+  color: var(--dk-text);
+}
+
+:root[data-theme="dark"] .game-row-tag.new {
+  background: #f0a22e;
+  color: #fff;
+}
+
+:root[data-theme="dark"] .explore-new-art {
+  background: #26302a;
+}
+
