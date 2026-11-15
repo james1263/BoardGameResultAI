@@ -17,3 +17,7 @@
   background: #f0a22e;
   color: #fff;
 }
+
+:root[data-theme="dark"] .explore-new-art {
+  background: #26302a;
+}
