@@ -68,6 +68,8 @@ export default function RulebookPage({
   const [indexed, setIndexed] = useState<string[] | null>(null)
   const [search, setSearch] = useState('')
   const [picked, setPicked] = useState<LibraryGame | null>(null)
+  // 宣告在 useBackClose(onClose) 之後：選了遊戲時，返回鍵與 ESC 先回到搜尋畫面
+  useBackClose(() => setPicked(null), picked !== null)
   const [since, setSince] = useState<number | null>(null)
   const marked = useRef(false)
   const feed = useErrataFeed(picked === null)
@@ -125,18 +127,18 @@ export default function RulebookPage({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="ra-page-head">
-          {picked && (
-            <button type="button" className="ra-back" onClick={() => setPicked(null)}>
-              ‹ 換遊戲
-            </button>
-          )}
           <h2>
             {picked ? picked.name : '規則助手'}
             {!picked && (
               <HoldTip text="選一款遊戲後，可以看規則連結、管理者認證的玩錯紀錄，或直接問規則問題。" />
             )}
           </h2>
-          <button type="button" className="ra-x" aria-label="關閉" onClick={onClose}>
+          <button
+            type="button"
+            className="ra-x"
+            aria-label={picked ? '回到搜尋' : '關閉'}
+            onClick={picked ? () => setPicked(null) : onClose}
+          >
             ✕
           </button>
         </div>
