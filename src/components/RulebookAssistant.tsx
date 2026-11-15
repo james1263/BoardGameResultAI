@@ -126,7 +126,7 @@ type ParsedFeedback = { title: string; answer: string; content: string; pageText
 type ParseResult = { ok: true; data: ParsedFeedback } | { ok: false; reason: string }
 
 function parseFeedback(raw: string, ctx: FeedbackCtx): ParseResult {
-    const block = raw.match(/===\s*規則助手回饋\s*v1\s*===([\s\S]*?)===\s*結束\s*===/)
+const block = raw.match(/={1,}\s*規則助手回饋\s*v1\s*={1,}([\s\S]*?)={1,}\s*結束\s*={1,}/)
     if (!block) {
         return { ok: false, reason: '找不到「===規則助手回饋 v1===」到「===結束===」的區塊，請把 AI 回覆最後那整段貼上。' }
     }

@@ -17,6 +17,35 @@ let timer: number | undefined
 let guard: number | undefined
 let listening = false
 
+let escListening = false
+
+// ESC：等同按手機返回鍵，只退最上面一層
+function onEsc(event: KeyboardEvent) {
+    if (event.key !== 'Escape') return
+    if (event.defaultPrevented || event.isComposing || event.keyCode === 229 || event.repeat) return
+    if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return
+    if (expectedPops > 0 || depth <= 0) return
+    if (!stack.some((entry) => entry.pushed)) return
+    // 歷史狀態不是我們記的（例如 Google 登入回來後被改寫）就不退，避免離開網站
+    const raw = (window.history.state as { backDepth?: number } | null)?.backDepth
+    if (typeof raw !== 'number') return
+    // 確認視窗（askConfirm／showNotice／askInput）開著時，ESC 不動作
+    if (document.querySelector('[role="alertdialog"]')) return
+    // 在輸入框打字時，ESC 不動作
+    const target = event.target as HTMLElement | null
+    if (target) {
+        const tag = target.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable) return
+    }
+    window.history.back()
+}
+
+function ensureEsc() {
+    if (escListening) return
+    window.addEventListener('keydown', onEsc)
+    escListening = true
+}
+
 function onPop(event: PopStateEvent) {
     if (expectedPops > 0) {
         // 自己收回歷史造成的，略過
@@ -117,6 +146,7 @@ export function useBackClose(onClose: () => void, enabled = true) {
         if (!enabled) return
         const entry: Entry = { close: () => closeRef.current(), pushed: false }
         stack.push(entry)
+        ensureEsc()
         sync()
         return () => {
             const index = stack.indexOf(entry)

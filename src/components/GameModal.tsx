@@ -144,16 +144,6 @@ export default function GameModal({
   // 宣告在上面那行之後，彈窗才會在返回鍵堆疊的最上面（一次只退一層）
   useBackClose(closeSheet, sheet !== null)
 
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return
-      if (sheet) closeSheet()
-      else onClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose, sheet, closeSheet])
-
   // 從小封面切換到另一款遊戲時，回到概覽最上面、收起類型與規則
   useEffect(() => {
     if (lastGameRef.current === game.bggName) return
