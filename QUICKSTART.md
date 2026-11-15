@@ -1,6 +1,6 @@
 # 玩桌遊｜BoardGame（桌遊規則助手）— 懶人包（給下一個 AI）
 
-> 最後更新：2026-11-15（**第七次合併版**：併入搜尋未命中分析、熱搜管理者刪除、垃圾桶清理補洞、英文詞候選功能的發現；對照 `未來目標.md` 逐節檢查，**沒有刪掉任何還沒做的待辦**）。程式最新已知：`gameCleanup.ts` 零結果詞補洞已 push（commit hash 未貼，build 結果未貼［未驗證］）、文件 commit 已 push；更早見 git log。
+> 最後更新：2026-11-15（**第七次合併版＋英文詞候選查證**：併入搜尋未命中分析、熱搜管理者刪除、垃圾桶清理補洞、英文詞候選功能的發現；對照 `未來目標.md` 逐節檢查，**沒有刪掉任何還沒做的待辦**）。程式最新已知：`gameCleanup.ts` 零結果詞補洞已 push（commit hash 未貼，build 結果未貼［未驗證］）、文件 commit 已 push；更早見 git log。
 > **分工**：本檔＝現況、待辦摘要、使用者決定、合作規則、陷阱；`PROJECT_CONTEXT.md`＝架構、資料庫、功能規則、規則助手設計；`未來目標.md`＝所有未完成目標總清單；`連帶關係圖.md`＝改 A 影響 B；`畫面改版.md`＝畫面改版決定與現況；`生成後.md`＝本版之後的修改紀錄與計數。**開工前都讀，衝突時以 `生成後.md` 為準。**
 > **精簡原則（使用者要求）：縮小文件時，「以前說要做但還沒做」的項目一律不可刪**；只能刪已完成的過程敘述、重複測試清單、舊 commit 流水帳（git log 有）。
 > 標記：**［使用者決定］**、**［AI 建議］**（使用者未回「照建議」）、**［未驗證］**。
@@ -28,7 +28,7 @@
 - **規則助手**：搜尋優先單頁、繁簡同搜、詞庫與同義詞、搜尋框下方「可能的英文詞」chip（只改搜尋框、不搜尋、不扣次數；通用詞庫 `zhEnGlossary.ts`）、結果排序＝中文規則書優先 → FAQ → 擴充 → 主遊戲 → 玩家整理（只改前端）、**每日 50 次（VIP；管理者不限；找到結果才扣）**、玩錯紀錄、AI 回饋投稿、熱搜。**現行搜尋函式 v10：沒結果時另外記「搜尋零結果」詞。**
 - **管理中心**：成員／集點聚會／上傳檔案（PDF｜連結｜玩錯紀錄｜詞庫四分頁，搜尋列置頂；PDF 上傳依檔名＋內容猜範圍；連結顯示影片標題；YouTube 自動帶標題、Bilibili 只能手填〔Bilibili 封 Supabase IP，已結案〕；詞庫可「貼上 AI 回覆」匯入；「複製清單」附 AI 說明）／資料匯入；待審紅點。
 - **搜尋未命中分析（2026-11-15 完成）**：`game_glossary_misses` 分 `glossary_miss`（詞庫沒對應）與 `search_zero_result`（搜尋零結果），標來源 `user`／`admin`；`GlossaryMisses.tsx` 有零結果區塊（單筆刪除、清空）與「匯出給 AI 分析」（選一款遊戲 → 複製或下載 .txt，五節：未命中詞／現有詞庫／候選段落／規則書原文附錄／AI 分析任務；附錄預設上限 60,000 字）；90 天自動刪（在搜尋函式內）；不存完整問題與帳號；`privacy.html` 已補。`AI_PROMPT`（快速複製清單）仍是舊版，尚未改五類版。
-- **英文詞候選（發現，2026-11-15）**：`GlossaryMisses.tsx` 的 `askAi` 呼叫 `admin_get_term_candidates`（回 `bgg_name, zh_term, en_term, status`；`status` 有 `rejected`），用「中文詞＋累積的英文候選詞」以管理者身分搜尋後複製給 AI；`gameCleanup.ts` 第 8 步呼叫 `admin_delete_term_candidates`。**這組功能（資料表、寫入入口、RLS、`privacy.html`）文件從未記錄，來歷未查［待確認］。**
+- **英文詞候選（2026-11-15 已查證）**：表 `rule_term_candidates`（`id, bgg_name, zh_term, en_term, pick_count, status, first_at, last_at`，無 `user_id`；RLS 已開、無政策、`anon`／`authenticated` 無表權限）。玩家端 `report_term_pick(p_bgg_name, p_zh, p_en)`（VIP／管理者、不記帳號、`pick_count` 只在 `pending` 時累加）由 `RulebookAssistant.tsx` 的 `reportPicks` 在「點過英文詞 chip 且搜尋有結果」時呼叫（最多 5 組）。管理者端：`admin_get_term_candidates()`（`GlossaryMisses.tsx` 的 `askAi` 用，排除 `rejected`）、`admin_set_term_candidate_status(p_id, p_status)`（**前端沒有任何呼叫，管理者無法核准／退回**）、`admin_delete_term_candidates(p_bgg_name)`（垃圾桶第 8 步）。**`reportPicks` 只回報內建 `zhEnGlossary.ts` 已有的組合，所以候選＝內建建議詞的使用統計，不是新詞發現。** `privacy.html` 第 72 行已涵蓋；表無 `user_id`，刪帳號不需處理。`RulebookAssistant.tsx` 第 333、336 行有殘留 `console.log`［待拿掉］。
 - **垃圾桶清理（`gameCleanup.ts` 現行 5.5 + 9 步）**：規則書 PDF、擴充、背景、詞庫、未對應詞（`glossary_miss`）、**搜尋零結果詞（5.5，已補）**、玩錯紀錄、熱搜統計、英文詞候選、本命桌遊。不動玩家的想玩／已玩、評分、心得、遊玩紀錄、聚會。
 - **深色模式**：玩家選單「外觀」三選項（深色／淺色／跟隨系統），`index.html` 的 `var DEF` 為 `'dark'`；`dark-theme*.css`（`:root[data-theme="dark"]`）覆蓋，舊 CSS 不動；仍可能有漏網（見 2.4）。
 - **其他**：擴充、遊戲背景、評論按讚、留言統一表單 `NoteForm`、`privacy.html`（隨新功能更新）。
@@ -52,7 +52,7 @@
 
 ## 4. 待辦摘要（完整、含狀態標記見 `未來目標.md`；一次一批，上一批測完才進下一批）
 - **立刻**：確認 `gameCleanup.ts` 補洞的 `npm.cmd run build` 結果與 commit hash；文件第七次合併後 commit（兩份主文件＋`生成後.md`，不計 push）。
-- **已決定、未動工**：①「我的投稿」搜尋欄白底與規則連結貼 YouTube 自動帶標題（`MySubmissions.tsx` 已上傳過，搜尋欄顏色待查 css）；②「我的聚會」垃圾桶遊戲仍顯示封面但不可評分／留言（現在被「只列有評分」過濾，要查 `get_my_gatherings`）；③詳細視窗「前往我的評分」直接跳評分彈窗（已用 `game-rate-sheet.css`，確認是否完成）；④回報待審詞庫候選：**先查 `admin_get_term_candidates` 現況（見 2.2 英文詞候選），可能已部分做完**；⑤首頁卡片深色補漏；⑥預計聚會頁文字清理（`PlannedGatheringsAdmin.tsx`）；⑦上傳規則書依內容猜範圍的一致性待實測；⑧**`GlossaryMisses.tsx` 的 `AI_PROMPT` 改寫成五類版（A～F，同匯出檔第五節），檔案已上傳過**；⑨`gm-hint` 說明文字與複製清單格式（「遊戲英文名｜中文詞｜英文對應詞」）統一。
+- **已決定、未動工**：①「我的投稿」搜尋欄白底與規則連結貼 YouTube 自動帶標題（`MySubmissions.tsx` 已上傳過，搜尋欄顏色待查 css）；②「我的聚會」垃圾桶遊戲仍顯示封面但不可評分／留言（現在被「只列有評分」過濾，要查 `get_my_gatherings`）；③詳細視窗「前往我的評分」直接跳評分彈窗（已用 `game-rate-sheet.css`，確認是否完成）；④英文詞候選的管理者核准／退回介面（函式 `admin_set_term_candidate_status` 已有、前端沒入口，見 2.2）；拿掉 `RulebookAssistant.tsx` 的兩行 `console.log`；⑤首頁卡片深色補漏；⑥預計聚會頁文字清理（`PlannedGatheringsAdmin.tsx`）；⑦上傳規則書依內容猜範圍的一致性待實測；⑧**`GlossaryMisses.tsx` 的 `AI_PROMPT` 改寫成五類版（A～F，同匯出檔第五節），檔案已上傳過**；⑨`gm-hint` 說明文字與複製清單格式（「遊戲英文名｜中文詞｜英文對應詞」）統一。
 - **規則助手／RAG**：其他桌遊詞庫（靠未對應詞清單與「匯出給 AI 分析」慢慢累積）；Context Pack；embedding 評估；網站內雲端 AI（使用者尚未回答付費版與自動開啟 vs 管理者確認）；題庫與驗收（旭日 6 題、羅倫佐 4 題、第三款未決定）；其他待做（更新版本按鈕、章節標題、OCR 標示、最切題排序、規則衝突優先序未實作）。
 - **規則書與本機 OCR**：規則書 80+ 份分批上傳（先不要催）；`RA_compressed` 掃描型需本機 OCR；抽查字是否通順；`LocalAI.md` 補「新增中文規則書怎麼做」；本機桌遊 AI 之後再說。
 - **募資與商業化、長期願景**：見 `未來目標.md` 第 5、6 節；在使用者回覆「付費版」「自動開啟 vs 確認」之前不要寫捐款或 Edge Function 程式。
@@ -121,7 +121,7 @@
 ## 7. 技術提醒與陷阱（去重）
 1. plpgsql 函式建立成功不代表能執行；欄位名稱先查 `information_schema.columns`；`player_profiles` 主鍵是 `id`；搜尋失敗排查＝F12 Console／Network Response。
 2. `search_rulebook_chunks` 已改過十次（**現行 v10**：`(p_bgg_name, p_query, p_alt default null)`，檔案 `BoardGameSQL/search_rulebook_chunks_v10.sql`），改前先匯出線上定義；回傳型別或參數變了先 `drop function if exists` 再 `create`，並重新 `revoke`／`grant`。
-3. 新增以 `bgg_name` 為鍵的表要同步垃圾桶清理（`cleanupGameData`）、通則（RLS、`revoke`、anon 無權限）、刪帳號 `admin_delete_member`、`privacy.html`。**本命桌遊表：垃圾桶已納入（第 9 步）；刪帳號與 `privacy.html` 是否涵蓋仍待查。英文詞候選表：整組待查（見 2.2）。**
+3. 新增以 `bgg_name` 為鍵的表要同步垃圾桶清理（`cleanupGameData`）、通則（RLS、`revoke`、anon 無權限）、刪帳號 `admin_delete_member`、`privacy.html`。本命桌遊表 `favorite_games`：垃圾桶已納入（第 9 步）、`user_id` 外鍵 `on delete cascade`（刪帳號自動連動）；`privacy.html` 是否涵蓋仍待查。英文詞候選表已查證（見 2.2）。
 4. 新增待審類型要同步 `admin_pending_count()`、`PENDING_CHANGED_EVENT`、`privacy.html`；統計函式要排除 `reference_only`。
 5. `gathering_games` 對已移除列 insert 會撞主鍵；改 `loyalty_day_status` 不要加 `removed_at is null`。
 6. 管理者判斷用 `is_admin()`；新函式用 `is_admin() or is_vip()`。
