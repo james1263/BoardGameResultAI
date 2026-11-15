@@ -455,3 +455,17 @@
   background: var(--lc-tab-on);
   color: var(--lc-tab-on-ink);
 }
+
+.club-leaderboard .rsb-del {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 12px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  background: transparent;
+  color: #b42318;
+  cursor: pointer;
+}
+:root[data-theme="dark"] .club-leaderboard .rsb-del {
+  color: #ff8a80;
+}

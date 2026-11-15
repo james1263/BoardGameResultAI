@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
+import { supabase } from '../lib/supabase'
+import { askConfirm, showNotice } from '../lib/askConfirm'
 import { useRuleStats, type RuleStatPeriod } from '../lib/useRuleSearchStats'
 
 const PERIODS: { key: RuleStatPeriod; label: string }[] = [
@@ -13,16 +15,38 @@ const PERIODS: { key: RuleStatPeriod; label: string }[] = [
 // 樣式在 styles/club-leaderboard.css（.rsb-*，只在統計中心抽屜內生效）
 export default function RuleStatsBoard({
   enabled,
+  isAdmin = false,
   boardGames,
   onOpenGame,
 }: {
   enabled: boolean
+  isAdmin?: boolean
   boardGames: BoardGame[]
   onOpenGame: (game: BoardGame) => void
 }) {
   const [period, setPeriod] = useState<RuleStatPeriod>('all')
   const stats = useRuleStats(period, enabled)
   const byName = new Map(boardGames.map((game) => [game.bggName, game]))
+
+  // 管理者手動刪除：整款遊戲的統計，或單一關鍵字（所有遊戲、所有日期）
+  const removeGame = async (bggName: string, label: string) => {
+    if (!(await askConfirm(`確定要刪除「${label}」的所有搜尋統計嗎？刪除後無法復原。`))) return
+    const { error } = await supabase.rpc('admin_delete_rule_stats', { p_bgg_name: bggName })
+    if (error) {
+      await showNotice('刪除失敗：' + error.message)
+      return
+    }
+    stats.reload()
+  }
+  const removeKeyword = async (keyword: string) => {
+    if (!(await askConfirm(`確定要刪除關鍵字「${keyword}」的所有統計嗎？（所有遊戲、所有日期，無法復原）`))) return
+    const { error } = await supabase.rpc('admin_delete_rule_keyword', { p_keyword: keyword })
+    if (error) {
+      await showNotice('刪除失敗：' + error.message)
+      return
+    }
+    stats.reload()
+  }
 
   return (
     <div className="rsb">
@@ -62,6 +86,16 @@ export default function RuleStatsBoard({
                       <span className="rsb-text">{row.bggName}</span>
                     )}
                     <span className="rsb-count">{row.count} 次</span>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        className="rsb-del"
+                        aria-label={`刪除 ${game ? game.name : row.bggName} 的統計`}
+                        onClick={() => removeGame(row.bggName, game ? game.name : row.bggName)}
+                      >
+                        刪除
+                      </button>
+                    )}
                   </li>
                 )
               })}
@@ -81,6 +115,16 @@ export default function RuleStatsBoard({
                     {row.games > 1 && <small className="rsb-games">{row.games} 款遊戲</small>}
                   </span>
                   <span className="rsb-count">{row.count} 次</span>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      className="rsb-del"
+                      aria-label={`刪除關鍵字 ${row.keyword}`}
+                      onClick={() => removeKeyword(row.keyword)}
+                    >
+                      刪除
+                    </button>
+                  )}
                 </li>
               ))}
             </ol>

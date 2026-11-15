@@ -48,6 +48,7 @@ export function useRuleStats(period: RuleStatPeriod, enabled: boolean) {
   const [games, setGames] = useState<RuleStatGame[]>([])
   const [keywords, setKeywords] = useState<RuleStatKeyword[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     if (!enabled) return
@@ -84,7 +85,9 @@ export function useRuleStats(period: RuleStatPeriod, enabled: boolean) {
     return () => {
       cancelled = true
     }
-  }, [period, enabled])
+  }, [period, enabled, reloadKey])
 
-  return { games, keywords, status }
+  const reload = () => setReloadKey((n) => n + 1)
+
+  return { games, keywords, status, reload }
 }

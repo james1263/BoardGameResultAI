@@ -539,6 +539,7 @@ export default function Leaderboard({
               <div className="mylist-body">
                 <RuleStatsBoard
                   enabled={isOpen}
+                  isAdmin={isAdmin}
                   boardGames={boardGames}
                   onOpenGame={onOpenGame}
                 />
