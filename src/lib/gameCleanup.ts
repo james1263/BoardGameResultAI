@@ -4,6 +4,7 @@ import { supabase } from './supabase'
 // 會刪除：規則書／FAQ 的 PDF 與搜尋索引、貼的連結、擴充（含圖片與連結）、背景介紹、詞庫與未對應詞。
 // 不會動：玩家自己的想玩／已玩、評分、心得、遊玩紀錄、聚會資料（那是玩家的紀錄）。
 // 玩錯紀錄也會一併刪除。
+// 玩家設定的「本命桌遊」若選了這款，也會一併清掉（第 9 步）。
 export type CleanupResult = {
   // 嚴重：檔案沒刪成功（會變成孤兒檔），呼叫端應該提醒
   errors: string[]
@@ -159,6 +160,14 @@ export async function cleanupGameData(bggName: string): Promise<CleanupResult> {
     if (del.error) warnings.push('刪除英文詞候選失敗：' + del.error.message)
   } catch (error) {
     warnings.push('清理英文詞候選時發生錯誤：' + (error instanceof Error ? error.message : '未知'))
+  }
+
+  // 9. 玩家的本命桌遊（這張表沒有外鍵，要手動清）
+  try {
+    const del = await supabase.rpc('admin_delete_favorite_games', { p_bgg_name: bggName })
+    if (del.error) warnings.push('刪除本命桌遊失敗：' + del.error.message)
+  } catch (error) {
+    warnings.push('清理本命桌遊時發生錯誤：' + (error instanceof Error ? error.message : '未知'))
   }
   return { errors, warnings }
 }
