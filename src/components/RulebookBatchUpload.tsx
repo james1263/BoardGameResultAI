@@ -53,6 +53,28 @@ type Row = {
   scopeManual: boolean
   expansionName: string
 }
+const FILE_LIMIT = 1024 * 1024 * 1024
+const DB_LIMIT = 500 * 1024 * 1024
+function usageLevel(used: number, limit: number): string {
+  const p = (used / limit) * 100
+  return p >= 95 ? 'danger' : p >= 80 ? 'warn' : 'ok'
+}
+function QuotaLine({ label, used, limit, limitText }: { label: string; used: number; limit: number; limitText: string }) {
+  const pct = (used / limit) * 100
+  return (
+    <div className={`rbv-quota-line ${usageLevel(used, limit)}`}>
+      <div className="rbv-quota-text">
+        <span>{label}</span>
+        <span className="rbv-quota-num">
+          {Math.round(used / 1024 / 1024)} MB / {limitText}
+        </span>
+      </div>
+      <span className="rbv-quota-bar">
+        <i style={{ width: `${Math.min(100, pct)}%` }} />
+      </span>
+    </div>
+  )
+}
 type StorageUsage = {
   buckets: { bucket_id: string; file_count: number; total_bytes: number }[]
   files: { name: string; size: number }[]
@@ -210,8 +232,10 @@ function buildCoverRows(games: GameOption[], docs: AllDoc[]): CoverRow[] {
       const indexed = uploads.filter((d) => d.ai_indexed && d.index_status === 'completed')
       const links = list.filter((d) => d.source_type !== 'upload')
       const pages = indexed.reduce((sum, d) => sum + (d.page_count ?? 0), 0)
-      return { game, uploads: uploads.length, indexed: indexed.length, links: links.length, pages,
-        linkTitles: links.map((d) => (d.title ?? '').trim()).filter((t) => t !== '') }
+      return {
+        game, uploads: uploads.length, indexed: indexed.length, links: links.length, pages,
+        linkTitles: links.map((d) => (d.title ?? '').trim()).filter((t) => t !== '')
+      }
     })
     .sort(
       (a, b) =>
@@ -519,36 +543,36 @@ function GameDocGroup({
                 </span>
               )}
               {editId !== doc.id && (
-              <div className="rbd-actions">
-              {doc.source_type === 'external' && (
-                <button type="button" className="rbd-del" onClick={() => startEdit(doc)}>
-                  編輯
-                </button>
-              )}
-              {doc.source_type === 'upload' && (
-                <select
-                  className="rbd-scope"
-                  title={scopeLabel(doc.content_scope, doc.expansion_name)}
-                  value={doc.content_scope ?? 'main'}
-                  onChange={(event) =>
-                    void changeScope(doc, event.target.value as DocScope)
-                  }
-                >
-                  {(Object.keys(SCOPE_LABELS) as DocScope[]).map((key) => (
-                    <option key={key} value={key}>
-                      {SCOPE_LABELS[key]}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <button
-                type="button"
-                className="rbd-del"
-                onClick={() => remove(doc)}
-              >
-                刪除
-              </button>
-              </div>
+                <div className="rbd-actions">
+                  {doc.source_type === 'external' && (
+                    <button type="button" className="rbd-del" onClick={() => startEdit(doc)}>
+                      編輯
+                    </button>
+                  )}
+                  {doc.source_type === 'upload' && (
+                    <select
+                      className="rbd-scope"
+                      title={scopeLabel(doc.content_scope, doc.expansion_name)}
+                      value={doc.content_scope ?? 'main'}
+                      onChange={(event) =>
+                        void changeScope(doc, event.target.value as DocScope)
+                      }
+                    >
+                      {(Object.keys(SCOPE_LABELS) as DocScope[]).map((key) => (
+                        <option key={key} value={key}>
+                          {SCOPE_LABELS[key]}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <button
+                    type="button"
+                    className="rbd-del"
+                    onClick={() => remove(doc)}
+                  >
+                    刪除
+                  </button>
+                </div>
               )}
             </li>
           )
@@ -655,176 +679,176 @@ function RulebookOverviewList({
   return (
     <section className="rbv-list">
       <>
-      {filtOpen && (
-      <div className="rbv-filters">
-        <FilterChips
-          label="規則書"
-          value={pdfFilter}
-          onChange={setPdfFilter}
-          options={[
-            { key: 'all', text: '全部', n: rows.length },
-            { key: 'yes', text: '已上傳', n: upN },
-            { key: 'no', text: '未上傳', n: rows.length - upN },
-          ]}
-        />
-        <FilterChips
-          label="連結"
-          value={linkFilter}
-          onChange={setLinkFilter}
-          options={[
-            { key: 'all', text: '全部', n: rows.length },
-            { key: 'yes', text: '已連結', n: lkN },
-            { key: 'no', text: '未連結', n: rows.length - lkN },
-          ]}
-        />
-        <div className="rbv-filter">
-          <span className="rbv-filter-label">索引</span>
-          <div className="rbv-chips">
-            <button
-              type="button"
-              aria-pressed={pendingOnly}
-              className={`rbv-chip ${pendingOnly ? 'active' : ''}`}
-              onClick={() => setPendingOnly(!pendingOnly)}
-            >
-              只看索引未完成<small>{pendingN}</small>
-            </button>
-          </div>
-        </div>
-      </div>
-      )}
-
-      <div className="rbv-searchrow">
-        {leading}
-        <input
-          className="rbv-search"
-          type="search"
-          placeholder="搜尋遊戲名稱"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        <button
-          type="button"
-          className={`rbv-filterbtn ${filtOpen || activeN > 0 ? 'on' : ''}`}
-          aria-expanded={filtOpen}
-          onClick={() => setFiltOpen((v) => !v)}
-        >
-          篩選{activeN > 0 && <small>{activeN}</small>}
-        </button>
-        {filtered && (
-          <button
-            type="button"
-            className="rbv-clear"
-            onClick={() => {
-              setPdfFilter('all')
-              setLinkFilter('all')
-              setPendingOnly(false)
-              setQuery('')
-            }}
-          >
-            清除篩選
-          </button>
-        )}
-      </div>
-      {activeN > 0 && (
-        <div className="rbv-tags">
-          {pdfFilter !== 'all' && (
-            <button type="button" className="rbv-tag" onClick={() => setPdfFilter('all')}>
-              規則書：{pdfFilter === 'yes' ? '已上傳' : '未上傳'} ✕
-            </button>
-          )}
-          {linkFilter !== 'all' && (
-            <button type="button" className="rbv-tag" onClick={() => setLinkFilter('all')}>
-              連結：{linkFilter === 'yes' ? '已連結' : '未連結'} ✕
-            </button>
-          )}
-          {pendingOnly && (
-            <button type="button" className="rbv-tag" onClick={() => setPendingOnly(false)}>
-              索引：未完成 ✕
-            </button>
-          )}
-        </div>
-      )}
-      <CountLine
-        shown={shown.length}
-        total={rows.length}
-        note="「已上傳」不等於可搜尋，要有「索引 ✓」規則助手才搜得到。垃圾桶與「僅供參考」不列入。"
-      />
-
-      {!loaded ? (
-        <p className="rb-hint">讀取中…</p>
-      ) : shown.length === 0 ? (
-        <p className="rb-hint">沒有符合的遊戲。</p>
-      ) : (
-        <ul className="rbv-rows">
-          {shown.map((r) => {
-            const id = r.game.bgg_name
-            const open = openIds.includes(id)
-            const pdfBadge =
-              r.uploads === 0 ? { cls: 'bad', text: 'PDF ✕' } : { cls: 'ok', text: 'PDF ✓' }
-            const idxBadge =
-              r.uploads === 0
-                ? { cls: 'muted', text: '索引 —' }
-                : r.indexed > 0
-                  ? { cls: 'ok', text: `索引 ✓${r.pages > 0 ? ` ${r.pages}頁` : ''}` }
-                  : { cls: 'warn', text: '索引 未完成' }
-            const linkBadge =
-              r.links > 0
-                ? { cls: 'ok', text: `連結 ✓${r.links > 1 ? ` ${r.links}` : ''}` }
-                : { cls: 'muted', text: '連結 ✕' }
-            return (
-              <li key={id} className={`rbv-row ${open ? 'open' : ''}`}>
+        {filtOpen && (
+          <div className="rbv-filters">
+            <FilterChips
+              label="規則書"
+              value={pdfFilter}
+              onChange={setPdfFilter}
+              options={[
+                { key: 'all', text: '全部', n: rows.length },
+                { key: 'yes', text: '已上傳', n: upN },
+                { key: 'no', text: '未上傳', n: rows.length - upN },
+              ]}
+            />
+            <FilterChips
+              label="連結"
+              value={linkFilter}
+              onChange={setLinkFilter}
+              options={[
+                { key: 'all', text: '全部', n: rows.length },
+                { key: 'yes', text: '已連結', n: lkN },
+                { key: 'no', text: '未連結', n: rows.length - lkN },
+              ]}
+            />
+            <div className="rbv-filter">
+              <span className="rbv-filter-label">索引</span>
+              <div className="rbv-chips">
                 <button
                   type="button"
-                  className="rbv-row-head"
-                  aria-expanded={open}
-                  onClick={() => onToggle(id)}
+                  aria-pressed={pendingOnly}
+                  className={`rbv-chip ${pendingOnly ? 'active' : ''}`}
+                  onClick={() => setPendingOnly(!pendingOnly)}
                 >
-                  <span className="rbv-row-name">
-                    {r.game.name || id}
-                    {r.linkTitles.length > 0 && (
-                      <small className="rbv-row-links">
-                        ▶ {r.linkTitles[0]}
-                        {r.linkTitles.length > 1 ? `　等 ${r.linkTitles.length} 筆` : ''}
-                      </small>
-                    )}
-                  </span>
-                  <span className="rbv-badges">
-                    <span className={`rbv-badge ${pdfBadge.cls}`}>{pdfBadge.text}</span>
-                    <span className={`rbv-badge ${linkBadge.cls}`}>{linkBadge.text}</span>
-                    <span className={`rbv-badge ${idxBadge.cls}`}>{idxBadge.text}</span>
-                  </span>
-                  <span className="rbv-arrow" aria-hidden="true">
-                    {open ? '▴' : '▾'}
-                  </span>
+                  只看索引未完成<small>{pendingN}</small>
                 </button>
-                {open && (
-                  <div className="rbv-row-body">
-                    <div className="rbv-row-actions">
-                      <button type="button" className="rbv-mini" onClick={() => onAddLink(id)}>
-                        ＋ 貼這款的連結
-                      </button>
-                      <span className="rbv-row-tip">
-                        上傳 PDF 請用上方「＋ 上傳 PDF」，遊戲選這一款。
-                      </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="rbv-searchrow">
+          {leading}
+          <input
+            className="rbv-search"
+            type="search"
+            placeholder="搜尋遊戲名稱"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <button
+            type="button"
+            className={`rbv-filterbtn ${filtOpen || activeN > 0 ? 'on' : ''}`}
+            aria-expanded={filtOpen}
+            onClick={() => setFiltOpen((v) => !v)}
+          >
+            篩選{activeN > 0 && <small>{activeN}</small>}
+          </button>
+          {filtered && (
+            <button
+              type="button"
+              className="rbv-clear"
+              onClick={() => {
+                setPdfFilter('all')
+                setLinkFilter('all')
+                setPendingOnly(false)
+                setQuery('')
+              }}
+            >
+              清除篩選
+            </button>
+          )}
+        </div>
+        {activeN > 0 && (
+          <div className="rbv-tags">
+            {pdfFilter !== 'all' && (
+              <button type="button" className="rbv-tag" onClick={() => setPdfFilter('all')}>
+                規則書：{pdfFilter === 'yes' ? '已上傳' : '未上傳'} ✕
+              </button>
+            )}
+            {linkFilter !== 'all' && (
+              <button type="button" className="rbv-tag" onClick={() => setLinkFilter('all')}>
+                連結：{linkFilter === 'yes' ? '已連結' : '未連結'} ✕
+              </button>
+            )}
+            {pendingOnly && (
+              <button type="button" className="rbv-tag" onClick={() => setPendingOnly(false)}>
+                索引：未完成 ✕
+              </button>
+            )}
+          </div>
+        )}
+        <CountLine
+          shown={shown.length}
+          total={rows.length}
+          note="「已上傳」不等於可搜尋，要有「索引 ✓」規則助手才搜得到。垃圾桶與「僅供參考」不列入。"
+        />
+
+        {!loaded ? (
+          <p className="rb-hint">讀取中…</p>
+        ) : shown.length === 0 ? (
+          <p className="rb-hint">沒有符合的遊戲。</p>
+        ) : (
+          <ul className="rbv-rows">
+            {shown.map((r) => {
+              const id = r.game.bgg_name
+              const open = openIds.includes(id)
+              const pdfBadge =
+                r.uploads === 0 ? { cls: 'bad', text: 'PDF ✕' } : { cls: 'ok', text: 'PDF ✓' }
+              const idxBadge =
+                r.uploads === 0
+                  ? { cls: 'muted', text: '索引 —' }
+                  : r.indexed > 0
+                    ? { cls: 'ok', text: `索引 ✓${r.pages > 0 ? ` ${r.pages}頁` : ''}` }
+                    : { cls: 'warn', text: '索引 未完成' }
+              const linkBadge =
+                r.links > 0
+                  ? { cls: 'ok', text: `連結 ✓${r.links > 1 ? ` ${r.links}` : ''}` }
+                  : { cls: 'muted', text: '連結 ✕' }
+              return (
+                <li key={id} className={`rbv-row ${open ? 'open' : ''}`}>
+                  <button
+                    type="button"
+                    className="rbv-row-head"
+                    aria-expanded={open}
+                    onClick={() => onToggle(id)}
+                  >
+                    <span className="rbv-row-name">
+                      {r.game.name || id}
+                      {r.linkTitles.length > 0 && (
+                        <small className="rbv-row-links">
+                          ▶ {r.linkTitles[0]}
+                          {r.linkTitles.length > 1 ? `　等 ${r.linkTitles.length} 筆` : ''}
+                        </small>
+                      )}
+                    </span>
+                    <span className="rbv-badges">
+                      <span className={`rbv-badge ${pdfBadge.cls}`}>{pdfBadge.text}</span>
+                      <span className={`rbv-badge ${linkBadge.cls}`}>{linkBadge.text}</span>
+                      <span className={`rbv-badge ${idxBadge.cls}`}>{idxBadge.text}</span>
+                    </span>
+                    <span className="rbv-arrow" aria-hidden="true">
+                      {open ? '▴' : '▾'}
+                    </span>
+                  </button>
+                  {open && (
+                    <div className="rbv-row-body">
+                      <div className="rbv-row-actions">
+                        <button type="button" className="rbv-mini" onClick={() => onAddLink(id)}>
+                          ＋ 貼這款的連結
+                        </button>
+                        <span className="rbv-row-tip">
+                          上傳 PDF 請用上方「＋ 上傳 PDF」，遊戲選這一款。
+                        </span>
+                      </div>
+                      {r.uploads === 0 && r.links === 0 && (
+                        <p className="rb-hint">這款還沒有任何規則書或連結。</p>
+                      )}
+                      <GameDocGroup
+                        key={`${id}-${listTick}`}
+                        bggName={id}
+                        sizeByName={sizeByName}
+                        filter={() => true}
+                        onChanged={onChanged}
+                        onDeleted={onDeleted}
+                      />
                     </div>
-                    {r.uploads === 0 && r.links === 0 && (
-                      <p className="rb-hint">這款還沒有任何規則書或連結。</p>
-                    )}
-                    <GameDocGroup
-                      key={`${id}-${listTick}`}
-                      bggName={id}
-                      sizeByName={sizeByName}
-                      filter={() => true}
-                      onChanged={onChanged}
-                      onDeleted={onDeleted}
-                    />
-                  </div>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </>
     </section>
   )
@@ -843,10 +867,9 @@ export default function RulebookBatchUpload({
   const subs = useAdminSubmissions(true)
   const linkPending = subs.rows.filter((row) => row.kind === 'link').length
   const glossaryPending = subs.rows.filter((row) => row.kind === 'glossary').length
-  // 從玩家投稿帶進「貼連結」表單時，記下投稿 id，新增成功後才標成已核准
   const [linkFromSub, setLinkFromSub] = useState<string | null>(null)
   const [usage, setUsage] = useState<StorageUsage | null>(null)
-  // 複製未對應詞清單後，自動打開詞庫「＋」視窗（數字變動就開一次）
+  const [dbBytes, setDbBytes] = useState<number | null>(null)
   const [glossOpenTick, setGlossOpenTick] = useState(0)
   const [, setUsageError] = useState('')
   const [allDocs, setAllDocs] = useState<AllDoc[]>([])
@@ -902,6 +925,8 @@ export default function RulebookBatchUpload({
       setAllDocs((docsResult.data ?? []) as AllDoc[])
       setDocsLoaded(true)
     }
+    const dbResult = await supabase.rpc('admin_database_size')
+    if (!dbResult.error && dbResult.data != null) setDbBytes(Number(dbResult.data))
     const errataResult = await supabase.rpc('admin_count_game_errata')
     if (!errataResult.error) {
       setErrataCounts(
@@ -977,14 +1002,14 @@ export default function RulebookBatchUpload({
     const timer = window.setTimeout(() => {
       const request: Promise<string> = isYoutube
         ? fetch('https://www.youtube.com/oembed?format=json&url=' + encodeURIComponent(url))
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => (data && typeof data.title === 'string' ? data.title : ''))
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => (data && typeof data.title === 'string' ? data.title : ''))
         : supabase.functions
-            .invoke('video-title', { body: { url: cleanUrl } })
-            .then(({ data, error }) => {
-              if (error) throw new Error(error.message || '呼叫失敗')
-              return data && typeof data.title === 'string' ? data.title : ''
-            })
+          .invoke('video-title', { body: { url: cleanUrl } })
+          .then(({ data, error }) => {
+            if (error) throw new Error(error.message || '呼叫失敗')
+            return data && typeof data.title === 'string' ? data.title : ''
+          })
       request
         .then((title) => {
           if (cancelled) return
@@ -1301,8 +1326,8 @@ export default function RulebookBatchUpload({
       .map((d) => d.storage_path || `${d.id}.pdf`)
     const ok = await askConfirm(
       `確定要清掉「${group.name}」的 ${group.docs.length} 份文件嗎？\n` +
-        `PDF 原檔與搜尋索引都會刪除（約釋放 ${formatMb(group.bytes)}），無法復原。\n` +
-        `遊戲本身不會被刪除。`,
+      `PDF 原檔與搜尋索引都會刪除（約釋放 ${formatMb(group.bytes)}），無法復原。\n` +
+      `遊戲本身不會被刪除。`,
     )
     if (!ok) return
     setClearingGame(group.bggName)
@@ -1340,7 +1365,7 @@ export default function RulebookBatchUpload({
     if (orphanFiles.length === 0 || running) return
     const ok = await askConfirm(
       `找到 ${orphanFiles.length} 個沒有對應文件列的 PDF，共 ${formatMb(orphanBytes)}。\n` +
-        `這些檔案在網站上看不到、也搜不到，確定要刪除嗎？無法復原。`,
+      `這些檔案在網站上看不到、也搜不到，確定要刪除嗎？無法復原。`,
     )
     if (!ok) return
     const removed = await supabase.storage
@@ -1413,8 +1438,8 @@ export default function RulebookBatchUpload({
       (missingMode ? 1 : 0)
     const missingRows = missingMode
       ? missingOf(missingFilter).filter(
-          (g) => !listQuery || compact(`${g.bgg_name} ${g.name}`).includes(listQuery),
-        )
+        (g) => !listQuery || compact(`${g.bgg_name} ${g.name}`).includes(listQuery),
+      )
       : []
     const trashedGroups = buildGroups(docs).filter((g) => g.trashed && g.bytes > 0)
     const trashedBytes = trashedGroups.reduce((sum, g) => sum + g.bytes, 0)
@@ -1452,119 +1477,126 @@ export default function RulebookBatchUpload({
           )}
         </div>
         {isPdf && (
-          <div className="rbv-stats rbv-stats-plain">
+          <div className="rbv-stats rbv-stats-plain rbv-quota">
             <span>
               PDF 檔案 <b>{docs.length}</b> 份
             </span>
-            <span className="rbv-stats-usage">
-              總容量{' '}
-              {usage
-                ? formatMb(usage.buckets.find((b) => b.bucket_id === 'rulebooks')?.total_bytes ?? 0)
-                : '讀取中…'}
-            </span>
+            {usage ? (
+              <QuotaLine
+                label="檔案儲存"
+                used={usage.buckets.reduce((sum, b) => sum + Number(b.total_bytes ?? 0), 0)}
+                limit={FILE_LIMIT}
+                limitText="1 GB"
+              />
+            ) : (
+              <span className="rbv-stats-usage">讀取中…</span>
+            )}
+            {dbBytes !== null && (
+              <QuotaLine label="資料庫" used={dbBytes} limit={DB_LIMIT} limitText="500 MB" />
+            )}
           </div>
         )}
         {isPdf && docs.length > 0 && (
           <>
-          {pdfFiltOpen && (
-          <div className="rbv-filters">
-            <div className="rbv-filter">
-              <span className="rbv-filter-label">範圍</span>
-              <div className="rbv-chips" role="group" aria-label="依範圍篩選">
-                {scopeKeys
-                  .filter((key) => scopeCount(key) > 0 || scopeFilter === key)
-                  .map((key) => (
+            {pdfFiltOpen && (
+              <div className="rbv-filters">
+                <div className="rbv-filter">
+                  <span className="rbv-filter-label">範圍</span>
+                  <div className="rbv-chips" role="group" aria-label="依範圍篩選">
+                    {scopeKeys
+                      .filter((key) => scopeCount(key) > 0 || scopeFilter === key)
+                      .map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          aria-pressed={scopeFilter === key}
+                          className={`rbv-chip ${scopeFilter === key ? 'active' : ''}`}
+                          onClick={() => setScopeFilter(scopeFilter === key ? 'all' : key)}
+                        >
+                          {SCOPE_LABELS[key]}
+                          <small>{scopeCount(key)}</small>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+                <div className="rbv-filter">
+                  <span className="rbv-filter-label">語言</span>
+                  <div className="rbv-chips" role="group" aria-label="依語言篩選">
+                    {(['zh', 'en', 'other'] as const)
+                      .filter((key) => langCount(key) > 0 || docLangFilter === key)
+                      .map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          aria-pressed={docLangFilter === key}
+                          className={`rbv-chip ${docLangFilter === key ? 'active' : ''}`}
+                          onClick={() => setDocLangFilter(docLangFilter === key ? 'all' : key)}
+                        >
+                          {langText(key)}
+                          <small>{langCount(key)}</small>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+                <div className="rbv-filter">
+                  <span className="rbv-filter-label">索引</span>
+                  <div className="rbv-chips" role="group" aria-label="依索引狀態篩選">
+                    {INDEX_CHIPS.filter((item) => indexCount(item.key) > 0 || indexFilter === item.key).map(
+                      (item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          aria-pressed={indexFilter === item.key}
+                          className={`rbv-chip ${indexFilter === item.key ? 'active' : ''}`}
+                          onClick={() => setIndexFilter(indexFilter === item.key ? 'all' : item.key)}
+                        >
+                          {item.label}
+                          <small>{indexCount(item.key)}</small>
+                        </button>
+                      ),
+                    )}
+                  </div>
+                </div>
+                <div className="rbv-filter">
+                  <span className="rbv-filter-label">排序</span>
+                  <div className="rbv-chips" role="group" aria-label="排序方式">
                     <button
-                      key={key}
                       type="button"
-                      aria-pressed={scopeFilter === key}
-                      className={`rbv-chip ${scopeFilter === key ? 'active' : ''}`}
-                      onClick={() => setScopeFilter(scopeFilter === key ? 'all' : key)}
+                      aria-pressed={!sortBySize}
+                      className={`rbv-chip ${!sortBySize ? 'active' : ''}`}
+                      onClick={() => setSortBySize(false)}
                     >
-                      {SCOPE_LABELS[key]}
-                      <small>{scopeCount(key)}</small>
+                      依名稱
                     </button>
-                  ))}
-              </div>
-            </div>
-            <div className="rbv-filter">
-              <span className="rbv-filter-label">語言</span>
-              <div className="rbv-chips" role="group" aria-label="依語言篩選">
-                {(['zh', 'en', 'other'] as const)
-                  .filter((key) => langCount(key) > 0 || docLangFilter === key)
-                  .map((key) => (
                     <button
-                      key={key}
                       type="button"
-                      aria-pressed={docLangFilter === key}
-                      className={`rbv-chip ${docLangFilter === key ? 'active' : ''}`}
-                      onClick={() => setDocLangFilter(docLangFilter === key ? 'all' : key)}
+                      aria-pressed={sortBySize}
+                      className={`rbv-chip ${sortBySize ? 'active' : ''}`}
+                      onClick={() => setSortBySize(true)}
                     >
-                      {langText(key)}
-                      <small>{langCount(key)}</small>
+                      依大小（大 → 小）
                     </button>
-                  ))}
+                  </div>
+                </div>
+                <div className="rbv-filter">
+                  <span className="rbv-filter-label">缺少</span>
+                  <div className="rbv-chips" role="group" aria-label="依缺少的文件篩選">
+                    {scopeKeys.map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        aria-pressed={missingFilter === key}
+                        className={`rbv-chip ${missingFilter === key ? 'active' : ''}`}
+                        onClick={() => setMissingFilter(missingFilter === key ? 'none' : key)}
+                      >
+                        {SCOPE_LABELS[key]}
+                        <small>{missingOf(key).length}</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="rbv-filter">
-              <span className="rbv-filter-label">索引</span>
-              <div className="rbv-chips" role="group" aria-label="依索引狀態篩選">
-                {INDEX_CHIPS.filter((item) => indexCount(item.key) > 0 || indexFilter === item.key).map(
-                  (item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      aria-pressed={indexFilter === item.key}
-                      className={`rbv-chip ${indexFilter === item.key ? 'active' : ''}`}
-                      onClick={() => setIndexFilter(indexFilter === item.key ? 'all' : item.key)}
-                    >
-                      {item.label}
-                      <small>{indexCount(item.key)}</small>
-                    </button>
-                  ),
-                )}
-              </div>
-            </div>
-            <div className="rbv-filter">
-              <span className="rbv-filter-label">排序</span>
-              <div className="rbv-chips" role="group" aria-label="排序方式">
-                <button
-                  type="button"
-                  aria-pressed={!sortBySize}
-                  className={`rbv-chip ${!sortBySize ? 'active' : ''}`}
-                  onClick={() => setSortBySize(false)}
-                >
-                  依名稱
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={sortBySize}
-                  className={`rbv-chip ${sortBySize ? 'active' : ''}`}
-                  onClick={() => setSortBySize(true)}
-                >
-                  依大小（大 → 小）
-                </button>
-              </div>
-            </div>
-            <div className="rbv-filter">
-              <span className="rbv-filter-label">缺少</span>
-              <div className="rbv-chips" role="group" aria-label="依缺少的文件篩選">
-                {scopeKeys.map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    aria-pressed={missingFilter === key}
-                    className={`rbv-chip ${missingFilter === key ? 'active' : ''}`}
-                    onClick={() => setMissingFilter(missingFilter === key ? 'none' : key)}
-                  >
-                    {SCOPE_LABELS[key]}
-                    <small>{missingOf(key).length}</small>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          )}
+            )}
           </>
         )}
         {label === 'PDF' && (
@@ -1963,9 +1995,11 @@ export default function RulebookBatchUpload({
           rows={subs.rows}
           error={subs.error}
           onChanged={() => void subs.reload()}
-          onUseLink={() => {}}
+          onUseLink={() => { }}
         />
       )}
+
+      {mode === 'glossary' && <GlossaryMisses onCopied={() => setGlossOpenTick((n) => n + 1)} />}
 
       {mode === 'glossary' && (
         <GlossaryAdmin
@@ -1976,8 +2010,6 @@ export default function RulebookBatchUpload({
           )}
         />
       )}
-
-      {mode === 'glossary' && <GlossaryMisses onCopied={() => setGlossOpenTick((n) => n + 1)} />}
 
       {tab === 'link' && (
         <SubmissionsAdmin
@@ -1999,43 +2031,43 @@ export default function RulebookBatchUpload({
       )}
 
       {tab === 'link' && (
-      <RulebookOverviewList
-        rows={coverRows}
-        loaded={docsLoaded && games.length > 0}
-        pdfFilter={pdfFilter}
-        setPdfFilter={setPdfFilter}
-        linkFilter={linkFilter}
-        setLinkFilter={setLinkFilter}
-        pendingOnly={pendingOnly}
-        setPendingOnly={setPendingOnly}
-        query={ovQuery}
-        setQuery={setOvQuery}
-        openIds={ovOpen}
-        onToggle={(id) =>
-          setOvOpen((cur) => (cur.includes(id) ? cur.filter((n) => n !== id) : [...cur, id]))
-        }
-        sizeByName={sizeByName}
-        listTick={listTick}
-        onChanged={() => setListTick((n) => n + 1)}
-        onDeleted={() => void loadUsage()}
-        leading={
-          <button
-            type="button"
-            className="rbv-add"
-            aria-label="貼連結"
-            disabled={running}
-            onClick={() => setMode(mode === 'link' ? null : 'link')}
-          >
-            ＋
-          </button>
-        }
-        onAddLink={(id) => {
-          setLinkGame(id)
-          setLinkDone('')
-          setLinkError('')
-          setMode('link')
-        }}
-      />
+        <RulebookOverviewList
+          rows={coverRows}
+          loaded={docsLoaded && games.length > 0}
+          pdfFilter={pdfFilter}
+          setPdfFilter={setPdfFilter}
+          linkFilter={linkFilter}
+          setLinkFilter={setLinkFilter}
+          pendingOnly={pendingOnly}
+          setPendingOnly={setPendingOnly}
+          query={ovQuery}
+          setQuery={setOvQuery}
+          openIds={ovOpen}
+          onToggle={(id) =>
+            setOvOpen((cur) => (cur.includes(id) ? cur.filter((n) => n !== id) : [...cur, id]))
+          }
+          sizeByName={sizeByName}
+          listTick={listTick}
+          onChanged={() => setListTick((n) => n + 1)}
+          onDeleted={() => void loadUsage()}
+          leading={
+            <button
+              type="button"
+              className="rbv-add"
+              aria-label="貼連結"
+              disabled={running}
+              onClick={() => setMode(mode === 'link' ? null : 'link')}
+            >
+              ＋
+            </button>
+          }
+          onAddLink={(id) => {
+            setLinkGame(id)
+            setLinkDone('')
+            setLinkError('')
+            setMode('link')
+          }}
+        />
       )}
 
       {sub === 'files' &&

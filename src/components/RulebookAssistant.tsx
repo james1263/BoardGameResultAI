@@ -5,7 +5,7 @@ import {
     searchRulebook,
     type RulebookChunk,
 } from '../lib/useRulebookSearch'
-import { hasChinese, suggestKeywords } from '../lib/zhEnGlossary'
+import { suggestKeywords } from '../lib/zhEnGlossary'
 import InfoHint from './InfoHint'
 import { errataTag, searchErrata, type Errata } from '../lib/useGameErrata'
 import { cleanOcrText } from '../lib/cleanOcrText'
@@ -296,17 +296,6 @@ export default function RulebookAssistant({
             }
         }
         return { tokens, at: -1, len: target.length }
-    }
-    const hasWord = (word: string) => findWord(query, word).at >= 0
-    const toggleSuggestion = (word: string) => {
-        const { tokens, at, len } = findWord(query, word)
-        if (at >= 0) {
-            tokens.splice(at, len)
-            setQuery(tokens.join(' '))
-        } else {
-            const base = query.trim()
-            setQuery(base ? `${base} ${word}` : word)
-        }
     }
 
     useEffect(() => {
@@ -621,29 +610,6 @@ export default function RulebookAssistant({
                     {busy ? '搜尋中…' : '搜尋'}
                 </button>
             </div>
-
-            {hasChinese(query) && suggestions.length > 0 && (
-                <div className="ra2-sug">
-                    <p className="ra2-small">可能的英文詞（點擊加入搜尋框，尚未搜尋，不扣次數）</p>
-                    <div className="ra-chips">
-                        {suggestions.map((word) => {
-                            const picked = hasWord(word)
-                            return (
-                                <button
-                                    key={`sug-${word}`}
-                                    type="button"
-                                    className="ra-chip"
-                                    aria-pressed={picked}
-                                    onMouseDown={(event) => event.preventDefault()}
-                                    onClick={() => toggleSuggestion(word)}
-                                >
-                                    {picked ? `✓ ${word}` : word}
-                                </button>
-                            )
-                        })}
-                    </div>
-                </div>
-            )}
 
             {activeLabel === '' && remaining !== undefined && remaining !== null && (
                 <p className="ra2-small">今天還剩 {remaining} 次（找到結果才扣）</p>
