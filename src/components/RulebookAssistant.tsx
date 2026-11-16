@@ -12,6 +12,7 @@ import { cleanOcrText } from '../lib/cleanOcrText'
 import { useHotKeywords } from '../lib/useRuleSearchStats'
 import { useBackClose } from '../lib/useBackClose'
 import { toSimplified } from '../lib/toSimplified'
+import { expandSynonyms } from '../lib/zhSynonyms'
 import '../styles/errata.css'
 import '../styles/ra-compact.css'
 import { supabase } from '../lib/supabase'
@@ -350,10 +351,12 @@ export default function RulebookAssistant({
             return
         }
         // 繁體問句同時轉成簡體一起查（找簡體規則書）；轉換失敗就只查原問句
-        const simp = await toSimplified(q)
+        const extra = label === '全部輸入內容' ? expandSynonyms(q, bggName) : []
+        const withSyn = extra.length > 0 ? `${q} ${extra.join(' ')}` : q
+        const simp = await toSimplified(withSyn)
         const alt = simp !== q ? simp : undefined
         setActiveLabel(label)
-        setSearchTerms(buildTerms(alt ? `${q} ${alt}` : q, label === '全部輸入內容' ? suggestions : []))
+        setSearchTerms(buildTerms(alt ? `${withSyn} ${alt}` : withSyn, label === '全部輸入內容' ? suggestions : []))
         if (label === '全部輸入內容') setFullQuery(q)
         const key = q.toLowerCase()
         const cached = cache.current.get(key)
