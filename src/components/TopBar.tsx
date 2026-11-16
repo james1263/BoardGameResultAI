@@ -19,6 +19,7 @@ export default function TopBar({
   activePage,
   onGoPage,
   onGoHome,
+  onOpenPicker,
   clubAlert,
   canUseRules,
   onCloseAdmin,
@@ -32,6 +33,7 @@ export default function TopBar({
   activePage: NavPage | null
   onGoPage: (page: NavPage) => void
   onGoHome: () => void
+  onOpenPicker: () => void
   // 俱樂部紅點：今天有聚會、還沒評分
   clubAlert: boolean
   canUseRules: boolean
@@ -56,18 +58,18 @@ export default function TopBar({
         <a
           className="sb-brand"
           href="#"
-          aria-label="玩桌遊首頁"
+          aria-label="挑三款"
           onClick={(event) => {
             event.preventDefault()
-            onGoHome()
+            onOpenPicker()
             scrollToTop()
           }}
         >
           <span className="sb-logo" aria-hidden="true">
-            🎲
+            🎰
           </span>
           <span className="sb-brand-text">
-            <strong>玩桌遊</strong>
+            <strong>挑三款</strong>
           </span>
         </a>
 

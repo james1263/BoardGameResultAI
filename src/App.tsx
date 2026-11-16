@@ -71,6 +71,7 @@ import { useTrashActions } from './lib/useTrashActions'
 import { updateDescription } from './lib/saveDescription'
 import PostGatheringNotes from './components/PostGatheringNotes'
 import ThemeHint from './components/ThemeHint'
+import TodayPicker from './components/TodayPicker'
 import { usePlannedUnseen } from './lib/usePlannedUnseen'
 import { useLoyaltyAlerts } from './lib/useLoyaltyAlerts'
 import { useNotesUnseen } from './lib/useNotesUnseen'
@@ -579,6 +580,11 @@ function Library({
     setActivePage(null)
     setIsFilterOpen(false)
   }, activePage !== null || isFilterOpen)
+  // 「今天玩什麼？」推薦視窗；開了導覽頁面就自動關掉
+  const [pickerOpen, setPickerOpen] = useState(false)
+  useEffect(() => {
+    if (activePage !== null) setPickerOpen(false)
+  }, [activePage])
   const [groupByMine, setGroupByMine] = useState(saved.groupByMine)
   const [hiddenGroups, setHiddenGroups] = useState<MineGroup[]>(
     saved.hiddenGroups,
@@ -1004,6 +1010,10 @@ function Library({
         activePage={activePage}
         onGoPage={goPage}
         onGoHome={goHome}
+        onOpenPicker={() => {
+          goHome()
+          setPickerOpen(true)
+        }}
         clubAlert={todayTask.pending && vip.isVip && !isAdmin}
         canUseRules={vip.isVip || isAdmin}
         onCloseAdmin={() => setActivePage(null)}
@@ -1365,6 +1375,16 @@ function Library({
           }}
         />
       )}
+      <TodayPicker
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        games={statGames}
+        personal={personal}
+        ratings={ratings}
+        playSessions={playSessions}
+        coverVersions={coverVersions}
+        onOpenGame={openGame}
+      />
       <PostGatheringNotes
         boardGames={boardGames}
         personal={personal}
