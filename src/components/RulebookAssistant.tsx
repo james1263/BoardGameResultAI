@@ -330,10 +330,8 @@ export default function RulebookAssistant({
     // 玩家點了英文詞 chip 並搜尋到結果：只匿名回報「中文詞＋英文詞」，失敗不影響搜尋
     async function reportPicks(rawQuery: string) {
         try {
-            console.log('reportPicks 進入', rawQuery)
             const zhWords = zhChipsFor(rawQuery)
             const enWords = suggestions.filter((w) => findWord(rawQuery, w).at >= 0)
-            console.log('reportPicks 詞', zhWords, enWords)
             if (zhWords.length === 0 || enWords.length === 0) return
             const pairs: { zh: string; en: string }[] = []
             for (const en of enWords) {
