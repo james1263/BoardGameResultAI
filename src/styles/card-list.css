@@ -40,11 +40,13 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
+  text-align: left;
   white-space: nowrap;
 }
 
 .game-grid.view-list .lv-head .lv-h-name {
   grid-column: 1 / 3;
+  padding-left: calc(48px + var(--lv-gap));
 }
 
 /* 分區標題（想玩／還沒玩過／已玩） */
@@ -151,7 +153,7 @@
   text-align: left;
 }
 
-.game-grid.view-list.lv-info .game-card .game-facts > span > span {
+.game-grid.view-list.lv-info .game-card .game-facts>span>span {
   color: #5d6a60;
   font-size: 12px;
   text-align: left;
@@ -235,7 +237,7 @@
     white-space: nowrap;
   }
 
-  .game-grid.view-list.lv-info .game-card .game-facts > span > span {
+  .game-grid.view-list.lv-info .game-card .game-facts>span>span {
     font-size: 11px;
   }
 
