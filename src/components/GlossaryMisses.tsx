@@ -36,7 +36,7 @@ type Candidate = {
 
 type Item = { key: string; bgg_name: string; zh_term: string; kind: 'miss' | 'zero'; count: number }
 
-const EXPORT_APPENDIX_LIMIT = 60000
+const APPENDIX_LIMITS = [60000, 120000, 200000]
 
 // 附在匯出文字最後，讓 AI 另外輸出可直接貼進詞庫的清單
 function exportFooter(game: string): string {
@@ -58,6 +58,8 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
   const [error, setError] = useState('')
   const [exportGame, setExportGame] = useState('')
   const [withAppendix, setWithAppendix] = useState(true)
+  const [appendixLimit, setAppendixLimit] = useState(120000)
+  const [pruning, setPruning] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [candBusy, setCandBusy] = useState('')
   const [verify, setVerify] = useState<Record<string, string>>({})
@@ -125,7 +127,7 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
       const { data, error: err } = await supabase.rpc('admin_export_miss_analysis', {
         p_bgg_name: pickedGame,
         p_include_appendix: withAppendix,
-        p_appendix_limit: EXPORT_APPENDIX_LIMIT,
+        p_appendix_limit: appendixLimit,
       })
       if (err) {
         setError('匯出失敗：' + err.message)
@@ -194,6 +196,36 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
     )
   }
 
+  // 清掉已解決的零結果詞：重新搜一次，現在搜得到的就從清單移除（管理者身分，不扣次數）
+  async function pruneSolved() {
+    const targets = shown.filter((i) => i.kind === 'zero')
+    if (targets.length === 0 || pruning) return
+    if (
+      !(await askConfirm(
+        `要重新搜尋《${pickedGame}》的 ${targets.length} 個零結果詞嗎？現在搜得到的會從清單移除；仍然搜不到的會留著，次數可能再加 1。`,
+      ))
+    )
+      return
+    setPruning(true)
+    setError('')
+    let removed = 0
+    try {
+      for (const it of targets) {
+        const result = await searchRulebook(it.bgg_name, it.zh_term)
+        if (result.error || result.chunks.length === 0) continue
+        const { error: err } = await supabase.rpc('admin_delete_search_miss', {
+          p_bgg_name: it.bgg_name,
+          p_zh_term: it.zh_term,
+          p_kind: 'search_zero_result',
+        })
+        if (!err) removed += 1
+      }
+    } finally {
+      setPruning(false)
+    }
+    await load()
+    await showNotice(`完成：移除 ${removed} 個已解決的零結果詞，還有 ${targets.length - removed} 個仍然搜不到。`)
+  }
   async function clearKind(kind: 'miss' | 'zero') {
     const text =
       kind === 'miss'
@@ -417,7 +449,18 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
                         checked={withAppendix}
                         onChange={(event) => setWithAppendix(event.target.checked)}
                       />{' '}
-                      附上規則書原文（上限 {EXPORT_APPENDIX_LIMIT.toLocaleString()} 字元）
+                      附上規則書原文，上限{' '}
+                      <select
+                        value={appendixLimit}
+                        disabled={!withAppendix}
+                        onChange={(event) => setAppendixLimit(Number(event.target.value))}
+                      >
+                        {APPENDIX_LIMITS.map((n) => (
+                          <option key={n} value={n}>
+                            {n.toLocaleString()} 字元
+                          </option>
+                        ))}
+                      </select>
                     </label>
                   </p>
                   <ul className="gm-list">
@@ -441,6 +484,14 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
                   <div className="gm-actions">
                     <button type="button" className="gm-btn" onClick={() => void load()}>
                       重新整理
+                    </button>
+                    <button
+                      type="button"
+                      className="gm-btn"
+                      disabled={pruning || !shown.some((i) => i.kind === 'zero')}
+                      onClick={() => void pruneSolved()}
+                    >
+                      {pruning ? '檢查中…' : '清掉已解決的零結果'}
                     </button>
                     <button type="button" className="gm-btn danger" disabled={!rows.length} onClick={() => void clearKind('miss')}>
                       清空找不到英文
