@@ -253,6 +253,56 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
     }
   }
 
+  // 一鍵核准：逐筆驗證，規則書找得到這個英文詞的才寫進詞庫；找不到的跳過並留在清單
+  async function approveAllVerified() {
+    if (candBusy || pendingCands.length === 0) return
+    if (
+      !(await askConfirm(
+        `要自動驗證並核准 ${pendingCands.length} 組候選嗎？只有「規則書找得到這個英文詞」的會寫進詞庫（已確認），找不到的會留在清單。寫錯可以到「全部詞庫」刪除。`,
+      ))
+    )
+      return
+    setCandBusy('all')
+    setError('')
+    let ok = 0
+    let skipped = 0
+    let failed = 0
+    try {
+      for (const c of pendingCands) {
+        const result = await searchRulebook(c.bgg_name, c.en_term)
+        if (result.error || result.chunks.length === 0) {
+          skipped += 1
+          setVerify((prev) => ({ ...prev, [c.id]: '規則書找不到這個英文詞，不建議核准' }))
+          continue
+        }
+        const { error: saveErr } = await supabase.rpc('admin_save_glossary', {
+          p_id: null,
+          p_bgg_name: c.bgg_name,
+          p_zh: c.zh_term,
+          p_en: c.en_term,
+          p_note: '',
+          p_confirmed: true,
+        })
+        if (saveErr) {
+          failed += 1
+          continue
+        }
+        const { error: stErr } = await supabase.rpc('admin_set_term_candidate_status', {
+          p_id: c.id,
+          p_status: 'approved',
+        })
+        if (stErr) failed += 1
+        else ok += 1
+      }
+    } finally {
+      setCandBusy('')
+    }
+    await load()
+    await showNotice(
+      `完成：核准 ${ok} 組${skipped ? `、跳過 ${skipped} 組（規則書找不到）` : ''}${failed ? `、失敗 ${failed} 組` : ''}。`,
+    )
+  }
+
   async function rejectCand(c: Candidate) {
     if (candBusy) return
     setCandBusy(c.id)
@@ -411,6 +461,18 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
 
           {tab === 'cand' && (
             <>
+              {pendingCands.length > 0 && (
+                <div className="gm-actions">
+                  <button
+                    type="button"
+                    className="gm-btn primary"
+                    disabled={candBusy !== ''}
+                    onClick={() => void approveAllVerified()}
+                  >
+                    {candBusy === 'all' ? '驗證並核准中…' : `一鍵驗證並核准（${pendingCands.length}）`}
+                  </button>
+                </div>
+              )}
               {!loading && pendingCands.length === 0 && <p className="gm-hint">目前沒有待審的候選。</p>}
               {[...candByGame.entries()].map(([game, list]) => (
                 <div key={game}>
