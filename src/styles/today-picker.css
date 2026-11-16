@@ -317,3 +317,25 @@
   font-size: 12px;
   text-align: center;
 }
+
+/* 難度收合 */
+.tp-more {
+  display: block;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f6dd8f;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tp-levels.tp-hide {
+  display: none;
+}
+
+/* 結果的類型標籤 */
+.tp-sheet .tp-caption .tp-tag {
+  color: #f6dd8f;
+}

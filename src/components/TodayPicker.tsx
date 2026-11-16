@@ -64,6 +64,7 @@ export default function TodayPicker({
     const [filters, setFilters] = useState<PickFilters>(NO_FILTERS)
     const [draft, setDraft] = useState<PickFilters>(NO_FILTERS)
     const [panelOpen, setPanelOpen] = useState(false)
+    const [showLevels, setShowLevels] = useState(false)
     const [picks, setPicks] = useState<PickResult[]>([])
     const [stopped, setStopped] = useState<boolean[]>([true, true, true])
     const [tick, setTick] = useState(0)
@@ -141,6 +142,7 @@ export default function TodayPicker({
 
     function openPanel() {
         setDraft(filters)
+        setShowLevels(filters.levels.length > 0)
         setPanelOpen(true)
     }
 
@@ -231,7 +233,19 @@ export default function TodayPicker({
                             </div>
                         </div>
 
-                        <div className="tp-levels" role="group" aria-label="難度">
+                        <button
+                            type="button"
+                            className="tp-more"
+                            aria-expanded={showLevels}
+                            onClick={() => setShowLevels((v) => !v)}
+                        >
+                            {showLevels ? '收起難度 ▴' : '更多條件：難度 ▾'}
+                        </button>
+                        <div
+                            className={`tp-levels ${showLevels ? '' : 'tp-hide'}`}
+                            role="group"
+                            aria-label="難度"
+                        >
                             <span className="tp-label">難度</span>
                             {LEVEL_LABELS.map((label, index) => (
                                 <button
@@ -294,10 +308,15 @@ export default function TodayPicker({
                                                         <small>
                                                             {shown.bggTime != null && `${shown.bggTime} 分`}
                                                             {level !== null && ` · ${LEVEL_LABELS[level]}`}
+                                                            {shown.category
+                                                                .filter((item) => item in CATEGORY_HINTS)
+                                                                .map((tag) => ` · ${tag}`)}
                                                         </small>
                                                     )
                                                 })()}
-                                                {reason && <small className="tp-reason">{reason}</small>}
+                                                {reason && reason !== '符合你選的條件' && (
+                                                    <small className="tp-reason">{reason}</small>
+                                                )}
                                             </>
                                         )}
                                     </div>
