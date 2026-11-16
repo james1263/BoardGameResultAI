@@ -358,9 +358,10 @@ export default function GlossaryAdmin({
       {!formOpen && error && <p className="admin-error">{error}</p>}
       {!formOpen && message && <p className="rb-msg">{message}</p>}
 
-      <h4 className="er-list-title">
+      <details className="ov-fold" open={onlyPending || keyword !== ''}>
+      <summary>
         全部詞庫（{all.length}）{pendingTotal > 0 ? `・AI 建議待確認 ${pendingTotal}` : ''}
-      </h4>
+      </summary>
       {pendingTotal > 0 && (
         <p className="rb-hint">
           <button type="button" className="admin-link" onClick={() => setOnlyPending((v) => !v)}>
@@ -448,6 +449,7 @@ export default function GlossaryAdmin({
           </details>
         )
       })}
+      </details>
     </>
   )
 }

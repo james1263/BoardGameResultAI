@@ -1,16 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { askConfirm, showNotice } from '../lib/askConfirm'
 import { searchRulebook } from '../lib/useRulebookSearch'
-import { searchErrata } from '../lib/useGameErrata'
-import { toSimplified } from '../lib/toSimplified'
-import { useBackClose } from '../lib/useBackClose'
-import { buildAnswerPrompt, copyText, saveFeedbackCtx, type FeedbackCtx } from '../lib/aiAnswer'
-import AiFeedbackBox from './AiFeedbackBox'
+import { copyText } from '../lib/aiAnswer'
 import '../styles/rb-docs-tidy.css'
 import '../styles/errata.css'
 import '../styles/glossary-ask.css'
+import '../styles/glossary-tabs.css'
 
 type MissRow = {
   bgg_name: string
@@ -29,88 +25,59 @@ type SearchMissRow = {
   last_seen: string
 }
 
-type SourceCount = { user: number; admin: number }
-type ZeroRow = { bgg_name: string; zh_term: string; user: number; admin: number; last_seen: string }
-
-type Candidate = { bgg_name: string; zh_term: string; en_term: string; status: string }
-type AskState = { bggName: string; zh: string; en: string[]; ctx: FeedbackCtx }
-
-// 複製成功後跳出的投稿視窗（疊在管理中心上面；返回鍵／✕ 只關這一層）
-function AskModal({ state, onClose }: { state: AskState; onClose: () => void }) {
-  useBackClose(onClose, true)
-  return createPortal(
-    <div className="gma-backdrop" onClick={onClose}>
-      <div className="gma-sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-        <div className="gma-head">
-          <strong>
-            {state.bggName}｜{state.zh}
-          </strong>
-          <button type="button" className="gma-close" aria-label="關閉" onClick={onClose}>
-            ✕
-          </button>
-        </div>
-        <p className="gma-hint">
-          已複製給 AI 的內容（搜尋詞：{[state.zh, ...state.en].join('、')}）。貼給 AI 後，把它回覆最後的回饋區塊貼在下面投稿；管理員投稿會直接核准。
-        </p>
-        <AiFeedbackBox key={state.ctx.code} bggName={state.bggName} ctx={state.ctx} onDismiss={onClose} />
-      </div>
-    </div>,
-    document.body,
-  )
+type Candidate = {
+  id: string
+  bgg_name: string
+  zh_term: string
+  en_term: string
+  pick_count: number
+  status: string
 }
 
-function buildTxt(rows: MissRow[]): string {
-  return rows.map((r) => `${r.bgg_name}｜${r.zh_term}｜${r.hit_count}`).join('\n')
-}
-
-function sourceLabel(s?: SourceCount): string {
-  if (!s) return ''
-  const parts: string[] = []
-  if (s.user) parts.push(`玩家 ${s.user}`)
-  if (s.admin) parts.push(`管理員 ${s.admin}`)
-  return parts.join('・')
-}
-
-// 複製給 AI 的說明＋清單（快速版，沒有附規則書原文）；AI 回覆的格式剛好可以貼進詞庫「新增詞庫」視窗
-// 想連規則書原文一起給 AI 分析，用下方「匯出給 AI 分析」
-const AI_PROMPT = [
-  '這是桌遊規則助手的「找不到對應詞」清單。清單每行格式：遊戲英文名｜玩家輸入的中文詞｜出現次數。',
-  '請先在心裡把每個詞分類，只有 A、B 兩類才輸出：',
-  'A 類（缺中英對應）：該遊戲英文規則書有對應術語，輸出「遊戲英文名｜中文詞｜英文對應詞」，單複數與大小寫照規則書用法。',
-  'B 類（缺同義詞）：玩家的口語說法和該遊戲中文規則書的正式用語不同，輸出「遊戲英文名｜中文詞｜中文正式用語」。',
-  '其餘情況一律略過、不要輸出：沒把握的詞、太泛用的詞（例如「行動」「能力」）、明顯不屬於該遊戲的詞、本身已是英文的詞、需要看規則書原文才能判斷的詞（規則書有沒有寫、文字品質問題等，請改用「匯出給 AI 分析」）。',
-  '回覆只輸出純文字，每行一筆，格式固定為：遊戲英文名｜中文詞｜對應詞',
-  '範例：Skymines｜股份｜Shares',
-  '不要加編號、標題、類別標籤、說明、備註或程式碼框，也不要輸出出現次數。',
-  '每個中文詞只給一個最適合的對應詞。',
-  '',
-  '（以下是清單）',
-].join('\n')
+type Item = { key: string; bgg_name: string; zh_term: string; kind: 'miss' | 'zero'; count: number }
 
 const EXPORT_APPENDIX_LIMIT = 60000
+
+// 附在匯出文字最後，讓 AI 另外輸出可直接貼進詞庫的清單
+function exportFooter(game: string): string {
+  return [
+    '',
+    '',
+    '【輸出要求】',
+    '請在上面的分析之後，另外輸出「可匯入詞庫的清單」：只放你有把握的 A 類（中英對應）與 B 類（同義詞）。',
+    `每行一筆，格式固定為：${game}｜中文詞｜對應詞`,
+    '不要加編號、標題、說明或程式碼框。太泛用的詞（例如「行動」「能力」）與沒把握的詞請略過。',
+  ].join('\n')
+}
 
 export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) {
   const [rows, setRows] = useState<MissRow[]>([])
   const [searchMisses, setSearchMisses] = useState<SearchMissRow[]>([])
+  const [cands, setCands] = useState<Candidate[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [askBusy, setAskBusy] = useState('')
-  const [ask, setAsk] = useState<AskState | null>(null)
   const [exportGame, setExportGame] = useState('')
   const [withAppendix, setWithAppendix] = useState(true)
   const [exporting, setExporting] = useState(false)
+  const [candBusy, setCandBusy] = useState('')
+  const [verify, setVerify] = useState<Record<string, string>>({})
+  const [open, setOpen] = useState(false)
+  const [tab, setTab] = useState<'miss' | 'cand'>('miss')
+  const [showHelp, setShowHelp] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
-    const [missRes, searchRes] = await Promise.all([
+    const [missRes, searchRes, candRes] = await Promise.all([
       supabase.rpc('admin_get_glossary_misses', { p_bgg_name: null }),
       supabase.rpc('admin_get_search_misses', { p_bgg_name: null }),
+      supabase.rpc('admin_get_term_candidates'),
     ])
-    const err = missRes.error ?? searchRes.error
+    const err = missRes.error ?? searchRes.error ?? candRes.error
     if (err) setError('讀取失敗：' + err.message)
     setRows(missRes.error ? [] : ((missRes.data ?? []) as MissRow[]))
     setSearchMisses(searchRes.error ? [] : ((searchRes.data ?? []) as SearchMissRow[]))
+    setCands(candRes.error ? [] : ((candRes.data ?? []) as Candidate[]))
     setLoading(false)
   }, [])
 
@@ -118,83 +85,38 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
     void load()
   }, [load])
 
-  // 「找不到英文的詞」每列旁邊顯示來源（玩家／管理員各幾次）
-  const sourceOf = useMemo(() => {
-    const map = new Map<string, SourceCount>()
-    for (const m of searchMisses) {
-      if (m.kind !== 'glossary_miss') continue
-      const key = m.bgg_name + '|' + m.zh_term
-      const cur = map.get(key) ?? { user: 0, admin: 0 }
-      if (m.source === 'admin') cur.admin += m.hit_count
-      else cur.user += m.hit_count
-      map.set(key, cur)
-    }
-    return map
-  }, [searchMisses])
-
-  // 搜尋零結果：同一個詞把玩家與管理員合成一列
-  const zeroRows = useMemo(() => {
-    const map = new Map<string, ZeroRow>()
+  // 「找不到英文」與「搜尋零結果」合成一份清單，只顯示次數
+  const items = useMemo(() => {
+    const list: Item[] = rows.map((r) => ({
+      key: 'm|' + r.bgg_name + '|' + r.zh_term,
+      bgg_name: r.bgg_name,
+      zh_term: r.zh_term,
+      kind: 'miss',
+      count: r.hit_count,
+    }))
+    const zero = new Map<string, Item>()
     for (const m of searchMisses) {
       if (m.kind !== 'search_zero_result') continue
-      const key = m.bgg_name + '|' + m.zh_term
-      const cur = map.get(key) ?? {
-        bgg_name: m.bgg_name,
-        zh_term: m.zh_term,
-        user: 0,
-        admin: 0,
-        last_seen: m.last_seen,
-      }
-      if (m.source === 'admin') cur.admin += m.hit_count
-      else cur.user += m.hit_count
-      if (m.last_seen > cur.last_seen) cur.last_seen = m.last_seen
-      map.set(key, cur)
+      const key = 'z|' + m.bgg_name + '|' + m.zh_term
+      const cur = zero.get(key) ?? { key, bgg_name: m.bgg_name, zh_term: m.zh_term, kind: 'zero' as const, count: 0 }
+      cur.count += m.hit_count
+      zero.set(key, cur)
     }
-    return [...map.values()].sort(
-      (a, b) =>
-        a.bgg_name.localeCompare(b.bgg_name) ||
-        b.user + b.admin - (a.user + a.admin) ||
-        a.zh_term.localeCompare(b.zh_term),
-    )
-  }, [searchMisses])
+    return [...list, ...zero.values()]
+  }, [rows, searchMisses])
 
   const exportGames = useMemo(
-    () =>
-      [...new Set([...rows.map((r) => r.bgg_name), ...zeroRows.map((r) => r.bgg_name)])].sort((a, b) =>
-        a.localeCompare(b),
-      ),
-    [rows, zeroRows],
+    () => [...new Set(items.map((i) => i.bgg_name))].sort((a, b) => a.localeCompare(b)),
+    [items],
   )
-  const pickedGame = exportGames.includes(exportGame) ? exportGame : ''
+  const pickedGame = exportGames.includes(exportGame) ? exportGame : (exportGames[0] ?? '')
+  const shown = items
+    .filter((i) => i.bgg_name === pickedGame)
+    .sort((a, b) => (a.kind === b.kind ? b.count - a.count : a.kind === 'miss' ? -1 : 1))
 
-  async function copyTxt() {
-    const text = AI_PROMPT + '\n' + buildTxt(rows)
-    try {
-      await navigator.clipboard.writeText(text)
-      await showNotice(
-        '已複製（含給 AI 的說明），貼給 AI 後，把它的回覆貼進接下來的「新增詞庫」視窗。AI 沒回的詞表示沒把握，之後仍會留在這份清單裡。',
-      )
-      onCopied?.()
-    } catch {
-      await showNotice('複製失敗，請改用「下載 .txt」。')
-    }
-  }
+  const pendingCands = cands.filter((c) => c.status === 'pending')
 
-  function downloadTxt() {
-    const blob = new Blob(['\ufeff' + buildTxt(rows)], {
-      type: 'text/plain;charset=utf-8',
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `glossary_misses_${new Date().toISOString().slice(0, 10)}.txt`
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    URL.revokeObjectURL(url)
-  }
-
-  // 呼叫資料庫匯出函式，產生「未命中詞＋詞庫＋候選段落＋原文附錄＋AI 分析任務」的整份文字
+  // 呼叫資料庫匯出函式，結尾附上「輸出要求」
   async function buildExport(): Promise<string | null> {
     if (!pickedGame || exporting) return null
     setExporting(true)
@@ -213,7 +135,7 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
         setError('匯出沒有內容。')
         return null
       }
-      return data
+      return data + exportFooter(pickedGame)
     } finally {
       setExporting(false)
     }
@@ -227,7 +149,7 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
       return
     }
     await showNotice(
-      `已複製《${pickedGame}》的 AI 分析資料（約 ${text.length.toLocaleString()} 字元）。貼給 AI 後，把它回覆「第二部分」的清單貼進接下來的「新增詞庫」視窗。`,
+      `已複製《${pickedGame}》的 AI 分析資料（約 ${text.length.toLocaleString()} 字元）。貼給 AI 後，把它最後輸出的清單貼進接下來的「新增詞庫」視窗。`,
     )
     onCopied?.()
   }
@@ -246,70 +168,19 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
     URL.revokeObjectURL(url)
   }
 
-  // 用「中文詞＋這款遊戲累積過的英文候選詞」以管理者身分搜尋，複製給 AI 並開投稿視窗
-  async function askAi(r: MissRow) {
-    const key = r.bgg_name + '|' + r.zh_term
-    if (askBusy) return
-    setAskBusy(key)
-    setError('')
-    try {
-      const { data } = await supabase.rpc('admin_get_term_candidates')
-      const en = Array.from(
-        new Set(
-          ((data ?? []) as Candidate[])
-            .filter((c) => c.bgg_name === r.bgg_name && c.zh_term === r.zh_term && c.status !== 'rejected')
-            .map((c) => c.en_term),
-        ),
-      )
-      const q = [r.zh_term, ...en].join(' ')
-      const simp = await toSimplified(q)
-      const result = await searchRulebook(r.bgg_name, q, simp !== q ? simp : undefined)
-      if (result.error) {
-        setError(result.error)
-        return
-      }
-      if (result.chunks.length === 0) {
-        await showNotice('沒有找到相關段落，所以沒有複製。')
-        return
-      }
-      const errata = (await searchErrata(r.bgg_name, q)).items
-      const { text, ctx } = buildAnswerPrompt({
-        gameName: r.bgg_name,
-        question: `「${r.zh_term}」在這款遊戲的規則裡是什麼意思？怎麼運作？`,
-        chunks: result.chunks,
-        errata,
+  async function removeItem(it: Item) {
+    if (it.kind === 'miss') {
+      const { error: err } = await supabase.rpc('admin_delete_glossary_miss', {
+        p_bgg_name: it.bgg_name,
+        p_zh_term: it.zh_term,
       })
-      if (!(await copyText(text))) {
-        setError('複製失敗，請稍後再試。')
-        return
-      }
-      saveFeedbackCtx(r.bgg_name, ctx)
-      setAsk({ bggName: r.bgg_name, zh: r.zh_term, en, ctx })
-    } finally {
-      setAskBusy('')
+      if (err) setError('刪除失敗：' + err.message)
+      else setRows((prev) => prev.filter((x) => !(x.bgg_name === it.bgg_name && x.zh_term === it.zh_term)))
+      return
     }
-  }
-
-  async function removeOne(r: MissRow) {
-    const { error: err } = await supabase.rpc('admin_delete_glossary_miss', {
-      p_bgg_name: r.bgg_name,
-      p_zh_term: r.zh_term,
-    })
-    if (err) setError('刪除失敗：' + err.message)
-    else setRows((prev) => prev.filter((x) => x !== r))
-  }
-
-  async function clearAll() {
-    if (!(await askConfirm('確定要清空「找不到英文的詞」整份清單嗎？（不影響詞庫與搜尋零結果清單）'))) return
-    const { error: err } = await supabase.rpc('admin_clear_glossary_misses')
-    if (err) setError('清空失敗：' + err.message)
-    else setRows([])
-  }
-
-  async function removeZero(r: ZeroRow) {
     const { error: err } = await supabase.rpc('admin_delete_search_miss', {
-      p_bgg_name: r.bgg_name,
-      p_zh_term: r.zh_term,
+      p_bgg_name: it.bgg_name,
+      p_zh_term: it.zh_term,
       p_kind: 'search_zero_result',
     })
     if (err) {
@@ -318,182 +189,273 @@ export default function GlossaryMisses({ onCopied }: { onCopied?: () => void }) 
     }
     setSearchMisses((prev) =>
       prev.filter(
-        (x) => !(x.kind === 'search_zero_result' && x.bgg_name === r.bgg_name && x.zh_term === r.zh_term),
+        (x) => !(x.kind === 'search_zero_result' && x.bgg_name === it.bgg_name && x.zh_term === it.zh_term),
       ),
     )
   }
 
-  async function clearZero() {
-    if (!(await askConfirm('確定要清空「搜尋零結果」整份清單嗎？（不影響詞庫與「找不到英文的詞」）'))) return
-    const { error: err } = await supabase.rpc('admin_clear_search_misses')
+  async function clearKind(kind: 'miss' | 'zero') {
+    const text =
+      kind === 'miss'
+        ? '確定要清空「找不到英文」的所有詞嗎？（不影響詞庫與零結果）'
+        : '確定要清空「零結果」的所有詞嗎？（不影響詞庫與找不到英文）'
+    if (!(await askConfirm(text))) return
+    const { error: err } = await supabase.rpc(kind === 'miss' ? 'admin_clear_glossary_misses' : 'admin_clear_search_misses')
     if (err) setError('清空失敗：' + err.message)
+    else if (kind === 'miss') setRows([])
     else setSearchMisses((prev) => prev.filter((x) => x.kind !== 'search_zero_result'))
   }
 
-  const byGame = new Map<string, MissRow[]>()
-  for (const r of rows) {
-    const list = byGame.get(r.bgg_name) ?? []
-    list.push(r)
-    byGame.set(r.bgg_name, list)
+  // 驗證：用英文詞搜該遊戲規則書，看有沒有段落含這個詞（用管理者身分，不扣次數）
+  async function verifyCand(c: Candidate) {
+    setVerify((prev) => ({ ...prev, [c.id]: '查詢中…' }))
+    const result = await searchRulebook(c.bgg_name, c.en_term)
+    const msg = result.error
+      ? '查詢失敗'
+      : result.chunks.length === 0
+        ? '規則書找不到這個英文詞，不建議核准'
+        : `規則書有 ${result.chunks.length} 段含這個詞`
+    setVerify((prev) => ({ ...prev, [c.id]: msg }))
   }
 
-  const zeroByGame = new Map<string, ZeroRow[]>()
-  for (const r of zeroRows) {
-    const list = zeroByGame.get(r.bgg_name) ?? []
-    list.push(r)
-    zeroByGame.set(r.bgg_name, list)
+  // 核准：先寫進詞庫（已確認），成功才把候選標成核准；詞庫寫入失敗就不改狀態
+  async function approveCand(c: Candidate) {
+    if (candBusy) return
+    if (
+      !(await askConfirm(
+        `要把「${c.zh_term} → ${c.en_term}」寫進《${c.bgg_name}》的詞庫嗎？寫錯可以隨時到「全部詞庫」刪除。`,
+      ))
+    )
+      return
+    setCandBusy(c.id)
+    setError('')
+    try {
+      const { error: saveErr } = await supabase.rpc('admin_save_glossary', {
+        p_id: null,
+        p_bgg_name: c.bgg_name,
+        p_zh: c.zh_term,
+        p_en: c.en_term,
+        p_note: '',
+        p_confirmed: true,
+      })
+      if (saveErr) {
+        setError('寫入詞庫失敗：' + saveErr.message)
+        return
+      }
+      const { error: stErr } = await supabase.rpc('admin_set_term_candidate_status', {
+        p_id: c.id,
+        p_status: 'approved',
+      })
+      if (stErr) setError('已寫入詞庫，但候選狀態更新失敗：' + stErr.message)
+      void load()
+    } finally {
+      setCandBusy('')
+    }
   }
+
+  async function rejectCand(c: Candidate) {
+    if (candBusy) return
+    setCandBusy(c.id)
+    setError('')
+    try {
+      const { error: stErr } = await supabase.rpc('admin_set_term_candidate_status', {
+        p_id: c.id,
+        p_status: 'rejected',
+      })
+      if (stErr) setError('退回失敗：' + stErr.message)
+      else setCands((prev) => prev.filter((x) => x.id !== c.id))
+    } finally {
+      setCandBusy('')
+    }
+  }
+
+  const candByGame = new Map<string, Candidate[]>()
+  for (const c of pendingCands) {
+    const list = candByGame.get(c.bgg_name) ?? []
+    list.push(c)
+    candByGame.set(c.bgg_name, list)
+  }
+
+  const helpText =
+    tab === 'miss'
+      ? '玩家搜尋時「詞庫沒有對應英文」或「完全搜不到」的詞會記在這裡（只記詞與次數，不記是誰；90 天沒再出現會自動清除）。做法：選一款遊戲 → 複製給 AI 分析 → 把 AI 最後輸出的清單貼進上方「＋」的「貼上 AI 回覆」。「找不到英文」是詞庫缺對應詞；「零結果」是整句沒搜到任何規則書段落。'
+      : '玩家在規則助手點選「可能的英文詞」並搜尋到結果後，會累積在這裡（不記是誰）。核准前先按「驗證」：規則書找不到這個英文詞就不要核准。核准只是在詞庫多一筆，之後可以到「全部詞庫」刪除。'
 
   return (
-    <div className="gm-box">
-      <h4>找不到英文的詞（{rows.length}）</h4>
-      <p className="gm-hint">
-        玩家或管理員在規則助手輸入、但詞庫沒有對應英文的中文詞，會自動記在這裡（只記詞與次數，不記是誰、也不記完整問題）。
-        把清單匯出給 AI 整理成「遊戲名｜中文詞｜英文對應詞」，再貼進詞庫的「新增詞庫」視窗；已進詞庫的詞會自動從這裡消失。
-      </p>
-      <div className="gm-actions">
-        <button type="button" className="gm-btn primary" disabled={!rows.length} onClick={copyTxt}>
-          複製清單
-        </button>
-        <button type="button" className="gm-btn" disabled={!rows.length} onClick={downloadTxt}>
-          下載 .txt
-        </button>
-        <button type="button" className="gm-btn" onClick={() => void load()}>
-          重新整理
-        </button>
-        <button type="button" className="gm-btn danger" disabled={!rows.length} onClick={clearAll}>
-          清空
-        </button>
-      </div>
-      {loading && <p className="gm-hint">讀取中…</p>}
-      {error && <p className="admin-error">{error}</p>}
-      {!loading && !error && rows.length === 0 && (
-        <p className="gm-hint">目前沒有未對應的詞。</p>
-      )}
-      {[...byGame.entries()].map(([game, list]) => (
-        <div key={game}>
-          <div className="gm-game">{game}</div>
-          <ul className="gm-list">
-            {list.map((r) => {
-              const label = sourceLabel(sourceOf.get(r.bgg_name + '|' + r.zh_term))
-              return (
-                <li key={r.zh_term} className="gm-row">
-                  <span className="gm-term">{r.zh_term}</span>
-                  <span className="gm-count">
-                    {r.hit_count} 次{label ? `（${label}）` : ''}
-                  </span>
-                  <button
-                    type="button"
-                    className="gm-ask"
-                    disabled={askBusy !== ''}
-                    onClick={() => void askAi(r)}
-                  >
-                    {askBusy === r.bgg_name + '|' + r.zh_term ? '搜尋中…' : '複製給我的 AI'}
-                  </button>
-                  <button
-                    type="button"
-                    className="gm-x"
-                    aria-label={`刪除 ${r.zh_term}`}
-                    onClick={() => void removeOne(r)}
-                  >
-                    ×
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      ))}
+    <div className="gm-box gmt">
+      <button type="button" className="gm-btn gmt-toggle" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        {open ? '▾' : '▸'} 未命中分析（待處理 {items.length}・候選 {pendingCands.length}）
+      </button>
 
-      <h4 style={{ marginTop: 18 }}>搜尋零結果的詞（{zeroRows.length}）</h4>
-      <p className="gm-hint">
-        玩家或管理員搜尋後「完全沒有找到規則書段落」的詞（只記詞與次數，不記是誰、也不記完整問題；90 天沒再出現會自動清除）。
-        原因可能是詞庫缺詞、簡繁用字不同、規則書沒寫這件事，或規則書文字品質不佳；用下方「匯出給 AI 分析」可以一起判斷。
-      </p>
-      <div className="gm-actions">
-        <button type="button" className="gm-btn danger" disabled={!zeroRows.length} onClick={clearZero}>
-          清空
-        </button>
-      </div>
-      {!loading && !error && zeroRows.length === 0 && (
-        <p className="gm-hint">目前沒有搜尋零結果的詞。</p>
-      )}
-      {[...zeroByGame.entries()].map(([game, list]) => (
-        <div key={game}>
-          <div className="gm-game">{game}</div>
-          <ul className="gm-list">
-            {list.map((r) => (
-              <li key={r.zh_term} className="gm-row">
-                <span className="gm-term">{r.zh_term}</span>
-                <span className="gm-count">
-                  {r.user + r.admin} 次（{sourceLabel({ user: r.user, admin: r.admin })}）
-                </span>
-                <button
-                  type="button"
-                  className="gm-x"
-                  aria-label={`刪除 ${r.zh_term}`}
-                  onClick={() => void removeZero(r)}
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-
-      <h4 style={{ marginTop: 18 }}>匯出給 AI 分析</h4>
-      <p className="gm-hint">
-        選一款遊戲，產生一份文字：未命中詞、現有詞庫、候選原文段落（含頁碼與前後文）、規則書原文附錄，最後附給 AI 的分析任務。
-        不含玩家帳號與完整搜尋問句；規則書文字只給你自己分析用，請勿公開轉貼。
-      </p>
-      {exportGames.length === 0 && <p className="gm-hint">目前沒有可匯出的遊戲（還沒有未命中詞）。</p>}
-      {exportGames.length > 0 && (
+      {open && (
         <>
-          <div className="gm-actions">
-            {exportGames.map((game) => (
+          <div className="gmt-bar">
+            <div className="gmt-tabs" role="tablist">
               <button
-                key={game}
                 type="button"
-                className={'gm-btn' + (pickedGame === game ? ' primary' : '')}
-                aria-pressed={pickedGame === game}
-                onClick={() => setExportGame(game)}
+                role="tab"
+                aria-selected={tab === 'miss'}
+                className={'gmt-tab' + (tab === 'miss' ? ' active' : '')}
+                onClick={() => setTab('miss')}
               >
-                {game}
+                未命中的詞（{items.length}）
               </button>
-            ))}
-          </div>
-          <p className="gm-hint">
-            <label>
-              <input
-                type="checkbox"
-                checked={withAppendix}
-                onChange={(event) => setWithAppendix(event.target.checked)}
-              />{' '}
-              附上規則書原文（上限 {EXPORT_APPENDIX_LIMIT.toLocaleString()} 字元，超過會依頁碼從前面取並註明）
-            </label>
-          </p>
-          <div className="gm-actions">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === 'cand'}
+                className={'gmt-tab' + (tab === 'cand' ? ' active' : '')}
+                onClick={() => setTab('cand')}
+              >
+                英文詞候選（{pendingCands.length}）
+              </button>
+            </div>
             <button
               type="button"
-              className="gm-btn primary"
-              disabled={!pickedGame || exporting}
-              onClick={() => void copyExport()}
+              className={'gmt-help' + (showHelp ? ' on' : '')}
+              aria-label="顯示或隱藏說明"
+              aria-pressed={showHelp}
+              onClick={() => setShowHelp((v) => !v)}
             >
-              {exporting ? '產生中…' : '複製給 AI'}
-            </button>
-            <button
-              type="button"
-              className="gm-btn"
-              disabled={!pickedGame || exporting}
-              onClick={() => void downloadExport()}
-            >
-              下載 .txt
+              ⓘ
             </button>
           </div>
+          {showHelp && <p className="gm-hint gmt-hint">{helpText}</p>}
+          {loading && <p className="gm-hint">讀取中…</p>}
+          {error && <p className="admin-error">{error}</p>}
+
+          {tab === 'miss' && (
+            <>
+              {exportGames.length === 0 && !loading && <p className="gm-hint">目前沒有未命中的詞。</p>}
+              {exportGames.length > 0 && (
+                <>
+                  <div className="gm-actions">
+                    {exportGames.map((game) => (
+                      <button
+                        key={game}
+                        type="button"
+                        className={'gm-btn' + (pickedGame === game ? ' primary' : '')}
+                        aria-pressed={pickedGame === game}
+                        onClick={() => setExportGame(game)}
+                      >
+                        {game}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="gm-actions">
+                    <button
+                      type="button"
+                      className="gm-btn primary"
+                      disabled={!pickedGame || exporting}
+                      onClick={() => void copyExport()}
+                    >
+                      {exporting ? '產生中…' : '複製給 AI 分析'}
+                    </button>
+                    <button
+                      type="button"
+                      className="gm-btn"
+                      disabled={!pickedGame || exporting}
+                      onClick={() => void downloadExport()}
+                    >
+                      下載 .txt
+                    </button>
+                  </div>
+                  <p className="gm-hint">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={withAppendix}
+                        onChange={(event) => setWithAppendix(event.target.checked)}
+                      />{' '}
+                      附上規則書原文（上限 {EXPORT_APPENDIX_LIMIT.toLocaleString()} 字元）
+                    </label>
+                  </p>
+                  <ul className="gm-list">
+                    {shown.map((it) => (
+                      <li key={it.key} className="gm-row">
+                        <span className="gm-term">{it.zh_term}</span>
+                        <span className="gm-count">
+                          {it.kind === 'miss' ? '找不到英文' : '零結果'}・{it.count} 次
+                        </span>
+                        <button
+                          type="button"
+                          className="gm-x"
+                          aria-label={`刪除 ${it.zh_term}`}
+                          onClick={() => void removeItem(it)}
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="gm-actions">
+                    <button type="button" className="gm-btn" onClick={() => void load()}>
+                      重新整理
+                    </button>
+                    <button type="button" className="gm-btn danger" disabled={!rows.length} onClick={() => void clearKind('miss')}>
+                      清空找不到英文
+                    </button>
+                    <button
+                      type="button"
+                      className="gm-btn danger"
+                      disabled={!items.some((i) => i.kind === 'zero')}
+                      onClick={() => void clearKind('zero')}
+                    >
+                      清空零結果
+                    </button>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {tab === 'cand' && (
+            <>
+              {!loading && pendingCands.length === 0 && <p className="gm-hint">目前沒有待審的候選。</p>}
+              {[...candByGame.entries()].map(([game, list]) => (
+                <div key={game}>
+                  <div className="gm-game">{game}</div>
+                  <ul className="gm-list">
+                    {list.map((c) => (
+                      <li key={c.id} className="gm-row">
+                        <span className="gm-term">
+                          {c.zh_term} → {c.en_term}
+                        </span>
+                        <span className="gm-count">{verify[c.id] ?? `${c.pick_count} 次`}</span>
+                        <button
+                          type="button"
+                          className="gm-ask"
+                          disabled={candBusy !== ''}
+                          onClick={() => void verifyCand(c)}
+                        >
+                          驗證
+                        </button>
+                        <button
+                          type="button"
+                          className="gm-ask"
+                          disabled={candBusy !== ''}
+                          onClick={() => void approveCand(c)}
+                        >
+                          核准
+                        </button>
+                        <button
+                          type="button"
+                          className="gm-x"
+                          aria-label={`退回 ${c.zh_term} → ${c.en_term}`}
+                          disabled={candBusy !== ''}
+                          onClick={() => void rejectCand(c)}
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </>
+          )}
         </>
       )}
-      {ask && <AskModal state={ask} onClose={() => setAsk(null)} />}
     </div>
   )
 }

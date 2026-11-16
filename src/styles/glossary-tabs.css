@@ -1,0 +1,71 @@
+/* 詞庫頁「未命中分析」子分頁：分頁列＋可收起的說明，並縮小留白 */
+.gm-box.gmt .gmt-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+}
+.gm-box.gmt .gmt-tabs {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+.gm-box.gmt .gmt-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 7px 2px;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.gm-box.gmt .gmt-tab.active {
+  border-color: #456b50;
+  background: #456b50;
+  color: #fbf7ec;
+}
+.gm-box.gmt .gmt-help {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.gm-box.gmt .gmt-help.on {
+  border-color: #456b50;
+  background: rgba(69, 107, 80, 0.25);
+}
+.gm-box.gmt .gmt-hint {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.gm-box.gmt .gm-actions {
+  margin: 4px 0 6px;
+}
+.gm-box.gmt .gm-game {
+  margin: 8px 0 2px;
+}
+.gm-box.gmt .gm-list {
+  margin: 0;
+}
+.gm-box.gmt .gm-hint {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
