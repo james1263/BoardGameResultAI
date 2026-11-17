@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
 import type { GameFaqData } from '../data/faq/types'
 import { RISING_SUN_FAQ } from '../data/faq/risingSunFaq'
+import { GAIA_PROJECT_FAQ } from '../data/faq/gaiaProjectFaq'
 
 // 有 FAQ 的遊戲在這裡登記（key 是資料庫裡的 bggName）
 const FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Rising Sun': RISING_SUN_FAQ,
+  'Gaia Project': GAIA_PROJECT_FAQ,
 }
 
 export function getGameFaq(bggName: string): GameFaqData | null {
