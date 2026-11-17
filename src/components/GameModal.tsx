@@ -26,6 +26,7 @@ import GameExpansions from './GameExpansions'
 import GameBackground from './GameBackground'
 import GameInfoSheet from './GameInfoSheet'
 import QuickReview from './QuickReview'
+import { getQuickReview } from '../data/quickReview'
 import GameQa from './GameQa'
 import { getGameFaq, countFaqItems } from './GameFaq'
 import { BrainIcon, PairIcon, PersonIcon } from './Icons'
@@ -213,7 +214,7 @@ export default function GameModal({
       sub: isAdmin ? '規則書・連結・教學影片' : '連結・教學影片',
     },
   ]
-  if (game.bggName === 'Rising Sun' && (vip.isVip || isAdmin) && !game.referenceOnly) {
+  if (getQuickReview(game.bggName) && (vip.isVip || isAdmin) && !game.referenceOnly) {
     ruleEntries.push({ key: 'review', icon: '⚡', sub: '目標・流程・行動・得分' })
   }
   // FAQ、玩錯紀錄、AI 回饋合併成一張卡，進去後每一區都有標籤註明類型
@@ -733,7 +734,7 @@ export default function GameModal({
                 showErrata={canSeeErrata}
               />
             )}
-            {sheet === 'review' && <QuickReview />}
+            {sheet === 'review' && <QuickReview bggName={game.bggName} />}
           </GameInfoSheet>
         )}
       </section>

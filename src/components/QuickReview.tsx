@@ -1,4 +1,4 @@
-import { RISING_SUN_REVIEW } from '../data/quickReview/risingSun'
+import { getQuickReview } from '../data/quickReview'
 import type { ReviewSection } from '../data/quickReview/risingSun'
 import '../styles/quick-review.css'
 
@@ -18,8 +18,10 @@ function Items({ section }: { section: ReviewSection }) {
   )
 }
 
-export default function QuickReview() {
-  const { draftNote, sections } = RISING_SUN_REVIEW
+export default function QuickReview({ bggName }: { bggName: string }) {
+  const data = getQuickReview(bggName)
+  if (!data) return null
+  const { draftNote, sections } = data
   const main = sections.filter((section) => !section.fold)
   const folded = sections.filter((section) => section.fold)
   return (
