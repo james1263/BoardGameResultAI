@@ -12,6 +12,7 @@ import { useSession } from '../lib/useSession'
 import '../styles/ra-large.css'
 import '../styles/errata.css'
 import '../styles/ra-v2.css'
+import GameFaq, { getGameFaq, countFaqItems } from './GameFaq'
 
 // 標題旁的 ⓘ：按住顯示說明，放開就消失（氣泡掛到 body，不會被標題列裁掉）
 function HoldTip({ text }: { text: string }) {
@@ -107,6 +108,7 @@ export default function RulebookPage({
   }, [boardGames, search])
 
   const hasIndex = picked && indexed ? indexed.includes(picked.bggName) : false
+  const faqData = picked ? getGameFaq(picked.bggName) : null
   const newCount = feed.items.filter((row) => since !== null && Date.parse(row.changed_at) > since).length
 
   function pick(bggName: string) {
@@ -153,6 +155,16 @@ export default function RulebookPage({
               >
                 📖 這款的規則連結與影片
               </button>
+              {faqData && (
+                <div className="ra-src ra-src-errata">
+                  <details className="ov-fold er-fold">
+                    <summary>官方 FAQ（{countFaqItems(faqData)} 則）</summary>
+                    <div className="ov-fold-body">
+                      <GameFaq bggName={picked.bggName} />
+                    </div>
+                  </details>
+                </div>
+              )}
               <div className="ra-src ra-src-errata">
                 <GameErrata bggName={picked.bggName} isAdmin={isAdmin} hideSubmit />
               </div>
