@@ -425,22 +425,6 @@ function Library({
     setSelectedGame(game)
   }
 
-  // 主畫面「我的統計」：直接開俱樂部的我的統計（返回／✕ 回主畫面，不經過俱樂部首頁）
-  function openMyStats() {
-    setWriteFromBoard(false)
-    setReturnGame(null)
-    setJumpCard(false)
-    setJumpGatheringId(null)
-    setJumpRatings(null)
-    setSelectedGame(null)
-    setIsFilterOpen(false)
-    setInviteFocus(null)
-    setInviteKey((count) => count + 1)
-    setMyListMode('list')
-    setJumpView({ view: 'stats', bggName: null })
-    setActivePage('mylist')
-  }
-
   function goPage(page: NavPage) {
     setWriteFromBoard(false)
     setReturnGame(null)
@@ -1011,10 +995,6 @@ function Library({
         activePage={activePage}
         onGoPage={goPage}
         onGoHome={goHome}
-        onOpenPicker={() => {
-          goHome()
-          setPickerOpen(true)
-        }}
         clubAlert={todayTask.pending && vip.isVip && !isAdmin}
         canUseRules={vip.isVip || isAdmin}
         onCloseAdmin={() => setActivePage(null)}
@@ -1063,9 +1043,9 @@ function Library({
                 <button
                   type="button"
                   className="explore-mine-btn"
-                  onClick={openMyStats}
+                  onClick={() => setPickerOpen(true)}
                 >
-                  我的統計 ›
+                  🎰 挑三款
                 </button>
               </div>
             </div>
