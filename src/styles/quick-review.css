@@ -1,8 +1,42 @@
-/* 開桌前快速複習；所有選擇器帶 .game-modal.gm-v2 以蓋過 vip.css */
-.game-modal.gm-v2 .qr { display: flex; flex-direction: column; gap: 14px; padding-bottom: 8px; }
+/* 開桌前快速複習；所有選擇器帶 .game-modal.gm-v2 以蓋過 vip.css。全部靠左對齊。 */
+.game-modal.gm-v2 .qr,
+.game-modal.gm-v2 .qr * { text-align: left !important; }
+
+.game-modal.gm-v2 .qr { display: flex; flex-direction: column; gap: 12px; padding-bottom: 8px; }
 .game-modal.gm-v2 .qr-note { margin: 0; font-size: 12px; line-height: 1.5; opacity: 0.7; }
-.game-modal.gm-v2 .qr-block { border-top: 1px solid rgba(128, 128, 128, 0.3); padding-top: 10px; }
-.game-modal.gm-v2 .qr-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
-.game-modal.gm-v2 .qr-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.game-modal.gm-v2 .qr-item { display: flex; flex-direction: column; gap: 2px; font-size: 14px; line-height: 1.55; }
-.game-modal.gm-v2 .qr-src { font-size: 11px; opacity: 0.6; }
+
+/* 主要區塊：卡片式，像 One-Sheet 一塊一塊 */
+.game-modal.gm-v2 .qr-block {
+  padding: 12px 14px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 12px;
+  background: rgba(128, 128, 128, 0.06);
+}
+.game-modal.gm-v2 .qr-title { margin: 0 0 8px; font-size: 16px; font-weight: 800; line-height: 1.3; }
+
+.game-modal.gm-v2 .qr-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.game-modal.gm-v2 .qr-item { display: flex; flex-direction: column; gap: 2px; font-size: 14px; line-height: 1.6; }
+.game-modal.gm-v2 .qr-label { margin-right: 6px; font-weight: 800; color: #b78a5a; }
+.game-modal.gm-v2 .qr-src { font-size: 11px; opacity: 0.55; }
+
+/* 較少用的區塊：收起來 */
+.game-modal.gm-v2 .qr-more-head { margin: 8px 0 -4px; font-size: 12px; opacity: 0.65; }
+.game-modal.gm-v2 .qr-fold {
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 12px;
+  padding: 0 14px;
+}
+.game-modal.gm-v2 .qr-sum {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.game-modal.gm-v2 .qr-sum::-webkit-details-marker { display: none; }
+.game-modal.gm-v2 .qr-sum::after { content: '▾'; opacity: 0.6; }
+.game-modal.gm-v2 .qr-fold[open] > .qr-sum::after { content: '▴'; }
+.game-modal.gm-v2 .qr-fold[open] .qr-list { padding-bottom: 14px; }
