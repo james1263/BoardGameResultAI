@@ -1,0 +1,12 @@
+/* 全站字型：一律用黑體系，避免中文落到系統預設的新細明體
+   放在 App.tsx 最後一個 import（dark-theme-12.css 之後），才蓋得過其他檔案。
+   想換字型只改下面這一行。 */
+:root {
+  --app-font: Inter, "Noto Sans TC", "Microsoft JhengHei", "微軟正黑體", "PingFang TC",
+    "Heiti TC", "Noto Sans CJK TC", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html body,
+html body * {
+  font-family: var(--app-font) !important;
+}

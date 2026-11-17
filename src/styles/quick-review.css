@@ -1,0 +1,8 @@
+/* 開桌前快速複習；所有選擇器帶 .game-modal.gm-v2 以蓋過 vip.css */
+.game-modal.gm-v2 .qr { display: flex; flex-direction: column; gap: 14px; padding-bottom: 8px; }
+.game-modal.gm-v2 .qr-note { margin: 0; font-size: 12px; line-height: 1.5; opacity: 0.7; }
+.game-modal.gm-v2 .qr-block { border-top: 1px solid rgba(128, 128, 128, 0.3); padding-top: 10px; }
+.game-modal.gm-v2 .qr-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.game-modal.gm-v2 .qr-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.game-modal.gm-v2 .qr-item { display: flex; flex-direction: column; gap: 2px; font-size: 14px; line-height: 1.55; }
+.game-modal.gm-v2 .qr-src { font-size: 11px; opacity: 0.6; }

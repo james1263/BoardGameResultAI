@@ -13,6 +13,7 @@ import { useHotKeywords } from '../lib/useRuleSearchStats'
 import { useBackClose } from '../lib/useBackClose'
 import { toSimplified } from '../lib/toSimplified'
 import { expandSynonyms } from '../lib/zhSynonyms'
+import { faqSubtitle, searchFaq, type FaqHit } from '../lib/faqSearch'
 import '../styles/errata.css'
 import '../styles/ra-compact.css'
 import { supabase } from '../lib/supabase'
@@ -255,6 +256,7 @@ export default function RulebookAssistant({
     const [notice, setNotice] = useState('')
     const [lastQuery, setLastQuery] = useState('')
     const [errata, setErrata] = useState<Errata[]>([])
+    const [faqHits, setFaqHits] = useState<FaqHit[]>([])
     const [showRaw, setShowRaw] = useState(false)
     const [fontSize, setFontSize] = useState<FontSize>(loadFont)
     const [searchTerms, setSearchTerms] = useState<string[]>([])
@@ -357,6 +359,8 @@ export default function RulebookAssistant({
         const alt = simp !== q ? simp : undefined
         setActiveLabel(label)
         setSearchTerms(buildTerms(alt ? `${withSyn} ${alt}` : withSyn, label === '全部輸入內容' ? suggestions : []))
+        // 官方 FAQ 中文翻譯：前端直接比對，不扣次數
+        setFaqHits(searchFaq(bggName, buildTerms(withSyn, [])))
         if (label === '全部輸入內容') setFullQuery(q)
         const key = q.toLowerCase()
         const cached = cache.current.get(key)
@@ -597,6 +601,7 @@ export default function RulebookAssistant({
                             setLastQuery(now)
                             setChunks(null)
                             setErrata([])
+                            setFaqHits([])
                             setActiveLabel('')
                             setFbShown(false)
                             setLangFilter('all')
@@ -768,6 +773,26 @@ export default function RulebookAssistant({
                         )
                     })}
                 </ul>
+            )}
+
+            {faqHits.length > 0 && (
+                <div className="er-box">
+                    <p className="er-box-title">
+                        官方 FAQ（{faqSubtitle(bggName)}，非中文規則書原文）・{faqHits.length} 筆
+                    </p>
+                    <ul className="er-list">
+                        {faqHits.map((f) => (
+                            <li key={f.key}>
+                                <div className="er-title">
+                                    {highlight(f.topic, searchTerms)}
+                                    <small className="er-src"> ・{f.group}</small>
+                                </div>
+                                {f.q && <p className="er-body">Q：{highlight(f.q, searchTerms)}</p>}
+                                <p className="er-body">{f.q ? 'A：' : ''}{highlight(f.a, searchTerms)}</p>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             )}
 
             {errata.length > 0 && (
