@@ -22,10 +22,12 @@ import type { RatingsApi } from '../lib/useGameRatings'
 import GameNotesBoard from './GameNotesBoard'
 import '../styles/discussion-links.css'
 import GamePlayHistory from './GamePlayHistory'
-import GameErrata from './GameErrata'
 import GameExpansions from './GameExpansions'
 import GameBackground from './GameBackground'
 import GameInfoSheet from './GameInfoSheet'
+import QuickReview from './QuickReview'
+import GameQa from './GameQa'
+import { getGameFaq, countFaqItems } from './GameFaq'
 import { BrainIcon, PairIcon, PersonIcon } from './Icons'
 import { useGameExpansions } from '../lib/useGameExpansions'
 import { useGameBackground } from '../lib/useGameBackground'
@@ -36,9 +38,11 @@ import { RATING_FIELDS } from '../lib/useGameRatings'
 import '../styles/overview.css'
 import '../styles/game-modal-v2.css'
 import '../styles/game-rate-sheet.css'
+import '../styles/game-modal-rules.css'
 
 const TABS = [
   { key: 'overview', label: '概覽' },
+  { key: 'rules', label: '規則' },
   { key: 'ratings', label: '評分' },
   { key: 'discussion', label: '討論' },
   { key: 'history', label: '紀錄' },
@@ -46,10 +50,16 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key']
 
-// 舊的「規則」分頁已併進概覽；外部仍可傳 'rules'，會開到概覽並直接開「規則連結」彈窗
+// 「規則」分頁放規則相關入口（規則連結與影片、開桌前快速複習、FAQ・玩錯紀錄・AI 回饋）。
+// 外部傳 initialTab='rules' 會開到規則分頁，並直接開「規則連結」彈窗。
+// 僅供參考的遊戲只有「概覽」與「規則」兩個分頁
+const REFERENCE_TABS: readonly TabKey[] = ['overview', 'rules']
 const WALL_PREVIEW = 12
 
-type SheetKey = 'rules' | 'background' | 'expansions' | 'errata' | 'rating'
+// 預留：之後的「新手上手小遊戲」可新增 'tutorial'，再到下面 ruleEntries 接一張卡
+type SheetKey = 'rules' | 'background' | 'expansions' | 'errata' | 'rating' | 'review'
+
+type SheetEntry = { key: SheetKey; icon: string; sub: string; title?: string }
 
 const SHEET_TITLES: Record<SheetKey, string> = {
   rules: '規則連結與影片',
@@ -57,6 +67,7 @@ const SHEET_TITLES: Record<SheetKey, string> = {
   expansions: '擴充',
   errata: '玩錯紀錄・AI 回饋',
   rating: '我的評分',
+  review: '開桌前快速複習',
 }
 
 function difficultyText(value: number | null | undefined): string {
@@ -107,7 +118,7 @@ export default function GameModal({
   onCoverUpload: (event: ChangeEvent<HTMLInputElement>) => void
   onTrash: () => void
   isTrashing: boolean
-  initialTab?: TabKey | 'rules' | 'mine'
+  initialTab?: TabKey | 'mine'
   onOpenGathering?: (gatheringId: string) => void
   allGames?: LibraryGame[]
   onSwitchGame?: (game: LibraryGame) => void
@@ -120,12 +131,13 @@ export default function GameModal({
   onClose: () => void
 }) {
   const [tab, setTab] = useState<TabKey>(
-    initialTab === undefined || initialTab === 'rules' || initialTab === 'mine'
-      ? 'overview'
-      : initialTab,
+    initialTab === undefined || initialTab === 'mine' ? 'overview' : initialTab,
   )
-  // 僅供參考的遊戲只有概覽，沒有評分、討論、紀錄
-  const activeTab: TabKey = game.referenceOnly ? 'overview' : tab
+  // 僅供參考的遊戲只有概覽與規則，沒有評分、討論、紀錄
+  const visibleTabs: readonly { key: TabKey; label: string }[] = game.referenceOnly
+    ? TABS.filter((item) => REFERENCE_TABS.includes(item.key))
+    : TABS
+  const activeTab: TabKey = visibleTabs.some((item) => item.key === tab) ? tab : 'overview'
   const [sheet, setSheet] = useState<SheetKey | null>(initialTab === 'rules' ? 'rules' : null)
   const [openType, setOpenType] = useState<string | null>(null)
   const [showAllWall, setShowAllWall] = useState(false)
@@ -177,26 +189,71 @@ export default function GameModal({
   const errataCount = errataApi.items.filter(
     (item) => !item.status || item.status === 'approved',
   ).length
-  const entries: { key: SheetKey; icon: string; sub: string }[] = [
+  const faq = getGameFaq(game.bggName)
+  const canSeeErrata = (vip.isVip || isAdmin) && !game.referenceOnly
+
+  // 概覽分頁的入口：遊戲本身的資料
+  const overviewEntries: SheetEntry[] = []
+  if (isAdmin || (!bgApi.loading && bgHasData)) {
+    overviewEntries.push({ key: 'background', icon: '🏛', sub: bgHasData ? '背景科普' : '尚未填寫' })
+  }
+  if (isAdmin || (!expApi.loading && expApi.rows.length > 0)) {
+    overviewEntries.push({
+      key: 'expansions',
+      icon: '🧩',
+      sub: expApi.rows.length > 0 ? `${expApi.rows.length} 個擴充` : '尚未登錄',
+    })
+  }
+
+  // 規則分頁的入口：規則相關。之後要新增入口（例如新手上手小遊戲）就接在這個陣列最後面
+  const ruleEntries: SheetEntry[] = [
     {
       key: 'rules',
       icon: '📖',
       sub: isAdmin ? '規則書・連結・教學影片' : '連結・教學影片',
     },
   ]
-  if (isAdmin || (!bgApi.loading && bgHasData)) {
-    entries.push({ key: 'background', icon: '🏛', sub: bgHasData ? '背景科普' : '尚未填寫' })
+  if (game.bggName === 'Rising Sun' && (vip.isVip || isAdmin) && !game.referenceOnly) {
+    ruleEntries.push({ key: 'review', icon: '⚡', sub: '目標・流程・行動・得分' })
   }
-  if (isAdmin || (!expApi.loading && expApi.rows.length > 0)) {
-    entries.push({
-      key: 'expansions',
-      icon: '🧩',
-      sub: expApi.rows.length > 0 ? `${expApi.rows.length} 個擴充` : '尚未登錄',
-    })
+  // FAQ、玩錯紀錄、AI 回饋合併成一張卡，進去後每一區都有標籤註明類型
+  const errataTitle = faq
+    ? canSeeErrata
+      ? 'FAQ・玩錯紀錄・AI 回饋'
+      : '官方 FAQ'
+    : SHEET_TITLES.errata
+  if (faq || canSeeErrata) {
+    const parts: string[] = []
+    if (faq) parts.push(`FAQ ${countFaqItems(faq)} 則`)
+    if (canSeeErrata) parts.push(`玩錯紀錄 ${errataCount} 則`)
+    ruleEntries.push({ key: 'errata', icon: '💡', sub: parts.join('・'), title: errataTitle })
   }
-  if ((vip.isVip || isAdmin) && !game.referenceOnly) {
-    entries.push({ key: 'errata', icon: '💡', sub: `${errataCount} 則` })
-  }
+  // 預留：新手上手小遊戲
+  // ruleEntries.push({ key: 'tutorial', icon: '🎓', sub: '邊玩邊學規則' })
+
+  const renderEntries = (list: SheetEntry[]) => (
+    <div className="gm-entries">
+      {list.map((entry) => (
+        <button
+          key={entry.key}
+          type="button"
+          className="gm-entry"
+          onClick={() => setSheet(entry.key)}
+        >
+          <span className="gm-entry-icon" aria-hidden="true">
+            {entry.icon}
+          </span>
+          <span className="gm-entry-text">
+            <b>{entry.title ?? SHEET_TITLES[entry.key]}</b>
+            <small>{entry.sub}</small>
+          </span>
+          <span className="gm-entry-go" aria-hidden="true">
+            ›
+          </span>
+        </button>
+      ))}
+    </div>
+  )
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -301,22 +358,23 @@ export default function GameModal({
             </div>
           </div>
 
-          {!game.referenceOnly && (
           <div className="modal-tabs" role="tablist">
-            {TABS.map((item) => (
+            {visibleTabs.map((item) => (
               <button
                 key={item.key}
                 type="button"
                 role="tab"
-                aria-selected={tab === item.key}
-                className={`modal-tab${tab === item.key ? ' is-active' : ''}`}
-                onClick={() => setTab(item.key)}
+                aria-selected={activeTab === item.key}
+                className={`modal-tab${activeTab === item.key ? ' is-active' : ''}`}
+                onClick={() => {
+                  setTab(item.key)
+                  bodyRef.current?.scrollTo({ top: 0 })
+                }}
               >
                 {item.label}
               </button>
             ))}
           </div>
-          )}
         </div>
 
         <div className="modal-body" role="tabpanel" ref={bodyRef}>
@@ -410,29 +468,9 @@ export default function GameModal({
                 </div>
               )}
 
-              <div className="modal-section">
-                <div className="gm-entries">
-                  {entries.map((entry) => (
-                    <button
-                      key={entry.key}
-                      type="button"
-                      className="gm-entry"
-                      onClick={() => setSheet(entry.key)}
-                    >
-                      <span className="gm-entry-icon" aria-hidden="true">
-                        {entry.icon}
-                      </span>
-                      <span className="gm-entry-text">
-                        <b>{SHEET_TITLES[entry.key]}</b>
-                        <small>{entry.sub}</small>
-                      </span>
-                      <span className="gm-entry-go" aria-hidden="true">
-                        ›
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {overviewEntries.length > 0 && (
+                <div className="modal-section">{renderEntries(overviewEntries)}</div>
+              )}
 
               {isAdmin && (
                 <div className="cover-upload">
@@ -463,6 +501,10 @@ export default function GameModal({
                 </div>
               )}
             </>
+          )}
+
+          {activeTab === 'rules' && (
+            <div className="modal-section">{renderEntries(ruleEntries)}</div>
           )}
 
           {activeTab === 'ratings' && (
@@ -620,7 +662,10 @@ export default function GameModal({
         </div>
 
         {sheet && (
-          <GameInfoSheet title={SHEET_TITLES[sheet]} onClose={closeSheet}>
+          <GameInfoSheet
+            title={sheet === 'errata' ? errataTitle : SHEET_TITLES[sheet]}
+            onClose={closeSheet}
+          >
             {sheet === 'rules' && (
               <GameDocuments
                 key={game.bggName}
@@ -680,14 +725,15 @@ export default function GameModal({
               </div>
             )}
             {sheet === 'errata' && (
-              <GameErrata
+              <GameQa
                 key={game.bggName}
                 bggName={game.bggName}
                 isAdmin={isAdmin}
-                embedded
-                api={errataApi}
+                errataApi={errataApi}
+                showErrata={canSeeErrata}
               />
             )}
+            {sheet === 'review' && <QuickReview />}
           </GameInfoSheet>
         )}
       </section>

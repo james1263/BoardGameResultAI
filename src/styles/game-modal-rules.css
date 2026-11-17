@@ -1,0 +1,288 @@
+/* 遊戲詳情彈窗：放大卡片、規則分頁、FAQ／玩錯紀錄合併頁
+   要放在 game-modal-v2.css 之後載入（GameModal.tsx 已排好順序）。
+   顏色全部沿用 game-modal-v2.css 的 --gm-* 變數，所以深色模式會自動跟著變。
+   想調整大小，只改下面三個變數：寬度、高度、封面。 */
+
+.modal-backdrop .game-modal.gm-v2 {
+  --gm-width: 760px;
+  --gm-height: 900px;
+  --gm-cover: 136px;
+  width: min(calc(100vw - 16px), var(--gm-width));
+  max-width: none;
+  /* 固定高度：每個分頁大小一致，切換分頁不會跳動 */
+  height: min(92dvh, var(--gm-height));
+  max-height: 92dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 520px) {
+  .modal-backdrop .game-modal.gm-v2 {
+    --gm-cover: 116px;
+  }
+}
+
+.modal-backdrop .game-modal.gm-v2 .modal-fixed {
+  flex: none;
+}
+
+.modal-backdrop .game-modal.gm-v2 .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* ---------- 頂部放大 ---------- */
+.modal-backdrop .game-modal.gm-v2 .modal-head.gm-hero {
+  min-height: calc(var(--gm-cover) + 28px);
+  padding: 16px;
+  gap: 16px;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .modal-cover,
+.modal-backdrop .game-modal.gm-v2 .gm-hero .modal-game-icon {
+  width: var(--gm-cover);
+  height: var(--gm-cover);
+  object-fit: cover;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .modal-head-info h2 {
+  font-size: 24px;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .modal-score {
+  font-size: 34px;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .gm-facts li {
+  font-size: 13px;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero .gm-facts svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 520px) {
+  .modal-backdrop .game-modal.gm-v2 .gm-hero .modal-head-info h2 {
+    font-size: 21px;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .gm-hero .modal-score {
+    font-size: 30px;
+  }
+
+  .modal-backdrop .game-modal.gm-v2 .gm-hero .gm-facts li {
+    font-size: 12px;
+  }
+}
+
+/* ---------- 分頁列：5 個分頁平均分配，空間不夠時可左右滑 ---------- */
+.game-modal.gm-v2 .modal-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.game-modal.gm-v2 .modal-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.game-modal.gm-v2 .modal-tab {
+  flex: 1 0 auto;
+  min-width: 0;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+/* ---------- 入口卡片放大 ---------- */
+.gm-v2 .gm-entry {
+  min-height: 68px;
+  padding: 12px 14px;
+  gap: 10px;
+}
+
+.gm-v2 .gm-entry-icon {
+  font-size: 24px;
+}
+
+.gm-v2 .gm-entry-text b {
+  font-size: 15px;
+}
+
+.gm-v2 .gm-entry-text small {
+  font-size: 12.5px;
+}
+
+/* ---------- FAQ／玩錯紀錄 合併頁 ---------- */
+.game-modal.gm-v2 .gqa {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.game-modal.gm-v2 .gqa-hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--gm-soft);
+}
+
+.game-modal.gm-v2 .gqa-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.game-modal.gm-v2 .gqa-chip {
+  padding: 7px 14px;
+  border: 1px solid var(--gm-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gm-ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.game-modal.gm-v2 .gqa-chip.is-active {
+  border-color: var(--gm-accent);
+  background: var(--gm-accent);
+  color: #fff;
+}
+
+.game-modal.gm-v2 .gqa-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-modal.gm-v2 .gqa-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--gm-soft);
+}
+
+.game-modal.gm-v2 .gqa-badge {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.game-modal.gm-v2 .gqa-badge.is-faq {
+  background: var(--gm-accent);
+}
+
+.game-modal.gm-v2 .gqa-badge.is-errata {
+  background: var(--gm-caramel);
+}
+
+.game-modal.gm-v2 .gqa-section + .gqa-section {
+  padding-top: 14px;
+  border-top: 1px solid var(--gm-line);
+}
+
+/* ---------- 官方 FAQ 列表 ---------- */
+.game-modal.gm-v2 .gfaq {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-modal.gm-v2 .gfaq-note,
+.game-modal.gm-v2 .gfaq-count {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--gm-soft);
+}
+
+.game-modal.gm-v2 .gfaq-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--gm-line);
+  border-radius: 10px;
+  background: var(--gm-bg);
+  color: var(--gm-ink);
+  font: inherit;
+  font-size: 15px;
+}
+
+.game-modal.gm-v2 .gfaq-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.game-modal.gm-v2 .gfaq-group-title {
+  margin: 0;
+  font-size: 14px;
+  color: var(--gm-accent);
+}
+
+.game-modal.gm-v2 .gfaq-topic {
+  border: 1px solid var(--gm-line);
+  border-radius: 12px;
+  background: var(--gm-card);
+  color: var(--gm-ink);
+  overflow: hidden;
+}
+
+.game-modal.gm-v2 .gfaq-topic > summary {
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.game-modal.gm-v2 .gfaq-topic > summary::-webkit-details-marker {
+  display: none;
+}
+
+.game-modal.gm-v2 .gfaq-topic > summary::after {
+  content: '＋';
+  float: right;
+  color: var(--gm-caramel);
+}
+
+.game-modal.gm-v2 .gfaq-topic[open] > summary::after {
+  content: '－';
+}
+
+.game-modal.gm-v2 .gfaq-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 2px 14px 14px;
+}
+
+.game-modal.gm-v2 .gfaq-item p {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+
+.game-modal.gm-v2 .gfaq-item p b {
+  flex: none;
+  width: 1.4em;
+  color: var(--gm-caramel);
+}
+
+.game-modal.gm-v2 .gfaq-q span {
+  font-weight: 700;
+}
