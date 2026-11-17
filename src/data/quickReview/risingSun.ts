@@ -16,14 +16,13 @@ export type ReviewBlock = {
 
 export const RISING_SUN_REVIEW: { bggName: string; draftNote: string; blocks: ReviewBlock[] } = {
   bggName: 'Rising Sun',
-  draftNote:
-    '草稿：依中文規則書與 FAQ 2.0 整理，尚待人工核對；兩者有衝突時以 FAQ 2.0 為準。',
+  draftNote: '',
   blocks: [
     {
       title: '遊戲目標',
       items: [
         {
-          text: '3～6 人遊戲，共四個季節（春、夏、秋、冬）。冬季結算後，勝利分數（VP）最多的玩家獲勝。',
+          text: '3～5 人遊戲（加入王朝入侵擴充的日／月氏族後最多 6 人），共四個季節（春、夏、秋、冬）。冬季結算後，勝利分數（VP）最多的玩家獲勝。',
           src: '中文規則書 第 2、10、25 頁',
         },
         {
@@ -36,7 +35,7 @@ export const RISING_SUN_REVIEW: { bggName: string; draftNote: string; blocks: Re
         },
         {
           text: '戰爭地區標記套組加成（只算「不同地區」的標記）：3～4 個＝5 VP、5～6 個＝15 VP、7～8 個＝25 VP。',
-          src: '中文規則書 第 25、6 頁（舊英文摘要草稿寫 10／20／30，與中文規則書不同，已改為 5／15／25，請核對）',
+          src: '中文規則書 第 25、6 頁）',
         },
         {
           text: '分數軌超過 50 分時，標記翻面回到 1 分的位置，最後計分時再加 50 分。',
@@ -61,7 +60,7 @@ export const RISING_SUN_REVIEW: { bggName: string; draftNote: string; blocks: Re
         },
         {
           text: '茶會：玩家協商，雙方都同意才能結盟；前一季的結盟全部失效；結盟整季有效，直到下次茶會（除非有人選了「背叛」）。',
-          src: '中文規則書 第 11、12 頁',
+          src: '中文規則書 第 12、22、23 頁',
         },
         {
           text: '政策階段與戰爭階段見「回合流程」；季節末清算見「資源用途」。',
@@ -81,7 +80,7 @@ export const RISING_SUN_REVIEW: { bggName: string; draftNote: string; blocks: Re
           src: '中文規則書 第 12、25 頁',
         },
         {
-          text: '輪到你時：拿政策行動板塊堆最上面 4 張偷看，選 1 張面朝下放進政策格，其餘 3 張面朝下放回牌堆頂（不洗牌）；然後翻開宣告這個行動。',
+          text: '輪到你時：拿政策行動板塊堆最上面 4 張偷看，選 1 張面朝上放進政策格（由左至右依序放），其餘 3 張面朝下放回牌堆頂（不洗牌），讓所有玩家知道要進行哪個政策行動。',
           src: '中文規則書 第 13 頁',
         },
         {
@@ -89,7 +88,7 @@ export const RISING_SUN_REVIEW: { bggName: string; draftNote: string; blocks: Re
           src: '中文規則書 第 13、16 頁',
         },
         {
-          text: '神明回合：由左到右結算 4 個神殿板塊；每個神殿比較信徒的戰力值，最高者獲得該神明效果，戰力相同則榮耀高者勝，沒有信徒就跳過。',
+          text: '神明回合：由左到右結算 4 個神殿板塊；每個神殿比較信徒的戰力值，最高者獲得該神明效果，戰力相同則榮耀高者勝，沒有信徒就跳過。使用神靈降世擴充時，神靈單位另有地區效果，不在本頁範圍。',
           src: '中文規則書 第 19 頁',
         },
         {
@@ -130,7 +129,7 @@ export const RISING_SUN_REVIEW: { bggName: string; draftNote: string; blocks: Re
           src: '中文規則書 第 18 頁',
         },
         {
-          text: '背叛限制：不能替換自己與同一個玩家的兩個單位；大名不受影響；神殿板塊上的信徒不受影響，但在地圖上的信徒會被影響；預備區沒有同類型單位就不能換。被換掉的單位回預備區，不算被擊殺。',
+          text: '背叛限制：兩個目標不能屬於同一位玩家；替換用的單位只能來自自己的預備區，不能拿地圖上的單位來換；大名不受影響；神殿板塊上的信徒不受影響，但在地圖上的信徒會被影響；預備區沒有同類型單位就不能換。被換掉的單位回預備區，不算被擊殺。',
           src: '中文規則書 第 18 頁',
         },
       ],
@@ -221,8 +220,8 @@ export const RISING_SUN_REVIEW: { bggName: string; draftNote: string; blocks: Re
           src: '中文規則書 第 25 頁',
         },
         {
-          text: '結盟只有在茶會能成立，雙方都要同意；結盟後不能把盟友當成季節卡的敵方目標，也不能在戰爭中擊殺盟友的單位。',
-          src: '中文規則書 第 11、12 頁',
+          text: '結盟只有在茶會能成立，雙方都要同意；結盟後，季節卡能力不能把盟友當成敵方目標；戰爭中若盟友贏了，你的單位不會被擊殺（綁架人質仍可抓盟友的單位）。',
+          src: '中文規則書 第 12、22、23 頁',
         },
         {
           text: '切腹要殺光所有單位，不能挑著留；殺光後仍算參戰，仍可下注與綁架。',
@@ -253,7 +252,7 @@ export const RISING_SUN_REVIEW: { bggName: string; draftNote: string; blocks: Re
           src: 'FAQ 2.0 FAQ-1',
         },
         {
-          text: '大名免疫「指定單一單位」的效果（Fire Dragon、Earth Dragon、Benten），但不免疫針對玩家的效果（Oni of Plagues、須佐之男、雷神、Path of the Serpent 等）。',
+          text: '大名免疫「指定單一單位」的效果（Fire Dragon、Earth Dragon、Benten），但不免疫針對玩家的效果（（Oni of Plagues、Kami Unbound 的 Susanoo／Raijin、Path of the Serpent 等）。',
           src: 'FAQ 2.0 FAQ-1',
         },
         {
@@ -265,7 +264,7 @@ export const RISING_SUN_REVIEW: { bggName: string; draftNote: string; blocks: Re
           src: 'FAQ 2.0 FAQ-1',
         },
         {
-          text: '福祿壽（Fukurokuju）可以被擊殺（可切腹、戰鬥結束被殺、被 Daikaiju 壓碎）；他算堡壘，若在預備區，可在調度政策行動時被「建造」。「堡壘不能被擊殺」只適用於堡壘標記。',
+          text: '福祿壽（Fukurokuju，Dynasty Invasion 擴充的七福神之一，只有日／月氏族能取得）可以被擊殺（可切腹、戰鬥結束被殺、被 Daikaiju 壓碎）；他算堡壘，若在預備區，可在調度政策行動時被「建造」。「堡壘不能被擊殺」只適用於堡壘標記。',
           src: 'FAQ 2.0 FAQ-3（舊版 FAQ 1.0 說法相反，以 2.0 為準）',
         },
       ],

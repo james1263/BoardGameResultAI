@@ -4,7 +4,7 @@ import '../styles/quick-review.css'
 export default function QuickReview() {
   return (
     <div className="qr">
-      <p className="qr-note">{RISING_SUN_REVIEW.draftNote}</p>
+      {RISING_SUN_REVIEW.draftNote && <p className="qr-note">{RISING_SUN_REVIEW.draftNote}</p>}
       {RISING_SUN_REVIEW.blocks.map((block) => (
         <section key={block.title} className="qr-block">
           <div className="qr-title">{block.title}</div>
