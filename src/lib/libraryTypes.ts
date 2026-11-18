@@ -8,6 +8,7 @@ export type LibraryGame = BoardGame & {
   description?: string | null
   // 僅供參考：只留在桌遊收藏供搜尋，不能想玩／已玩／評分，也不進任何統計
   referenceOnly?: boolean
+  newOverride?: boolean | null
 }
 
 export type SortKey =

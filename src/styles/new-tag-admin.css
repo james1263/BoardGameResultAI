@@ -1,0 +1,12 @@
+body .nta { max-width: 720px; margin: 12px auto; padding: 8px 12px; border: 1px solid rgba(128,128,128,.35); border-radius: 10px; font-size: 14px; }
+body .nta summary { cursor: pointer; font-weight: 700; }
+body .nta .nta-hint { margin: 6px 0; opacity: .75; font-size: 13px; }
+body .nta .nta-msg { margin: 6px 0; color: #d9534f; }
+body .nta .nta-search { width: 100%; box-sizing: border-box; font-size: 16px; padding: 8px 10px; border: 1px solid rgba(128,128,128,.4); border-radius: 8px; background: transparent; color: inherit; }
+body .nta .nta-list { list-style: none; margin: 8px 0 0; padding: 0; }
+body .nta .nta-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 0; border-top: 1px solid rgba(128,128,128,.25); }
+body .nta .nta-name { font-weight: 600; }
+body .nta .nta-btns { display: inline-flex; gap: 4px; }
+body .nta .nta-btns button { padding: 4px 10px; border: 1px solid rgba(128,128,128,.45); border-radius: 999px; background: transparent; color: inherit; cursor: pointer; font-size: 13px; }
+body .nta .nta-btns button[aria-pressed="true"] { background: #2f6f4f; border-color: #2f6f4f; color: #fff; }
+body .nta .nta-btns button:disabled { opacity: .5; }

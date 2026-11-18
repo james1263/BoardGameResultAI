@@ -72,6 +72,7 @@ import { updateDescription } from './lib/saveDescription'
 import PostGatheringNotes from './components/PostGatheringNotes'
 import ThemeHint from './components/ThemeHint'
 import TodayPicker from './components/TodayPicker'
+import NewTagAdmin from './components/NewTagAdmin'
 import { usePlannedUnseen } from './lib/usePlannedUnseen'
 import { useLoyaltyAlerts } from './lib/useLoyaltyAlerts'
 import { useNotesUnseen } from './lib/useNotesUnseen'
@@ -116,6 +117,7 @@ function isPinnedGame(
   if (!game.createdAt) return false
   const age = nowMs - new Date(game.createdAt).getTime()
   if (age >= PIN_DAYS * 24 * 60 * 60 * 1000) return false
+  if (game.newOverride === false) return false
   const hasRank =
     game.rankingEngine != null && Number.isInteger(game.rankingEngine)
   return !hasRank
@@ -473,6 +475,8 @@ function Library({
   }, [boardGames, nowMs, seenNew])
 
   function isNewGame(game: LibraryGame): boolean {
+    if (game.newOverride === true) return true
+    if (game.newOverride === false) return false
     if (!game.createdAt) return false
     if (seenNew.has(game.bggName)) return false
     const age = nowMs - new Date(game.createdAt).getTime()
@@ -1205,6 +1209,18 @@ function Library({
         <span>玩桌遊｜BoardGame</span>
         <span>讓每一場遊戲，都玩得更盡興。</span>
         <AdminPanel />
+        {isAdmin && (
+          <NewTagAdmin
+            games={boardGames}
+            onChange={(name, value) =>
+              onGamesChange((current) =>
+                current.map((item) =>
+                  item.bggName === name ? { ...item, newOverride: value } : item,
+                ),
+              )
+            }
+          />
+        )}
       </footer>
 
       {selectedGame && (
