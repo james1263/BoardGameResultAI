@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import type { GameFaqData } from '../data/faq/types'
 import { RISING_SUN_FAQ } from '../data/faq/risingSunFaq'
 import { GAIA_PROJECT_FAQ } from '../data/faq/gaiaProjectFaq'
+import { getUnofficialFaq } from '../data/faq/unofficialRegistry'
+import { isSafeUrl } from '../lib/useGameDocuments'
 
 // 有 FAQ 的遊戲在這裡登記（key 是資料庫裡的 bggName）
 const FAQ_BY_GAME: Record<string, GameFaqData> = {
@@ -13,6 +15,9 @@ export function getGameFaq(bggName: string): GameFaqData | null {
   return FAQ_BY_GAME[bggName] ?? null
 }
 
+// BGG 討論・非官方 FAQ（登記表在 data/faq/unofficialRegistry.ts，網頁與規則助手共用）
+export { getUnofficialFaq }
+
 // 規則分頁入口卡片上顯示的「N 則」
 export function countFaqItems(data: GameFaqData): number {
   return data.groups.reduce(
@@ -22,8 +27,15 @@ export function countFaqItems(data: GameFaqData): number {
   )
 }
 
-export default function GameFaq({ bggName }: { bggName: string }) {
-  const data = getGameFaq(bggName)
+export default function GameFaq({
+  bggName,
+  kind = 'official',
+}: {
+  bggName: string
+  // official＝官方 FAQ；unofficial＝BGG 討論・非官方 FAQ（玩家整理，會標示來源）
+  kind?: 'official' | 'unofficial'
+}) {
+  const data = kind === 'unofficial' ? getUnofficialFaq(bggName) : getGameFaq(bggName)
   const [query, setQuery] = useState('')
   const keyword = query.trim().toLowerCase()
 
@@ -53,13 +65,30 @@ export default function GameFaq({ bggName }: { bggName: string }) {
   return (
     <div className="gfaq">
       <p className="gfaq-note">{data.note}</p>
+      {data.sources && data.sources.length > 0 && (
+        <p className="gfaq-note">
+          來源：
+          {data.sources.map((source, index) => (
+            <span key={index}>
+              {index > 0 && '、'}
+              {source.url && isSafeUrl(source.url) ? (
+                <a href={source.url} target="_blank" rel="noreferrer">
+                  {source.label} ↗
+                </a>
+              ) : (
+                source.label
+              )}
+            </span>
+          ))}
+        </p>
+      )}
       <input
         type="search"
         className="gfaq-search"
-        placeholder="搜尋 FAQ（例如：忠誠、切腹、福祿壽）"
+        placeholder={kind === 'unofficial' ? '搜尋非官方 FAQ（例如：太陽能板、維護費）' : '搜尋 FAQ（例如：忠誠、切腹、福祿壽）'}
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        aria-label="搜尋 FAQ"
+        aria-label={kind === 'unofficial' ? '搜尋非官方 FAQ' : '搜尋 FAQ'}
       />
       {keyword !== '' && (
         <p className="gfaq-count">
@@ -86,6 +115,7 @@ export default function GameFaq({ bggName }: { bggName: string }) {
                       {item.q && <b>A</b>}
                       <span>{item.a}</span>
                     </p>
+                    {item.src && <small className="gfaq-src">來源：{item.src}</small>}
                   </div>
                 ))}
               </div>

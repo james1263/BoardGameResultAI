@@ -28,7 +28,7 @@ import GameInfoSheet from './GameInfoSheet'
 import QuickReview from './QuickReview'
 import { getQuickReview } from '../data/quickReview'
 import GameQa from './GameQa'
-import { getGameFaq, countFaqItems } from './GameFaq'
+import GameFaq, { getGameFaq, getUnofficialFaq, countFaqItems } from './GameFaq'
 import { BrainIcon, PairIcon, PersonIcon } from './Icons'
 import { useGameExpansions } from '../lib/useGameExpansions'
 import { useGameBackground } from '../lib/useGameBackground'
@@ -191,6 +191,8 @@ export default function GameModal({
     (item) => !item.status || item.status === 'approved',
   ).length
   const faq = getGameFaq(game.bggName)
+  // BGG 討論・非官方 FAQ：玩家整理的設計師回覆／討論，和官方 FAQ 分開標示
+  const unofficial = getUnofficialFaq(game.bggName)
   const canSeeErrata = (vip.isVip || isAdmin) && !game.referenceOnly
 
   // 概覽分頁的入口：遊戲本身的資料
@@ -217,15 +219,21 @@ export default function GameModal({
   if (getQuickReview(game.bggName) && (vip.isVip || isAdmin) && !game.referenceOnly) {
     ruleEntries.push({ key: 'review', icon: '⚡', sub: '目標・流程・行動・得分' })
   }
-  // FAQ、玩錯紀錄、AI 回饋合併成一張卡，進去後每一區都有標籤註明類型
-  const errataTitle = faq
+  // FAQ、BGG 討論・非官方 FAQ、玩錯紀錄、AI 回饋合併成一張卡，進去後每一區都有標籤註明類型
+  const hasAnyFaq = !!faq || !!unofficial
+  const errataTitle = hasAnyFaq
     ? canSeeErrata
       ? 'FAQ・玩錯紀錄・AI 回饋'
-      : '官方 FAQ'
+      : faq && unofficial
+        ? 'FAQ・BGG 討論'
+        : faq
+          ? '官方 FAQ'
+          : 'BGG 討論・非官方 FAQ'
     : SHEET_TITLES.errata
-  if (faq || canSeeErrata) {
+  if (hasAnyFaq || canSeeErrata) {
     const parts: string[] = []
     if (faq) parts.push(`FAQ ${countFaqItems(faq)} 則`)
+    if (unofficial) parts.push(`非官方 ${countFaqItems(unofficial)} 則`)
     if (canSeeErrata) parts.push(`玩錯紀錄 ${errataCount} 則`)
     ruleEntries.push({ key: 'errata', icon: '💡', sub: parts.join('・'), title: errataTitle })
   }
@@ -726,13 +734,23 @@ export default function GameModal({
               </div>
             )}
             {sheet === 'errata' && (
-              <GameQa
-                key={game.bggName}
-                bggName={game.bggName}
-                isAdmin={isAdmin}
-                errataApi={errataApi}
-                showErrata={canSeeErrata}
-              />
+              <>
+                <GameQa
+                  key={game.bggName}
+                  bggName={game.bggName}
+                  isAdmin={isAdmin}
+                  errataApi={errataApi}
+                  showErrata={canSeeErrata}
+                />
+                {unofficial && (
+                  <details className="ov-fold er-fold">
+                    <summary>BGG 討論・非官方 FAQ（{countFaqItems(unofficial)} 則）</summary>
+                    <div className="ov-fold-body">
+                      <GameFaq key={game.bggName} bggName={game.bggName} kind="unofficial" />
+                    </div>
+                  </details>
+                )}
+              </>
             )}
             {sheet === 'review' && <QuickReview bggName={game.bggName} />}
           </GameInfoSheet>

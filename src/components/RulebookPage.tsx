@@ -12,7 +12,7 @@ import { useSession } from '../lib/useSession'
 import '../styles/ra-large.css'
 import '../styles/errata.css'
 import '../styles/ra-v2.css'
-import GameFaq, { getGameFaq, countFaqItems } from './GameFaq'
+import GameFaq, { getGameFaq, getUnofficialFaq, countFaqItems } from './GameFaq'
 
 // 標題旁的 ⓘ：按住顯示說明，放開就消失（氣泡掛到 body，不會被標題列裁掉）
 function HoldTip({ text }: { text: string }) {
@@ -109,6 +109,7 @@ export default function RulebookPage({
 
   const hasIndex = picked && indexed ? indexed.includes(picked.bggName) : false
   const faqData = picked ? getGameFaq(picked.bggName) : null
+  const unofficialData = picked ? getUnofficialFaq(picked.bggName) : null
   const newCount = feed.items.filter((row) => since !== null && Date.parse(row.changed_at) > since).length
 
   function pick(bggName: string) {
@@ -161,6 +162,16 @@ export default function RulebookPage({
                     <summary>官方 FAQ（{countFaqItems(faqData)} 則）</summary>
                     <div className="ov-fold-body">
                       <GameFaq bggName={picked.bggName} />
+                    </div>
+                  </details>
+                </div>
+              )}
+              {unofficialData && (
+                <div className="ra-src ra-src-errata">
+                  <details className="ov-fold er-fold">
+                    <summary>BGG 討論・非官方 FAQ（{countFaqItems(unofficialData)} 則）</summary>
+                    <div className="ov-fold-body">
+                      <GameFaq bggName={picked.bggName} kind="unofficial" />
                     </div>
                   </details>
                 </div>

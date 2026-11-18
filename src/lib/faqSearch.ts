@@ -1,10 +1,13 @@
-// 規則助手用：在前端直接搜尋官方 FAQ 的中文翻譯（不呼叫資料庫、不扣每日次數）
-// 之後新增別款遊戲的 FAQ：在下面的 FAQ_BY_GAME 登記一行（key＝bggName）。
-// 注意：GameFaq.tsx 也有一份自己的登記表，兩邊都要登記。
+// 規則助手用：在前端直接搜尋 FAQ 的中文內容（不呼叫資料庫、不扣每日次數）
+// 兩種來源：
+//   ① 官方 FAQ：在下面的 FAQ_BY_GAME 登記一行（key＝bggName）。注意：GameFaq.tsx 也有一份自己的登記表，兩邊都要登記。
+//   ② BGG 討論・非官方 FAQ：登記在 data/faq/unofficialRegistry.ts（只有一份，網頁與這裡共用）。
+// 搜尋結果裡，非官方的命中會在 group 前面加上「【非官方】」，讓玩家一眼分得出來，且排在官方之後。
 
 import type { GameFaqData } from '../data/faq/types'
 import { RISING_SUN_FAQ } from '../data/faq/risingSunFaq'
 import { GAIA_PROJECT_FAQ } from '../data/faq/gaiaProjectFaq'
+import { getUnofficialFaq } from '../data/faq/unofficialRegistry'
 
 const FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Rising Sun': RISING_SUN_FAQ,
@@ -17,15 +20,27 @@ export type FaqHit = {
   topic: string
   q?: string
   a: string
+  // true＝BGG 討論・非官方 FAQ（玩家整理，不是官方）
+  unofficial?: boolean
 }
+
+const UNOFFICIAL_LABEL = '【非官方】'
+const MAX_HITS = 8
+// 兩種來源都有命中時，至少保留幾則非官方（避免被官方命中擠掉）
+const MIN_UNOFFICIAL = 3
 
 export function faqSubtitle(bggName: string): string {
-  return FAQ_BY_GAME[bggName]?.sub ?? ''
+  const official = FAQ_BY_GAME[bggName]?.sub ?? ''
+  const unofficial = getUnofficialFaq(bggName)
+  if (!unofficial) return official
+  return official ? `${official}＋非官方 BGG 討論整理` : `非官方・${unofficial.sub}`
 }
 
-// terms：與規則書搜尋共用的關鍵詞（含同義詞展開）。回傳最相關的前 8 則
-export function searchFaq(bggName: string, terms: string[]): FaqHit[] {
-  const data = FAQ_BY_GAME[bggName]
+function rankHits(
+  data: GameFaqData | null | undefined,
+  terms: string[],
+  unofficial: boolean,
+): { hit: FaqHit; score: number }[] {
   if (!data || terms.length === 0) return []
   const lowered = terms.map((t) => t.toLowerCase())
   const need = Math.max(1, Math.ceil(lowered.length * 0.4))
@@ -41,15 +56,31 @@ export function searchFaq(bggName: string, terms: string[]): FaqHit[] {
         }
         if (score >= need) {
           hits.push({
-            hit: { key: `${gi}-${ti}-${ii}`, group: group.title, topic: topic.name, q: item.q, a: item.a },
+            hit: {
+              key: `${unofficial ? 'u-' : ''}${gi}-${ti}-${ii}`,
+              group: unofficial ? `${UNOFFICIAL_LABEL}${group.title}` : group.title,
+              topic: topic.name,
+              q: item.q,
+              a: item.a,
+              unofficial: unofficial || undefined,
+            },
             score,
           })
         }
       })
     })
   })
-  return hits
-    .sort((x, y) => y.score - x.score)
-    .slice(0, 8)
-    .map((x) => x.hit)
+  return hits.sort((x, y) => y.score - x.score)
+}
+
+// terms：與規則書搜尋共用的關鍵詞（含同義詞展開）。回傳最相關的前 8 則（官方在前，非官方在後）
+export function searchFaq(bggName: string, terms: string[]): FaqHit[] {
+  const official = rankHits(FAQ_BY_GAME[bggName], terms, false)
+  const unofficial = rankHits(getUnofficialFaq(bggName), terms, true)
+  const takeUnofficial = Math.min(unofficial.length, Math.max(MIN_UNOFFICIAL, MAX_HITS - official.length))
+  const takeOfficial = Math.min(official.length, MAX_HITS - takeUnofficial)
+  return [
+    ...official.slice(0, takeOfficial).map((x) => x.hit),
+    ...unofficial.slice(0, takeUnofficial).map((x) => x.hit),
+  ]
 }
