@@ -12,6 +12,7 @@ import { BRASS_BIRMINGHAM_REVIEW } from './brassBirmingham'
 import { FEAST_FOR_ODIN_REVIEW } from './feastForOdin'
 import { CUZCO_REVIEW } from './cuzco'
 import { SKYMINES_REVIEW } from './skymines'
+import { FEDERATION_REVIEW } from './federation'
   
 
 export type QuickReviewData = { bggName: string; draftNote: string; sections: ReviewSection[] }
@@ -31,6 +32,7 @@ const REVIEWS: QuickReviewData[] = [
   , FEAST_FOR_ODIN_REVIEW
   , CUZCO_REVIEW
   , SKYMINES_REVIEW
+  , FEDERATION_REVIEW
 ]
 
 export function getQuickReview(bggName: string): QuickReviewData | undefined {
