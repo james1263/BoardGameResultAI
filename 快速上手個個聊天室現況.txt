@@ -1,17 +1,20 @@
 已未完成：
 
-.james88713@gmail.com 下一步
+.james88713@gmail.com
 
-.james50aj3g4@gmail.com 把規則書上傳(2)
+.james50aj3g4@gmail.com <最新的生成後.md>
 
-.p46104293@gs.ncku.edu.tw <最新的生成後.md>
+p46104293@gs.ncku.edu.tw 
 
-.james.boardgame@gmail.com 奧丁的盛宴->繼續(4)
+.james.boardgame@gmail.com 
 
-.james88713@outlook.com  達爾文補最後的中文bili(5)
+.james88713@outlook.com  繼續
 
-.james50aj3g4@outlook.com 蓋亞補最後的中文bili(5)
+james50aj3g4@outlook.com 
 
-james.boardgame@outlook.com 達爾文補最後的中文bili(3)
+james.boardgame@outlook.com 
 
 「遊戲名｜中文詞｜對應詞」 單人不要加 一般來說擴充都要收
+
+GameFaq.tsx
+faqSearch.ts

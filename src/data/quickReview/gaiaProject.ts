@@ -1,11 +1,11 @@
 // 開桌前快速複習：蓋亞計劃（Gaia Project）
 // 格式比照旭日（risingSun.ts）、卓爾金曆（tzolkin.ts）、帕米爾和平（paxPamir.ts）：先看主要區塊，較少用的內容預設收起。
-// 內容來源：①英文規則書（24 頁，書上印刷頁＝PDF 頁；中文版規則書頁碼相同）②官方勘誤與 FAQ v1.0（2017/11/14）③Super Summary（玩家整理）④Player Aid
+// 內容來源：①英文規則書（24 頁，書上印刷頁；中文版規則書頁碼相同。注意：中文版 PDF 第 1 頁是轉貼封面，PDF 頁＝印刷頁＋1，網站規則助手顯示的是 PDF 頁）②官方勘誤與 FAQ v1.0（2017/11/14）③Super Summary（玩家整理）④Player Aid
 //          ⑤Reference 速查 ⑥擴充「遺失艦隊（The Lost Fleet）」英文規則。
 // 用詞（2026-11-18 起）：依使用者提供的中文版規則書（B 站轉貼，頁面是圖片）與玩家速查表，用中文版官方詞：礦產基地、貿易中心、科技實驗室、大學院、星際要塞、
 //   蓋亞改造機、回合助推器、航行距離、登陸、放棄、快速行動、補充能量、量子智能方塊（本檔簡稱 QIC）等；對照見最後一個收起區塊「用詞對照」。
-// 14 個種族的中文名稱已用使用者截圖（附錄 I）核對過。【待核對】擴充（遺失艦隊）沒有中文版，擴充內容與 4 個新種族（Tinkeroids、Darkanians、Moweyds、Space Giants）仍是自譯。
-// 英文規則書與勘誤有衝突時以勘誤為準（例如蓋亞計劃是「移動」能量到蓋亞區，不是「花費」）。
+// 14 個種族的中文名稱已用中文版規則書附錄 I 核對（聖禽族、晶礦星人已更正）。【待核對】熔炎族（Bal T’aks）該頁字跡太糊，名稱待確認。【待核對】擴充（遺失艦隊）沒有中文版，擴充內容與 4 個新種族（Tinkeroids、Darkanians、Moweyds、Space Giants）仍是自譯。
+// 英文規則書與勘誤有衝突時以勘誤為準（例如蓋亞計劃是「移動」能量到蓋亞區，不是「支付」）。
 // 研究面板上各個能量／QIC 行動的費用：讀自中文版規則書附錄（頁面圖片，解析度偏低），待對照實物研究面板核對。
 
 import type { ReviewSection } from './risingSun'
@@ -52,8 +52,8 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
           src: '規則書 第 10 頁',
         },
         {
-          label: 'Ⅳ 整理',
-          text: '拿掉能量、QIC、特殊行動格上的行動標記；回合助推器全部翻回正面；移除本回合的回合計分板塊。第 6 回合不做整理，直接終局計分。',
+          label: 'Ⅳ 清理',
+          text: '拿掉能量、QIC、特殊行動格上的行動標記；回合助推器全部翻回正面；移除本回合的回合計分板塊。第 6 回合不做清理，直接終局計分。',
           src: '規則書 第 17 頁',
         },
       ],
@@ -67,13 +67,13 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
           src: '規則書 第 9 頁',
         },
         {
-          label: '花費',
+          label: '支付',
           text: '只能花區域 III 的標記，花掉就移到區域 I。',
           src: '規則書 第 9 頁',
         },
         {
-          label: '獲得與丟棄',
-          text: '「獲得」能量是從供應區拿標記放進區域 I；「丟棄」是把標記還回供應區，可從任意區丟，但不能從蓋亞區丟。',
+          label: '獲得與銷毀',
+          text: '「獲得」能量是從供應堆拿標記放進區域 I；「銷毀」是把標記還回供應堆，可從蓋亞區以外的任意區域選擇。',
           src: '規則書 第 9 頁',
         },
         {
@@ -206,7 +206,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
         },
         {
           label: '推進到 2→3 級',
-          text: '研究標記每次從 2 級升到 3 級，立刻補充 3 能量（用科技板塊推進也算）。',
+          text: '玩家標記每次從 2 級升到 3 級，立刻補充 3 能量（用科技板塊推進也算）。',
           src: '規則書 第 15 頁；FAQ v1.0 勘誤 第 15 頁',
         },
       ],
@@ -215,7 +215,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
       title: '行動 4：建立聯邦',
       items: [
         {
-          text: '把你登陸的星球連成一個聯邦，從供應區選 1 個聯邦標記（綠面朝上）並立刻獲得上面全部內容。可組成任意多個聯邦。',
+          text: '把你登陸的星球連成一個聯邦，從供應堆選 1 個聯邦標記（綠面朝上）並立刻獲得上面全部內容。可組成任意多個聯邦。',
           src: '規則書 第 14 頁',
         },
         {
@@ -225,7 +225,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
         },
         {
           label: '連接',
-          text: '相鄰的星球本來就連通；不相鄰的要立刻蓋衛星：丟棄 1 能量，把衛星放在你登陸的星球或你的衛星相鄰的空格（不能放在星球上；一格每個玩家顏色最多 1 顆）。這個行動內必須一次連完。',
+          text: '相鄰的星球本來就連通；不相鄰的要立刻蓋衛星：銷毀 1 能量，把衛星放在你登陸的星球或你的衛星相鄰的空格（不能放在星球上；一格每個玩家顏色最多 1 顆）。這個行動內必須一次連完。',
           src: '規則書 第 14 頁',
         },
         {
@@ -280,12 +280,12 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
         },
         {
           label: '放棄',
-          text: '你的回合不想或不能做別的就必須放棄。選一個目前可選的回合助推器（包含本回合別人剛放回來的），再把原本的放回去；不能連兩回合用同一個。第一個放棄的人拿起始玩家標記。最後一回合只放回助推器，不拿新的。助推器與部分科技有「放棄時」的紅色效果，在放回助推器那一刻結算。',
+          text: '你的回合不想或不能做別的就必須放棄。選一個目前可選的回合助推器（包含本回合別人剛放回來的），再把原本的放回去；不能連兩回合用同一個。第一個放棄的人拿起始玩家指示物。最後一回合只放回助推器，不拿新的。助推器與部分科技有「放棄時」的紅色效果，在放回助推器那一刻結算。',
           src: '規則書 第 16 頁',
         },
         {
           label: '快速行動',
-          text: '在你自己的回合、行動「之前或之後」都可以做，不能在行動途中，也不能在放棄後做。每種可做多次：①丟 1 個區域 II 的能量，把另一個區域 II 的移到區域 III ②4 能量換 1 QIC ③3 能量換 1 礦石 ④1 QIC 換 1 礦石 ⑤4 能量換 1 知識 ⑥1 能量換 1 信用點 ⑦1 知識換 1 信用點 ⑧1 礦石換 1 信用點 ⑨1 礦石換 1 能量（放區域 I）。',
+          text: '在你自己的回合、行動「之前或之後」都可以做，不能在行動途中，也不能在放棄後做。每種可做多次：①銷毀 1 個區域 II 的能量，把另一個區域 II 的移到區域 III ②4 能量換 1 QIC ③3 能量換 1 礦石 ④1 QIC 換 1 礦石 ⑤4 能量換 1 知識 ⑥1 能量換 1 信用點 ⑦1 知識換 1 信用點 ⑧1 礦石換 1 信用點 ⑨1 礦石換 1 能量（放區域 I）。',
           src: '規則書 第 16 頁',
         },
       ],
@@ -323,7 +323,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
         },
         {
           label: '最終計分板塊（2 個）',
-          text: '依各自排名軌：第 1 名 18 分、第 2 名 12 分、第 3 名 6 分、第 4 名 0 分。平手時，每個平手玩家各加上剩餘最高名次的分數後平分（例如兩人並列第 1：18＋12＝30，各 15）。1～2 人遊戲要把中立玩家的衛星算進排名。',
+          text: '依各自進度條：第 1 名 18 分、第 2 名 12 分、第 3 名 6 分、第 4 名 0 分。平手時，每個平手玩家各加上剩餘最高名次的分數後平分（例如兩人並列第 1：18＋12＝30，各 15）。1～2 人遊戲要把中立玩家的衛星算進排名。',
           src: '規則書 第 7、18 頁',
         },
         {
@@ -343,7 +343,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
       fold: true,
       items: [
         {
-          text: '蓋亞計劃是「移動」能量到蓋亞區，來源可以是區域 I、II、III；不是花費能量。',
+          text: '蓋亞計劃是「移動」能量到蓋亞區，來源可以是區域 I、II、III；不是支付能量。',
           src: 'FAQ v1.0 勘誤 第 12 頁',
         },
         {
@@ -383,7 +383,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
           src: '規則書 第 12、16 頁',
         },
         {
-          text: '變體遊戲板（勘誤）：進階設置時，在「遊戲板」設置步驟由最後一位玩家組裝，也可以全員一起決定。',
+          text: '可變遊戲版圖（勘誤）：進階設置時，在「遊戲板」設置步驟由最後一位玩家組裝，也可以全員一起決定。',
           src: 'FAQ v1.0 勘誤 第 19 頁',
         },
       ],
@@ -394,7 +394,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
       items: [
         {
           label: '遊戲板',
-          text: '3～4 人用全部 10 塊星域（05、06、07 實線面朝上）；1～2 人用 01～07（05、06、07 外框面朝上）。',
+          text: '3～4 人用全部 10 塊星域（05、06、07 實心數字面朝上）；1～2 人用 01～07（05、06、07 空心數字面朝上）。',
           src: '規則書 第 4 頁',
         },
         {
@@ -414,17 +414,17 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
         },
         {
           label: '個人',
-          text: '6 個研究標記放研究面板 0 級，種族面板有 1 級的就推進 1 級並領一次性獎勵；起始資源與能量依種族面板；分數標記放 10 分；衛星每個排名軌 0 格放 1 顆。首次遊戲推薦種族：2 人聖角族、異空族；3 人人類、利爪族、晶體星人；4 人人類、聖角族、異空族、利爪族。',
+          text: '6 個玩家標記放研究面板 0 級，種族面板有 1 級的就推進 1 級並領一次性獎勵；起始資源與能量依種族面板；分數標記放 10 分；衛星每個進度條 0 格放 1 顆。首次遊戲推薦種族：2 人聖禽族、異空族；3 人人類、利爪族、晶礦星人；4 人人類、聖禽族、異空族、利爪族。',
           src: '規則書 第 5～7 頁',
         },
         {
-          label: '起始礦產基地',
-          text: '進階設置：從起始玩家起順時針，各在自己母星類型的任一星球放 1 座礦產基地；再從最後一位起逆時針放第 2 座在不同母星。起始礦產基地別人不補充能量。異空族的第 3 座礦產基地最後放；蜂人最後放星際要塞。',
+          label: '初始礦產基地',
+          text: '進階設置：從起始玩家起順時針，各在自己母星類型的任一星球放 1 座礦產基地；再從最後一位起逆時針放第 2 座在不同母星。初始礦產基地別人不補充能量。異空族的第 3 座礦產基地最後放；蜂人最後放星際要塞。',
           src: '規則書 第 19 頁',
         },
         {
           label: '1～2 人',
-          text: '加入中立玩家，在兩個排名軌放中立衛星，位置由各最終計分板塊上的數字決定（2 人時放在 8 格）。',
+          text: '加入中立玩家，在兩個進度條放中立衛星，位置由各最終計分板塊上的數字決定（2 人時放在 8 格）。',
           src: '規則書 第 7 頁',
         },
       ],
@@ -517,7 +517,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
       items: [
         {
           label: '人類（Terrans）',
-          text: '能力：蓋亞階段把蓋亞區能量移到區域 II。星際要塞：移到區域 II 時，可依移動的能量數取得資源，如同花費能量做免費轉換。',
+          text: '能力：蓋亞階段把蓋亞區能量移到區域 II。星際要塞：移到區域 II 時，可視為支付了這些能量，以快速行動一般獲得資源。',
           src: '規則書 第 20 頁',
         },
         {
@@ -527,7 +527,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
         },
         {
           label: '異空族（Xenos）',
-          text: '能力：第 3 座起始礦產基地在所有人放完後才放。星際要塞：聯邦只需能量值 6；收入的 1 能量標記改成 1 QIC。',
+          text: '能力：第 3 座初始礦產基地在所有人放完後才放。星際要塞：聯邦只需能量值 6；收入的 1 能量標記改成 1 QIC。',
           src: '規則書 第 20 頁',
         },
         {
@@ -537,7 +537,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
         },
         {
           label: '利爪族（Taklons）',
-          text: '能力：智能石算 1 個能量標記（開蓋亞計劃、蓋衛星等），但花費時當 3 能量。星際要塞：每次被動補充能量時多得 1 個能量標記，可在補充能量前或後拿。',
+          text: '能力：智能石算 1 個能量標記（開蓋亞計劃、蓋衛星等），但支付時當 3 能量。星際要塞：每次被動補充能量時多得 1 個能量標記，可在補充能量前或後拿。',
           src: '規則書 第 20 頁；FAQ v1.0 第 1 頁（沒選擇補充能量就不會多得）',
         },
         {
@@ -546,8 +546,8 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
           src: '規則書 第 20 頁',
         },
         {
-          label: '聖角族（Hadsch Hallas）',
-          text: '星際要塞：可用信用點取代能量做「獲得資源」的免費轉換。',
+          label: '聖禽族（Hadsch Hallas）',
+          text: '星際要塞：可用信用點取代能量，來執行「獲得資源」的快速行動。',
           src: '規則書 第 20 頁',
         },
         {
@@ -556,7 +556,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
           src: '規則書 第 20 頁；FAQ v1.0 第 1 頁（空間站與衛星可共存一格）',
         },
         {
-          label: '晶體星人（Geodens）',
+          label: '晶礦星人（Geodens）',
           text: '星際要塞：每種星球類型第一次建造礦產基地 +3 知識（升級前已登陸的類型不算）。',
           src: '規則書 第 21 頁',
         },
@@ -577,12 +577,12 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
         },
         {
           label: '超星人（Nevlas）',
-          text: '能力：快速行動，把 1 個能量標記從區域 III 移到蓋亞區換 1 知識（不算花費能量）。星際要塞：區域 III 的標記花費時當 2 能量；付奇數費用時多的會浪費。',
+          text: '能力：快速行動，把 1 個能量標記從區域 III 移到蓋亞區換 1 知識（不算支付能量）。星際要塞：區域 III 的標記支付時當 2 能量；付奇數費用時多的會浪費。',
           src: '規則書 第 21 頁；FAQ v1.0 第 1 頁（兩個奇數費用的快速行動可合用）',
         },
         {
           label: '伊塔星人（Itars）',
-          text: '能力：每次從區域 II 丟 1 個標記好讓另一個進區域 III，被丟的標記改放蓋亞區。星際要塞：蓋亞階段可丟 4 個蓋亞區標記換 1 個科技板塊（標準或進階），可做多次。',
+          text: '能力：每次從區域 II 銷毀 1 個標記好讓另一個進區域 III，被銷毀的標記改放蓋亞區。星際要塞：蓋亞階段可銷毀 4 個蓋亞區標記換 1 個科技板塊（標準或進階），可做多次。',
           src: '規則書 第 21 頁；FAQ v1.0 第 1 頁（蓋亞階段先用伊塔星人能力，再用人類能力）',
         },
       ],
@@ -593,17 +593,17 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
       items: [
         {
           label: '蓋亞技術',
-          text: '規則書第 12 頁：蓋亞計劃是從區域 I、II、III「移動」總量能量到蓋亞區，不是花費；研究 1～2 級 6 個、3 級 4 個、4～5 級 3 個，所有改造機費用相同。範例：人類有 2 個改造機時，要移動 4 個。',
+          text: '規則書第 12 頁：蓋亞計劃是從區域 I、II、III「移動」總量能量到蓋亞區，不是支付；研究 1～2 級 6 個、3 級 4 個、4～5 級 3 個，所有改造機費用相同。範例：人類有 2 個改造機時，要移動 4 個。',
           src: 'FAQ v1.0 第 1 頁',
         },
         {
           label: '研究 2→3 級',
-          text: '規則書第 15 頁：研究標記每次從 2 級升到 3 級就補充 3 能量，用科技板塊推進也一樣。',
+          text: '規則書第 15 頁：玩家標記每次從 2 級升到 3 級就補充 3 能量，用科技板塊推進也一樣。',
           src: 'FAQ v1.0 第 1 頁',
         },
         {
           label: '蓋亞階段順序',
-          text: '先讓伊塔星人用星際要塞（丟棄能量換科技），再讓人類在移動能量時用星際要塞取得資源。',
+          text: '先讓伊塔星人用星際要塞（銷毀能量標記換科技），再讓人類在移動能量時用星際要塞取得資源。',
           src: 'FAQ v1.0 第 1 頁',
         },
         {
@@ -649,12 +649,12 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
         },
         {
           label: '行動 11：探索艦隊船艦',
-          text: '對應的船艦格要在航行距離內（可用 QIC 與特殊行動加航行距離）；你的探索板上要還有探索穿梭機，每艘船只能派 1 個；放在編號最小的空位，若不是第一個到的就按空位所示補充能量。通常花 5 分（利爪族另需把智能石移到蓋亞區；超星人與伊塔星人另需丟 1 能量；熔炎族要 7 分）。探索不算登陸，之後算航行距離仍從你最近的登陸星球量起。',
+          text: '對應的船艦格要在航行距離內（可用 QIC 與特殊行動加航行距離）；你的探索板上要還有探索穿梭機，每艘船只能派 1 個；放在編號最小的空位，若不是第一個到的就按空位所示補充能量。通常花 5 分（利爪族另需把智能石移到蓋亞區；超星人與伊塔星人另需銷毀 1 能量；熔炎族要 7 分）。探索不算登陸，之後算航行距離仍從你最近的登陸星球量起。',
           src: '遺失艦隊規則 第 9 頁',
         },
         {
           label: '行動 12：檢視神器',
-          text: '探索過 Twilight 才能用：從區域 I、II、III 任意丟 6 能量，從 Twilight 拿 1 個神器。',
+          text: '探索過 Twilight 才能用：從區域 I、II、III 任意銷毀 6 能量，從 Twilight 拿 1 個神器。',
           src: '遺失艦隊規則 第 9 頁',
         },
         {
@@ -690,12 +690,12 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
         },
         {
           label: '星球與版圖',
-          text: 'Transdim Planet 超維星球；Gaia Planet 蓋亞星球；Lost Planet 失落星球；colonize 登陸；habitable 宜居；Sector 星域；Range 航行距離（取決於「航行」研究領域）。',
+          text: 'Transdim Planet 超維星球；Gaia Planet 蓋亞星球；Lost Planet 失落星球；colonize 登陸；habitable 宜居；Sector 星域；Range 航行距離（取決於「航行」研究領域）；星球類型：陸地、沙漠、沼澤、氧化、熔岩、鈦金、冰雪。',
           src: '中文版規則書 第 11 頁',
         },
         {
           label: '資源與能量',
-          text: 'Ore 礦石；Credits 信用點；Knowledge 知識；Q.I.C. 量子智能方塊（本檔簡稱 QIC）；VP 分（分數）；Power 能量（能量標記、能量循環、區域 I／II／III、蓋亞區）；charge 補充能量。',
+          text: 'Ore 礦石；Credits 信用點；Knowledge 知識；Q.I.C. 量子智能方塊（本檔簡稱 QIC）；VP 分（分數）；Power 能量（能量標記、能量循環、區域 I／II／III、蓋亞區）；charge 補充能量；pay 支付；destroy 銷毀（能量標記）；Supply 供應堆；Player marker 玩家標記。',
           src: '中文版規則書 第 10、11 頁',
         },
         {
@@ -715,7 +715,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
         },
         {
           label: '種族名稱（中文版）',
-          text: 'Terrans 人類；Lantids 亞特蘭斯星人；Xenos 異空族；Gleens 格倫星人；Taklons 利爪族；Ambas 大使星人；Hadsch Hallas 聖角族；Ivits 蜂人；Geodens 晶體星人；Bal T’aks 熔炎族；Firaks 章魚人；Bescods 瘋狂機器；Nevlas 超星人；Itars 伊塔星人。',
+          text: 'Terrans 人類；Lantids 亞特蘭斯星人；Xenos 異空族；Gleens 格倫星人；Taklons 利爪族；Ambas 大使星人；Hadsch Hallas 聖禽族；Ivits 蜂人；Geodens 晶礦星人；Bal T’aks 熔炎族；Firaks 章魚人；Bescods 瘋狂機器；Nevlas 超星人；Itars 伊塔星人。',
           src: '中文版規則書 附錄 I（種族）',
         },
         {
