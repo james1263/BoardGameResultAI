@@ -4,9 +4,9 @@
 //          ⑤Reference 速查 ⑥擴充「遺失艦隊（The Lost Fleet）」英文規則。
 // 用詞（2026-11-18 起）：依使用者提供的中文版規則書（B 站轉貼，頁面是圖片）與玩家速查表，用中文版官方詞：礦產基地、貿易中心、科技實驗室、大學院、星際要塞、
 //   蓋亞改造機、回合助推器、航行距離、登陸、放棄、快速行動、補充能量、量子智能方塊（本檔簡稱 QIC）等；對照見最後一個收起區塊「用詞對照」。
-// 【待核對】①14 個種族的中文名稱是從圖片辨識，字體模糊，尤其「亞特蘭斯星人」（Lantids）；②擴充（遺失艦隊）沒有中文版，擴充內容與 4 個新種族（Tinkeroids、Darkanians、Moweyds、Space Giants）仍是自譯。
+// 14 個種族的中文名稱已用使用者截圖（附錄 I）核對過。【待核對】擴充（遺失艦隊）沒有中文版，擴充內容與 4 個新種族（Tinkeroids、Darkanians、Moweyds、Space Giants）仍是自譯。
 // 英文規則書與勘誤有衝突時以勘誤為準（例如蓋亞計劃是「移動」能量到蓋亞區，不是「花費」）。
-// 研究面板上各個能量／QIC 行動的費用數字在圖片裡，文字層沒有，本檔只寫效果，費用請看研究面板。
+// 研究面板上各個能量／QIC 行動的費用：讀自中文版規則書附錄（頁面圖片，解析度偏低），待對照實物研究面板核對。
 
 import type { ReviewSection } from './risingSun'
 
@@ -260,7 +260,7 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
         },
         {
           label: '能量／QIC 行動',
-          text: '研究面板下方紫色（花能量）與綠色（花 QIC）的行動格，付費用後執行效果；每個格子每回合只能被用一次（放行動標記）。費用數字看研究面板。',
+          text: '研究面板下方紫色（花能量）與綠色（花 QIC）的行動格，付費用後執行效果；每個格子每回合只能被用一次（放行動標記）。費用（讀自附錄圖片，待對照實物）：能量行動 7＝3 知識；5＝2 步免費改造；4＝2 礦石；4＝7 信用點；4＝2 知識；3＝1 步免費改造；3＝2 個能量標記。QIC 行動 4＝獲得 1 個科技板塊；3＝再次結算 1 個聯邦標記；2＝得 3 分＋每種已登陸星球類型 1 分。',
           src: '規則書 第 15、23 頁',
         },
         {
@@ -714,9 +714,9 @@ export const GAIA_PROJECT_REVIEW: { bggName: string; draftNote: string; sections
           src: '中文版規則書 第 22 頁',
         },
         {
-          label: '種族名稱（辨識自圖片，待核對）',
-          text: 'Terrans 人類；Lantids 亞特蘭斯星人（字體模糊，待核對）；Xenos 異空族；Gleens 格倫星人；Taklons 利爪族；Ambas 大使星人；Hadsch Hallas 聖角族；Ivits 蜂人；Geodens 晶體星人；Bal T’aks 熔炎族；Firaks 章魚人；Bescods 瘋狂機器；Nevlas 超星人；Itars 伊塔星人。',
-          src: '中文版規則書 第 20、21 頁（圖片）',
+          label: '種族名稱（中文版）',
+          text: 'Terrans 人類；Lantids 亞特蘭斯星人；Xenos 異空族；Gleens 格倫星人；Taklons 利爪族；Ambas 大使星人；Hadsch Hallas 聖角族；Ivits 蜂人；Geodens 晶體星人；Bal T’aks 熔炎族；Firaks 章魚人；Bescods 瘋狂機器；Nevlas 超星人；Itars 伊塔星人。',
+          src: '中文版規則書 附錄 I（種族）',
         },
         {
           text: '【待核對】擴充遺失艦隊沒有中文版：船艦、探索穿梭機、神器、新種族的中文名稱與用詞仍是自譯；日後有中文版再換。',

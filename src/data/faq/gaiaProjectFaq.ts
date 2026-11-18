@@ -1,13 +1,13 @@
 // 蓋亞計劃（Gaia Project）官方勘誤與 FAQ v1.0（2017/11/14）中文翻譯
 // 來源：Errata and FAQ Version 1.0（英文原版），中文為自譯稿。
-// 用詞比照 gaiaProject.ts（快速複習）：礦產基地、貿易中心、星際要塞、蓋亞改造機、聯邦、衛星等。種族名稱是從圖片辨識的，字體模糊處見 gaiaProject.ts 的用詞對照。
+// 用詞比照 gaiaProject.ts（快速複習）：礦產基地、貿易中心、星際要塞、蓋亞改造機、聯邦、衛星等。種族名稱已用中文版規則書附錄 I 核對。
 // 勘誤與基本規則書衝突時以本勘誤為準。
 
 import type { GameFaqData } from './types'
 
 export const GAIA_PROJECT_FAQ: GameFaqData = {
   sub: '勘誤與 FAQ v1.0・中文翻譯',
-  note: '依官方 Errata and FAQ v1.0（2017/11/14）翻譯；勘誤與基本規則書衝突時以勘誤為準。用詞依中文版規則書；種族名稱辨識自圖片，待核對。',
+  note: '依官方 Errata and FAQ v1.0（2017/11/14）翻譯；勘誤與基本規則書衝突時以勘誤為準。用詞依中文版規則書，種族名稱已核對。',
   groups: [
     {
       title: '規則書勘誤',

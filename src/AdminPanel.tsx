@@ -217,6 +217,12 @@ export default function AdminPanel() {
                 removed.map((item) => `・${item.name}（${item.bggName}）`).join('\n')
         }
 
+        if (preview.trashedInCsv.length > 0) {
+            confirmText +=
+                `\n\n♻️ 有 ${preview.trashedInCsv.length} 款目前在垃圾桶、但 CSV 有，將自動移回桌遊收藏：\n` +
+                preview.trashedInCsv.map((item) => `・${item.name}（${item.bggName}）`).join('\n')
+        }
+
         if (!(await askConfirm(confirmText, { confirmText: '確認匯入', danger: false }))) return
 
         if (removed.length > 5) {
@@ -242,6 +248,24 @@ export default function AdminPanel() {
         }
 
         const problems: string[] = []
+        // 0-1. 垃圾桶裡的遊戲只要又出現在 CSV，就移回桌遊收藏（資料已被上面的匯入更新）
+        let restoredGames = 0
+        if (preview.trashedInCsv.length > 0) {
+            const { data: restoredRows, error: restoreError } = await supabase
+                .from('board_games')
+                .update({ removed_at: null, removed_reason: null })
+                .in(
+                    'bgg_name',
+                    preview.trashedInCsv.map((item) => item.bggName),
+                )
+                .not('removed_at', 'is', null)
+                .select('bgg_name')
+            if (restoreError) {
+                problems.push('從垃圾桶移回桌遊收藏失敗：' + restoreError.message)
+            } else {
+                restoredGames = restoredRows?.length ?? 0
+            }
+        }
         // 0. 寫入簡介（CSV 沒有簡介欄、或該款簡介空白時，不動資料庫原有的簡介）
         let descriptionCount = 0
         const descriptionRows = pendingGames
@@ -316,6 +340,9 @@ export default function AdminPanel() {
         let message = `匯入完成：新增 ${preview.newCount} 款、更新 ${preview.updateCount} 款，上傳封面 ${uploaded} 張。`
         if (descriptionCount > 0) {
             message += `\n已寫入簡介 ${descriptionCount} 款。`
+        }
+        if (restoredGames > 0) {
+            message += `\n已從垃圾桶移回桌遊收藏 ${restoredGames} 款（規則書、擴充、背景、詞庫已在移入垃圾桶時刪除，需重新建立）。`
         }
         if (removed.length > 0) {
             message += `\n已移到垃圾桶 ${trashedGames} 款遊戲（只保留封面與基本資料，可在頁面最下方的垃圾桶還原，但規則書等附屬資料需重新建立）。`
@@ -481,7 +508,7 @@ export default function AdminPanel() {
                                     )}
                                     {preview.trashedInCsv.length > 0 && (
                                         <p>
-                                            提醒：CSV 裡有、但目前在垃圾桶的遊戲（資料會更新，仍留在垃圾桶，要放回請到頁面最下方按「還原」）：
+                                            CSV 裡有、但目前在垃圾桶的遊戲（確認匯入後會自動移回桌遊收藏）：
                                             {preview.trashedInCsv.map((item) => item.name).join('、')}
                                         </p>
                                     )}

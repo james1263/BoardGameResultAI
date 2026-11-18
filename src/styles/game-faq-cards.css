@@ -1,0 +1,118 @@
+/* BGG 討論・非官方 FAQ：卡片式、全部靠左（像開桌前快速複習）。
+   GameFaq.tsx 自己 import，詳細視窗與規則助手都會吃到。 */
+
+body .gfaq.gfaq-u,
+body .gfaq.gfaq-u * {
+  text-align: left !important;
+}
+
+body .gfaq.gfaq-u {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+body .gfaq-u .gfaq-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+body .gfaq-u .gfaq-group-title {
+  margin: 0;
+}
+
+/* 類型標籤（勘誤／一般規則／企業與專案） */
+body .gfaq-u .gfaq-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: #b8864b;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+body .gfaq-u .gfaq-card {
+  padding: 12px 14px;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 12px;
+  background: rgba(128, 128, 128, 0.08);
+}
+
+body .gfaq-u .gfaq-card-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+body .gfaq-u .gfaq-item + .gfaq-item {
+  margin-top: 10px;
+}
+
+body .gfaq-u .gfaq-item p {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+
+body .gfaq-u .gfaq-item p b {
+  flex: none;
+  width: 1.4em;
+  color: #b8864b;
+}
+
+body .gfaq-u .gfaq-src {
+  display: block;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+body .gfaq-u .gfaq-search {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 詳細視窗「FAQ．玩錯紀錄．AI回饋．BGG討論」裡，BGG 討論這一區的收合列 */
+.game-modal.gm-v2 .gqa-fold {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--gm-line, rgba(128, 128, 128, 0.35));
+}
+
+.game-modal.gm-v2 .gqa-fold > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--gm-soft, inherit);
+  font-size: 13px;
+}
+
+.game-modal.gm-v2 .gqa-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.game-modal.gm-v2 .gqa-fold > summary::after {
+  content: '＋';
+  margin-left: auto;
+  color: var(--gm-caramel, #b8864b);
+}
+
+.game-modal.gm-v2 .gqa-fold[open] > summary::after {
+  content: '－';
+}
+
+.game-modal.gm-v2 .gqa-fold[open] > summary {
+  margin-bottom: 10px;
+}
+
+.game-modal.gm-v2 .gqa-badge.is-unofficial {
+  background: var(--gm-caramel, #b8864b);
+}

@@ -4,6 +4,7 @@ import { RISING_SUN_FAQ } from '../data/faq/risingSunFaq'
 import { GAIA_PROJECT_FAQ } from '../data/faq/gaiaProjectFaq'
 import { getUnofficialFaq } from '../data/faq/unofficialRegistry'
 import { isSafeUrl } from '../lib/useGameDocuments'
+import '../styles/game-faq-cards.css'
 
 // 有 FAQ 的遊戲在這裡登記（key 是資料庫裡的 bggName）
 const FAQ_BY_GAME: Record<string, GameFaqData> = {
@@ -30,10 +31,13 @@ export function countFaqItems(data: GameFaqData): number {
 export default function GameFaq({
   bggName,
   kind = 'official',
+  hideSearch = false,
 }: {
   bggName: string
   // official＝官方 FAQ；unofficial＝BGG 討論・非官方 FAQ（玩家整理，會標示來源）
   kind?: 'official' | 'unofficial'
+  // 規則助手頁已有主搜尋欄（會一起搜 FAQ），這裡不要再多一個
+  hideSearch?: boolean
 }) {
   const data = kind === 'unofficial' ? getUnofficialFaq(bggName) : getGameFaq(bggName)
   const [query, setQuery] = useState('')
@@ -63,7 +67,7 @@ export default function GameFaq({
   const topicCount = groups.reduce((sum, group) => sum + group.topics.length, 0)
 
   return (
-    <div className="gfaq">
+    <div className={`gfaq ${kind === 'unofficial' ? 'gfaq-u' : ''}`}>
       <p className="gfaq-note">{data.note}</p>
       {data.sources && data.sources.length > 0 && (
         <p className="gfaq-note">
@@ -82,15 +86,17 @@ export default function GameFaq({
           ))}
         </p>
       )}
-      <input
-        type="search"
-        className="gfaq-search"
-        placeholder={kind === 'unofficial' ? '搜尋非官方 FAQ（例如：太陽能板、維護費）' : '搜尋 FAQ（例如：忠誠、切腹、福祿壽）'}
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        aria-label={kind === 'unofficial' ? '搜尋非官方 FAQ' : '搜尋 FAQ'}
-      />
-      {keyword !== '' && (
+      {!hideSearch && (
+        <input
+          type="search"
+          className="gfaq-search"
+          placeholder={kind === 'unofficial' ? '搜尋非官方 FAQ（例如：太陽能板、維護費）' : '搜尋 FAQ（例如：忠誠、切腹、福祿壽）'}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          aria-label={kind === 'unofficial' ? '搜尋非官方 FAQ' : '搜尋 FAQ'}
+        />
+      )}
+      {!hideSearch && keyword !== '' && (
         <p className="gfaq-count">
           {topicCount > 0 ? `找到 ${topicCount} 個主題` : '沒有找到相關的 FAQ'}
         </p>
@@ -98,29 +104,45 @@ export default function GameFaq({
 
       {groups.map((group) => (
         <section className="gfaq-group" key={group.title}>
-          <h4 className="gfaq-group-title">{group.title}</h4>
-          {group.topics.map((topic) => (
-            <details className="gfaq-topic" key={topic.name} open={keyword !== ''}>
-              <summary>{topic.name}</summary>
-              <div className="gfaq-body">
-                {topic.items.map((item, index) => (
-                  <div className="gfaq-item" key={index}>
-                    {item.q && (
-                      <p className="gfaq-q">
-                        <b>Q</b>
-                        <span>{item.q}</span>
-                      </p>
-                    )}
-                    <p className="gfaq-a">
-                      {item.q && <b>A</b>}
-                      <span>{item.a}</span>
-                    </p>
-                    {item.src && <small className="gfaq-src">來源：{item.src}</small>}
-                  </div>
-                ))}
+          {kind === 'unofficial' ? (
+            <h4 className="gfaq-group-title">
+              <span className="gfaq-tag">{group.title}</span>
+            </h4>
+          ) : (
+            <h4 className="gfaq-group-title">{group.title}</h4>
+          )}
+          {group.topics.map((topic) => {
+            const items = topic.items.map((item, index) => (
+              <div className="gfaq-item" key={index}>
+                {item.q && (
+                  <p className="gfaq-q">
+                    <b>Q</b>
+                    <span>{item.q}</span>
+                  </p>
+                )}
+                <p className="gfaq-a">
+                  {item.q && <b>A</b>}
+                  <span>{item.a}</span>
+                </p>
+                {item.src && <small className="gfaq-src">來源：{item.src}</small>}
               </div>
-            </details>
-          ))}
+            ))
+            // 非官方：每則直接攤開成卡片（像快速複習），不用一則一則點開
+            if (kind === 'unofficial') {
+              return (
+                <article className="gfaq-card" key={topic.name}>
+                  <h5 className="gfaq-card-title">{topic.name}</h5>
+                  {items}
+                </article>
+              )
+            }
+            return (
+              <details className="gfaq-topic" key={topic.name} open={keyword !== ''}>
+                <summary>{topic.name}</summary>
+                <div className="gfaq-body">{items}</div>
+              </details>
+            )
+          })}
         </section>
       ))}
     </div>

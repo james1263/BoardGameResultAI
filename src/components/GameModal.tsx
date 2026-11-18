@@ -221,15 +221,11 @@ export default function GameModal({
   }
   // FAQ、BGG 討論・非官方 FAQ、玩錯紀錄、AI 回饋合併成一張卡，進去後每一區都有標籤註明類型
   const hasAnyFaq = !!faq || !!unofficial
-  const errataTitle = hasAnyFaq
-    ? canSeeErrata
-      ? 'FAQ・玩錯紀錄・AI 回饋'
-      : faq && unofficial
-        ? 'FAQ・BGG 討論'
-        : faq
-          ? '官方 FAQ'
-          : 'BGG 討論・非官方 FAQ'
-    : SHEET_TITLES.errata
+  const titleParts: string[] = []
+  if (faq) titleParts.push('FAQ')
+  if (canSeeErrata) titleParts.push('玩錯紀錄', 'AI回饋')
+  if (unofficial) titleParts.push('BGG討論')
+  const errataTitle = titleParts.length > 0 ? titleParts.join('．') : SHEET_TITLES.errata
   if (hasAnyFaq || canSeeErrata) {
     const parts: string[] = []
     if (faq) parts.push(`FAQ ${countFaqItems(faq)} 則`)
@@ -743,11 +739,12 @@ export default function GameModal({
                   showErrata={canSeeErrata}
                 />
                 {unofficial && (
-                  <details className="ov-fold er-fold">
-                    <summary>BGG 討論・非官方 FAQ（{countFaqItems(unofficial)} 則）</summary>
-                    <div className="ov-fold-body">
-                      <GameFaq key={game.bggName} bggName={game.bggName} kind="unofficial" />
-                    </div>
+                  <details className="gqa-fold">
+                    <summary>
+                      <span className="gqa-badge is-unofficial">BGG 討論・非官方 FAQ</span>
+                      <small>{countFaqItems(unofficial)} 則・玩家整理</small>
+                    </summary>
+                    <GameFaq key={game.bggName} bggName={game.bggName} kind="unofficial" />
                   </details>
                 )}
               </>

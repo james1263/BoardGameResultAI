@@ -778,7 +778,9 @@ export default function RulebookAssistant({
             {faqHits.length > 0 && (
                 <div className="er-box">
                     <p className="er-box-title">
-                        官方 FAQ（{faqSubtitle(bggName)}，非中文規則書原文）・{faqHits.length} 筆
+                        {faqHits.some((f) => !f.unofficial)
+                            ? `官方 FAQ（${faqSubtitle(bggName)}，非中文規則書原文）`
+                            : 'BGG 討論・非官方 FAQ（玩家整理，非官方規則）'}・{faqHits.length} 筆
                     </p>
                     <ul className="er-list">
                         {faqHits.map((f) => (

@@ -161,7 +161,7 @@ export default function RulebookPage({
                   <details className="ov-fold er-fold">
                     <summary>官方 FAQ（{countFaqItems(faqData)} 則）</summary>
                     <div className="ov-fold-body">
-                      <GameFaq bggName={picked.bggName} />
+                      <GameFaq bggName={picked.bggName} hideSearch />
                     </div>
                   </details>
                 </div>
@@ -171,7 +171,7 @@ export default function RulebookPage({
                   <details className="ov-fold er-fold">
                     <summary>BGG 討論・非官方 FAQ（{countFaqItems(unofficialData)} 則）</summary>
                     <div className="ov-fold-body">
-                      <GameFaq bggName={picked.bggName} kind="unofficial" />
+                      <GameFaq bggName={picked.bggName} kind="unofficial" hideSearch />
                     </div>
                   </details>
                 </div>
