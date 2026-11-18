@@ -10,6 +10,8 @@ import { SHACKLETON_BASE_REVIEW } from './shackletonBase'
 import { DARWINS_JOURNEY_REVIEW } from './darwinsJourney'
 import { BRASS_BIRMINGHAM_REVIEW } from './brassBirmingham'
 import { FEAST_FOR_ODIN_REVIEW } from './feastForOdin'
+import { CUZCO_REVIEW } from './cuzco'
+import { SKYMINES_REVIEW } from './skymines'
   
 
 export type QuickReviewData = { bggName: string; draftNote: string; sections: ReviewSection[] }
@@ -27,6 +29,8 @@ const REVIEWS: QuickReviewData[] = [
   , DARWINS_JOURNEY_REVIEW
   , BRASS_BIRMINGHAM_REVIEW
   , FEAST_FOR_ODIN_REVIEW
+  , CUZCO_REVIEW
+  , SKYMINES_REVIEW
 ]
 
 export function getQuickReview(bggName: string): QuickReviewData | undefined {
