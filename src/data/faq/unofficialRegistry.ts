@@ -5,10 +5,15 @@
 
 import type { GameFaqData } from './types'
 import { SHACKLETON_BASE_UNOFFICIAL_FAQ } from './unofficial/shackletonBase'
+import { TZOLKIN_UNOFFICIAL_FAQ } from './unofficial/tzolkinFaq'
+import { PAX_PAMIR_FAQ } from './unofficial/paxPamirFaq'
+import { DARWINS_JOURNEY_FAQ } from './unofficial/darwinsJourneyFaq'
 
 export const UNOFFICIAL_FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Shackleton Base: A Journey to the Moon': SHACKLETON_BASE_UNOFFICIAL_FAQ,
-  // 待搬進來：卓爾金曆（Tzolk'in）、帕米爾和平（Pax Pamir）等已有的非官方整理
+  "Tzolk'in: The Mayan Calendar": TZOLKIN_UNOFFICIAL_FAQ,
+  'Pax Pamir: Second Edition': PAX_PAMIR_FAQ,
+  "Darwin's Journey": DARWINS_JOURNEY_FAQ,
 }
 
 export function getUnofficialFaq(bggName: string): GameFaqData | null {
