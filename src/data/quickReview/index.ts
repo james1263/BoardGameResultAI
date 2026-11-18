@@ -8,6 +8,9 @@ import { KANBAN_EV_REVIEW } from './kanbanEv'
 import { CARNEGIE_REVIEW } from './carnegie'
 import { SHACKLETON_BASE_REVIEW } from './shackletonBase'
 import { DARWINS_JOURNEY_REVIEW } from './darwinsJourney'
+import { BRASS_BIRMINGHAM_REVIEW } from './brassBirmingham'
+import { FEAST_FOR_ODIN_REVIEW } from './feastForOdin'
+  
 
 export type QuickReviewData = { bggName: string; draftNote: string; sections: ReviewSection[] }
 
@@ -22,6 +25,8 @@ const REVIEWS: QuickReviewData[] = [
   , CARNEGIE_REVIEW
   , SHACKLETON_BASE_REVIEW
   , DARWINS_JOURNEY_REVIEW
+  , BRASS_BIRMINGHAM_REVIEW
+  , FEAST_FOR_ODIN_REVIEW
 ]
 
 export function getQuickReview(bggName: string): QuickReviewData | undefined {

@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import type { GameFaqData } from '../data/faq/types'
 import { RISING_SUN_FAQ } from '../data/faq/risingSunFaq'
 import { GAIA_PROJECT_FAQ } from '../data/faq/gaiaProjectFaq'
+import { BRASS_BIRMINGHAM_FAQ } from '../data/faq/brassBirminghamFaq'
+import { FEAST_FOR_ODIN_FAQ } from '../data/faq/feastForOdinFaq'
 import { getUnofficialFaq } from '../data/faq/unofficialRegistry'
 import { isSafeUrl } from '../lib/useGameDocuments'
 import '../styles/game-faq-cards.css'
@@ -10,6 +12,8 @@ import '../styles/game-faq-cards.css'
 const FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Rising Sun': RISING_SUN_FAQ,
   'Gaia Project': GAIA_PROJECT_FAQ,
+  'Brass: Birmingham': BRASS_BIRMINGHAM_FAQ,
+  'A Feast for Odin': FEAST_FOR_ODIN_FAQ,
 }
 
 export function getGameFaq(bggName: string): GameFaqData | null {

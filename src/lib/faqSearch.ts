@@ -8,10 +8,14 @@ import type { GameFaqData } from '../data/faq/types'
 import { RISING_SUN_FAQ } from '../data/faq/risingSunFaq'
 import { GAIA_PROJECT_FAQ } from '../data/faq/gaiaProjectFaq'
 import { getUnofficialFaq } from '../data/faq/unofficialRegistry'
+import { BRASS_BIRMINGHAM_FAQ } from '../data/faq/brassBirminghamFaq'
+import { FEAST_FOR_ODIN_FAQ } from '../data/faq/feastForOdinFaq'
 
 const FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Rising Sun': RISING_SUN_FAQ,
   'Gaia Project': GAIA_PROJECT_FAQ,
+  'Brass: Birmingham': BRASS_BIRMINGHAM_FAQ,
+  'A Feast for Odin': FEAST_FOR_ODIN_FAQ,
 }
 
 export type FaqHit = {
