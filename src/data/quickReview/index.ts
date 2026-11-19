@@ -26,6 +26,7 @@ import { EVERDELL_SILVERFROST_REVIEW } from './everdellSilverfrost'
 import { CRESCENT_MOON_REVIEW } from './crescentMoon'
 import { BRUXELLES_1893_REVIEW } from './bruxelles1893'
 import { VITICULTURE_REVIEW } from './viticulture'
+import { DEAL_WITH_THE_DEVIL_REVIEW } from './dealWithTheDevil'
   
 
 export type QuickReviewData = { bggName: string; draftNote: string; sections: ReviewSection[] }
@@ -59,6 +60,7 @@ const REVIEWS: QuickReviewData[] = [
    , CRESCENT_MOON_REVIEW
    , BRUXELLES_1893_REVIEW
    , VITICULTURE_REVIEW
+   , DEAL_WITH_THE_DEVIL_REVIEW
 ]
 
 export function getQuickReview(bggName: string): QuickReviewData | undefined {
