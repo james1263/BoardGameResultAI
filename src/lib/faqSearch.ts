@@ -10,12 +10,18 @@ import { GAIA_PROJECT_FAQ } from '../data/faq/gaiaProjectFaq'
 import { getUnofficialFaq } from '../data/faq/unofficialRegistry'
 import { BRASS_BIRMINGHAM_FAQ } from '../data/faq/brassBirminghamFaq'
 import { FEAST_FOR_ODIN_FAQ } from '../data/faq/feastForOdinFaq'
+import { ALCHEMISTS_FAQ } from '../data/faq/alchemistsFaq'
+import { TILETUM_FAQ } from '../data/faq/tiletumFaq'
+import { PULSAR_2849_FAQ } from '../data/faq/pulsar2849Faq'
 
 const FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Rising Sun': RISING_SUN_FAQ,
   'Gaia Project': GAIA_PROJECT_FAQ,
   'Brass: Birmingham': BRASS_BIRMINGHAM_FAQ,
   'A Feast for Odin': FEAST_FOR_ODIN_FAQ,
+  'Alchemists': ALCHEMISTS_FAQ,
+  'Tiletum': TILETUM_FAQ,
+  'Pulsar 2849': PULSAR_2849_FAQ,
 }
 
 export type FaqHit = {

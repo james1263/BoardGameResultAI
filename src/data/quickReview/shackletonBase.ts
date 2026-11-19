@@ -123,17 +123,17 @@ export const SHACKLETON_BASE_REVIEW: { bggName: string; draftNote: string; secti
           src: '規則書 第 4 頁',
         },
         {
-          label: '工程師',
+          label: '工程師（黃色）',
           text: '每個啟動的區塊挖該區塊中央標示的資源（鈦或稀土）。',
           src: '規則書 第 4 頁',
         },
         {
-          label: '技術員',
+          label: '技術員（紅色）',
           text: '每個啟動的區塊拿 3 信用點。',
           src: '規則書 第 4 頁',
         },
         {
-          label: '科學家',
+          label: '科學家（藍色）',
           text: '每個啟動的區塊，啟動該區塊周圍的 1 個企業標記；同一個標記每次行動只能啟動一次（即使它同時貼著同一排的兩個區塊）。區塊沒有企業標記可啟動時，費用仍要付。',
           src: '規則書 第 4 頁',
         },

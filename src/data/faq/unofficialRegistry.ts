@@ -10,6 +10,8 @@ import { PAX_PAMIR_FAQ } from './unofficial/paxPamirFaq'
 import { DARWINS_JOURNEY_FAQ } from './unofficial/darwinsJourneyFaq'
 import { BRASS_BIRMINGHAM_UNOFFICIAL_FAQ } from './unofficial/brassBirminghamUnofficial'
 import { FEAST_FOR_ODIN_UNOFFICIAL_FAQ } from './unofficial/feastForOdinUnofficial'
+import { NIPPON_UNOFFICIAL_FAQ } from './unofficial/nipponUnofficial'
+import { ALCHEMISTS_UNOFFICIAL_FAQ } from './unofficial/alchemistsUnofficial'
 
 export const UNOFFICIAL_FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Shackleton Base: A Journey to the Moon': SHACKLETON_BASE_UNOFFICIAL_FAQ,
@@ -18,6 +20,8 @@ export const UNOFFICIAL_FAQ_BY_GAME: Record<string, GameFaqData> = {
   "Darwin's Journey": DARWINS_JOURNEY_FAQ,
   'Brass: Birmingham': BRASS_BIRMINGHAM_UNOFFICIAL_FAQ,
   'A Feast for Odin': FEAST_FOR_ODIN_UNOFFICIAL_FAQ,
+  'Nippon: Zaibatsu': NIPPON_UNOFFICIAL_FAQ,
+  'Alchemists': ALCHEMISTS_UNOFFICIAL_FAQ,
 }
 
 export function getUnofficialFaq(bggName: string): GameFaqData | null {
