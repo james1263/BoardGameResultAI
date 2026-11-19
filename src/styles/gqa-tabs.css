@@ -1,0 +1,208 @@
+/* 詳細視窗「FAQ．玩錯紀錄．AI回饋．BGG討論」三分頁版面。
+   只改樣式與排列；所有選擇器帶 body .gqa 前綴以蓋過 vip.css。
+   顏色一律用半透明灰＋var fallback，深色與淺色都能讀。 */
+
+body .gqa {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* 分頁列：固定在捲動區頂端（不用 backdrop-filter／transform／filter，不加向上陰影） */
+body .gqa .gqa-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  margin: 0 0 10px;
+  padding: 4px 0 0;
+  background: var(--gm-bg, var(--gm-card, #1b2620));
+  border-bottom: 1px solid var(--gm-line, rgba(128, 128, 128, 0.35));
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+body .gqa .gqa-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+body .gqa .gqa-tab {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+body .gqa .gqa-tab.is-active {
+  opacity: 1;
+  border-bottom-color: var(--gm-caramel, #b8864b);
+}
+
+body .gqa .gqa-tab-n {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: rgba(128, 128, 128, 0.25);
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+}
+
+body .gqa .gqa-tab.is-active .gqa-tab-n {
+  background: var(--gm-caramel, #b8864b);
+  color: #fff;
+}
+
+/* 每個分頁頂端的一行小字 */
+body .gqa .gqa-sub {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  opacity: 0.72;
+}
+
+/* 說明文字縮小（GameFaq 自己的 note） */
+body .gqa .gfaq-note {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  opacity: 0.72;
+}
+
+/* ---------- 官方 FAQ：扁平問題列表 ---------- */
+body .gqa .gfaq:not(.gfaq-u) .gfaq-group {
+  margin-top: 14px;
+}
+
+body .gqa .gfaq:not(.gfaq-u) .gfaq-group-title {
+  margin: 0 0 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--gm-sage, #8fb39b);
+}
+
+body .gqa .gfaq:not(.gfaq-u) .gfaq-topic {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--gm-line, rgba(128, 128, 128, 0.3));
+  border-radius: 0;
+  background: transparent;
+}
+
+body .gqa .gfaq:not(.gfaq-u) .gfaq-topic > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 2px;
+  border: 0;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  list-style: none;
+}
+
+body .gqa .gfaq:not(.gfaq-u) .gfaq-topic > summary::-webkit-details-marker {
+  display: none;
+}
+
+body .gqa .gfaq:not(.gfaq-u) .gfaq-topic > summary::after {
+  content: '＋';
+  flex: none;
+  color: var(--gm-caramel, #b8864b);
+}
+
+body .gqa .gfaq:not(.gfaq-u) .gfaq-topic[open] > summary::after {
+  content: '－';
+}
+
+body .gqa .gfaq:not(.gfaq-u) .gfaq-body {
+  padding: 2px 2px 14px;
+}
+
+body .gqa .gfaq .gfaq-item + .gfaq-item {
+  margin-top: 12px;
+}
+
+body .gqa .gfaq .gfaq-q {
+  margin: 0 0 4px;
+  font-weight: 700;
+}
+
+body .gqa .gfaq .gfaq-a {
+  margin: 0 0 4px;
+  font-size: 14.5px;
+  line-height: 1.8;
+}
+
+body .gqa .gfaq .gfaq-src {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+/* ---------- 玩錯紀錄・AI 回饋：資訊卡片 ---------- */
+body .gqa .ge-embedded .er-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+body .gqa .ge-embedded .er-list > li {
+  padding: 12px 14px;
+  border: 1px solid var(--gm-line, rgba(128, 128, 128, 0.35));
+  border-left: 3px solid var(--gm-sage, #8fb39b);
+  border-radius: 12px;
+  background: rgba(128, 128, 128, 0.08);
+}
+
+body .gqa .ge-embedded .er-title {
+  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* 新增玩錯紀錄：降為次要按鈕 */
+body .gqa .ge-embedded > .ma-btn {
+  margin-top: 14px !important;
+  padding: 10px !important;
+  border: 1px dashed var(--gm-line, rgba(128, 128, 128, 0.5)) !important;
+  background: transparent !important;
+  color: inherit !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+/* ---------- BGG 討論：來源卡片 ---------- */
+body .gqa .gfaq.gfaq-u .gfaq-card {
+  border-left: 3px solid var(--gm-caramel, #b8864b);
+}
+
+body .gqa .gfaq.gfaq-u .gfaq-note a {
+  color: var(--gm-caramel, #b8864b);
+}

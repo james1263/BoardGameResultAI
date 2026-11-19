@@ -28,7 +28,7 @@ import GameInfoSheet from './GameInfoSheet'
 import QuickReview from './QuickReview'
 import { getQuickReview } from '../data/quickReview'
 import GameQa from './GameQa'
-import GameFaq, { getGameFaq, getUnofficialFaq, countFaqItems } from './GameFaq'
+import { getGameFaq, getUnofficialFaq, countFaqItems } from './GameFaq'
 import { BrainIcon, PairIcon, PersonIcon } from './Icons'
 import { useGameExpansions } from '../lib/useGameExpansions'
 import { useGameBackground } from '../lib/useGameBackground'
@@ -730,24 +730,14 @@ export default function GameModal({
               </div>
             )}
             {sheet === 'errata' && (
-              <>
-                <GameQa
-                  key={game.bggName}
-                  bggName={game.bggName}
-                  isAdmin={isAdmin}
-                  errataApi={errataApi}
-                  showErrata={canSeeErrata}
-                />
-                {unofficial && (
-                  <details className="gqa-fold">
-                    <summary>
-                      <span className="gqa-badge is-unofficial">BGG 討論・非官方 FAQ</span>
-                      <small>{countFaqItems(unofficial)} 則・玩家整理</small>
-                    </summary>
-                    <GameFaq key={game.bggName} bggName={game.bggName} kind="unofficial" />
-                  </details>
-                )}
-              </>
+              <GameQa
+                key={game.bggName}
+                bggName={game.bggName}
+                isAdmin={isAdmin}
+                errataApi={errataApi}
+                showErrata={canSeeErrata}
+                includeUnofficial
+              />
             )}
             {sheet === 'review' && <QuickReview bggName={game.bggName} />}
           </GameInfoSheet>

@@ -29,6 +29,11 @@ import { VITICULTURE_REVIEW } from './viticulture'
 import { DEAL_WITH_THE_DEVIL_REVIEW } from './dealWithTheDevil'
 import { PRAGA_CAPUT_REGNI_REVIEW } from './pragaCaputRegni'
 import { AYAR_REVIEW } from './ayar'
+import { WHITE_CASTLE_REVIEW } from './whiteCastle'
+import { DUNE_IMPERIUM_UPRISING_REVIEW } from './duneImperiumUprising'
+import { KEYFLOWER_REVIEW } from './keyflower'
+import { FURUYONI_NEW_ACT_REVIEW } from './furuyoniNewAct'
+import { HEAVEN_AND_ALE_REVIEW } from './heavenAndAle'
 
 
 export type QuickReviewData = { bggName: string; draftNote: string; sections: ReviewSection[] }
@@ -65,6 +70,11 @@ const REVIEWS: QuickReviewData[] = [
   , DEAL_WITH_THE_DEVIL_REVIEW
   , PRAGA_CAPUT_REGNI_REVIEW
   , AYAR_REVIEW
+  , WHITE_CASTLE_REVIEW
+  , DUNE_IMPERIUM_UPRISING_REVIEW
+  , KEYFLOWER_REVIEW
+  , FURUYONI_NEW_ACT_REVIEW
+  , HEAVEN_AND_ALE_REVIEW
 ]
 
 export function getQuickReview(bggName: string): QuickReviewData | undefined {

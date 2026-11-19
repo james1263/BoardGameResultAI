@@ -1,81 +1,92 @@
 import { useState } from 'react'
 import GameErrata from './GameErrata'
-import GameFaq, { getGameFaq } from './GameFaq'
+import GameFaq, { countFaqItems, getGameFaq, getUnofficialFaq } from './GameFaq'
 import type { useGameErrata } from '../lib/useGameErrata'
+import '../styles/gqa-tabs.css'
 
-type Filter = 'all' | 'faq' | 'errata'
+type Tab = 'faq' | 'errata' | 'bgg'
 
-// 「FAQ・玩錯紀錄・AI 回饋」合併頁：
-// 每一區的標題前都有彩色標籤，一眼看出這段是官方 FAQ，還是玩家的玩錯紀錄／AI 回饋。
+// 「FAQ・玩錯紀錄・AI 回饋・BGG 討論」：三個分頁，一次只看一種資料。
+// 官方 FAQ＝簡潔問題列表；玩錯紀錄・AI 回饋＝資訊卡片；BGG 討論＝非官方來源卡片。
 export default function GameQa({
   bggName,
   isAdmin,
   errataApi,
   showErrata,
+  includeUnofficial = false,
 }: {
   bggName: string
   isAdmin: boolean
   errataApi: ReturnType<typeof useGameErrata>
   // 玩錯紀錄・AI 回饋只有 VIP／管理者看得到（和原本的權限相同）
   showErrata: boolean
+  // true＝BGG 討論也放在這裡的分頁（GameModal 要同時拿掉自己另外掛的那一區，否則會出現兩次）
+  includeUnofficial?: boolean
 }) {
-  const hasFaq = getGameFaq(bggName) !== null
-  const [filter, setFilter] = useState<Filter>('all')
-  const canFilter = hasFaq && showErrata
-  const activeFilter: Filter = canFilter ? filter : 'all'
+  const faqData = getGameFaq(bggName)
+  const unofficialData = includeUnofficial ? getUnofficialFaq(bggName) : null
+
+  const tabs: { key: Tab; label: string; count: number | null }[] = []
+  if (faqData) tabs.push({ key: 'faq', label: '官方 FAQ', count: countFaqItems(faqData) })
+  if (showErrata) {
+    const approved = errataApi.items.filter((i) => !i.status || i.status === 'approved')
+    tabs.push({
+      key: 'errata',
+      label: '玩錯紀錄・AI 回饋',
+      count: errataApi.loading ? null : approved.length,
+    })
+  }
+  if (unofficialData) {
+    tabs.push({ key: 'bgg', label: 'BGG 討論', count: countFaqItems(unofficialData) })
+  }
+
+  const [tab, setTab] = useState<Tab | null>(null)
+  const active: Tab | null = tabs.some((t) => t.key === tab) ? tab : (tabs[0]?.key ?? null)
 
   return (
     <div className="gqa">
-      <p className="gqa-hint">
-        {hasFaq && '官方 FAQ＝出版商的官方解答。'}
-        {showErrata && '玩錯紀錄＝玩家實際玩錯後整理的常見錯誤；AI 回饋＝規則助手裡被認可的好答案。'}
-      </p>
-
-      {canFilter && (
-        <div className="gqa-filters" role="group" aria-label="篩選類型">
-          {(
-            [
-              { key: 'all', label: '全部' },
-              { key: 'faq', label: '官方 FAQ' },
-              { key: 'errata', label: '玩錯紀錄・AI 回饋' },
-            ] as const
-          ).map((item) => (
+      {tabs.length > 1 && (
+        <div className="gqa-tabs" role="tablist" aria-label="資料類型">
+          {tabs.map((t) => (
             <button
-              key={item.key}
+              key={t.key}
               type="button"
-              className={`gqa-chip${activeFilter === item.key ? ' is-active' : ''}`}
-              aria-pressed={activeFilter === item.key}
-              onClick={() => setFilter(item.key)}
+              role="tab"
+              className={`gqa-tab${active === t.key ? ' is-active' : ''}`}
+              aria-selected={active === t.key}
+              onClick={() => setTab(t.key)}
             >
-              {item.label}
+              {t.label}
+              {t.count !== null && <span className="gqa-tab-n">{t.count}</span>}
             </button>
           ))}
         </div>
       )}
 
-      {hasFaq && activeFilter !== 'errata' && (
-        <section className="gqa-section">
-          <h4 className="gqa-title">
-            <span className="gqa-badge is-faq">官方 FAQ</span>
-            出版商發布的官方問答
-          </h4>
-          <GameFaq key={bggName} bggName={bggName} />
+      {active === 'faq' && faqData && (
+        <section className="gqa-panel gqa-panel-faq">
+          <p className="gqa-sub">出版商發布的官方問答，與規則書衝突時以官方為準。</p>
+          <GameFaq key={`${bggName}-faq`} bggName={bggName} />
         </section>
       )}
 
-      {showErrata && activeFilter !== 'faq' && (
-        <section className="gqa-section">
-          <h4 className="gqa-title">
-            <span className="gqa-badge is-errata">玩錯紀錄・AI 回饋</span>
-            玩家整理的常見錯誤與好的 AI 回答
-          </h4>
+      {active === 'errata' && showErrata && (
+        <section className="gqa-panel gqa-panel-errata">
+          <p className="gqa-sub">玩家實際玩錯後整理的常見錯誤，以及規則助手裡被認可的好答案。</p>
           <GameErrata
-            key={bggName}
+            key={`${bggName}-errata`}
             bggName={bggName}
             isAdmin={isAdmin}
             embedded
             api={errataApi}
           />
+        </section>
+      )}
+
+      {active === 'bgg' && unofficialData && (
+        <section className="gqa-panel gqa-panel-bgg">
+          <p className="gqa-sub">非官方：玩家製作的教學筆記與 BGG 討論整理，與官方衝突時以官方為準。</p>
+          <GameFaq key={`${bggName}-bgg`} bggName={bggName} kind="unofficial" />
         </section>
       )}
     </div>
