@@ -21,6 +21,11 @@ import { PULSAR_2849_REVIEW } from './pulsar2849'
 import { SIDEREAL_CONFLUENCE_REVIEW } from './siderealConfluence'
 import { DEAD_RECKONING_REVIEW } from './deadReckoning'
 import { MARRAKESH_REVIEW } from './marrakesh'
+import { CLANS_OF_CALEDONIA_REVIEW } from './clansOfCaledonia'
+import { EVERDELL_SILVERFROST_REVIEW } from './everdellSilverfrost'
+import { CRESCENT_MOON_REVIEW } from './crescentMoon'
+import { BRUXELLES_1893_REVIEW } from './bruxelles1893'
+import { VITICULTURE_REVIEW } from './viticulture'
   
 
 export type QuickReviewData = { bggName: string; draftNote: string; sections: ReviewSection[] }
@@ -49,6 +54,11 @@ const REVIEWS: QuickReviewData[] = [
    , SIDEREAL_CONFLUENCE_REVIEW
    , DEAD_RECKONING_REVIEW
    , MARRAKESH_REVIEW
+   , CLANS_OF_CALEDONIA_REVIEW
+   , EVERDELL_SILVERFROST_REVIEW
+   , CRESCENT_MOON_REVIEW
+   , BRUXELLES_1893_REVIEW
+   , VITICULTURE_REVIEW
 ]
 
 export function getQuickReview(bggName: string): QuickReviewData | undefined {
