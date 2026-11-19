@@ -27,7 +27,9 @@ import { CRESCENT_MOON_REVIEW } from './crescentMoon'
 import { BRUXELLES_1893_REVIEW } from './bruxelles1893'
 import { VITICULTURE_REVIEW } from './viticulture'
 import { DEAL_WITH_THE_DEVIL_REVIEW } from './dealWithTheDevil'
-  
+import { PRAGA_CAPUT_REGNI_REVIEW } from './pragaCaputRegni'
+import { AYAR_REVIEW } from './ayar'
+
 
 export type QuickReviewData = { bggName: string; draftNote: string; sections: ReviewSection[] }
 
@@ -49,18 +51,20 @@ const REVIEWS: QuickReviewData[] = [
   , FEDERATION_REVIEW
   , LORENZO_REVIEW
   , NIPPON_REVIEW
-   , ALCHEMISTS_REVIEW
-   , TILETUM_REVIEW
-   , PULSAR_2849_REVIEW
-   , SIDEREAL_CONFLUENCE_REVIEW
-   , DEAD_RECKONING_REVIEW
-   , MARRAKESH_REVIEW
-   , CLANS_OF_CALEDONIA_REVIEW
-   , EVERDELL_SILVERFROST_REVIEW
-   , CRESCENT_MOON_REVIEW
-   , BRUXELLES_1893_REVIEW
-   , VITICULTURE_REVIEW
-   , DEAL_WITH_THE_DEVIL_REVIEW
+  , ALCHEMISTS_REVIEW
+  , TILETUM_REVIEW
+  , PULSAR_2849_REVIEW
+  , SIDEREAL_CONFLUENCE_REVIEW
+  , DEAD_RECKONING_REVIEW
+  , MARRAKESH_REVIEW
+  , CLANS_OF_CALEDONIA_REVIEW
+  , EVERDELL_SILVERFROST_REVIEW
+  , CRESCENT_MOON_REVIEW
+  , BRUXELLES_1893_REVIEW
+  , VITICULTURE_REVIEW
+  , DEAL_WITH_THE_DEVIL_REVIEW
+  , PRAGA_CAPUT_REGNI_REVIEW
+  , AYAR_REVIEW
 ]
 
 export function getQuickReview(bggName: string): QuickReviewData | undefined {
