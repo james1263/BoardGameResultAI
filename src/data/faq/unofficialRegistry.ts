@@ -15,6 +15,7 @@ import { ALCHEMISTS_UNOFFICIAL_FAQ } from './unofficial/alchemistsUnofficial'
 import { EVERDELL_SILVERFROST_UNOFFICIAL_FAQ } from './unofficial/everdellSilverfrostUnofficial'
 import { KEYFLOWER_UNOFFICIAL_FAQ } from './unofficial/keyflowerUnofficial'
 import { FURUYONI_NEW_ACT_UNOFFICIAL_FAQ } from './unofficial/furuyoniNewActUnofficial'
+import { KEMET_UNOFFICIAL_FAQ } from './unofficial/kemetUnofficial'
 
 export const UNOFFICIAL_FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Shackleton Base: A Journey to the Moon': SHACKLETON_BASE_UNOFFICIAL_FAQ,
@@ -28,6 +29,7 @@ export const UNOFFICIAL_FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Everdell Silverfrost': EVERDELL_SILVERFROST_UNOFFICIAL_FAQ,
   'Keyflower': KEYFLOWER_UNOFFICIAL_FAQ,
   '新幕 桜降る代に決闘を 基本セット (A Duel for Falling Cherry Blossoms: New Act – Basic Set)': FURUYONI_NEW_ACT_UNOFFICIAL_FAQ,
+  'Kemet: Blood and Sand': KEMET_UNOFFICIAL_FAQ,
 }
 
 export function getUnofficialFaq(bggName: string): GameFaqData | null {

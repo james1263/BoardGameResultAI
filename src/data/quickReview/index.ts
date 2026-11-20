@@ -34,6 +34,15 @@ import { DUNE_IMPERIUM_UPRISING_REVIEW } from './duneImperiumUprising'
 import { KEYFLOWER_REVIEW } from './keyflower'
 import { FURUYONI_NEW_ACT_REVIEW } from './furuyoniNewAct'
 import { HEAVEN_AND_ALE_REVIEW } from './heavenAndAle'
+import { UNDERWATER_CITIES_REVIEW } from './underwaterCities'
+import { VIKINGS_878_REVIEW } from './vikings878'
+import { UNDAUNTED_CALLISTO_REVIEW } from './undauntedCallisto'
+import { MIND_MGMT_REVIEW } from './mindMgmt'
+import { KRONOLOGIC_PARIS_1920_REVIEW } from './kronologic'
+import { BIER_PIONIERE_REVIEW } from './bierPioniere'
+import { KEMET_REVIEW } from './kemet'
+import { WALLENSTEIN_REVIEW } from './wallenstein'
+import { LUNA_MARIS_REVIEW } from './lunaMaris'
 
 
 export type QuickReviewData = { bggName: string; draftNote: string; sections: ReviewSection[] }
@@ -75,6 +84,15 @@ const REVIEWS: QuickReviewData[] = [
   , KEYFLOWER_REVIEW
   , FURUYONI_NEW_ACT_REVIEW
   , HEAVEN_AND_ALE_REVIEW
+  , UNDERWATER_CITIES_REVIEW
+  , VIKINGS_878_REVIEW
+  , UNDAUNTED_CALLISTO_REVIEW
+  , MIND_MGMT_REVIEW
+  , KRONOLOGIC_PARIS_1920_REVIEW
+  , BIER_PIONIERE_REVIEW
+  , KEMET_REVIEW
+  , WALLENSTEIN_REVIEW
+  , LUNA_MARIS_REVIEW
 ]
 
 export function getQuickReview(bggName: string): QuickReviewData | undefined {
