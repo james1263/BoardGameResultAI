@@ -31,6 +31,12 @@ export function getGameFaq(bggName: string): GameFaqData | null {
 // BGG 討論・非官方 FAQ（登記表在 data/faq/unofficialRegistry.ts，網頁與規則助手共用）
 export { getUnofficialFaq }
 
+// 這款 FAQ 的說明文字（GameQa 的長按／滑過提示用）；沒有資料回空字串
+export function getFaqNote(bggName: string, kind: 'official' | 'unofficial' = 'official'): string {
+  const data = kind === 'unofficial' ? getUnofficialFaq(bggName) : getGameFaq(bggName)
+  return data?.note ?? ''
+}
+
 // 規則分頁入口卡片上顯示的「N 則」
 export function countFaqItems(data: GameFaqData): number {
   return data.groups.reduce(
@@ -44,16 +50,28 @@ export default function GameFaq({
   bggName,
   kind = 'official',
   hideSearch = false,
+  externalQuery,
+  leadNote,
+  foldNotes = false,
+  hideNotes = false,
 }: {
   bggName: string
   // official＝官方 FAQ；unofficial＝BGG 討論・非官方 FAQ（玩家整理，會標示來源）
   kind?: 'official' | 'unofficial'
   // 規則助手頁已有主搜尋欄（會一起搜 FAQ），這裡不要再多一個
   hideSearch?: boolean
+  // 有值＝搜尋字由外面（GameQa 的統一搜尋）控制，這裡不顯示自己的搜尋欄
+  externalQuery?: string
+  // 說明文字最前面再加一段（GameQa 放各分頁原本的一行小字）
+  leadNote?: string
+  // true＝說明與來源收進一個預設收起的「說明」
+  foldNotes?: boolean
+  // true＝說明文字不顯示（由外面用長按／滑過提示），只在最下面留一行來源
+  hideNotes?: boolean
 }) {
   const data = kind === 'unofficial' ? getUnofficialFaq(bggName) : getGameFaq(bggName)
   const [query, setQuery] = useState('')
-  const keyword = query.trim().toLowerCase()
+  const keyword = (externalQuery ?? query).trim().toLowerCase()
 
   const groups = useMemo(() => {
     if (!data) return []
@@ -78,27 +96,44 @@ export default function GameFaq({
 
   const topicCount = groups.reduce((sum, group) => sum + group.topics.length, 0)
 
+  const sourcesLine =
+    data.sources && data.sources.length > 0 ? (
+      <p className="gfaq-note gfaq-sources">
+        來源：
+        {data.sources.map((source, index) => (
+          <span key={index}>
+            {index > 0 && '、'}
+            {source.url && isSafeUrl(source.url) ? (
+              <a href={source.url} target="_blank" rel="noreferrer">
+                {source.label} ↗
+              </a>
+            ) : (
+              source.label
+            )}
+          </span>
+        ))}
+      </p>
+    ) : null
+
+  const notes = (
+    <>
+      {leadNote && <p className="gfaq-note">{leadNote}</p>}
+      <p className="gfaq-note">{data.note}</p>
+      {sourcesLine}
+    </>
+  )
+
   return (
     <div className={`gfaq ${kind === 'unofficial' ? 'gfaq-u' : ''}`}>
-      <p className="gfaq-note">{data.note}</p>
-      {data.sources && data.sources.length > 0 && (
-        <p className="gfaq-note">
-          來源：
-          {data.sources.map((source, index) => (
-            <span key={index}>
-              {index > 0 && '、'}
-              {source.url && isSafeUrl(source.url) ? (
-                <a href={source.url} target="_blank" rel="noreferrer">
-                  {source.label} ↗
-                </a>
-              ) : (
-                source.label
-              )}
-            </span>
-          ))}
-        </p>
+      {hideNotes ? null : foldNotes ? (
+        <details className="gqa-desc">
+          <summary>說明</summary>
+          {notes}
+        </details>
+      ) : (
+        notes
       )}
-      {!hideSearch && (
+      {!hideSearch && externalQuery === undefined && (
         <input
           type="search"
           className="gfaq-search"
@@ -108,7 +143,7 @@ export default function GameFaq({
           aria-label={kind === 'unofficial' ? '搜尋非官方 FAQ' : '搜尋 FAQ'}
         />
       )}
-      {!hideSearch && keyword !== '' && (
+      {(externalQuery !== undefined || !hideSearch) && keyword !== '' && (
         <p className="gfaq-count">
           {topicCount > 0 ? `找到 ${topicCount} 個主題` : '沒有找到相關的 FAQ'}
         </p>
@@ -157,6 +192,7 @@ export default function GameFaq({
           })}
         </section>
       ))}
+      {hideNotes && sourcesLine}
     </div>
   )
 }

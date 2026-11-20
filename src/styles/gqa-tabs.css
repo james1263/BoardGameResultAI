@@ -8,17 +8,89 @@ body .gqa {
   gap: 0;
 }
 
-/* 分頁列：固定在捲動區頂端（不用 backdrop-filter／transform／filter，不加向上陰影） */
-body .gqa .gqa-tabs {
+/* 整個 .gqa 最少撐到固定高度：三個分頁大小一樣，內容少時下方留白。
+   數值是配合底部彈窗上限（約 88% 螢幕）估的；若三頁還是差一點，只調這一個數字。 */
+body .gqa {
+  min-height: 76vh;
+  min-height: 76dvh;
+}
+
+/* 頂列：放大鏡＋分頁（或搜尋框），固定在捲動區頂端（不用 backdrop-filter／transform／filter，不加向上陰影） */
+body .gqa .gqa-bar {
   position: sticky;
   top: 0;
   z-index: 3;
   display: flex;
+  align-items: stretch;
   gap: 4px;
   margin: 0 0 10px;
   padding: 4px 0 0;
   background: var(--gm-bg, var(--gm-card, #1b2620));
   border-bottom: 1px solid var(--gm-line, rgba(128, 128, 128, 0.35));
+}
+
+body .gqa .gqa-sbtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  padding: 0;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--gm-caramel, #b8864b);
+  cursor: pointer;
+}
+
+body .gqa .gqa-sbtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+body .gqa .gqa-searchbox {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 0 8px;
+}
+
+body .gqa .gqa-searchbox .gqa-ico {
+  flex: none;
+  margin-left: 6px;
+  color: var(--gm-caramel, #b8864b);
+}
+
+body .gqa .gqa-search {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--gm-line, rgba(128, 128, 128, 0.45));
+  border-radius: 10px;
+  background: rgba(128, 128, 128, 0.1);
+  color: inherit;
+  font-size: 16px;
+}
+
+body .gqa .gqa-cancel {
+  flex: none;
+  padding: 8px 6px;
+  border: 0;
+  background: transparent;
+  color: var(--gm-caramel, #b8864b);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+body .gqa .gqa-tabs {
+  flex: 1;
+  display: flex;
+  gap: 2px;
+  min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -28,11 +100,12 @@ body .gqa .gqa-tabs::-webkit-scrollbar {
 }
 
 body .gqa .gqa-tab {
-  flex: none;
+  flex: 1 1 auto;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 12px;
+  justify-content: center;
+  gap: 5px;
+  padding: 9px 6px;
   border: 0;
   border-bottom: 3px solid transparent;
   border-radius: 0;
@@ -63,6 +136,39 @@ body .gqa .gqa-tab-n {
 body .gqa .gqa-tab.is-active .gqa-tab-n {
   background: var(--gm-caramel, #b8864b);
   color: #fff;
+}
+
+/* 可摺疊的說明（預設收起） */
+body .gqa .gqa-desc {
+  margin: 0 0 10px;
+}
+
+body .gqa .gqa-desc > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.75;
+  cursor: pointer;
+  list-style: none;
+}
+
+body .gqa .gqa-desc > summary::-webkit-details-marker {
+  display: none;
+}
+
+body .gqa .gqa-desc > summary::after {
+  content: '▾';
+  color: var(--gm-caramel, #b8864b);
+}
+
+body .gqa .gqa-desc[open] > summary::after {
+  content: '▴';
+}
+
+body .gqa .gqa-desc[open] > summary {
+  margin-bottom: 6px;
 }
 
 /* 每個分頁頂端的一行小字 */

@@ -1,26 +1,26 @@
-james88713@gmail.com
+james88713@gmail.com 大合併
 
-james50aj3g4@gmail.com
+.james50aj3g4@gmail.com 山嶽之王-- 4:10
 
-.p46104293@gs.ncku.edu.tw 上傳生成後繼續11:10 大五月花號
+.p46104293@gs.ncku.edu.tw 4:10
 
-james.boardgame@gmail.com
+.james.boardgame@gmail.com 4:30
 
-james88713.claude@gmail.com
+.james88713.claude@gmail.com 4:40
 
-.james50aj3g4.claude@gmail.com 11:10
+james50aj3g4.claude@gmail.com  4:10
 
-james88713@outlook.com
+james88713@outlook.com 慘劇繼續 1:50
 
-.james50aj3g4@outlook.com 天堂與美酒生成後繼續 11:50
+james50aj3g4@outlook.com
 
-.james.boardgame@outlook.com 散櫻亂舞 生成後繼續11:50
+james.boardgame@outlook.com
 
-james88713.claude@outlook.com
+james88713.claude@outlook.com 
 
-james50aj3g4.claude@outlook.com 啤酒先驅沒有給我檔案也沒有給我辭庫->生成後 11:00
+.james50aj3g4.claude@outlook.com 啤酒先驅生成後 4:40
 
-「遊戲名｜中文詞｜對應詞」 單人不要加 一般來說擴充都要收
+「遊戲名｜中文詞｜對應詞」 另外，幫我生成快速複習的檔案(單人不要加 一般來說擴充都要收)
 
 GameFaq.tsx
 faqSearch.ts

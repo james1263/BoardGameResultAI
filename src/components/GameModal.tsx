@@ -40,6 +40,7 @@ import '../styles/overview.css'
 import '../styles/game-modal-v2.css'
 import '../styles/game-rate-sheet.css'
 import '../styles/game-modal-rules.css'
+import '../styles/gm-tabs-polish.css'
 
 const TABS = [
   { key: 'overview', label: '概覽' },
@@ -345,8 +346,7 @@ export default function GameModal({
                   <b>{difficultyText(game.bggDifficulty)}</b>
                 </li>
                 <li>
-                  <i aria-hidden="true">◷</i>
-                  <span>時間</span>
+                  <i aria-label="時間" title="時間">◷</i>
                   <b>{game.bggTime == null ? '—' : `${game.bggTime} 分`}</b>
                 </li>
                 <li>

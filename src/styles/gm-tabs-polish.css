@@ -1,0 +1,108 @@
+/* 詳細視窗微調（2026-11-20）：標題區資訊格、FAQ 三分頁、說明氣泡、回到最上面
+   要在 GameModal.tsx 的 import 清單最後面載入（在 game-modal-rules.css 之後）。
+   還原：刪掉這個檔與 GameModal.tsx 對應的 import。 */
+
+/* ---------- 標題區四項資訊：第一欄跟著「難度 3.50・中重」的寬度，不再疊到時間 ---------- */
+.modal-backdrop .game-modal.gm-v2 .gm-hero ul.gm-facts {
+  grid-template-columns: max-content max-content;
+  gap: 4px 14px;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero ul.gm-facts li {
+  min-width: 0;
+}
+
+/* ---------- 三分頁：頂列漏頂 ----------
+   .gm-sheet-body 上方有 12px 內距，sticky 的頂列貼在內距下面，內容會從那 12px 露出來。
+   頂列往上多延伸 12px 蓋住它。 */
+body .gqa .gqa-bar {
+  top: -12px;
+  margin: -12px 0 6px;
+  padding-top: 16px;
+}
+
+/* ---------- 三分頁：留白少一點（若還想更少，只改這個數字；0 代表不撐高） ---------- */
+body .gqa {
+  min-height: 52vh;
+  min-height: 52dvh;
+}
+
+body .gqa .gqa-tab {
+  padding: 7px 6px;
+}
+
+body .gqa .gfaq:not(.gfaq-u) .gfaq-group {
+  margin-top: 8px;
+}
+
+body .gqa .gfaq:not(.gfaq-u) .gfaq-topic > summary {
+  padding: 9px 2px;
+}
+
+body .gqa .gfaq:not(.gfaq-u) .gfaq-body {
+  padding: 2px 2px 10px;
+}
+
+/* 說明與來源一律靠左 */
+body .gqa .gfaq-note {
+  text-align: left;
+}
+
+body .gqa .gfaq-sources {
+  margin-top: 14px;
+}
+
+/* 分頁標籤：長按時不要跳出系統選單、不要選到字 */
+body .gqa .gqa-tab {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ---------- 說明氣泡（掛在 body，固定配色，靠左） ---------- */
+body .gqa-tip {
+  position: fixed;
+  z-index: 3000;
+  box-sizing: border-box;
+  width: 280px;
+  max-width: calc(100vw - 24px);
+  padding: 10px 12px;
+  border: 1px solid rgba(183, 138, 90, 0.6);
+  border-radius: 10px;
+  background: #2b3a31;
+  color: #f2efe4;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  text-align: left;
+  white-space: pre-line;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+/* ---------- 回到最上面（GameInfoSheet 共用） ---------- */
+.gm-v2 .gm-totop-wrap {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  height: 0;
+  overflow: visible;
+}
+
+.gm-v2 .gm-totop {
+  position: absolute;
+  right: 0;
+  bottom: 12px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid rgba(183, 138, 90, 0.7);
+  border-radius: 50%;
+  background: #2b3a31;
+  color: #e2b983;
+  font-size: 20px;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
