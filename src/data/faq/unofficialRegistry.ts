@@ -16,6 +16,9 @@ import { EVERDELL_SILVERFROST_UNOFFICIAL_FAQ } from './unofficial/everdellSilver
 import { KEYFLOWER_UNOFFICIAL_FAQ } from './unofficial/keyflowerUnofficial'
 import { FURUYONI_NEW_ACT_UNOFFICIAL_FAQ } from './unofficial/furuyoniNewActUnofficial'
 import { KEMET_UNOFFICIAL_FAQ } from './unofficial/kemetUnofficial'
+import { SEKIGAHARA_UNOFFICIAL_FAQ } from './unofficial/sekigaharaUnofficial'
+import { PIRATES_OF_MARACAIBO_UNOFFICIAL_FAQ } from './unofficial/piratesOfMaracaiboUnofficial'
+import { INIS_UNOFFICIAL_FAQ } from './unofficial/inisUnofficial'
 
 export const UNOFFICIAL_FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Shackleton Base: A Journey to the Moon': SHACKLETON_BASE_UNOFFICIAL_FAQ,
@@ -30,6 +33,9 @@ export const UNOFFICIAL_FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Keyflower': KEYFLOWER_UNOFFICIAL_FAQ,
   '新幕 桜降る代に決闘を 基本セット (A Duel for Falling Cherry Blossoms: New Act – Basic Set)': FURUYONI_NEW_ACT_UNOFFICIAL_FAQ,
   'Kemet: Blood and Sand': KEMET_UNOFFICIAL_FAQ,
+  'Sekigahara: The Unification of Japan': SEKIGAHARA_UNOFFICIAL_FAQ,
+    'Pirates of Maracaibo': PIRATES_OF_MARACAIBO_UNOFFICIAL_FAQ,
+    'Inis: Legendary Edition': INIS_UNOFFICIAL_FAQ,
 }
 
 export function getUnofficialFaq(bggName: string): GameFaqData | null {

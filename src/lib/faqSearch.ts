@@ -14,6 +14,7 @@ import { ALCHEMISTS_FAQ } from '../data/faq/alchemistsFaq'
 import { TILETUM_FAQ } from '../data/faq/tiletumFaq'
 import { PULSAR_2849_FAQ } from '../data/faq/pulsar2849Faq'
 import { FURUYONI_NEW_ACT_FAQ } from '../data/faq/furuyoniNewActFaq'
+import { INIS_FAQ } from '../data/faq/inisFaq'
 
 const FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Rising Sun': RISING_SUN_FAQ,
@@ -24,6 +25,7 @@ const FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Tiletum': TILETUM_FAQ,
   'Pulsar 2849': PULSAR_2849_FAQ,
   '新幕 桜降る代に決闘を 基本セット (A Duel for Falling Cherry Blossoms: New Act – Basic Set)': FURUYONI_NEW_ACT_FAQ,
+  'Inis: Legendary Edition': INIS_FAQ,
 }
 
 export type FaqHit = {

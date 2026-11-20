@@ -43,7 +43,17 @@ import { BIER_PIONIERE_REVIEW } from './bierPioniere'
 import { KEMET_REVIEW } from './kemet'
 import { WALLENSTEIN_REVIEW } from './wallenstein'
 import { LUNA_MARIS_REVIEW } from './lunaMaris'
-
+import { TRAGEDY_LOOPER_REVIEW } from './tragedyLooper'
+import { MOUNTAIN_KING_REVIEW } from './mountainKing'
+import { MANSIONS_OF_MADNESS_REVIEW } from './mansionsOfMadness'
+import { QMG_WW2_REVIEW } from './qmgWw2'
+import { ROCK_SWAP_FLIP_FLOP_REVIEW } from './rockSwapFlipFlop'
+import { WANDERING_TOWERS_REVIEW } from './wanderingTowers'
+import { DEAD_MANS_DRAW_REVIEW } from './deadMansDraw'
+import { SEKIGAHARA_REVIEW } from './sekigahara'
+import { HANSA_TEUTONICA_REVIEW } from './hansaTeutonica'
+import { CAMEL_UP_REVIEW } from './camelUp'
+import { INIS_REVIEW } from './inis'
 
 export type QuickReviewData = { bggName: string; draftNote: string; sections: ReviewSection[] }
 
@@ -93,6 +103,17 @@ const REVIEWS: QuickReviewData[] = [
   , KEMET_REVIEW
   , WALLENSTEIN_REVIEW
   , LUNA_MARIS_REVIEW
+  , TRAGEDY_LOOPER_REVIEW
+  , MOUNTAIN_KING_REVIEW
+  , MANSIONS_OF_MADNESS_REVIEW
+  , QMG_WW2_REVIEW
+  , ROCK_SWAP_FLIP_FLOP_REVIEW
+  , WANDERING_TOWERS_REVIEW
+  , DEAD_MANS_DRAW_REVIEW
+  , SEKIGAHARA_REVIEW
+  , HANSA_TEUTONICA_REVIEW
+  , CAMEL_UP_REVIEW
+  , INIS_REVIEW
 ]
 
 export function getQuickReview(bggName: string): QuickReviewData | undefined {
