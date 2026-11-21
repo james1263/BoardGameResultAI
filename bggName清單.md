@@ -1,7 +1,7 @@
-## bggName 清單（資料庫實際名稱，使用者 2026-11-19 提供；快速複習檔、詞庫第一欄一律照這份，不要再問）
+## bggName 清單（資料庫實際名稱，使用者 2026-11-19 提供，2026-11-21 以資料庫貼上的名單核對更新；快速複習檔、詞庫第一欄一律照這份，不要再問）
 
-> 貼到 `生成後.md` 第 3 節（或之後合併進 QUICKSTART／PROJECT_CONTEXT）。注意撇號、冒號、引號要與下列完全一致（例：`Darwin's Journey` 直撇號、`The Quacks of Quedlinburg` 等）。
-> 已有快速複習的款：Rising Sun、Tzolk'in: The Mayan Calendar、Pax Pamir: Second Edition、Gaia Project、Great Western Trail: Argentina、Kanban EV、Carnegie、Shackleton Base: A Journey to the Moon、Darwin's Journey、Brass: Birmingham、A Feast for Odin、Cuzco、Skymines、Federation；**偉大的羅倫佐＝`Lorenzo il Magnifico: Big Box`（不是 `Lorenzo il Magnifico`）**。
+> 注意撇號、冒號、引號要與下列完全一致（例：`Darwin's Journey` 直撇號、`The Quacks of Quedlinburg` 等）。
+> 快速複習：2026-11-21 使用者說都做完了，款數以 `index.ts` 的 `REVIEWS` 為準；偉大的羅倫佐＝`Lorenzo il Magnifico: Big Box`（不是 `Lorenzo il Magnifico`）。
 
 ```
 Mansions of Madness: Second Edition
@@ -106,15 +106,17 @@ Bier Pioniere
 Tornado Splash
 Bable
 Cascadia
-Don't Get Gout!
+Don't Get Got!
 In the Hall of the Mountain King
 Joyride: Turbo
 Moon Colony Bloodbath
 Vulcanus
 Bruxelles 1893: Belle Époque
+Dixit: Odyssey
+Telestrations
 Living Forest
 Eternal Sevens
 Modern Art
 ```
 
-> 轉錄自使用者貼的截圖；少數字（如 `Don't Get Gout!`、`Bable`、`Heart of Crown`）請對照截圖確認拼法，若不同以資料庫為準。
+> 轉錄自使用者貼的截圖；少數字（如 `Don't Get Got!`、`Bable`、`Heart of Crown`）請對照截圖確認拼法，若不同以資料庫為準。
