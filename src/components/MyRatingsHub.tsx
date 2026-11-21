@@ -8,6 +8,7 @@ import { notifyRatingsChanged } from '../lib/unplayFlow'
 import RatingSection from './RatingSection'
 import '../styles/my-ratings-hub.css'
 import '../styles/batch-select.css'
+import '../styles/rating-help-head.css'
 
 type Status = 'none' | 'partial' | 'full'
 type Filter = 'all' | Status
@@ -86,6 +87,8 @@ export default function MyRatingsHub({
     const [selectMode, setSelectMode] = useState(false)
     const [selected, setSelected] = useState<Set<string>>(new Set())
     const [removing, setRemoving] = useState(false)
+    // 評分說明（標題旁的按鈕）
+    const [helpOpen, setHelpOpen] = useState(false)
 
     const ready = ratings.status === 'ready'
 
@@ -199,7 +202,17 @@ export default function MyRatingsHub({
             <div className="mylist-backdrop" onClick={onClose} />
             <aside className="mylist-drawer" role="dialog" aria-label="我的評分">
                 <div className="mylist-header">
-                    <h2>我的評分</h2>
+                    <div className="mrh-titlegroup">
+                        <h2>我的評分</h2>
+                        <button
+                            type="button"
+                            className="mrh-helpbtn"
+                            aria-expanded={helpOpen}
+                            onClick={() => setHelpOpen((value) => !value)}
+                        >
+                            ⓘ 評分說明
+                        </button>
+                    </div>
                     <button
                         className="mylist-close"
                         type="button"
@@ -235,12 +248,11 @@ export default function MyRatingsHub({
                                     <span>已玩</span>
                                 </div>
                             </div>
-                            <details className="mrh-helpfold">
-                                <summary>ⓘ 評分說明</summary>
-                                <p className="mrh-help">
+                            {helpOpen && (
+                                <p className="mrh-help mrh-help-open">
                                     完整評分＝整體與六項（喜歡度、玩家影響性、溝通度、變化度、獨特性、適合留下來）都填。點一款遊戲就能直接評分。
                                 </p>
-                            </details>
+                            )}
 
                             <div className="mrh-seg" role="tablist" aria-label="清單範圍">
                                 <button

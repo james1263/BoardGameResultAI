@@ -142,6 +142,9 @@ export default function GameModal({
   const activeTab: TabKey = visibleTabs.some((item) => item.key === tab) ? tab : 'overview'
   const [sheet, setSheet] = useState<SheetKey | null>(initialTab === 'rules' ? 'rules' : null)
   const [openType, setOpenType] = useState<string | null>(null)
+  // 開桌前快速複習：說明（點標題）與篩選面板（標題列的篩選鈕）
+  const [qrNoteOpen, setQrNoteOpen] = useState(false)
+  const [qrPanelOpen, setQrPanelOpen] = useState(false)
   const [showAllWall, setShowAllWall] = useState(false)
   const docsApi = useGameDocuments(game.bggName)
   const vip = useVip()
@@ -154,6 +157,12 @@ export default function GameModal({
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const lastGameRef = useRef(game.bggName)
   const closeSheet = useCallback(() => setSheet(null), [])
+  useEffect(() => {
+    if (sheet !== 'review') {
+      setQrNoteOpen(false)
+      setQrPanelOpen(false)
+    }
+  }, [sheet])
   useBackClose(onClose)
   // 宣告在上面那行之後，彈窗才會在返回鍵堆疊的最上面（一次只退一層）
   useBackClose(closeSheet, sheet !== null)
@@ -670,6 +679,19 @@ export default function GameModal({
           <GameInfoSheet
             title={sheet === 'errata' ? errataTitle : SHEET_TITLES[sheet]}
             onClose={closeSheet}
+            onTitleClick={sheet === 'review' ? () => setQrNoteOpen((value) => !value) : undefined}
+            headerExtra={
+              sheet === 'review' ? (
+                <button
+                  type="button"
+                  className={`gm-sheet-filterbtn${qrPanelOpen ? ' is-on' : ''}`}
+                  aria-expanded={qrPanelOpen}
+                  onClick={() => setQrPanelOpen((value) => !value)}
+                >
+                  🔍 篩選
+                </button>
+              ) : undefined
+            }
           >
             {sheet === 'rules' && (
               <GameDocuments
@@ -739,7 +761,14 @@ export default function GameModal({
                 includeUnofficial
               />
             )}
-            {sheet === 'review' && <QuickReview bggName={game.bggName} />}
+            {sheet === 'review' && (
+              <QuickReview
+                bggName={game.bggName}
+                noteOpen={qrNoteOpen}
+                panelOpen={qrPanelOpen}
+                onPanelChange={setQrPanelOpen}
+              />
+            )}
           </GameInfoSheet>
         )}
       </section>

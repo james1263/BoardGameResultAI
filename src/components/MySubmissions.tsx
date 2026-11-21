@@ -12,6 +12,7 @@ import {
 import GameErrata from './GameErrata'
 import '../styles/errata.css'
 import '../styles/my-submissions-dark.css'
+import '../styles/my-submissions-left.css'
 
 type Tab = 'errata' | 'link' | 'glossary' | 'ai'
 type GameLite = { name: string; bggName: string; referenceOnly?: boolean }

@@ -2,6 +2,20 @@
    要在 GameModal.tsx 的 import 清單最後面載入（在 game-modal-rules.css 之後）。
    還原：刪掉這個檔與 GameModal.tsx 對應的 import。 */
 
+/* ---------- 標題區：最佳人數、推薦人數各占一整列，人數多時不再被切掉 ---------- */
+.modal-backdrop .game-modal.gm-v2 .gm-hero ul.gm-facts {
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero ul.gm-facts li:nth-child(n + 3) {
+  grid-column: 1 / -1;
+}
+
+.modal-backdrop .game-modal.gm-v2 .gm-hero ul.gm-facts li b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- 標題區四項資訊：第一欄跟著「難度 3.50・中重」的寬度，不再疊到時間 ---------- */
 .modal-backdrop .game-modal.gm-v2 .gm-hero ul.gm-facts {
   grid-template-columns: max-content max-content;
@@ -23,8 +37,11 @@ body .gqa .gqa-bar {
 
 /* ---------- 三分頁：留白少一點（若還想更少，只改這個數字；0 代表不撐高） ---------- */
 body .gqa {
-  min-height: 52vh;
-  min-height: 52dvh;
+  min-height: 0;
+}
+
+.gm-v2 .gm-sheet:has(.gqa) {
+  height: 88%;
 }
 
 body .gqa .gqa-tab {
@@ -46,6 +63,16 @@ body .gqa .gfaq:not(.gfaq-u) .gfaq-body {
 /* 說明與來源一律靠左 */
 body .gqa .gfaq-note {
   text-align: left;
+}
+
+/* FAQ 區塊內所有文字（含「規則書勘誤」小標題）靠左 */
+body .gqa .gfaq,
+body .gqa .gfaq * {
+  text-align: left;
+}
+body .gqa .gfaq-group,
+body .gqa .gfaq-group > * {
+  justify-content: flex-start;
 }
 
 body .gqa .gfaq-sources {
@@ -105,4 +132,37 @@ body .gqa-tip {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- 底部彈窗標題列：標題可點、右邊可多放一顆鈕（開桌前快速複習用） ---------- */
+.gm-v2 .gm-sheet-head .gm-sheet-title-click {
+  min-width: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.gm-v2 .gm-sheet-head .gm-sheet-title-click::after {
+  content: ' ⓘ';
+  font-size: 0.8em;
+  font-weight: 400;
+  color: var(--gm-caramel, #b8864b);
+}
+.gm-v2 .gm-sheet-head .gm-sheet-extra {
+  flex: none;
+  margin-left: auto;
+  margin-right: 8px;
+}
+.gm-v2 .gm-sheet-head .gm-sheet-filterbtn {
+  padding: 6px 12px;
+  border: 1px solid rgba(128, 128, 128, 0.5);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.gm-v2 .gm-sheet-head .gm-sheet-filterbtn.is-on {
+  border-color: var(--gm-caramel, #b8864b);
+  color: var(--gm-caramel, #b8864b);
 }

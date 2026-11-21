@@ -6,10 +6,16 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 export default function GameInfoSheet({
   title,
   onClose,
+  onTitleClick,
+  headerExtra,
   children,
 }: {
   title: string
   onClose: () => void
+  // 選填：標題可以點（快速複習用來開關說明）
+  onTitleClick?: () => void
+  // 選填：標題列右邊、✕ 左邊多放一個東西（快速複習用來放篩選鈕）
+  headerExtra?: ReactNode
   children: ReactNode
 }) {
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -29,7 +35,25 @@ export default function GameInfoSheet({
       <div className="gm-sheet-dim" onClick={onClose} aria-hidden="true" />
       <section className="gm-sheet" role="dialog" aria-modal="true" aria-label={title}>
         <div className="gm-sheet-head">
-          <h3>{title}</h3>
+          {onTitleClick ? (
+            <h3
+              className="gm-sheet-title-click"
+              role="button"
+              tabIndex={0}
+              onClick={onTitleClick}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  onTitleClick()
+                }
+              }}
+            >
+              {title}
+            </h3>
+          ) : (
+            <h3>{title}</h3>
+          )}
+          {headerExtra && <div className="gm-sheet-extra">{headerExtra}</div>}
           <button type="button" className="gm-sheet-close" aria-label="關閉" onClick={onClose}>
             ×
           </button>

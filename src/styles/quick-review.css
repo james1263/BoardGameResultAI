@@ -40,3 +40,85 @@
 .game-modal.gm-v2 .qr-sum::after { content: '▾'; opacity: 0.6; }
 .game-modal.gm-v2 .qr-fold[open] > .qr-sum::after { content: '▴'; }
 .game-modal.gm-v2 .qr-fold[open] .qr-list { padding-bottom: 14px; }
+
+/* ---------- 篩選列（2026-11-21）：說明鈕在左、篩選鈕在右，捲動時固定在頂端 ---------- */
+.game-modal.gm-v2 .qr-bar {
+  position: sticky;
+  top: -12px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -12px 0 0;
+  padding: 16px 0 8px;
+  background: var(--gm-bg, var(--gm-card, #1b2620));
+}
+.game-modal.gm-v2 .qr-bar-right { display: flex; align-items: center; gap: 8px; }
+.game-modal.gm-v2 .qr-barbtn {
+  padding: 7px 12px;
+  border: 1px solid var(--gm-line, rgba(128, 128, 128, 0.5));
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.game-modal.gm-v2 .qr-barbtn.is-on { border-color: var(--gm-caramel, #b8864b); color: var(--gm-caramel, #b8864b); }
+.game-modal.gm-v2 .qr-barbtn.is-clear { opacity: 0.85; }
+
+.game-modal.gm-v2 .qr-panel {
+  padding: 12px 14px;
+  border: 1px solid var(--gm-line, rgba(128, 128, 128, 0.4));
+  border-radius: 12px;
+  background: rgba(128, 128, 128, 0.08);
+}
+.game-modal.gm-v2 .qr-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--gm-line, rgba(128, 128, 128, 0.45));
+  border-radius: 10px;
+  background: rgba(128, 128, 128, 0.1);
+  color: inherit;
+  font-size: 16px;
+}
+.game-modal.gm-v2 .qr-panel-hint { margin: 8px 0 4px; font-size: 12px; opacity: 0.7; }
+.game-modal.gm-v2 .qr-pick {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 38dvh;
+  overflow-y: auto;
+}
+.game-modal.gm-v2 .qr-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--gm-line, rgba(128, 128, 128, 0.25));
+  font-size: 15px;
+  cursor: pointer;
+}
+.game-modal.gm-v2 .qr-pick-row input { flex: none; width: 18px; height: 18px; }
+.game-modal.gm-v2 .qr-pick-tag { margin-left: 8px; font-size: 11px; opacity: 0.6; }
+.game-modal.gm-v2 .qr-panel-actions { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.game-modal.gm-v2 .qr-ok {
+  padding: 8px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gm-caramel, #b8864b);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.game-modal.gm-v2 .qr-empty { margin: 6px 0; font-size: 14px; opacity: 0.7; }
+
+.qr-bar-info {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}

@@ -1,0 +1,4 @@
+/* 我的投稿：文字一律靠左（2026-11-21）。按鈕不動，維持置中。 */
+body .mylist-drawer[aria-label="我的投稿"] .mylist-body :is(p, h4, ol, ul, li, label, small, div, span):not(button *) {
+  text-align: left !important;
+}

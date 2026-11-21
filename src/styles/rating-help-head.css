@@ -1,0 +1,26 @@
+/* 我的評分：評分說明移到標題旁（2026-11-21） */
+body .mylist-drawer .mrh-titlegroup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+body .mylist-drawer .mrh-titlegroup h2 { margin: 0; }
+body .mylist-drawer .mrh-helpbtn {
+  padding: 4px 10px;
+  border: 1px solid rgba(128, 128, 128, 0.5);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+body .mylist-drawer .mrh-help-open {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: left;
+  opacity: 0.85;
+}
