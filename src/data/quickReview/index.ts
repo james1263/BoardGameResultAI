@@ -54,6 +54,54 @@ import { SEKIGAHARA_REVIEW } from './sekigahara'
 import { HANSA_TEUTONICA_REVIEW } from './hansaTeutonica'
 import { CAMEL_UP_REVIEW } from './camelUp'
 import { INIS_REVIEW } from './inis'
+import { LURE_REVIEW } from './lure'
+import { RURIK_REVIEW } from './rurik'
+import { FOR_THE_GODS_REVIEW } from './forTheGods'
+import { VIKING_SEE_SAW_REVIEW } from './vikingSeeSaw'
+import { JOYRIDE_TURBO_REVIEW } from './joyrideTurbo'
+import { AVALON_REVIEW } from './avalon'
+import { YINSH_REVIEW } from './yinsh'
+import { BOHNANZA_REVIEW } from './bohnanza'
+import { RA_REVIEW } from './ra'
+import { ITS_A_WONDERFUL_WORLD_REVIEW } from './itsAWonderfulWorld'
+import { THE_MESSAGE_REVIEW } from './theMessage'
+import { FEED_THE_KRAKEN_REVIEW } from './feedTheKraken'
+import { SECRET_HITLER_REVIEW } from './secretHitler'
+import { WELCOME_TO_THE_MOON_REVIEW } from './welcomeToTheMoon'
+import { STARTUPS_REVIEW } from './startups'
+import { MAGICAL_ATHLETE_REVIEW } from './magicalAthlete'
+import { WITS_AND_WAGERS_REVIEW } from './witsAndWagers'
+import { WAR_CHEST_REVIEW } from './warChest'
+import { DONT_GET_GOT_REVIEW } from './dontGetGot'
+import { CASCADIA_REVIEW } from './cascadia'
+import { TORNADO_SPLASH_REVIEW } from './tornadoSplash'
+import { EMBALMING_GIRL_REVIEW } from './embalmingGirl'
+import { QUACKS_REVIEW } from './quacks'
+import { DEATH_NOTE_JINRO_REVIEW } from './deathNoteJinro'
+import { DOODLE_DASH_REVIEW } from './doodleDash'
+import { TAKE_TIME_REVIEW } from './takeTime'
+import { SALEM_1692_REVIEW } from './salem1692'
+import { MODERN_ART_REVIEW } from './modernArt'
+import { HEART_OF_CROWN_REVIEW } from './heartOfCrown'
+import { THE_RICH_AND_THE_GOOD_REVIEW } from './theRichAndTheGood'
+import { NORTHGARD_REVIEW } from './northgard'
+import { WITCHS_BREW_REVIEW } from './witchsBrew'
+import { DECRYPTO_REVIEW } from './decrypto'
+import { TAIWAN_NIGHT_MARKET_REVIEW } from './taiwanNightMarket'
+import { JORAKU_REVIEW } from './joraku'
+import { SPECTRAL_REVIEW } from './spectral'
+import { LIVING_FOREST_REVIEW } from './livingForest'
+import { MANILA_REVIEW } from './manila'
+import { BETRAYAL_3RD_REVIEW } from './betrayalHouseOnHill'
+import { HARMONIES_REVIEW } from './harmonies'
+import { SCOUT_REVIEW } from './scout'
+import { ETERNAL_SEVENS_REVIEW } from './eternalSevens'
+import { BABLE_REVIEW } from './bable'
+import { DETECTIVE_CITY_OF_ANGELS_REVIEW } from './detectiveCityOfAngels'
+import { MOON_COLONY_BLOODBATH_REVIEW } from './moonColonyBloodbath'
+import { SPICY_REVIEW } from './spicy'
+import { PIRATES_OF_MARACAIBO_REVIEW } from './piratesOfMaracaibo'
+import { ONWARD_REVIEW } from './onward'
 
 export type QuickReviewData = { bggName: string; draftNote: string; sections: ReviewSection[] }
 
@@ -114,6 +162,54 @@ const REVIEWS: QuickReviewData[] = [
   , HANSA_TEUTONICA_REVIEW
   , CAMEL_UP_REVIEW
   , INIS_REVIEW
+  , LURE_REVIEW
+  , RURIK_REVIEW
+  , FOR_THE_GODS_REVIEW
+  , VIKING_SEE_SAW_REVIEW
+  , JOYRIDE_TURBO_REVIEW
+  , AVALON_REVIEW
+  , YINSH_REVIEW
+  , BOHNANZA_REVIEW
+  , RA_REVIEW
+  , ITS_A_WONDERFUL_WORLD_REVIEW
+  , THE_MESSAGE_REVIEW
+  , FEED_THE_KRAKEN_REVIEW
+  , SECRET_HITLER_REVIEW
+  , WELCOME_TO_THE_MOON_REVIEW
+  , STARTUPS_REVIEW
+  , MAGICAL_ATHLETE_REVIEW
+  , WITS_AND_WAGERS_REVIEW
+  , WAR_CHEST_REVIEW
+  , DONT_GET_GOT_REVIEW
+  , CASCADIA_REVIEW
+  , TORNADO_SPLASH_REVIEW
+  , EMBALMING_GIRL_REVIEW
+  , QUACKS_REVIEW
+  , DEATH_NOTE_JINRO_REVIEW
+  , DOODLE_DASH_REVIEW
+  , TAKE_TIME_REVIEW
+  , SALEM_1692_REVIEW
+  , MODERN_ART_REVIEW
+  , HEART_OF_CROWN_REVIEW
+  , THE_RICH_AND_THE_GOOD_REVIEW
+  , NORTHGARD_REVIEW
+  , WITCHS_BREW_REVIEW
+  , DECRYPTO_REVIEW
+  , TAIWAN_NIGHT_MARKET_REVIEW
+  , JORAKU_REVIEW
+  , SPECTRAL_REVIEW
+  , LIVING_FOREST_REVIEW
+  , MANILA_REVIEW
+  , BETRAYAL_3RD_REVIEW
+  , HARMONIES_REVIEW
+  , SCOUT_REVIEW
+  , ETERNAL_SEVENS_REVIEW
+  , BABLE_REVIEW
+  , DETECTIVE_CITY_OF_ANGELS_REVIEW
+  , MOON_COLONY_BLOODBATH_REVIEW
+  , SPICY_REVIEW
+  , PIRATES_OF_MARACAIBO_REVIEW
+  , ONWARD_REVIEW
 ]
 
 export function getQuickReview(bggName: string): QuickReviewData | undefined {
