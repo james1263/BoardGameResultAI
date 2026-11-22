@@ -20,6 +20,7 @@ import { SEKIGAHARA_UNOFFICIAL_FAQ } from './unofficial/sekigaharaUnofficial'
 import { PIRATES_OF_MARACAIBO_UNOFFICIAL_FAQ } from './unofficial/piratesOfMaracaiboUnofficial'
 import { INIS_UNOFFICIAL_FAQ } from './unofficial/inisUnofficial'
 import { GAIA_PROJECT_UNOFFICIAL_FAQ } from './unofficial/gaiaProjectUnofficial'
+import { RISING_SUN_UNOFFICIAL_FAQ } from './unofficial/risingSunUnofficial'
 
 export const UNOFFICIAL_FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Shackleton Base: A Journey to the Moon': SHACKLETON_BASE_UNOFFICIAL_FAQ,
@@ -38,6 +39,7 @@ export const UNOFFICIAL_FAQ_BY_GAME: Record<string, GameFaqData> = {
   'Pirates of Maracaibo': PIRATES_OF_MARACAIBO_UNOFFICIAL_FAQ,
   'Inis: Legendary Edition': INIS_UNOFFICIAL_FAQ,
   'Gaia Project': GAIA_PROJECT_UNOFFICIAL_FAQ,
+  'Rising Sun': RISING_SUN_UNOFFICIAL_FAQ,
 }
 
 export function getUnofficialFaq(bggName: string): GameFaqData | null {
