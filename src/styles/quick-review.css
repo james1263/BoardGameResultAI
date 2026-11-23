@@ -69,10 +69,15 @@
 .game-modal.gm-v2 .qr-barbtn.is-clear { opacity: 0.85; }
 
 .game-modal.gm-v2 .qr-panel {
+  /* 2026-11-23：篩選面板捲動時固定在可見頂端，不用滑回最上面；背景要不透明，才不會透出底下文字 */
+  position: sticky;
+  top: -12px;
+  z-index: 4;
   padding: 12px 14px;
   border: 1px solid var(--gm-line, rgba(128, 128, 128, 0.4));
   border-radius: 12px;
-  background: rgba(128, 128, 128, 0.08);
+  background-color: var(--gm-bg, var(--gm-card, #1b2620));
+  background-image: linear-gradient(rgba(128, 128, 128, 0.08), rgba(128, 128, 128, 0.08));
 }
 .game-modal.gm-v2 .qr-search {
   width: 100%;

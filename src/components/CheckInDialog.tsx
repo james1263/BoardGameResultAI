@@ -140,6 +140,16 @@ export default function CheckInDialog({
   const succeeded = status !== null && SUCCESS.has(status)
   const canRetry = status === null || RETRYABLE.has(status)
 
+    // 連結已過期或無效：舊報到碼不會再有用，直接從瀏覽器清掉，以後開網站就不會再跳出這個視窗
+  useEffect(() => {
+    if (status !== 'ended' && status !== 'invalid') return
+    try {
+      localStorage.removeItem('boardgame-checkin-token')
+    } catch {
+      // 清除失敗也不影響使用
+    }
+  }, [status])
+
   // 報到成功後，讀取我在這一天被列入的聚會：指定遊戲、是否免評分
   useEffect(() => {
     if (!succeeded || !date || !userId) return

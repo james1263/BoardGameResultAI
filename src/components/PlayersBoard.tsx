@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import type { BoardGame } from '../data/boardGames.generated'
 import type { PlayerStat } from '../lib/usePlayerStats'
 import { rankGames } from '../lib/leaderboards'
@@ -9,13 +9,30 @@ import '../styles/players-board-games.css'
 
 type Tab = 'played' | 'rated' | 'score' | 'combo' | 'fav'
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'played', label: '玩過最多' },
-  { key: 'rated', label: '評過最多' },
-  { key: 'score', label: '評分' },
-  { key: 'combo', label: '綜合分數' },
-  { key: 'fav', label: '本命桌遊' },
+// 2026-11-23：五個分頁合併成三個，一排就看得到；內層用小切換選 玩過｜評過、整體｜綜合
+type Group = 'count' | 'score' | 'fav'
+
+const GROUPS: { key: Group; label: string; tabs: { key: Tab; label: string }[] }[] = [
+  {
+    key: 'count',
+    label: '參與數',
+    tabs: [
+      { key: 'played', label: '玩過' },
+      { key: 'rated', label: '評過' },
+    ],
+  },
+  {
+    key: 'score',
+    label: '評分',
+    tabs: [
+      { key: 'score', label: '整體' },
+      { key: 'combo', label: '綜合' },
+    ],
+  },
+  { key: 'fav', label: '本命桌遊', tabs: [{ key: 'fav', label: '本命桌遊' }] },
 ]
+
+const groupOf = (tab: Tab): Group => GROUPS.find((g) => g.tabs.some((t) => t.key === tab))!.key
 
 const TOP_COUNT = 10 // 款數榜：前 10 名（同分並列）
 
@@ -36,7 +53,12 @@ export default function PlayersBoard({
   renderCover,
   onOpenGame,
 }: Props) {
-  const [tab, setTab] = useState<Tab>('played')
+  const [tab, setTabState] = useState<Tab>('played')
+  const lastTab = useRef<Partial<Record<Group, Tab>>>({}) // 記住每一組最後選的子項目
+  const setTab = (next: Tab) => {
+    lastTab.current[groupOf(next)] = next
+    setTabState(next)
+  }
   const [highest, setHighest] = useState(true)
   const [hideAdmin, setHideAdmin] = useState(false)
   const [query, setQuery] = useState('')
@@ -117,6 +139,9 @@ export default function PlayersBoard({
     return chars.length > 5 ? chars.slice(0, 5).join('') + '…' : name
   }
 
+  const group = groupOf(tab)
+  const currentGroup = GROUPS.find((g) => g.key === group)!
+
   const isCount = tab === 'played' || tab === 'rated'
   const isFav = tab === 'fav'
 
@@ -163,22 +188,39 @@ export default function PlayersBoard({
   return (
     <>
       <div className="lbc-boards" role="tablist">
-        {TABS.map((item) => (
+        {GROUPS.map((item) => (
           <button
             key={item.key}
             type="button"
             role="tab"
-            aria-selected={tab === item.key}
-            className={`lbc-board ${tab === item.key ? 'active' : ''}`}
-            onClick={(event) => {
-              setTab(item.key)
-              event.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+            aria-selected={group === item.key}
+            className={`lbc-board ${group === item.key ? 'active' : ''}`}
+            onClick={() => {
+              // 切到別組時，沿用該組上次選的子項目（沒選過就用第一個）
+              if (group !== item.key) setTab(lastTab.current[item.key] ?? item.tabs[0].key)
             }}
           >
             {item.label}
           </button>
         ))}
       </div>
+
+      {currentGroup.tabs.length > 1 && (
+        <div className="lb-hintrow">
+          <span className="lb-pages pb-toggle">
+            {currentGroup.tabs.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                className={tab === item.key ? 'active' : ''}
+                onClick={() => setTab(item.key)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </span>
+        </div>
+      )}
 
       <div className="lbs">
         <div className="lbs-bar">

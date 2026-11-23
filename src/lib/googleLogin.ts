@@ -16,16 +16,28 @@ export function isInAppBrowser(): boolean {
   )
 }
 
+// 2026-11-23：在連結後面加 openExternalBrowser=1，LINE 點開時會直接改用手機的 Chrome／Safari，
+// 那裡 Google 才能登入，登入狀態也會被記住。其他 App／瀏覽器會忽略這個參數。
+export function withExternalBrowser(url: string): string {
+  try {
+    const parsed = new URL(url)
+    parsed.searchParams.set('openExternalBrowser', '1')
+    return parsed.toString()
+  } catch {
+    return url
+  }
+}
+
 // 要請玩家複製到 Chrome／Safari 的網址（報到碼已被移出網址列，所以要補回去）
 export function currentShareLink(): string {
   const origin = window.location.origin
   try {
     const token = localStorage.getItem(CHECKIN_KEY)
-    if (token) return `${origin}/?join=${token}`
+    if (token) return withExternalBrowser(`${origin}/?join=${token}`)
   } catch {
     // 讀不到就退回首頁網址
   }
-  return origin
+  return withExternalBrowser(origin)
 }
 
 export async function signInWithGoogle() {
