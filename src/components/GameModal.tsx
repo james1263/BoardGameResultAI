@@ -41,6 +41,7 @@ import '../styles/game-modal-v2.css'
 import '../styles/game-rate-sheet.css'
 import '../styles/game-modal-rules.css'
 import '../styles/gm-tabs-polish.css'
+import '../styles/gm-share.css'
 
 const TABS = [
   { key: 'overview', label: '概覽' },
@@ -82,6 +83,49 @@ function difficultyText(value: number | null | undefined): string {
 function bestText(value: unknown): string {
   if (!Array.isArray(value) || value.length === 0) return '—'
   return `${value.join('、')} 人`
+}
+
+// 分享用文字：只用網站上公開的遊戲資料（名稱、人數、時間、難度、簡介、網址），不含任何人的評分或紀錄
+function playersText(min: number | null | undefined, max: number | null | undefined): string {
+  if (min == null && max == null) return '—'
+  if (min != null && max != null) return min === max ? `${min} 人` : `${min}～${max} 人`
+  return `${min ?? max} 人`
+}
+
+function buildShareText(game: LibraryGame, withUrl: boolean): string {
+  const lines: string[] = [`🎲 ${game.name}`]
+  lines.push(`人數：${playersText(game.minPlayers, game.maxPlayers)}（最佳 ${bestText(game.bestPlayers)}、推薦 ${bestText(game.recommendPlayers)}）`)
+  lines.push(`時間：${game.bggTime == null ? '—' : `${game.bggTime} 分`}`)
+  lines.push(`難度：${difficultyText(game.bggDifficulty)}`)
+  const desc = (game.description ?? '').replace(/\s+/g, ' ').trim()
+  if (desc) lines.push('', desc.length > 120 ? `${desc.slice(0, 120)}…` : desc)
+  if (withUrl) lines.push('', `玩桌遊｜BoardGame：${window.location.origin}/`)
+  return lines.join('\n')
+}
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+  } catch {
+    // 往下走備用方法
+  }
+  try {
+    const area = document.createElement('textarea')
+    area.value = text
+    area.setAttribute('readonly', '')
+    area.style.position = 'fixed'
+    area.style.opacity = '0'
+    document.body.appendChild(area)
+    area.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(area)
+    return ok
+  } catch {
+    return false
+  }
 }
 
 export default function GameModal({
@@ -172,6 +216,36 @@ export default function GameModal({
   useBackClose(closeSheet, sheet !== null)
   // 全螢幕再往下一層：按返回先縮回小視窗，再按一次才關彈窗
   useBackClose(exitFull, sheetFull)
+
+  // 分享：把這款遊戲的基本資料複製成文字（按鈕上短暫顯示結果）
+  const [shareMsg, setShareMsg] = useState('')
+  const shareTimerRef = useRef<number | null>(null)
+  useEffect(
+    () => () => {
+      if (shareTimerRef.current != null) window.clearTimeout(shareTimerRef.current)
+    },
+    [],
+  )
+  const handleShare = async () => {
+    // 手機（與支援的瀏覽器）直接叫出系統分享選單（LINE、FB、訊息等）；不支援才改成複製文字
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: game.name,
+          text: buildShareText(game, false),
+          url: `${window.location.origin}/`,
+        })
+        return
+      } catch (error) {
+        // 按「取消」不算錯誤，什麼都不用做；其他錯誤往下走，改成複製
+        if (error instanceof DOMException && error.name === 'AbortError') return
+      }
+    }
+    const ok = await copyText(buildShareText(game, true))
+    setShareMsg(ok ? '已複製' : '複製失敗')
+    if (shareTimerRef.current != null) window.clearTimeout(shareTimerRef.current)
+    shareTimerRef.current = window.setTimeout(() => setShareMsg(''), 2000)
+  }
 
   // 從小封面切換到另一款遊戲時，回到概覽最上面、收起類型與規則
   useEffect(() => {
@@ -297,6 +371,33 @@ export default function GameModal({
                 想玩 {community.wantCount}・已玩 {community.playedCount}
               </span>
             )}
+            <button
+              type="button"
+              className="gm-share-btn"
+              aria-label="分享這款遊戲"
+              title="分享"
+              onClick={handleShare}
+            >
+              {shareMsg ? (
+                <span>{shareMsg}</span>
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 15V3" />
+                  <path d="M8 7l4-4 4 4" />
+                  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+                </svg>
+              )}
+            </button>
             <button
               className="modal-close"
               type="button"

@@ -1,0 +1,23 @@
+/* 詳細視窗右上角分享鈕（圖示，點了叫出系統分享選單；不支援時複製文字）。範圍限定在 .game-modal.gm-v2 */
+.game-modal.gm-v2 .modal-topbar .gm-share-btn {
+  margin-left: auto;
+  margin-right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(127, 127, 127, 0.18);
+  color: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.game-modal.gm-v2 .modal-topbar .gm-share-btn:hover,
+.game-modal.gm-v2 .modal-topbar .gm-share-btn:focus-visible {
+  background: rgba(127, 127, 127, 0.32);
+}
