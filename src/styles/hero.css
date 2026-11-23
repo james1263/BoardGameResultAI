@@ -277,3 +277,25 @@
 .hero {
   padding-bottom: 8px;
 }
+
+/* 2026-11-23：視窗縮放時搜尋區跟著縮、標題不斷行 */
+.hero h1 {
+  white-space: nowrap;
+  flex: none;
+}
+
+@media (max-width: 900px) {
+  .hero-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .hero-tools {
+    width: 100%;
+  }
+
+  .hero h1 {
+    text-align: center;
+  }
+}

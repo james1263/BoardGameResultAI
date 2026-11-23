@@ -145,6 +145,8 @@ export default function GameModal({
   // 開桌前快速複習：說明（點標題）與篩選面板（標題列的篩選鈕）
   const [qrNoteOpen, setQrNoteOpen] = useState(false)
   const [qrPanelOpen, setQrPanelOpen] = useState(false)
+  // 底部彈窗的全螢幕閱讀（快速複習、FAQ 類彈窗用）
+  const [sheetFull, setSheetFull] = useState(false)
   const [showAllWall, setShowAllWall] = useState(false)
   const docsApi = useGameDocuments(game.bggName)
   const vip = useVip()
@@ -157,7 +159,9 @@ export default function GameModal({
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const lastGameRef = useRef(game.bggName)
   const closeSheet = useCallback(() => setSheet(null), [])
+  const exitFull = useCallback(() => setSheetFull(false), [])
   useEffect(() => {
+    setSheetFull(false)
     if (sheet !== 'review') {
       setQrNoteOpen(false)
       setQrPanelOpen(false)
@@ -166,6 +170,8 @@ export default function GameModal({
   useBackClose(onClose)
   // 宣告在上面那行之後，彈窗才會在返回鍵堆疊的最上面（一次只退一層）
   useBackClose(closeSheet, sheet !== null)
+  // 全螢幕再往下一層：按返回先縮回小視窗，再按一次才關彈窗
+  useBackClose(exitFull, sheetFull)
 
   // 從小封面切換到另一款遊戲時，回到概覽最上面、收起類型與規則
   useEffect(() => {
@@ -233,14 +239,17 @@ export default function GameModal({
   const hasAnyFaq = !!faq || !!unofficial
   const titleParts: string[] = []
   if (faq) titleParts.push('FAQ')
-  if (canSeeErrata) titleParts.push('玩錯紀錄', 'AI回饋')
+  // 玩錯紀錄・AI 回饋：有資料（或還在讀取、或整張卡片沒有別的資料可顯示）才寫進名稱
+  const showErrataTitle =
+    canSeeErrata && (errataApi.loading || errataCount > 0 || (!faq && !unofficial))
+  if (showErrataTitle) titleParts.push('玩錯紀錄', 'AI回饋')
   if (unofficial) titleParts.push('BGG討論')
   const errataTitle = titleParts.length > 0 ? titleParts.join('．') : SHEET_TITLES.errata
   if (hasAnyFaq || canSeeErrata) {
     const parts: string[] = []
     if (faq) parts.push(`FAQ ${countFaqItems(faq)} 則`)
     if (unofficial) parts.push(`非官方 ${countFaqItems(unofficial)} 則`)
-    if (canSeeErrata) parts.push(`玩錯紀錄 ${errataCount} 則`)
+    if (showErrataTitle) parts.push(`玩錯紀錄 ${errataCount} 則`)
     ruleEntries.push({ key: 'errata', icon: '💡', sub: parts.join('・'), title: errataTitle })
   }
   // 預留：新手上手小遊戲
@@ -680,6 +689,12 @@ export default function GameModal({
             title={sheet === 'errata' ? errataTitle : SHEET_TITLES[sheet]}
             onClose={closeSheet}
             onTitleClick={sheet === 'review' ? () => setQrNoteOpen((value) => !value) : undefined}
+            full={sheetFull}
+            onToggleFull={
+              sheet === 'review' || sheet === 'errata'
+                ? () => setSheetFull((value) => !value)
+                : undefined
+            }
             headerExtra={
               sheet === 'review' ? (
                 <button

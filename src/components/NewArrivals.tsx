@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { LibraryGame } from '../lib/libraryTypes'
-import { NEW_GAME_DAYS } from '../lib/libraryTypes'
+import { NEW_GAME_DAYS, isNewUntilActive } from '../lib/libraryTypes'
 import { formatNumber } from '../lib/gameFormat'
 import CoverImage from './CoverImage'
 import '../styles/explore-home.css'
@@ -29,7 +29,7 @@ export default function NewArrivals({
       if (game.newOverride === false) continue
       const parsed = game.createdAt ? new Date(game.createdAt).getTime() : NaN
       const time = Number.isFinite(parsed) ? parsed : 0
-      if (game.newOverride === true) {
+      if (game.newOverride === true || isNewUntilActive(game.newUntil, nowMs)) {
         list.push({ game, time, forced: true })
         continue
       }

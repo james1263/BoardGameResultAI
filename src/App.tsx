@@ -53,6 +53,7 @@ import {
   MINE_GROUP_LABELS,
   getMineGroup,
   computeAdminScores,
+  isNewUntilActive,
 } from './lib/libraryTypes'
 import { getPlayerSortValue, compareNullableNumbers } from './lib/gameFormat'
 import StatusLegend from './components/StatusLegend'
@@ -229,13 +230,17 @@ function Library({
   // 關掉頁面或遊戲視窗後重讀集點資料，導覽列數字才會跟上剛得到的點數
   const reloadTask = todayTask.reload
   const taskReloadReady = useRef(false)
+  const gameClosed = selectedGame === null
   useEffect(() => {
     if (!taskReloadReady.current) {
       taskReloadReady.current = true
       return
     }
-    reloadTask()
-  }, [activePage, selectedGame === null, reloadTask])
+    // 打開視窗時不重讀；關閉後等一下再讀，避免卡住關閉動畫與捲動
+    if (!gameClosed) return
+    const timer = window.setTimeout(reloadTask, 1500)
+    return () => window.clearTimeout(timer)
+  }, [activePage, gameClosed, reloadTask])
   // 管理者傳的集點卡連結：登入後自動打開自己的集點卡
   const {
     pending: invitePending,
@@ -475,6 +480,8 @@ function Library({
   }, [boardGames, nowMs, seenNew])
 
   function isNewGame(game: LibraryGame): boolean {
+    // 強制 NEW 30 天：還沒到期一律顯示，不受 seenNew 影響
+    if (isNewUntilActive(game.newUntil, nowMs)) return true
     if (game.newOverride === true) return true
     if (game.newOverride === false) return false
     if (!game.createdAt) return false
@@ -1212,10 +1219,12 @@ function Library({
         {isAdmin && (
           <NewTagAdmin
             games={boardGames}
-            onChange={(name, value) =>
+            onChange={(name, value, newUntil) =>
               onGamesChange((current) =>
                 current.map((item) =>
-                  item.bggName === name ? { ...item, newOverride: value } : item,
+                  item.bggName === name
+                    ? { ...item, newOverride: value, newUntil }
+                    : item,
                 ),
               )
             }

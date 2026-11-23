@@ -9,6 +9,7 @@ type BoardGameRow = {
   description?: string | null
   reference_only?: boolean | null
   new_override?: boolean | null
+  new_until?: string | null
   name: string
   cover_slug: string
   link_bgg: string
@@ -56,6 +57,7 @@ function rowToGame(row: BoardGameRow, index: number): LibraryGame {
     description: row.description ?? '',
     referenceOnly: row.reference_only ?? false,
     newOverride: row.new_override ?? null,
+    newUntil: row.new_until ?? null,
     slug: `game-${index + 1}`,
     coverSlug: row.cover_slug,
     links: {

@@ -9,6 +9,8 @@ export type LibraryGame = BoardGame & {
   // 僅供參考：只留在桌遊收藏供搜尋，不能想玩／已玩／評分，也不進任何統計
   referenceOnly?: boolean
   newOverride?: boolean | null
+  // 強制 NEW 到期時間（ISO 字串）；還沒到期一律顯示 NEW，到期後回到自動判斷
+  newUntil?: string | null
 }
 
 export type SortKey =
@@ -105,6 +107,16 @@ export const RATING_FILTER_LABELS: Record<RatingFilter, string> = {
   all: '全部',
   rated: '我評過',
   unrated: '我還沒評',
+}
+
+// 管理者「強制 NEW 30 天」是否還沒到期
+export function isNewUntilActive(
+  newUntil: string | null | undefined,
+  nowMs: number,
+): boolean {
+  if (!newUntil) return false
+  const t = new Date(newUntil).getTime()
+  return Number.isFinite(t) && t > nowMs
 }
 
 export function isNewGameAt(

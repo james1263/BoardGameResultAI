@@ -415,3 +415,22 @@ main .library .explore-head {
 .explore-new-name {
   display: -webkit-box;
 }
+
+/* 2026-11-23：有滑鼠的裝置（含縮小的電腦視窗）也顯示細捲軸，才能拖動新加入桌遊 */
+@media (hover: hover) and (pointer: fine) {
+  .explore-new-list {
+    padding-bottom: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(138, 150, 140, 0.7) transparent;
+  }
+
+  .explore-new-list::-webkit-scrollbar {
+    display: block;
+    height: 8px;
+  }
+
+  .explore-new-list::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: rgba(138, 150, 140, 0.55);
+  }
+}

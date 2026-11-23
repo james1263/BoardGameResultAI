@@ -1,11 +1,27 @@
 import { useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { LibraryGame } from '../lib/libraryTypes'
+import { isNewUntilActive } from '../lib/libraryTypes'
 import '../styles/new-tag-admin.css'
+
+const FORCE_DAYS = 30
+
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`
+}
 
 type Props = {
   games: LibraryGame[]
-  onChange: (bggName: string, value: boolean | null) => void
+  onChange: (
+    bggName: string,
+    value: boolean | null,
+    newUntil: string | null,
+  ) => void
+}
+
+function newActive(game: LibraryGame): boolean {
+  return isNewUntilActive(game.newUntil, Date.now())
 }
 
 export default function NewTagAdmin({ games, onChange }: Props) {
@@ -15,7 +31,9 @@ export default function NewTagAdmin({ games, onChange }: Props) {
 
   const rows = useMemo(() => {
     const key = search.trim().toLocaleLowerCase()
-    if (!key) return games.filter((g) => g.newOverride != null)
+    if (!key) {
+      return games.filter((g) => g.newOverride != null || g.newUntil != null)
+    }
     return games
       .filter(
         (g) =>
@@ -25,12 +43,20 @@ export default function NewTagAdmin({ games, onChange }: Props) {
       .slice(0, 30)
   }, [games, search])
 
-  async function setOverride(game: LibraryGame, value: boolean | null) {
+  async function setOverride(
+    game: LibraryGame,
+    value: boolean | null,
+    days: number | null,
+  ) {
+    const newUntil =
+      days == null
+        ? null
+        : new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
     setBusy(game.bggName)
     setMessage('')
     const { data, error } = await supabase
       .from('board_games')
-      .update({ new_override: value })
+      .update({ new_override: value, new_until: newUntil })
       .eq('bgg_name', game.bggName)
       .select('bgg_name')
     setBusy(null)
@@ -42,14 +68,14 @@ export default function NewTagAdmin({ games, onChange }: Props) {
       setMessage('沒有更新到資料（可能沒有管理者權限）。')
       return
     }
-    onChange(game.bggName, value)
+    onChange(game.bggName, value, newUntil)
   }
 
   return (
     <details className="nta">
       <summary>NEW 標籤管理</summary>
       <p className="nta-hint">
-        預設依上架 30 天自動判斷。這裡可以強制顯示 NEW，或強制移除。
+        預設依上架 30 天自動判斷。「強制 NEW 30 天」從今天起算，到期後自動回到自動判斷；「強制移除」不會過期。
       </p>
       <input
         type="search"
@@ -72,25 +98,30 @@ export default function NewTagAdmin({ games, onChange }: Props) {
               <span className="nta-btns">
                 <button
                   type="button"
-                  aria-pressed={game.newOverride == null}
+                  aria-pressed={game.newOverride == null && !newActive(game)}
                   disabled={busy === game.bggName}
-                  onClick={() => void setOverride(game, null)}
+                  onClick={() => void setOverride(game, null, null)}
                 >
                   自動
                 </button>
                 <button
                   type="button"
-                  aria-pressed={game.newOverride === true}
+                  aria-pressed={newActive(game) || game.newOverride === true}
                   disabled={busy === game.bggName}
-                  onClick={() => void setOverride(game, true)}
+                  onClick={() => void setOverride(game, null, FORCE_DAYS)}
                 >
-                  強制 NEW
+                  強制 NEW 30 天
+                  {newActive(game) && game.newUntil
+                    ? `（到 ${formatDate(game.newUntil)}）`
+                    : game.newOverride === true
+                      ? '（舊設定，不過期）'
+                      : ''}
                 </button>
                 <button
                   type="button"
                   aria-pressed={game.newOverride === false}
                   disabled={busy === game.bggName}
-                  onClick={() => void setOverride(game, false)}
+                  onClick={() => void setOverride(game, false, null)}
                 >
                   強制移除
                 </button>

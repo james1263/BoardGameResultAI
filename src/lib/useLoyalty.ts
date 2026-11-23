@@ -163,7 +163,7 @@ export function useMyLoyalty() {
                     ''
                 const summaryRow = (s.data as SummaryRow[] | null)?.[0]
 
-                setState({
+                const next: MyState = {
                     userId: id,
                     summary: summaryRow ? toSummary(summaryRow) : null,
                     days: ((d.data ?? []) as DayRow[]).map(toDay),
@@ -173,7 +173,11 @@ export function useMyLoyalty() {
                         (gg.data ?? []) as PairRow[],
                     ),
                     error: message,
-                })
+                }
+                // 重讀後資料沒變就沿用舊物件，App 才不會為了同樣的資料整個重繪
+                setState((prev) =>
+                    prev && JSON.stringify(prev) === JSON.stringify(next) ? prev : next,
+                )
             } catch (error) {
                 if (cancelled) return
                 setState({

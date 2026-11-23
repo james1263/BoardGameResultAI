@@ -153,10 +153,6 @@ export default function AdminPanel() {
         setIsOpen(false)
     }
 
-    async function handleLogout() {
-        await supabase.auth.signOut()
-    }
-
     function closeImport() {
         setIsImportOpen(false)
         setImportError('')
@@ -439,18 +435,6 @@ export default function AdminPanel() {
             <>
                 <span className="admin-status">
                     {isAdmin ? '管理者模式' : '已登入'}
-                    {isAdmin && (
-                        <button
-                            className="admin-link"
-                            type="button"
-                            onClick={() => setIsImportOpen(true)}
-                        >
-                            匯入 CSV
-                        </button>
-                    )}
-                    <button className="admin-link" type="button" onClick={handleLogout}>
-                        登出
-                    </button>
                 </span>
 
                 {isAdmin && isImportOpen && (
