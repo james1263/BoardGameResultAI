@@ -4,7 +4,7 @@
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
-  touch-action: manipulation;
+  touch-action: none;
 }
 
 /* 長按跳出的快捷清單 */
@@ -40,6 +40,10 @@
 .gt-root.gt-root .gt-menu-item:hover,
 .gt-root.gt-root .gt-menu-item:active {
   background: #e9efd9;
+}
+.gt-root.gt-root .gt-menu-item.active {
+  background: #cfe3b8;
+  font-weight: 700;
 }
 
 /* 全螢幕視窗 */
@@ -133,6 +137,53 @@
 }
 .gt-root.gt-root .gt-tile:active {
   background: #e9efd9;
+}
+
+/* 調整位置 */
+.gt-root.gt-root .gt-tile:not(.gt-tile-empty) {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.gt-root.gt-root .gt-tile.wiggle {
+  animation: gt-wiggle 0.28s infinite alternate;
+}
+.gt-root.gt-root .gt-tile.dragging {
+  position: relative;
+  z-index: 5;
+  animation: none;
+  background: #e9efd9;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+  transition: none;
+}
+.gt-root.gt-root .gt-tile.drop {
+  border-color: #c9a24a;
+  background: #fff4d6;
+}
+@keyframes gt-wiggle {
+  0% {
+    transform: rotate(-1.6deg);
+  }
+  100% {
+    transform: rotate(1.6deg);
+  }
+}
+.gt-root.gt-root .gt-edit-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff4d6;
+  color: #5b4a12;
+  font-size: 13px;
+}
+.gt-root.gt-root .gt-edit-done {
+  flex: none;
+  padding: 6px 14px;
 }
 .gt-root.gt-root .gt-tile-icon {
   font-size: 32px;
@@ -474,7 +525,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gt-root.gt-root .gt-die.rolling {
+  .gt-root.gt-root .gt-die.rolling,
+  .gt-root.gt-root .gt-tile.wiggle {
     animation: none;
   }
 }
