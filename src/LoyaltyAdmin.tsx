@@ -113,6 +113,10 @@ export default function LoyaltyAdmin() {
     const [contacts, setContacts] = useState<Record<string, string>>({})
     const [allGames, setAllGames] = useState<GameOption[]>([])
     const [overview, setOverview] = useState<OverviewRow[]>([])
+    // 上月保留點（本月月初帶進來的點）與本月已出席次數；讀取失敗就當作沒有
+    const [carryMap, setCarryMap] = useState<
+        Record<string, { carry: number; visits: number }>
+    >({})
     const [selectedId, setSelectedId] = useState<string | null>(null)
     const [wizardOpen, setWizardOpen] = useState(false)
     const [gameSearch, setGameSearch] = useState('')
@@ -328,6 +332,7 @@ export default function LoyaltyAdmin() {
             ),
         )
         setOverview(((o.data ?? []) as OverviewRaw[]).map(toOverview))
+        void loadCarry()
         const vp = await supabase.from('vip_members').select('user_id')
         if (!vp.error) {
             setVipIds(new Set(((vp.data ?? []) as { user_id: string }[]).map((row) => row.user_id)))
@@ -348,7 +353,25 @@ export default function LoyaltyAdmin() {
             return
         }
         setOverview(((data ?? []) as OverviewRaw[]).map(toOverview))
+        void loadCarry()
         await loadVoucherUses()
+    }
+
+    async function loadCarry() {
+        const { data, error } = await supabase.rpc('admin_get_loyalty_carry')
+        if (error) {
+            setCarryMap({})
+            return
+        }
+        const next: Record<string, { carry: number; visits: number }> = {}
+        for (const row of (data ?? []) as {
+            user_id: string
+            carry_in: number
+            month_visits: number
+        }[]) {
+            next[row.user_id] = { carry: row.carry_in, visits: row.month_visits }
+        }
+        setCarryMap(next)
     }
 
     async function deleteGathering(gathering: Gathering) {
@@ -1552,6 +1575,17 @@ export default function LoyaltyAdmin() {
                                                     <small>
                                                         {contacts[row.userId] ?? '未填聯絡方式'}
                                                     </small>
+                                                    {(carryMap[row.userId]?.carry ?? 0) > 0 && (
+                                                        <small
+                                                            style={{
+                                                                display: 'block',
+                                                                fontWeight: 700,
+                                                                color: '#b45309',
+                                                            }}
+                                                        >
+                                                            ★ 含上月保留 {carryMap[row.userId]?.carry} 點（本月已來 {carryMap[row.userId]?.visits} 次）。這點只留到本月底；本月來滿 4 次，月底剩的點才會再留到下個月。
+                                                        </small>
+                                                    )}
                                                 </div>
                                                 <div className="lgs-stats">
                                                     <span>本月 {row.monthPoints}/2</span>

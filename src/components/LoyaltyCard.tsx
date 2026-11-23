@@ -92,6 +92,26 @@ export default function LoyaltyCard({
     return <VipLock feature="集點卡" />
   }
 
+  // 上月保留點與本月已出席次數；讀取失敗就不顯示提示
+  const [carry, setCarry] = useState<{ carryIn: number; visits: number } | null>(
+    null,
+  )
+  useEffect(() => {
+    if (!loyalty.summary) return
+    let alive = true
+    void supabase.rpc('get_my_loyalty_carry').then(({ data, error }) => {
+      if (!alive || error) return
+      const row = (Array.isArray(data) ? data[0] : data) as
+        | { carry_in: number; month_visits: number }
+        | null
+        | undefined
+      setCarry(row ? { carryIn: row.carry_in, visits: row.month_visits } : null)
+    })
+    return () => {
+      alive = false
+    }
+  }, [loyalty.summary])
+
   if (loyalty.loading) return <p className="mylist-empty">讀取中…</p>
 
   const summary = loyalty.summary
@@ -411,6 +431,11 @@ export default function LoyaltyCard({
             同一個月集滿 2 點，自動變成 1 張免費券，點數歸零。累積券{' '}
             {summary.earnedVouchers} 張・已使用 {summary.redeemed} 張。
           </p>
+          {carry && carry.carryIn > 0 && (
+            <p className="lc-progress-note" style={{ fontWeight: 700 }}>
+              ★ 含上月保留 {carry.carryIn} 點（本月已來 {carry.visits} 次）。這點只留到本月底；本月來滿 4 次，月底剩下的點才會再留到下個月。
+            </p>
+          )}
         </div>
       )}
 
@@ -442,7 +467,7 @@ export default function LoyaltyCard({
         </ol>
         <ul className="lc-rules">
           <li>一天不管玩幾款、參加幾場，只算 1 點。</li>
-          <li>當月只集到 1 點，到下個月 1 日就不再計入。</li>
+          <li>當月只集到 1 點，到下個月 1 日就不再計入；但如果當月出席滿 4 次（用券那天也算），月底剩下的 1 點會保留到下個月，只留一個月，不會延長。</li>
           <li>免費券沒有期限，但要拿到的隔天起才會自動使用。</li>
           <li>
             有可用的免費券時，報到並評分後系統會自動用券（不能累積）；用券那天不集點。
