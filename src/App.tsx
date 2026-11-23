@@ -73,6 +73,7 @@ import { updateDescription } from './lib/saveDescription'
 import PostGatheringNotes from './components/PostGatheringNotes'
 import ThemeHint from './components/ThemeHint'
 import TodayPicker from './components/TodayPicker'
+import GameTools, { ToolsButton, type ToolChoice, type ToolView } from './components/GameTools'
 import NewTagAdmin from './components/NewTagAdmin'
 import { usePlannedUnseen } from './lib/usePlannedUnseen'
 import { useLoyaltyAlerts } from './lib/useLoyaltyAlerts'
@@ -578,8 +579,16 @@ function Library({
   }, activePage !== null || isFilterOpen)
   // 「今天玩什麼？」推薦視窗；開了導覽頁面就自動關掉
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [toolsView, setToolsView] = useState<ToolView | null>(null)
+  function handleToolsChoice(choice: ToolChoice) {
+    if (choice === 'picker') setPickerOpen(true)
+    else setToolsView(choice)
+  }
   useEffect(() => {
-    if (activePage !== null) setPickerOpen(false)
+    if (activePage !== null) {
+      setPickerOpen(false)
+      setToolsView(null)
+    }
   }, [activePage])
   const [groupByMine, setGroupByMine] = useState(saved.groupByMine)
   const [hiddenGroups, setHiddenGroups] = useState<MineGroup[]>(
@@ -1051,13 +1060,7 @@ function Library({
               </label>
               <div className="hero-tools-row explore-meta">
                 <StatusLegend />
-                <button
-                  type="button"
-                  className="explore-mine-btn"
-                  onClick={() => setPickerOpen(true)}
-                >
-                  🎰 挑三款
-                </button>
+                <ToolsButton onSelect={handleToolsChoice} />
               </div>
             </div>
           </div>
@@ -1381,6 +1384,12 @@ function Library({
           }}
         />
       )}
+      <GameTools
+        view={toolsView}
+        onViewChange={setToolsView}
+        onClose={() => setToolsView(null)}
+        onOpenPicker={() => setPickerOpen(true)}
+      />
       <TodayPicker
         isOpen={pickerOpen}
         onClose={() => setPickerOpen(false)}

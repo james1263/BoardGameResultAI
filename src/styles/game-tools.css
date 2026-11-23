@@ -1,0 +1,480 @@
+/* 小工具：全部用固定配色，選擇器加 .gt-root.gt-root 提高權重，不被深色模式覆蓋 */
+
+.explore-mine-btn.gt-launch {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* 長按跳出的快捷清單 */
+.gt-menu-backdrop.gt-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  background: transparent;
+}
+.gt-root.gt-root .gt-menu {
+  position: fixed;
+  width: 168px;
+  padding: 6px;
+  background: #fffdf6;
+  border: 1px solid #cfd6bd;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+.gt-root.gt-root .gt-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #26331f;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.gt-root.gt-root .gt-menu-item:hover,
+.gt-root.gt-root .gt-menu-item:active {
+  background: #e9efd9;
+}
+
+/* 全螢幕視窗 */
+.gt-backdrop.gt-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.5);
+}
+.gt-root.gt-root .gt-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 460px);
+  max-height: min(88vh, 720px);
+  overflow: hidden;
+  border-radius: 18px;
+  background: #f4f1e6;
+  color: #26331f;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+}
+.gt-root.gt-root .gt-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #2f5d3a;
+  color: #ffffff;
+}
+.gt-root.gt-root .gt-title {
+  flex: 1;
+  padding-left: 4px;
+  text-align: left;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.gt-root.gt-root .gt-back,
+.gt-root.gt-root .gt-close {
+  min-width: 72px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-size: 15px;
+  cursor: pointer;
+}
+.gt-root.gt-root .gt-close {
+  min-width: 40px;
+  font-size: 22px;
+  line-height: 1;
+}
+.gt-root.gt-root .gt-back-space {
+  display: inline-block;
+  min-width: 72px;
+}
+.gt-root.gt-root .gt-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 14px 64px;
+  box-sizing: border-box;
+}
+
+/* 九宮格 */
+.gt-root.gt-root .gt-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.gt-root.gt-root .gt-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  aspect-ratio: 1 / 1;
+  padding: 8px;
+  border: 2px solid #2f5d3a;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #26331f;
+  cursor: pointer;
+}
+.gt-root.gt-root .gt-tile:active {
+  background: #e9efd9;
+}
+.gt-root.gt-root .gt-tile-icon {
+  font-size: 32px;
+}
+.gt-root.gt-root .gt-tile-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #26331f;
+}
+.gt-root.gt-root .gt-tile-empty {
+  border-style: dashed;
+  border-color: #b9c0a6;
+  background: transparent;
+  cursor: default;
+}
+.gt-root.gt-root .gt-tile-empty .gt-tile-icon,
+.gt-root.gt-root .gt-tile-empty .gt-tile-name {
+  color: #a3ab90;
+}
+
+/* 共用 */
+.gt-root.gt-root .gt-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.gt-root.gt-root .gt-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #26331f;
+  font-size: 14px;
+}
+.gt-root.gt-root .gt-input {
+  padding: 6px 8px;
+  border: 1px solid #b9c0a6;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #26331f;
+  font-size: 15px;
+}
+.gt-root.gt-root .gt-formula {
+  margin-left: auto;
+  font-size: 20px;
+  font-weight: 700;
+  color: #2f5d3a;
+}
+.gt-root.gt-root .gt-hint {
+  color: #6b7560;
+  font-size: 13px;
+}
+.gt-root.gt-root .gt-primary,
+.gt-root.gt-root .gt-secondary,
+.gt-root.gt-root .gt-ok {
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gt-root.gt-root .gt-primary,
+.gt-root.gt-root .gt-ok {
+  border: 0;
+  background: #2f5d3a;
+  color: #ffffff;
+}
+.gt-root.gt-root .gt-secondary {
+  border: 2px solid #2f5d3a;
+  background: #ffffff;
+  color: #2f5d3a;
+}
+
+/* 擲骰 */
+.gt-root.gt-root .gt-dice-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 220px;
+  justify-content: center;
+  padding: 20px 10px;
+  border: 2px dashed #2f5d3a;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #26331f;
+  cursor: pointer;
+}
+.gt-root.gt-root .gt-dice-area:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.gt-root.gt-root .gt-dice-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.gt-root.gt-root .gt-die {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  height: 56px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border: 2px solid #2f5d3a;
+  border-radius: 12px;
+  background: #fffdf6;
+  color: #2f5d3a;
+  font-size: 26px;
+  font-weight: 800;
+}
+.gt-root.gt-root .gt-die.rolling {
+  animation: gt-shake 0.24s infinite alternate;
+}
+@keyframes gt-shake {
+  0% {
+    transform: translate(-3px, -2px) rotate(-12deg);
+  }
+  100% {
+    transform: translate(3px, 2px) rotate(12deg);
+  }
+}
+.gt-root.gt-root .gt-dice-tip {
+  font-size: 15px;
+  font-weight: 700;
+  color: #26331f;
+}
+.gt-root.gt-root .gt-counts {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #d9dec9;
+  border-radius: 12px;
+  background: #ffffff;
+}
+.gt-root.gt-root .gt-counts-title {
+  margin-bottom: 8px;
+  color: #6b7560;
+  font-size: 13px;
+}
+.gt-root.gt-root .gt-counts-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gt-root.gt-root .gt-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid #d9dec9;
+  border-radius: 999px;
+  background: #f4f1e6;
+  color: #a3ab90;
+}
+.gt-root.gt-root .gt-count.has {
+  border-color: #2f5d3a;
+  background: #e9efd9;
+  color: #26331f;
+}
+.gt-root.gt-root .gt-count-face {
+  min-width: 24px;
+  height: 24px;
+  line-height: 24px;
+  border-radius: 50%;
+  background: #2f5d3a;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+.gt-root.gt-root .gt-count:not(.has) .gt-count-face {
+  background: #b9c0a6;
+}
+.gt-root.gt-root .gt-count-n {
+  font-size: 15px;
+  font-weight: 700;
+}
+.gt-root.gt-root .gt-lock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff4d6;
+  color: #5b4a12;
+  font-size: 14px;
+}
+.gt-root.gt-root .gt-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+.gt-root.gt-root .gt-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #26331f;
+  font-size: 14px;
+}
+.gt-root.gt-root .gt-check input {
+  width: 18px;
+  height: 18px;
+}
+.gt-root.gt-root .gt-msg {
+  margin: 0;
+  color: #9a3b2a;
+  font-size: 13px;
+}
+
+/* 最近 5 次（右下角，平時收起） */
+.gt-root.gt-root .gt-history {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.gt-root.gt-root .gt-history-btn {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #2f5d3a;
+  color: #ffffff;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+.gt-root.gt-root .gt-history-panel {
+  max-width: 260px;
+  padding: 10px 12px;
+  border: 1px solid #cfd6bd;
+  border-radius: 12px;
+  background: #fffdf6;
+  color: #26331f;
+  font-size: 13px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.gt-root.gt-root .gt-history-panel p {
+  margin: 0;
+  color: #6b7560;
+}
+.gt-root.gt-root .gt-history-panel ol {
+  margin: 0;
+  padding-left: 20px;
+}
+.gt-root.gt-root .gt-history-panel li {
+  margin: 2px 0;
+}
+
+/* 爬梯子 */
+.gt-root.gt-root .gt-names {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.gt-root.gt-root .gt-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gt-root.gt-root .gt-name-input {
+  flex: 1;
+  min-width: 0;
+}
+.gt-root.gt-root .gt-dot {
+  flex: none;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.gt-root.gt-root .gt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.gt-root.gt-root .gt-ladder-scroll {
+  overflow-x: auto;
+  padding: 8px;
+  border: 1px solid #d9dec9;
+  border-radius: 12px;
+  background: #ffffff;
+}
+.gt-root.gt-root .gt-ladder-scroll svg {
+  display: block;
+  margin: 0 auto;
+}
+.gt-root.gt-root .gt-rank-list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.gt-root.gt-root .gt-rank-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px;
+  border-bottom: 1px solid #e1e5d2;
+  color: #26331f;
+  font-size: 16px;
+}
+.gt-root.gt-root .gt-rank-no {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  line-height: 26px;
+  border-radius: 50%;
+  background: #2f5d3a;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+.gt-root.gt-root .gt-rank-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.gt-root.gt-root .gt-first {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #c9a24a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-root.gt-root .gt-die.rolling {
+    animation: none;
+  }
+}
