@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useBackClose } from '../lib/useBackClose'
+import { supabase } from '../lib/supabase'
 import '../styles/game-tools.css'
 
 export type ToolView = 'grid' | 'dice' | 'ladder'
@@ -603,7 +604,83 @@ function shortName(name: string) {
   return Array.from(name).slice(0, 4).join('')
 }
 
+type RosterGathering = { id: string; gathered_on: string; title: string }
+type RosterPerson = { name: string; checked: boolean }
+
+function taipeiToday() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei' }).format(
+    new Date(),
+  )
+}
+
 function LadderTool() {
+  // 代入聚會參加者：只有 VIP／管理者查得到資料，訪客會被資料庫擋下
+  const [rosterOpen, setRosterOpen] = useState(false)
+  const [rosterBusy, setRosterBusy] = useState(false)
+  const [rosterMsg, setRosterMsg] = useState('')
+  const [gatherings, setGatherings] = useState<RosterGathering[] | null>(null)
+  const [people, setPeople] = useState<RosterPerson[] | null>(null)
+
+  async function openRoster() {
+    setRosterOpen(true)
+    setPeople(null)
+    setRosterMsg('')
+    setRosterBusy(true)
+    const { data, error } = await supabase.rpc('get_my_gatherings')
+    setRosterBusy(false)
+    if (error) {
+      setRosterMsg('請先登入 VIP 帳號才能代入聚會參加者。')
+      setGatherings([])
+      return
+    }
+    const today = taipeiToday()
+    const rows = ((data ?? []) as RosterGathering[]).filter(
+      (g) => g.gathered_on <= today,
+    )
+    setGatherings(rows)
+    if (rows.length === 0) setRosterMsg('沒有已開團的聚會可以選。')
+  }
+
+  async function pickGathering(id: string) {
+    setRosterBusy(true)
+    setRosterMsg('')
+    const { data, error } = await supabase.rpc('get_gathering_detail', {
+      p_gathering: id,
+    })
+    setRosterBusy(false)
+    const detail = data as {
+      attendees?: { n?: string; me?: boolean; h?: boolean | null }[]
+    } | null
+    if (error || !detail || !Array.isArray(detail.attendees)) {
+      setRosterMsg('讀不到這場聚會的名單。')
+      return
+    }
+    const list = detail.attendees
+    // 只有管理者拿得到 h 欄位；管理者本人若不在名單內，補上 James
+    const isAdminView = list.some((a) => a.h !== undefined && a.h !== null)
+    const names = list.map((a) => (a.n ?? '').trim() || '（未命名）')
+    if (isAdminView && !list.some((a) => a.me)) names.unshift('James')
+    setPeople(names.map((name) => ({ name, checked: true })))
+  }
+
+  function applyRoster() {
+    if (!people) return
+    const chosen = people
+      .filter((p) => p.checked)
+      .map((p) => p.name)
+      .slice(0, MAX_PLAYERS)
+    if (chosen.length < 2) {
+      setRosterMsg('至少要勾選 2 人。')
+      return
+    }
+    setNames(() =>
+      Array.from({ length: MAX_PLAYERS }, (_, i) => chosen[i] ?? ''),
+    )
+    changeCount(chosen.length)
+    setRosterOpen(false)
+    setPeople(null)
+  }
+
   const [count, setCount] = useState(4)
   const [names, setNames] = useState<string[]>(() =>
     Array.from({ length: MAX_PLAYERS }, () => ''),
@@ -703,6 +780,87 @@ function LadderTool() {
           </select>
         </span>
         <span className="gt-hint">名字可以不填</span>
+      </div>
+
+      <div className="gt-roster">
+        <button
+          type="button"
+          className="gt-secondary gt-roster-btn"
+          disabled={running}
+          onClick={() => void openRoster()}
+        >
+          代入聚會參加者
+        </button>
+        {rosterOpen && (
+          <div className="gt-roster-panel">
+            {rosterBusy && <p className="gt-hint">讀取中…</p>}
+            {rosterMsg && <p className="gt-msg">{rosterMsg}</p>}
+            {!people && gatherings && gatherings.length > 0 && (
+              <>
+                <div className="gt-hint">先選一場聚會（最新在上）</div>
+                {gatherings.map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    className="gt-roster-item"
+                    onClick={() => void pickGathering(g.id)}
+                  >
+                    {g.gathered_on}　{g.title}
+                  </button>
+                ))}
+              </>
+            )}
+            {people && (
+              <>
+                <div className="gt-hint">
+                  取消勾選不玩的人，最多帶入 {MAX_PLAYERS} 人
+                </div>
+                {people.map((p, i) => (
+                  <label key={i} className="gt-check">
+                    <input
+                      type="checkbox"
+                      checked={p.checked}
+                      onChange={(event) => {
+                        const on = event.target.checked
+                        setPeople((cur) =>
+                          cur
+                            ? cur.map((x, k) =>
+                                k === i ? { ...x, checked: on } : x,
+                              )
+                            : cur,
+                        )
+                      }}
+                    />
+                    <span>{p.name}</span>
+                  </label>
+                ))}
+                <div className="gt-actions">
+                  <button
+                    type="button"
+                    className="gt-primary"
+                    onClick={applyRoster}
+                  >
+                    帶入
+                  </button>
+                  <button
+                    type="button"
+                    className="gt-secondary"
+                    onClick={() => setPeople(null)}
+                  >
+                    重選場次
+                  </button>
+                </div>
+              </>
+            )}
+            <button
+              type="button"
+              className="gt-secondary gt-roster-close"
+              onClick={() => setRosterOpen(false)}
+            >
+              關閉
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="gt-names">
