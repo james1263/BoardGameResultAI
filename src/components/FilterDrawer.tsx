@@ -4,7 +4,6 @@ import {
   DIFFICULTY_LEVEL_INFO,
   MINE_GROUPS,
   MINE_GROUP_LABELS,
-  NEW_GAME_DAYS,
   RATING_FILTERS,
   RATING_FILTER_LABELS,
   TIME_LIMITS,
@@ -12,12 +11,10 @@ import {
   type MineGroup,
   type NumericFilter,
   type RatingFilter,
-  type ViewMode,
 } from '../lib/libraryTypes'
 import { BrainIcon, EyeIcon, PairIcon, PersonIcon } from './Icons'
 import '../styles/filter-icons.css'
 import InfoHint from './InfoHint'
-import ViewToggle from './ViewToggle'
 
 function NumberSelect({
   label,
@@ -56,10 +53,6 @@ export type FilterDrawerProps = {
   displayedGameCount: number
   clearDisabled: boolean
   onClear: () => void
-  viewMode: ViewMode
-  onViewModeChange: (mode: ViewMode) => void
-  showCardInfo: boolean
-  onShowCardInfoChange: (value: boolean) => void
 
   playerCounts: number[]
   groupSizes: number[]
@@ -78,9 +71,6 @@ export type FilterDrawerProps = {
 
   difficultyLevels: DifficultyLevel[]
   toggleDifficultyLevel: (level: DifficultyLevel) => void
-
-  showNew: boolean
-  setShowNew: (value: boolean) => void
 
   ratingFilter: RatingFilter
   setRatingFilter: (value: RatingFilter) => void
@@ -105,8 +95,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
     setTimeLimit,
     difficultyLevels,
     toggleDifficultyLevel,
-    showNew,
-    setShowNew,
     ratingFilter,
     setRatingFilter,
     canFilterByRating,
@@ -306,43 +294,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
                     )
                   })}
                 </div>
-              </div>
-            </div>
-
-            <div className="filter-group">
-              <div className="filter-group-title">
-                <span>顯示設定</span>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  alignItems: 'center',
-                  gap: '10px 16px',
-                }}
-              >
-                <label className="category-option">
-                  <input
-                    type="checkbox"
-                    checked={showNew}
-                    onChange={(event) => setShowNew(event.target.checked)}
-                  />
-                  <span>顯示新遊戲（{NEW_GAME_DAYS} 天內加入）</span>
-                </label>
-                <label className="category-option">
-                  <input
-                    type="checkbox"
-                    checked={props.showCardInfo}
-                    onChange={(event) =>
-                      props.onShowCardInfoChange(event.target.checked)
-                    }
-                  />
-                  <span>顯示卡片下方文字</span>
-                </label>
-                <ViewToggle
-                  viewMode={props.viewMode}
-                  onChange={props.onViewModeChange}
-                />
               </div>
             </div>
           </details>

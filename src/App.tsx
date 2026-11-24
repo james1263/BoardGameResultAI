@@ -51,6 +51,8 @@ import {
   NEW_GAME_DAYS,
   MINE_GROUPS,
   MINE_GROUP_LABELS,
+  DIFFICULTY_LEVEL_INFO,
+  RATING_FILTER_LABELS,
   getMineGroup,
   computeAdminScores,
   isNewUntilActive,
@@ -62,6 +64,8 @@ import TopBar, { type NavPage } from './components/TopBar'
 import { useBackClose } from './lib/useBackClose'
 import { loadFilters, saveFilters } from './lib/filterStorage'
 import FilterDrawer from './components/FilterDrawer'
+import DisplayControl from './components/DisplayControl'
+import FilterTags, { type FilterTag } from './components/FilterTags'
 import GameCard from './components/GameCard'
 import GameModal from './components/GameModal'
 import MergeDialog from './components/MergeDialog'
@@ -958,6 +962,71 @@ function Library({
     )
   }
 
+    // 搜尋框下方的「已套用篩選」標籤（類型膠囊本來就看得到，不重複列）
+  const filterTags: FilterTag[] = []
+  if (groupRange !== null) {
+    filterTags.push({
+      key: 'people',
+      label:
+        groupSize !== '' && groupSizeMax !== ''
+          ? `${groupSize}～${groupSizeMax} 人`
+          : `${groupSize !== '' ? groupSize : groupSizeMax} 人`,
+      onRemove: () => {
+        setGroupSize('')
+        setGroupSizeMax('')
+      },
+    })
+  }
+  if (bestPlayerCount !== '') {
+    filterTags.push({
+      key: 'best',
+      label: `最佳 ${bestPlayerCount} 人`,
+      onRemove: () => setBestPlayerCount(''),
+    })
+  }
+  if (recommendPlayerCount !== '') {
+    filterTags.push({
+      key: 'recommend',
+      label: `推薦 ${recommendPlayerCount} 人`,
+      onRemove: () => setRecommendPlayerCount(''),
+    })
+  }
+  if (timeLimit !== '') {
+    filterTags.push({
+      key: 'time',
+      label: `${timeLimit} 分鐘內`,
+      onRemove: () => setTimeLimit(''),
+    })
+  }
+  for (const level of difficultyLevels) {
+    filterTags.push({
+      key: `diff-${level}`,
+      label: `難度：${DIFFICULTY_LEVEL_INFO[level].name}`,
+      onRemove: () => toggleDifficultyLevel(level),
+    })
+  }
+  if (ratingFilterActive) {
+    filterTags.push({
+      key: 'rating',
+      label: RATING_FILTER_LABELS[ratingFilter],
+      onRemove: () => setRatingFilter('all'),
+    })
+  }
+  if (groupByMine) {
+    filterTags.push({
+      key: 'groupByMine',
+      label: '依我的紀錄分區',
+      onRemove: () => setGroupByMine(false),
+    })
+  }
+  for (const group of hiddenGroups) {
+    filterTags.push({
+      key: `hide-${group}`,
+      label: `隱藏${MINE_GROUP_LABELS[group]}`,
+      onRemove: () => toggleMineGroup(group),
+    })
+  }
+
   function clearFilters() {
     setSearchText('')
     setSelectedCategories([])
@@ -1058,6 +1127,7 @@ function Library({
                   )}
                 </button>
               </label>
+                            <FilterTags tags={filterTags} />
               <div className="hero-tools-row explore-meta">
                 <StatusLegend />
                 <ToolsButton onSelect={handleToolsChoice} />
@@ -1085,6 +1155,14 @@ function Library({
               resultCount={displayedGameCount}
             />
             <div className="heading-actions explore-sort">
+              <DisplayControl
+                showNew={showNew}
+                onShowNewChange={setShowNew}
+                showCardInfo={showCardInfo}
+                onShowCardInfoChange={setShowCardInfo}
+                viewMode={viewMode}
+                onViewModeChange={changeViewMode}
+              />
               <SortControl
                 sortBy={effectiveSortBy}
                 isAdmin={isAdmin}
@@ -1112,10 +1190,6 @@ function Library({
             displayedGameCount={displayedGameCount}
             clearDisabled={searchText === '' && activeFilterCount === 0}
             onClear={clearFilters}
-            viewMode={viewMode}
-            onViewModeChange={changeViewMode}
-            showCardInfo={showCardInfo}
-            onShowCardInfoChange={setShowCardInfo}
             playerCounts={playerCounts}
             groupSizes={groupSizes}
             groupSize={groupSize}
@@ -1130,8 +1204,6 @@ function Library({
             setTimeLimit={setTimeLimit}
             difficultyLevels={difficultyLevels}
             toggleDifficultyLevel={toggleDifficultyLevel}
-            showNew={showNew}
-            setShowNew={setShowNew}
             ratingFilter={ratingFilter}
             setRatingFilter={setRatingFilter}
             canFilterByRating={canFilterByRating}

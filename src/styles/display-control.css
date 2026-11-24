@@ -1,0 +1,119 @@
+/* 排序鈕旁的「顯示」按鈕與搜尋框下方的篩選標籤（樣式仿 .sort-control） */
+
+.display-control {
+  position: relative;
+  display: inline-flex;
+}
+
+.display-btn {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--c-line, #ddd3bf);
+  border-radius: 999px;
+  background: var(--c-paper, #fffefa);
+  color: var(--c-ink, #34463c);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.display-btn:hover,
+.display-btn.open {
+  border-color: var(--c-forest, #3f7d58);
+}
+
+.display-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 240px;
+  padding: 14px;
+  border: 1px solid var(--c-line, #ddd3bf);
+  border-radius: 14px;
+  background: var(--c-paper, #fffefa);
+  color: var(--c-ink, #34463c);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.display-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.display-view {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.filter-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-top: 8px;
+}
+
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 10px;
+  border: 1px solid var(--c-line, #ddd3bf);
+  border-radius: 999px;
+  background: var(--c-paper, #fffefa);
+  color: var(--c-ink, #34463c);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.filter-tag button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 15px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.filter-tag button:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* 手機：顯示鈕與排序同一列，面板靠左對齊避免超出畫面 */
+@media (max-width: 760px) {
+  .display-panel {
+    right: auto;
+    left: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .explore-types-row .explore-sort {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .explore-types-row .explore-sort .sort-control {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .explore-types-row .explore-sort .sort-control select {
+    flex: 1;
+    min-width: 0;
+  }
+}

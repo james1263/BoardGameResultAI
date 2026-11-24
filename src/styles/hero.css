@@ -299,3 +299,19 @@
     text-align: center;
   }
 }
+
+/* 2026-11-24：電腦版標題與搜尋框同一排，圖例與小工具留在搜尋框下方 */
+@media (min-width: 901px) {
+  .hero {
+    padding-top: 16px;
+  }
+
+  .hero-inner {
+    align-items: flex-start;
+  }
+
+  .hero h1 {
+    margin: 0;
+    line-height: 50px;
+  }
+}

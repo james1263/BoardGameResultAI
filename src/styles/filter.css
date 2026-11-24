@@ -573,3 +573,22 @@ p.filter-group-hint {
 .filter-drawer .mine-eyes {
   margin: 6px 0;
 }
+
+
+/* 2026-11-24：抽屜間距再縮小 */
+.filter-drawer {
+  padding: 12px;
+}
+
+.filter-drawer .drawer-header {
+  margin: -12px -12px 6px;
+  padding: 10px 12px 6px;
+}
+
+.filter-drawer .filter-group {
+  margin-top: 10px;
+}
+
+.filter-drawer .filter-more {
+  margin-top: 10px;
+}
