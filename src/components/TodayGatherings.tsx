@@ -9,6 +9,7 @@ import type { RatingsApi } from '../lib/useGameRatings'
 import { useBackClose } from '../lib/useBackClose'
 import CoverImage from './CoverImage'
 import { TodayRatingModal } from './TodayRatingFlow'
+import RoomTimer from './RoomTimer'
 import '../styles/today-room.css'
 
 // 今日聚會：我的俱樂部最上面的卡片＋房間視窗（第一版）
@@ -32,6 +33,7 @@ function rowLabel(row: TodayRow, index: number, total: number): string {
 }
 
 function RoomDialog({
+  gatheringId,
   label,
   detail,
   isAdmin,
@@ -39,6 +41,7 @@ function RoomDialog({
   onClose,
   onRate,
 }: {
+  gatheringId: string
   label: string
   detail: Detail | null
   isAdmin: boolean
@@ -101,6 +104,8 @@ function RoomDialog({
                 })}
               </ul>
             )}
+
+            <RoomTimer gatheringId={gatheringId} isAdmin={isAdmin} />
 
             <p className="tr-section">出席（{people.length}）</p>
             <ul className="tr-chips">
@@ -241,6 +246,7 @@ export default function TodayGatherings({
       )}
       {room && (
         <RoomDialog
+          gatheringId={room.id}
           label={rowLabel(room, roomIndex, rows.length)}
           detail={details[room.id] ?? null}
           isAdmin={isAdmin}

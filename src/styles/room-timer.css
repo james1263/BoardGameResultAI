@@ -1,0 +1,275 @@
+/* 房間計時器（RoomTimer.tsx）：全部 .rt- 前綴、固定配色；用兩個 class 疊權重避免被全站深色規則蓋掉 */
+.rt-root.rt-root {
+  margin: 14px 0 6px;
+  padding: 12px;
+  border: 1px solid #d9d4bf;
+  border-radius: 12px;
+  background: #f6f3e8;
+  color: #26332a;
+}
+.rt-root.rt-root p,
+.rt-root.rt-root span,
+.rt-root.rt-root li {
+  color: inherit;
+}
+.rt-root.rt-root .rt-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rt-root.rt-root .rt-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.rt-root.rt-root .rt-mode {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #dfe8d6;
+  color: #2f5d3a;
+}
+.rt-root.rt-root .rt-link {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: #2f5d3a;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.rt-root.rt-root .rt-muted {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #6b6f60;
+}
+.rt-root.rt-root .rt-error {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #b3261e;
+}
+
+.rt-root.rt-root .rt-clock {
+  margin-top: 10px;
+  padding: 12px 8px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 2px solid #c9d6bd;
+  text-align: center;
+}
+.rt-root.rt-root .rt-clock.warn {
+  border-color: #d9a21b;
+  background: #fff8e1;
+}
+.rt-root.rt-root .rt-clock.over {
+  border-color: #b3261e;
+  background: #fdecea;
+}
+.rt-root.rt-root .rt-who {
+  margin: 0;
+  font-size: 14px;
+}
+.rt-root.rt-root .rt-time {
+  margin: 2px 0;
+  font-size: 54px;
+  line-height: 1.1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.rt-root.rt-root .rt-note {
+  margin: 0;
+  font-size: 12px;
+  color: #6b6f60;
+}
+
+.rt-root.rt-root .rt-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.rt-root.rt-root .rt-actions button {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid #b9c4ab;
+  background: #ffffff;
+  color: #26332a;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.rt-root.rt-root .rt-actions button.rt-main {
+  background: #2f5d3a;
+  border-color: #2f5d3a;
+  color: #ffffff;
+}
+.rt-root.rt-root .rt-actions button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.rt-root.rt-root .rt-list,
+.rt-root.rt-root .rt-order {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+.rt-root.rt-root .rt-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.rt-root.rt-root .rt-list li.cur {
+  background: #dfe8d6;
+  font-weight: 700;
+}
+.rt-root.rt-root .rt-n {
+  width: 18px;
+  text-align: center;
+  color: #6b6f60;
+  font-size: 12px;
+}
+.rt-root.rt-root .rt-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rt-root.rt-root .rt-val {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+
+.rt-root.rt-root .rt-edit {
+  margin-top: 10px;
+}
+.rt-root.rt-root .rt-modes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.rt-root.rt-root .rt-modes button {
+  flex: 1;
+  min-width: 90px;
+  min-height: 40px;
+  border-radius: 8px;
+  border: 1px solid #b9c4ab;
+  background: #ffffff;
+  color: #26332a;
+  font-size: 13px;
+  cursor: pointer;
+}
+.rt-root.rt-root .rt-modes button.on {
+  background: #2f5d3a;
+  border-color: #2f5d3a;
+  color: #ffffff;
+  font-weight: 700;
+}
+.rt-root.rt-root .rt-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+.rt-root.rt-root .rt-field input {
+  width: 90px;
+  min-height: 38px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid #b9c4ab;
+  background: #ffffff;
+  color: #26332a;
+  font-size: 15px;
+  text-align: right;
+}
+.rt-root.rt-root .rt-sub {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: #6b6f60;
+}
+.rt-root.rt-root .rt-order li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px;
+  font-size: 14px;
+}
+.rt-root.rt-root .rt-order li.off {
+  opacity: 0.5;
+}
+.rt-root.rt-root .rt-order input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+}
+.rt-root.rt-root .rt-order button {
+  width: 36px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #b9c4ab;
+  background: #ffffff;
+  color: #26332a;
+  cursor: pointer;
+}
+.rt-root.rt-root .rt-order button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* 深色模式 */
+:root[data-theme='dark'] .rt-root.rt-root {
+  background: #1f2a22;
+  border-color: #34443a;
+  color: #e6ece4;
+}
+:root[data-theme='dark'] .rt-root.rt-root .rt-mode {
+  background: #2c4033;
+  color: #bfe0c6;
+}
+:root[data-theme='dark'] .rt-root.rt-root .rt-link {
+  color: #9fd0aa;
+}
+:root[data-theme='dark'] .rt-root.rt-root .rt-muted,
+:root[data-theme='dark'] .rt-root.rt-root .rt-note,
+:root[data-theme='dark'] .rt-root.rt-root .rt-sub,
+:root[data-theme='dark'] .rt-root.rt-root .rt-n {
+  color: #a3b0a5;
+}
+:root[data-theme='dark'] .rt-root.rt-root .rt-error {
+  color: #ff9d94;
+}
+:root[data-theme='dark'] .rt-root.rt-root .rt-clock {
+  background: #17201a;
+  border-color: #3d5646;
+}
+:root[data-theme='dark'] .rt-root.rt-root .rt-clock.warn {
+  background: #3a3216;
+  border-color: #d9a21b;
+}
+:root[data-theme='dark'] .rt-root.rt-root .rt-clock.over {
+  background: #3d1d1a;
+  border-color: #e0574d;
+}
+:root[data-theme='dark'] .rt-root.rt-root .rt-actions button,
+:root[data-theme='dark'] .rt-root.rt-root .rt-modes button,
+:root[data-theme='dark'] .rt-root.rt-root .rt-order button,
+:root[data-theme='dark'] .rt-root.rt-root .rt-field input {
+  background: #17201a;
+  border-color: #3d5646;
+  color: #e6ece4;
+}
+:root[data-theme='dark'] .rt-root.rt-root .rt-actions button.rt-main,
+:root[data-theme='dark'] .rt-root.rt-root .rt-modes button.on {
+  background: #3f8a53;
+  border-color: #3f8a53;
+  color: #ffffff;
+}
+:root[data-theme='dark'] .rt-root.rt-root .rt-list li.cur {
+  background: #2c4033;
+}
