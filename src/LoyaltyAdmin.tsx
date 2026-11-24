@@ -12,6 +12,7 @@ import {
 } from './lib/useLoyalty'
 import PlannedGatheringsAdmin from './components/PlannedGatheringsAdmin'
 import NewGatheringWizard from './components/NewGatheringWizard'
+import QrCodeButton from './components/QrCodeButton'
 import './styles/lga-manage.css'
 import './styles/lga-list.css'
 import './styles/lga-status-list.css'
@@ -1191,8 +1192,85 @@ export default function LoyaltyAdmin() {
                                 )}
                             </div>
 
+                            <h4 className="lga-sub">③ 聚會連結（報到＋集點卡）</h4>
+                            {linkSlots !== null && (
+                                <p className="loy-admin-note">
+                                    上限 {effectiveCapacity} 人・手動加入 {manualCount} 人・連結名額 {linkQuota} 人
+                                    （已報到 {selectedSelf.length} 人）・<b>還可報到 {linkSlots} 人</b>
+                                </p>
+                            )}
+                            <p className="loy-admin-note">
+                                連結只在聚會當天有效（有效至 {formatDay(selected.gatheredOn)} 23:59，台北時間），
+                                隔天起所有人點都會顯示已過期。用連結報到的人會自動成為 VIP。
+                            </p>
+                            {!selectedCheckin ? (
+                                <>
+                                    {(selectedGames.length === 0 || draftCapacity === null) && (
+                                        <p className="loy-admin-note">
+                                            請先完成 ① 指定遊戲、② 人數上限，才能建立連結。
+                                        </p>
+                                    )}
+                                    {linkBlocked && (
+                                        <p className="loy-admin-note">
+                                            手動加入的人數已達人數上限，沒有名額留給聚會連結，所以不能建立連結。
+                                        </p>
+                                    )}
+                                    <button
+                                        type="button"
+                                        className="lga-outline"
+                                        disabled={
+                                            busy ||
+                                            selectedGames.length === 0 ||
+                                            draftCapacity === null ||
+                                            linkBlocked
+                                        }
+                                        onClick={() => createCheckin(selected.id)}
+                                    >
+                                        ＋ 建立聚會連結
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="lga-checkin-row">
+                                    <button
+                                        type="button"
+                                        className={`lga-toggle ${selectedCheckin.isOpen ? 'on' : ''}`}
+                                        disabled={busy}
+                                        aria-pressed={selectedCheckin.isOpen}
+                                        onClick={() =>
+                                            updateCheckin(selected.id, {
+                                                is_open: !selectedCheckin.isOpen,
+                                            })
+                                        }
+                                    >
+                                        {selectedCheckin.isOpen
+                                            ? '● 報到開放中（按一下關閉）'
+                                            : '○ 報到已關閉（按一下開放）'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="lga-outline"
+                                        disabled={busy || selectedGames.length === 0}
+                                        onClick={() => copyJoinLink(selectedCheckin.token)}
+                                    >
+                                        🔗 複製聚會連結
+                                    </button>
+                                    <QrCodeButton
+                                        link={`${window.location.origin}/?join=${selectedCheckin.token}&openExternalBrowser=1`}
+                                        disabled={busy || selectedGames.length === 0}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="lga-danger"
+                                        disabled={busy}
+                                        onClick={() => resetCheckinToken(selected.id)}
+                                    >
+                                        重設連結
+                                    </button>
+                                </div>
+                            )}
+
                             <h4 className="lga-sub">
-                                ③ 手動加入參加者（{selectedAttendees.length} / {players.length}）
+                                ④ 手動加入參加者（{selectedAttendees.length} / {players.length}）
                             </h4>
                             <p className="loy-admin-note">
                                 點名字即可勾選出席，立即儲存。被你加入的人會自動成為 VIP，
@@ -1297,79 +1375,6 @@ export default function LoyaltyAdmin() {
     })}
 </ul>
                                 </>
-                            )}
-
-                            <h4 className="lga-sub">④ 聚會連結（報到＋集點卡）</h4>
-                            {linkSlots !== null && (
-                                <p className="loy-admin-note">
-                                    上限 {effectiveCapacity} 人・手動加入 {manualCount} 人・連結名額 {linkQuota} 人
-                                    （已報到 {selectedSelf.length} 人）・<b>還可報到 {linkSlots} 人</b>
-                                </p>
-                            )}
-                            <p className="loy-admin-note">
-                                連結只在聚會當天有效（有效至 {formatDay(selected.gatheredOn)} 23:59，台北時間），
-                                隔天起所有人點都會顯示已過期。用連結報到的人會自動成為 VIP。
-                            </p>
-                            {!selectedCheckin ? (
-                                <>
-                                    {(selectedGames.length === 0 || draftCapacity === null) && (
-                                        <p className="loy-admin-note">
-                                            請先完成 ① 指定遊戲、② 人數上限，才能建立連結。
-                                        </p>
-                                    )}
-                                    {linkBlocked && (
-                                        <p className="loy-admin-note">
-                                            手動加入的人數已達人數上限，沒有名額留給聚會連結，所以不能建立連結。
-                                        </p>
-                                    )}
-                                    <button
-                                        type="button"
-                                        className="lga-outline"
-                                        disabled={
-                                            busy ||
-                                            selectedGames.length === 0 ||
-                                            draftCapacity === null ||
-                                            linkBlocked
-                                        }
-                                        onClick={() => createCheckin(selected.id)}
-                                    >
-                                        ＋ 建立聚會連結
-                                    </button>
-                                </>
-                            ) : (
-                                <div className="lga-checkin-row">
-                                    <button
-                                        type="button"
-                                        className={`lga-toggle ${selectedCheckin.isOpen ? 'on' : ''}`}
-                                        disabled={busy}
-                                        aria-pressed={selectedCheckin.isOpen}
-                                        onClick={() =>
-                                            updateCheckin(selected.id, {
-                                                is_open: !selectedCheckin.isOpen,
-                                            })
-                                        }
-                                    >
-                                        {selectedCheckin.isOpen
-                                            ? '● 報到開放中（按一下關閉）'
-                                            : '○ 報到已關閉（按一下開放）'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="lga-outline"
-                                        disabled={busy || selectedGames.length === 0}
-                                        onClick={() => copyJoinLink(selectedCheckin.token)}
-                                    >
-                                        🔗 複製聚會連結
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="lga-danger"
-                                        disabled={busy}
-                                        onClick={() => resetCheckinToken(selected.id)}
-                                    >
-                                        重設連結
-                                    </button>
-                                </div>
                             )}
                         </section>
                     )}
