@@ -52,5 +52,16 @@ export function useCheckinLink() {
     await signInWithGoogle()
   }, [])
 
-  return { token, isLoggedIn: session !== null, clear, login }
+  // 輸入四位數房號查到的報到碼：存起來並開啟報到視窗（和點連結同一條路）
+  const accept = useCallback((value: string) => {
+    if (!isValidToken(value)) return
+    try {
+      localStorage.setItem(KEY, value)
+    } catch {
+      // 存不進去也不影響這一次報到
+    }
+    setToken(value)
+  }, [])
+
+  return { token, isLoggedIn: session !== null, clear, login, accept }
 }
