@@ -1,0 +1,1 @@
+alter table public.board_games add column if not exists new_until timestamptz;

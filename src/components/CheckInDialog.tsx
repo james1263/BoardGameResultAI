@@ -20,7 +20,11 @@ import {
   type RewardKind,
 } from '../lib/rewardNotice'
 
-type JoinRow = { result_status: string; result_date: string | null }
+type JoinRow = {
+  result_status: string
+  result_date: string | null
+  result_gathering_id: string | null
+}
 type DayInfo = { exempt: boolean; games: string[]; error: string }
 
 const MESSAGES: Record<string, string> = {
@@ -63,6 +67,8 @@ export default function CheckInDialog({
   const [busy, setBusy] = useState(true)
   const [status, setStatus] = useState<string | null>(null)
   const [date, setDate] = useState<string | null>(null)
+  // 這次報到的是哪一場聚會（同一天可能有好幾場，一律以聚會 id 為準）
+  const [gatheringId, setGatheringId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [info, setInfo] = useState<DayInfo | null>(null)
   const [wasNeeded, setWasNeeded] = useState<boolean | null>(null)
@@ -111,6 +117,7 @@ export default function CheckInDialog({
     statusRef.current = row.result_status
     setStatus(row.result_status)
     setDate(row.result_date)
+    setGatheringId(row.result_gathering_id ?? null)
     if (row.result_status === 'joined' && wasVipRef.current === false && !isAdminRef.current) {
       setShowUpgrade(true)
     }
@@ -150,48 +157,38 @@ export default function CheckInDialog({
     }
   }, [status])
 
-  // 報到成功後，讀取我在這一天被列入的聚會：指定遊戲、是否免評分
+  // 報到成功後，讀取「這一場」聚會的指定遊戲、我是否免評分（以聚會 id 為準，不合併同一天的其他場）
   useEffect(() => {
-    if (!succeeded || !date || !userId) return
+    if (!succeeded || !userId) return
     let cancelled = false
 
-    async function loadDay(day: string, uid: string) {
-      const g = await supabase
-        .from('gatherings')
-        .select('id')
-        .eq('gathered_on', day)
-      const allIds = ((g.data ?? []) as { id: string }[]).map((row) => row.id)
-      if (g.error || allIds.length === 0) {
+    async function loadGathering(gid: string | null, uid: string) {
+      if (!gid) {
         if (!cancelled) {
-          setInfo({ exempt: false, games: [], error: g.error?.message ?? '' })
+          setInfo({ exempt: false, games: [], error: '沒有收到聚會場次，無法帶你評分。' })
         }
         return
       }
-
       const a = await supabase
         .from('gathering_attendees')
-        .select('gathering_id, exempt')
+        .select('exempt')
+        .eq('gathering_id', gid)
         .eq('user_id', uid)
-        .in('gathering_id', allIds)
-      const mine = (
-        (a.data ?? []) as { gathering_id: string; exempt: boolean }[]
-      )
-      const myIds = mine.map((row) => row.gathering_id)
+        .limit(1)
+      const mine = (a.data ?? []) as { exempt: boolean }[]
 
       const gg =
-        myIds.length > 0
+        mine.length > 0
           ? await supabase
             .from('gathering_games')
-            .select('gathering_id, bgg_name')
-            .in('gathering_id', myIds)
+            .select('bgg_name')
+            .eq('gathering_id', gid)
             .is('removed_at', null)
           : { data: [], error: null }
 
       if (cancelled) return
       const games = Array.from(
-        new Set(
-          ((gg.data ?? []) as { bgg_name: string }[]).map((row) => row.bgg_name),
-        ),
+        new Set(((gg.data ?? []) as { bgg_name: string }[]).map((row) => row.bgg_name)),
       )
       setInfo({
         exempt: mine.some((row) => row.exempt),
@@ -200,11 +197,11 @@ export default function CheckInDialog({
       })
     }
 
-    void loadDay(date, userId)
+    void loadGathering(gatheringId, userId)
     return () => {
       cancelled = true
     }
-  }, [succeeded, date, userId])
+  }, [succeeded, gatheringId, userId])
 
   useEffect(() => {
     if (!succeeded || !date || !userId) return
@@ -243,7 +240,7 @@ export default function CheckInDialog({
     !info.error &&
     !info.exempt &&
     info.games.length > 0 &&
-    !(userId && date && wasRewardSeen(userId, `flowdone|${date}`))
+    !(userId && gatheringId && wasRewardSeen(userId, `flowdone|${gatheringId}`))
 
   // 第一次算出結果時記住「一開始需不需要評分」
   useEffect(() => {
@@ -295,7 +292,7 @@ export default function CheckInDialog({
             finishLabel="前往集點卡"
             beforeSnap={snapRef.current ?? undefined}
             onFinish={() => {
-              if (userId && date) markRewardSeen(userId, `flowdone|${date}`)
+              if (userId && gatheringId) markRewardSeen(userId, `flowdone|${gatheringId}`)
               if (reward) setFinishing(true)
               else onDone(date)
             }}
