@@ -275,7 +275,6 @@ function Library({
     isLoggedIn: checkinLoggedIn,
     clear: clearCheckin,
     login: checkinLogin,
-    accept: acceptCheckin,
   } = useCheckinLink()
 
   function handleCheckedIn(date: string | null) {
@@ -1416,7 +1415,6 @@ function Library({
         notesUnseen={notesUnseen.count}
         onNotesSeen={notesUnseen.markSeen}
         onOpenLoyalty={openMyLoyalty}
-        onJoinByCode={acceptCheckin}
         onOpenWrite={openWriteNotes}
         writeFromBoard={writeFromBoard}
         onReturnToBoard={returnToBoard}

@@ -28,7 +28,6 @@ import ClubIcon from './components/ClubIcons'
 import { FavoritePicker, FavoritePodium, useMyFavorites } from './components/FavoriteGames'
 import './styles/club-home.css'
 import './styles/club-stats.css'
-import JoinByCode from './components/JoinByCode'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
@@ -383,7 +382,6 @@ export default function MyList({
     onBrowse,
     onOpenGame,
     onOpenWrite,
-    onJoinByCode,
     writeFromBoard = false,
     onReturnToBoard,
     returnToGame = false,
@@ -425,8 +423,6 @@ export default function MyList({
     onBrowse: () => void
     onOpenGame: (game: BoardGame, tab?: 'ratings' | 'discussion') => void
     onOpenLoyalty: () => void
-    // 「聚會」視窗輸入四位數房號查到報到碼後，交給 App 開報到視窗
-    onJoinByCode?: (token: string) => void
     // 從集點聚會頁的留言板「發表留言」跳到俱樂部的寫心得／留言（App 傳入）
     onOpenWrite?: (bggName: string | null, from?: 'board' | 'game') => void
     // 從「聚會」留言板進寫心得畫面時，✕ 與返回要回到留言板
@@ -769,14 +765,6 @@ export default function MyList({
                             ×
                         </button>
                     </div>
-                    <JoinByCode
-                        isLoggedIn={personal.isLoggedIn}
-                        onToken={(token) => {
-                            // 先關掉聚會視窗，稍等再開報到視窗，避免兩個視窗同時改瀏覽紀錄
-                            onClose()
-                            window.setTimeout(() => onJoinByCode?.(token), 350)
-                        }}
-                    />
                     {showUpcomingTab && (
                         <div className="lb-tabs">
                             <button

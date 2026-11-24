@@ -38,7 +38,7 @@ type Detail = {
     autoSessions: AutoSession[] | null
 }
 type AutoSession = { playedOn: string; bggName: string; source: string }
-type Checkin = { token: string; isOpen: boolean; capacity: number | null; shortCode: string | null }
+type Checkin = { token: string; isOpen: boolean; capacity: number | null }
 type VoucherUse = {
     id: string
     userId: string
@@ -236,7 +236,7 @@ export default function LoyaltyAdmin() {
             supabase.from('player_contacts').select('user_id, contact_name'),
             supabase
                 .from('gathering_checkins')
-                .select('gathering_id, token, is_open, capacity, short_code'),
+                .select('gathering_id, token, is_open, capacity'),
         ])
 
         const usesError = await loadVoucherUses()
@@ -291,16 +291,10 @@ export default function LoyaltyAdmin() {
                         token: string
                         is_open: boolean
                         capacity: number | null
-                        short_code: string | null
                     }[]
                 ).map((row) => [
                     row.gathering_id,
-                    {
-                        token: row.token,
-                        isOpen: row.is_open,
-                        capacity: row.capacity,
-                        shortCode: row.short_code,
-                    },
+                    { token: row.token, isOpen: row.is_open, capacity: row.capacity },
                 ]),
             ),
         )
@@ -526,7 +520,7 @@ export default function LoyaltyAdmin() {
         const { data, error } = await supabase
             .from('gathering_checkins')
             .insert({ gathering_id: gatheringId, is_open: true, capacity: value })
-            .select('gathering_id, token, is_open, capacity, short_code')
+            .select('gathering_id, token, is_open, capacity')
             .single()
 
         if (error) {
@@ -538,7 +532,6 @@ export default function LoyaltyAdmin() {
                     token: data.token,
                     isOpen: data.is_open,
                     capacity: data.capacity,
-                    shortCode: data.short_code,
                 },
             }))
         }
@@ -555,7 +548,7 @@ export default function LoyaltyAdmin() {
             .from('gathering_checkins')
             .update(patch)
             .eq('gathering_id', gatheringId)
-            .select('gathering_id, token, is_open, capacity, short_code')
+            .select('gathering_id, token, is_open, capacity')
             .single()
 
         if (error) {
@@ -567,7 +560,6 @@ export default function LoyaltyAdmin() {
                     token: data.token,
                     isOpen: data.is_open,
                     capacity: data.capacity,
-                    shortCode: data.short_code,
                 },
             }))
             if (doneMessage) setMessage(doneMessage)
@@ -610,25 +602,6 @@ export default function LoyaltyAdmin() {
             { token: crypto.randomUUID().replaceAll('-', '') },
             '已重設，請重新複製新的報到連結。',
         )
-    }
-
-    async function regenerateCode(gatheringId: string) {
-        setBusy(true)
-        setMessage('')
-        const { data, error } = await supabase.rpc('admin_regenerate_gathering_code', {
-            p_gathering: gatheringId,
-        })
-        if (error) {
-            setMessage('換房號失敗：' + error.message)
-        } else if (typeof data === 'string') {
-            setCheckins((current) =>
-                current[gatheringId]
-                    ? { ...current, [gatheringId]: { ...current[gatheringId], shortCode: data } }
-                    : current,
-            )
-            setMessage('已換新房號：' + data + '（舊房號立刻失效，已經報到的人不受影響）')
-        }
-        setBusy(false)
     }
 
     async function copyJoinLink(token: string) {
@@ -1395,17 +1368,6 @@ export default function LoyaltyAdmin() {
                                         onClick={() => resetCheckinToken(selected.id)}
                                     >
                                         重設連結
-                                    </button>
-                                    <span style={{ alignSelf: 'center', letterSpacing: '0.15em' }}>
-                                        房號 {selectedCheckin.shortCode ?? '——'}
-                                    </span>
-                                    <button
-                                        type="button"
-                                        className="lga-outline"
-                                        disabled={busy}
-                                        onClick={() => regenerateCode(selected.id)}
-                                    >
-                                        換房號
                                     </button>
                                 </div>
                             )}
