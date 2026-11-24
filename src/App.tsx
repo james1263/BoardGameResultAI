@@ -91,6 +91,7 @@ import './styles/fonts.css'
 const PIN_DAYS = 15
 
 const SEEN_NEW_KEY = 'boardgame-seen-new'
+const SHOW_DISCUSSIONS_KEY = 'boardgame-show-discussions'
 
 function loadSeenNew(): Set<string> {
   try {
@@ -562,6 +563,22 @@ function Library({
     useState<NumericFilter>(saved.recommendPlayerCount)
   const [timeLimit, setTimeLimit] = useState<NumericFilter>(saved.timeLimit)
   const [showNew, setShowNew] = useState(saved.showNew)
+    // 首頁「最新桌遊討論」要不要顯示（只存在這支手機的瀏覽器；預設顯示）
+  const [showDiscussions, setShowDiscussions] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(SHOW_DISCUSSIONS_KEY) !== '0'
+    } catch {
+      return true
+    }
+  })
+  function changeShowDiscussions(value: boolean) {
+    setShowDiscussions(value)
+    try {
+      localStorage.setItem(SHOW_DISCUSSIONS_KEY, value ? '1' : '0')
+    } catch {
+      // 儲存失敗也不影響使用
+    }
+  }
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>(
     saved.ratingFilter,
   )
@@ -1161,7 +1178,7 @@ function Library({
         )}
 
         <LatestDiscussions
-          enabled={vip.isVip || isAdmin}
+          enabled={(vip.isVip || isAdmin) && showDiscussions}
           games={statGames}
           reloadKey={selectedGame === null && activePage === null ? 1 : 0}
           onOpenGame={openGameDiscussion}
@@ -1180,6 +1197,9 @@ function Library({
               <DisplayControl
                 showNew={showNew}
                 onShowNewChange={setShowNew}
+                canHideDiscussions={vip.isVip || isAdmin}
+                showDiscussions={showDiscussions}
+                onShowDiscussionsChange={changeShowDiscussions}
                 showCardInfo={showCardInfo}
                 onShowCardInfoChange={setShowCardInfo}
                 viewMode={viewMode}

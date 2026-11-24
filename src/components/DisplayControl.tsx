@@ -10,6 +10,9 @@ export default function DisplayControl({
   onShowCardInfoChange,
   viewMode,
   onViewModeChange,
+  canHideDiscussions = false,
+  showDiscussions = true,
+  onShowDiscussionsChange,
 }: {
   showNew: boolean
   onShowNewChange: (value: boolean) => void
@@ -17,6 +20,10 @@ export default function DisplayControl({
   onShowCardInfoChange: (value: boolean) => void
   viewMode: ViewMode
   onViewModeChange: (mode: ViewMode) => void
+  // 只有 VIP／管理者看得到「最新桌遊討論」，所以也只有他們會看到這個選項
+  canHideDiscussions?: boolean
+  showDiscussions?: boolean
+  onShowDiscussionsChange?: (value: boolean) => void
 }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -61,6 +68,16 @@ export default function DisplayControl({
             />
             <span>顯示新遊戲（{NEW_GAME_DAYS} 天內加入）</span>
           </label>
+          {canHideDiscussions && onShowDiscussionsChange && (
+            <label className="display-option">
+              <input
+                type="checkbox"
+                checked={showDiscussions}
+                onChange={(event) => onShowDiscussionsChange(event.target.checked)}
+              />
+              <span>顯示最新桌遊討論</span>
+            </label>
+          )}
           <label className="display-option">
             <input
               type="checkbox"

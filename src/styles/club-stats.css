@@ -462,7 +462,7 @@ body .mylist-drawer.club-stats .mylist-header h2 {
   writing-mode: horizontal-tb;
 }
 
-/* ---------- 第 1 批（第 5 項）：「聚會．留言」兩個分頁鈕不換行、並排吃滿寬度 ----------
+/* ---------- 第 1 批（第 5 項）：「聚會」兩個分頁鈕不換行、並排吃滿寬度 ----------
    （這頁由 MyList.tsx 畫出，這裡的樣式只作用在沒有 club-* 範圍 class 的抽屜） */
 body .mylist-drawer:not(.club-stats):not(.club-home):not(.club-leaderboard) .lb-tabs {
   display: flex;
