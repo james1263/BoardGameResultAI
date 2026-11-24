@@ -186,7 +186,7 @@ export const KEMET_REVIEW: { bggName: string; draftNote: string; sections: Revie
         },
         {
           label: '怎麼放夥伴',
-          text: '取得帶有夥伴的板塊時，可以把夥伴放在你有部隊的城區，否則留在供應區的板塊上。之後，打出行動標記之前可以：在供應區與城區之間、同類型夥伴任意互換；把供應區的夥伴放進你城區的部隊。在城區增加單位時，也可以從供應區各放 1 個每種類型的夥伴一起放。',
+          text: '取得帶有夥伴的板塊時，可以把夥伴放在你有部隊的城區，否則留在供應區的板塊上。之後，打出行動標記之前可以：在供應區與城區之間、同類型夥伴任意互換；把供應區的夥伴放進你城區的部隊。設計師在論壇回覆，打行動標記前可以自由管理城區夥伴，包含把夥伴放回供應區【論壇回覆，待核對】；行動進行到一半不能再加夥伴。在城區增加單位時，也可以從供應區各放 1 個每種類型的夥伴一起放。',
           src: 'Rise of the Gods 規則書 第 8 頁',
         },
         {
@@ -320,7 +320,7 @@ export const KEMET_REVIEW: { bggName: string; draftNote: string; sections: Revie
         },
         {
           label: '單位上限',
-          text: '一個行動中部隊可以暫時超過部隊、生物、僕從上限，只要行動結束時每個區域都符合。',
+          text: '移動行動中部隊可以暫時超過部隊、生物、僕從上限，只要行動結束時每個區域都符合；招募與加單位的效果要遵守上限（玩家回答，待核對）。',
           src: 'Rise of the Gods 規則書 第 19 頁',
         },
         {
@@ -453,7 +453,7 @@ export const KEMET_REVIEW: { bggName: string; draftNote: string; sections: Revie
         },
         {
           label: '神祇的性質',
-          text: '神祇有生命點數；視為一支部隊，力量見神祇板塊；不是單位也不是夥伴；不能綁定單位或夥伴。',
+          text: '神祇有生命點數；視為一支部隊，力量見神祇板塊；不是單位也不是夥伴；不能綁定單位或夥伴。神祇永遠獨自在一個區域，不能與任何單位或夥伴共處（規則書「Alone on the battlefield」）。',
           src: 'Rise of the Gods 規則書 第 18 頁',
         },
         {
@@ -513,7 +513,7 @@ export const KEMET_REVIEW: { bggName: string; draftNote: string; sections: Revie
         },
         {
           label: '荷魯斯',
-          text: '移動行動：可免費傳送到任何不是對手城區的區域。戰鬥結束時，把荷魯斯的 LP 標記移到 LP 第 3 格。',
+          text: '移動行動：可免費從任何區域傳送到任何不是對手城區的區域（設計師論壇回覆）。LP 最大是 3，LP 歸 0 時放回供應區、不會回復。戰鬥結束時，把荷魯斯的 LP 標記移到 LP 第 3 格。',
           src: '玩家輔助 第 11 頁',
         },
       ],
@@ -577,6 +577,11 @@ export const KEMET_REVIEW: { bggName: string; draftNote: string; sections: Revie
           src: 'Rise of the Gods 規則書 第 13 頁',
         },
         {
+          label: '夜晚階段：神殿',
+          text: '隊伍只拿該神殿的 PP 一份，混合部隊不會讓每位隊友各拿一份；兩位隊友各控制一座神殿，隊伍拿 1 神明 FP，4 座神殿也只算 1 FP（設計師論壇回覆）。',
+          src: 'BGG〈Team mode〉、討論串 3559080（設計師回覆與玩家討論）【論壇說法，待核對】',
+        },
+        {
           label: '夜晚階段：命運',
           text: '9.1 把順位標記移到順位軌下一排；9.2 FP 最少的隊伍選 1 個順位標記放在第 1、2 或 3 位（3 隊遊戲）／第 1 或 2 位（2 隊遊戲），其餘隊伍依 FP 由少到多各選一個空格，平手時上一回合在最左的隊伍先選；9.3 依相同順序放第二個順位標記（3 人一隊再放一輪，直到全部放完）；9.4 開始新回合。',
           src: 'Rise of the Gods 規則書 第 13 頁',
@@ -594,7 +599,7 @@ export const KEMET_REVIEW: { bggName: string; draftNote: string; sections: Revie
       items: [
         {
           label: '更新（Renewal）',
-          text: '通用設置步驟 2.1 時，每個所選顏色把 3 級的「Domination」板塊先拿出來，與該顏色的「更新板塊」混洗，隨機抽 1 張放在原本 Domination 的位置。更新板塊各色有 3 張（紅、藍、鑽石、黑瑪瑙、紫水晶、琥珀、綠寶石，玩家輔助有列）。',
+          text: '通用設置步驟 2.1 時，每個所選顏色把 3 級的「Domination」板塊先拿出來，與該顏色的「更新板塊」混洗，隨機抽 1 張放在原本 Domination 的位置。更新板塊各色有 3 張（紅、藍、鑽石、黑瑪瑙、紫水晶、琥珀、綠寶石，玩家輔助有列）。更新板塊都用來取代 3 級的 Domination，抽到 Domination 就照用，也可以全部不用；各 Game Up 對照見非官方 FAQ。',
           src: 'Rise of the Gods 規則書 第 4 頁；玩家輔助 第 2～8 頁',
         },
         {
@@ -731,6 +736,18 @@ export const KEMET_REVIEW: { bggName: string; draftNote: string; sections: Revie
           text: '「單一效果」＝把多個效果合併成一次結算（例如 Strategic Hold、Night Ceremony、Divine Hunger、Honor in Battle 的 PP）。與「每次其他效果獲得 PP 就額外 +2」之類板塊的互動，請看非官方 FAQ。',
           src: 'Rise of the Gods 規則書 第 6 頁；玩家輔助 第 4、5 頁',
         },
+        {
+          text: '行動進行到一半不能再加夥伴；移動時也不能把夥伴單獨留在原地（夥伴必須一直綁在至少有 1 個單位的部隊上）。',
+          src: 'BGG 討論串 3535096（設計師回覆）；〈Leaving companions behind?〉（玩家討論）【論壇說法，待核對】',
+        },
+        {
+          text: 'Hypnotic Cobra 對上賽特：賽特抽到的 2 張神諭卡中，只要有任何 1 張是戰鬥神諭卡，兩張都棄掉；2 張都不是戰鬥神諭卡，才能留 1 張棄 1 張。',
+          src: 'BGG 討論串 3524226（設計師回覆）【論壇回覆，待核對】',
+        },
+        {
+          text: 'Impenetrable Shield 能不能同時擋普通傷害還沒有定論。設計師只確認：5 個單位、傷害 1、護盾 1、無法穿透護盾 1，對手傷害 2、無法阻擋傷害 1，最後剩 3 個單位。',
+          src: 'BGG 討論串 3526001（設計師回覆）【待核對】',
+        },
       ],
     },
     {
@@ -738,7 +755,7 @@ export const KEMET_REVIEW: { bggName: string; draftNote: string; sections: Revie
       fold: true,
       items: [
         {
-          text: '神諭卡張數：玩家輔助牌面標示各牌張數（不含 Diversion 與 Assemble）加總為 49，規則書元件表寫 38 張神諭卡。可能是元件表筆誤或牌面張數與實物不同，內文不寫總數【待核對，看實物】。',
+          text: '神諭卡張數：玩家輔助牌面標示各牌張數（不含 Diversion 與 Assemble）加總為 49，規則書元件表寫 38 張神諭卡。可能是元件表筆誤或牌面張數與實物不同，玩家輔助 49 張扣掉 Obelisks 8 張與 Shield of Onyx 3 張剛好是 38 張，推測元件表只算本體盒；但有玩家說另有 5 張元件表沒列，無法確定。內文不寫總數【待核對，看實物】。',
           src: 'Rise of the Gods 規則書 第 2 頁；玩家輔助 第 12 頁',
         },
         {
