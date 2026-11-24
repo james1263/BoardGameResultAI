@@ -23,7 +23,7 @@ export default function TopBar({
   canUseRules,
   onCloseAdmin,
 }: {
-  // 「聚會．留言」圖示上的紅色數字：還沒看過的新未來聚會（0 就不顯示）
+  // 「聚會」圖示上的紅色數字：還沒看過的新未來聚會（0 就不顯示）
   loyaltyBadge: number
   // 俱樂部圖示上的小數字（管理者與非 VIP）：想玩＋已玩的款數（0 就不顯示）
   clubCount?: number
@@ -125,7 +125,7 @@ export default function TopBar({
               <span className="sb-ico" aria-hidden="true">
                 🎟
               </span>
-              <span>聚會．留言</span>
+              <span>聚會</span>
               {loyaltyBadge > 0 && (
                 <span className="sb-count" aria-label={`${loyaltyBadge} 則新通知`}>
                   {loyaltyBadge}

@@ -34,7 +34,7 @@ type ListedGame = BoardGame & { removedAt?: string | null }
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
 type View = 'home' | 'stats' | 'ratings' | 'gatherings' | 'notes' | 'board' | 'submissions' | 'card'
-// 「聚會．留言」頁的分頁按鈕：放大，才不容易沒注意到
+// 「聚會」頁的分頁按鈕：放大，才不容易沒注意到
 const BIG_TAB: CSSProperties = { flex: 1, fontSize: 17, padding: '14px 10px' }
 type StatsTab = 'overview' | 'want' | 'played' | 'score' | 'chart'
 type SortKey =
@@ -425,7 +425,7 @@ export default function MyList({
     onOpenLoyalty: () => void
     // 從集點聚會頁的留言板「發表留言」跳到俱樂部的寫心得／留言（App 傳入）
     onOpenWrite?: (bggName: string | null, from?: 'board' | 'game') => void
-    // 從「聚會．留言」留言板進寫心得畫面時，✕ 與返回要回到留言板
+    // 從「聚會」留言板進寫心得畫面時，✕ 與返回要回到留言板
     writeFromBoard?: boolean
     onReturnToBoard?: () => void
     // 從遊戲詳細資料跳來的寫心得／我的評分：✕ 與返回要回到那款遊戲
@@ -469,7 +469,7 @@ export default function MyList({
             onClose={() => setFavOpen(false)}
         />
     ) : null
-    // 「聚會．留言」頁（VIP）的兩個分頁：未來聚會｜留言板（集點卡已搬到俱樂部）
+    // 「聚會」頁（VIP）的兩個分頁：未來聚會｜留言板（集點卡已搬到俱樂部）
     function defaultLoyaltyTab(): 'upcoming' | 'board' {
         if (mode === 'loyalty' && openView?.view === 'board' && isVip && !isAdmin) return 'board'
         return 'upcoming'
@@ -748,14 +748,14 @@ export default function MyList({
     const isLoading = personal.isLoggedIn && personal.status === 'loading'
     const sourceCount = tab === 'want' ? wantGames.length : playedGames.length
 
-    // ---------- 聚會．留言（未來聚會、留言板） ----------
+    // ---------- 聚會 ----------
     if (isLoyalty) {
         return (
             <>
                 <div className="mylist-backdrop" onClick={onClose} />
-                <aside className="mylist-drawer" role="dialog" aria-label="聚會．留言">
+                <aside className="mylist-drawer" role="dialog" aria-label="聚會">
                     <div className="mylist-header">
-                        <h2>聚會．留言</h2>
+                        <h2>聚會</h2>
                         <button
                             className="mylist-close"
                             type="button"

@@ -1,6 +1,7 @@
 ﻿import CategoryChips from './components/CategoryChips'
 import SortControl from './components/SortControl'
 import NewArrivals from './components/NewArrivals'
+import LatestDiscussions from './components/LatestDiscussions'
 import RulebookPage from './components/RulebookPage'
 import {
   useCallback,
@@ -218,7 +219,7 @@ function Library({
   const [jumpView, setJumpView] = useState<{ view: 'board' | 'notes' | 'stats'; bggName: string | null; write?: boolean } | null>(null)
   // 從報到、集點卡連結、「去評分」進來：直接打開俱樂部裡的集點卡
   const [jumpCard, setJumpCard] = useState(false)
-  // 從「聚會．留言」的留言板按「發表留言」進寫心得畫面：按 ✕ 或返回要回到留言板，不是俱樂部
+  // 從「聚會」的留言板按「發表留言」進寫心得畫面：按 ✕ 或返回要回到留言板，不是俱樂部
   const [writeFromBoard, setWriteFromBoard] = useState(false)
   // 從遊戲詳細資料按「寫心得／留言」「前往我的評分」跳走：按 ✕ 或返回要回到那款遊戲的詳細資料
   const [returnGame, setReturnGame] = useState<{ bggName: string; tab: 'discussion' | 'ratings' } | null>(null)
@@ -337,7 +338,7 @@ function Library({
     return () => window.removeEventListener(PLAYED_SYNC_EVENT, handlePlayedSync)
   }, [personal.status, personal.getEntry, personal.refreshEntries])
 
-  // 頂端導覽「聚會．留言」：未來聚會、留言板兩個分頁
+  // 頂端導覽「聚會」：未來聚會、留言板兩個分頁
   function openGatherings() {
     setInviteFocus(null)
     setInviteKey((count) => count + 1)
@@ -416,7 +417,7 @@ function Library({
     setActivePage('mylist')
   }
 
-  // 寫完心得／留言按 ✕：回到「聚會．留言」的留言板分頁
+  // 寫完心得／留言按 ✕：回到「聚會」的留言板分頁
   function returnToBoard() {
     setWriteFromBoard(false)
     setJumpView({ view: 'board', bggName: null })
@@ -424,6 +425,20 @@ function Library({
     openGatherings()
   }
 
+  // 首頁「最新桌遊討論」：點一則→開那款遊戲詳細資料的「討論」分頁
+  function openGameDiscussion(game: LibraryGame) {
+    setReturnGame(null)
+    setCoverMessage('')
+    setRatingFromCheckin(false)
+    setSelectedTab('discussion')
+    setSelectedGame(game)
+  }
+
+  // 首頁「最新桌遊討論」：查看全部→開「聚會」視窗的留言板（和 returnToBoard 同一條路）
+  function openAllDiscussions() {
+    setJumpView({ view: 'board', bggName: null })
+    openGatherings()
+  }
   // 從遊戲詳細資料跳出去之後按 ✕：回到那款遊戲的詳細資料（討論或評分分頁）
   function returnToGame() {
     const target = returnGame
@@ -962,7 +977,7 @@ function Library({
     )
   }
 
-    // 搜尋框下方的「已套用篩選」標籤（類型膠囊本來就看得到，不重複列）
+  // 搜尋框下方的「已套用篩選」標籤（類型膠囊本來就看得到，不重複列）
   const filterTags: FilterTag[] = []
   if (groupRange !== null) {
     filterTags.push({
@@ -1127,7 +1142,7 @@ function Library({
                   )}
                 </button>
               </label>
-                            <FilterTags tags={filterTags} />
+              <FilterTags tags={filterTags} />
               <div className="hero-tools-row explore-meta">
                 <StatusLegend />
                 <ToolsButton onSelect={handleToolsChoice} />
@@ -1145,6 +1160,13 @@ function Library({
           />
         )}
 
+        <LatestDiscussions
+          enabled={vip.isVip || isAdmin}
+          games={statGames}
+          reloadKey={selectedGame === null && activePage === null ? 1 : 0}
+          onOpenGame={openGameDiscussion}
+          onViewAll={openAllDiscussions}
+        />
         <div className="explore-home explore-types">
           <div className="explore-types-row">
             <CategoryChips
