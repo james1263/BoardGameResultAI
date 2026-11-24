@@ -13,6 +13,7 @@ import { useMyLoyalty, todayLocal } from './lib/useLoyalty'
 import { TodayRatingModal } from './components/TodayRatingFlow'
 import { PROFILE_SAVED_EVENT, signInWithGoogle } from './lib/googleLogin'
 import MyGatherings from './components/MyGatherings'
+import TodayGatherings from './components/TodayGatherings'
 import MyNotes from './components/MyNotes'
 import PlayedGameRecord from './components/PlayedGameRecord'
 import PastPlayDates from './components/PastPlayDates'
@@ -765,6 +766,13 @@ export default function MyList({
                             ×
                         </button>
                     </div>
+                    {personal.isLoggedIn && !isAdmin && (
+                        <TodayGatherings
+                            boardGames={boardGames}
+                            ratings={ratings}
+                            isAdmin={isAdmin}
+                        />
+                    )}
                     {showUpcomingTab && (
                         <div className="lb-tabs">
                             <button
@@ -1354,6 +1362,13 @@ export default function MyList({
                         renderCover={renderCover}
                         onOpenFavorites={() => setFavOpen(true)}
                     />
+                    {personal.isLoggedIn && isAdmin && (
+                        <TodayGatherings
+                            boardGames={boardGames}
+                            ratings={ratings}
+                            isAdmin={isAdmin}
+                        />
+                    )}
                     {personal.isLoggedIn && isVip && !isAdmin && (
                         <ClubPointsCard
                             onOpen={() => setView('card')}

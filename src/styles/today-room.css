@@ -1,0 +1,293 @@
+/* 今日聚會卡片與房間視窗（第一版）：固定配色，深色模式也看得清楚；選擇器帶 .tr- 前綴 */
+
+.tr-card.tr-card-x {
+  margin: 14px 20px 6px;
+  padding: 12px 14px;
+  border: 1px solid #b78a5a;
+  border-radius: 12px;
+  background: #fbf3e4;
+  color: #34463c;
+  text-align: left;
+}
+
+.tr-card-x .tr-card-title {
+  margin: 0 0 8px;
+  color: #34463c;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.tr-card-x .tr-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tr-card-x .tr-card-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: #fffdf9;
+  color: #34463c;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tr-card-x .tr-card-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tr-card-x .tr-card-text b {
+  color: #34463c;
+  font-size: 15px;
+}
+
+.tr-card-x .tr-card-text span {
+  color: #6b6f66;
+  font-size: 12px;
+}
+
+.tr-card-x .tr-card-go {
+  flex: none;
+  color: #456b50;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* 房間視窗（掛在 body，層級要高過 .modal-backdrop 1220） */
+.tr-backdrop.tr-backdrop-x {
+  position: fixed;
+  inset: 0;
+  z-index: 1230;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.tr-sheet.tr-sheet-x {
+  width: min(440px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 16px 18px 20px;
+  border-radius: 16px;
+  background: #fffdf9;
+  color: #34463c;
+  text-align: left;
+}
+
+.tr-sheet-x .tr-sheet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tr-sheet-x .tr-kicker {
+  margin: 0 0 2px;
+  color: #6b6f66;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.tr-sheet-x .tr-sheet-title {
+  margin: 0;
+  color: #34463c;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.tr-sheet-x .tr-x {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: #34463c;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.tr-sheet-x .tr-section {
+  margin: 16px 0 8px;
+  color: #34463c;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tr-sheet-x .tr-muted {
+  margin: 12px 0 0;
+  color: #6b6f66;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.tr-sheet-x .tr-games {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tr-sheet-x .tr-games li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tr-sheet-x .tr-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #eee;
+}
+
+.tr-sheet-x .tr-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tr-sheet-x .tr-gname {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #34463c;
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.tr-sheet-x .tr-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tr-sheet-x .tr-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef1e8;
+  color: #34463c;
+  font-size: 13px;
+}
+
+.tr-sheet-x .tr-chips li.me {
+  background: #456b50;
+  color: #fff;
+}
+
+.tr-sheet-x .tr-chips small {
+  color: inherit;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.tr-sheet-x .tr-primary {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 12px;
+  background: #456b50;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ===== 深色模式 ===== */
+:root[data-theme="dark"] .tr-card.tr-card-x {
+  border-color: #8a6a47;
+  background: #2b2a24;
+  color: #e8eddf;
+}
+
+:root[data-theme="dark"] .tr-card-x .tr-card-title,
+:root[data-theme="dark"] .tr-card-x .tr-card-text b {
+  color: #e8eddf;
+}
+
+:root[data-theme="dark"] .tr-card-x .tr-card-item {
+  background: #232d27;
+  color: #e8eddf;
+}
+
+:root[data-theme="dark"] .tr-card-x .tr-card-text span {
+  color: #a9b3a8;
+}
+
+:root[data-theme="dark"] .tr-card-x .tr-card-go {
+  color: #9fd0ae;
+}
+
+:root[data-theme="dark"] .tr-backdrop.tr-backdrop-x {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="dark"] .tr-sheet.tr-sheet-x {
+  background: #1e2823;
+  color: #e8eddf;
+}
+
+:root[data-theme="dark"] .tr-sheet-x .tr-sheet-title,
+:root[data-theme="dark"] .tr-sheet-x .tr-section,
+:root[data-theme="dark"] .tr-sheet-x .tr-gname {
+  color: #e8eddf;
+}
+
+:root[data-theme="dark"] .tr-sheet-x .tr-kicker,
+:root[data-theme="dark"] .tr-sheet-x .tr-muted {
+  color: #a9b3a8;
+}
+
+:root[data-theme="dark"] .tr-sheet-x .tr-x {
+  background: #3a4a42;
+  color: #e8eddf;
+}
+
+:root[data-theme="dark"] .tr-sheet-x .tr-cover {
+  background: #2e3d35;
+}
+
+:root[data-theme="dark"] .tr-sheet-x .tr-chips li {
+  background: #2e3d35;
+  color: #e8eddf;
+}
+
+:root[data-theme="dark"] .tr-sheet-x .tr-chips li.me {
+  background: #4f7a5c;
+  color: #fff;
+}
+
+:root[data-theme="dark"] .tr-sheet-x .tr-primary {
+  background: #4f7a5c;
+  color: #fff;
+}
