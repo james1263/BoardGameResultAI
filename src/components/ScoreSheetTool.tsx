@@ -127,6 +127,8 @@ function SheetEditor({
   onChanged: () => void
 }) {
   const isRes = tool === 'resource'
+  // 資源計數器還沒用過（沒有資料可帶入）就不顯示「取自資源計數器」；已經勾過的列照常顯示
+  const hasSnap = getResourceSnapshot() !== null
   const [title, setTitle] = useState(initial.title)
   const [rows, setRows] = useState<EditRow[]>(() => toEdit(initial.rows))
   const [shared, setShared] = useState(initial.isShared)
@@ -244,7 +246,7 @@ function SheetEditor({
         <p className="gt-hint ss-help">
           {isRes
             ? '資源計數器：遊戲中用 ＋／− 記每個人的資源數量，不計分。「起始」是開局時的數量。'
-            : '計分表：每一列是一個算分項目，設好符號與「每個算幾分」，使用時只要輸入數字。也可以勾「取自資源計數器」，使用時按「帶入」把資源數量換算成數字（資源名稱要和資源計數器裡的一樣）。'}
+            : '計分表：每一列是一個算分項目，設好符號與「每個算幾分」，使用時只要輸入數字。'}
         </p>
 
         <ul className="ss-edit-list">
@@ -359,16 +361,18 @@ function SheetEditor({
                     分
                   </label>
                 </div>
-                <div className="ss-edit-line ss-wrap">
-                  <label className="gt-check">
-                    <input
-                      type="checkbox"
-                      checked={row.linked}
-                      onChange={(event) => update(row.id, { linked: event.target.checked })}
-                    />
-                    取自資源計數器
-                  </label>
-                </div>
+                {(hasSnap || row.linked) && (
+                  <div className="ss-edit-line ss-wrap">
+                    <label className="gt-check">
+                      <input
+                        type="checkbox"
+                        checked={row.linked}
+                        onChange={(event) => update(row.id, { linked: event.target.checked })}
+                      />
+                      取自資源計數器（選填，使用時按「帶入」；名稱要和資源計數器一樣）
+                    </label>
+                  </div>
+                )}
                 {row.linked && (
                   <div className="ss-edit-line ss-wrap">
                     <label className="gt-field">
@@ -1005,7 +1009,13 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
 
 /* ───────────── 主畫面：範本清單 ───────────── */
 
-export default function ScoreSheetTool({ tool = 'score' }: { tool?: ToolKind }) {
+export default function ScoreSheetTool({
+  tool = 'score',
+  onExit,
+}: {
+  tool?: ToolKind
+  onExit?: () => void
+}) {
   const [mode, setMode] = useState<Mode>({ name: 'list' })
   const [list, setList] = useState<SheetTemplate[]>([])
   const [isVip, setIsVip] = useState(false)
@@ -1055,6 +1065,15 @@ export default function ScoreSheetTool({ tool = 'score' }: { tool?: ToolKind }) 
     }
   }
 
+  // 還沒有任何表單：不顯示空清單，直接進新增表單畫面（只自動跳一次）
+  const autoOpened = useRef(false)
+  useEffect(() => {
+    if (autoOpened.current || status !== 'ready' || list.length > 0) return
+    autoOpened.current = true
+    setMode({ name: 'edit', draft: blank() })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, list.length])
+
   function copyOf(t: SheetTemplate): SheetTemplate {
     return {
       ...t,
@@ -1085,7 +1104,7 @@ export default function ScoreSheetTool({ tool = 'score' }: { tool?: ToolKind }) 
         initial={mode.draft}
         tool={tool}
         isVip={isVip}
-        onBack={() => setMode({ name: 'list' })}
+        onBack={() => (list.length === 0 && onExit ? onExit() : setMode({ name: 'list' }))}
         onUse={(tpl) => setMode({ name: 'play', tpl, from: { name: 'edit', draft: tpl } })}
         onChanged={() => void refresh()}
       />
@@ -1095,6 +1114,16 @@ export default function ScoreSheetTool({ tool = 'score' }: { tool?: ToolKind }) 
   if (mode.name === 'play') {
     const from = mode.from
     return <PlayView tpl={mode.tpl} onBack={() => setMode(from)} />
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="ss-root">
+        <div className="ss-scroll">
+          <p className="gt-hint">讀取中…</p>
+        </div>
+      </div>
+    )
   }
 
   const mine = list.filter((t) => t.mine)
@@ -1149,7 +1178,6 @@ export default function ScoreSheetTool({ tool = 'score' }: { tool?: ToolKind }) 
           ＋ 新增表單
         </button>
 
-        {status === 'loading' && <p className="gt-hint">讀取中…</p>}
         {status === 'error' && (
           <p className="gt-msg">
             讀不到範本清單。

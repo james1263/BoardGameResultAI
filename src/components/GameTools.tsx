@@ -1334,8 +1334,8 @@ export default function GameTools({
         )}
         {view === 'dice' && <DiceTool history={history} onRecord={record} />}
         {view === 'ladder' && <LadderTool />}
-        {view === 'sheet' && <ScoreSheetTool key="sheet" tool="score" />}
-        {view === 'counter' && <ScoreSheetTool key="counter" tool="resource" />}
+        {view === 'sheet' && <ScoreSheetTool key="sheet" tool="score" onExit={() => onViewChange('grid')} />}
+        {view === 'counter' && <ScoreSheetTool key="counter" tool="resource" onExit={() => onViewChange('grid')} />}
       </div>
     </div>
     </div>
