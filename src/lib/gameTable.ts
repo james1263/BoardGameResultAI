@@ -49,6 +49,8 @@ export type GameTableData = {
   scores: ValueMap
   dice: DiceGroup[]
   diceLog: string[]
+  holdings: ValueMap
+  holdSets: string[]
 }
 
 export type RoomStore = { v: 1; left: string[]; tables: GameTableData[] }
@@ -68,7 +70,7 @@ export function loadStore(gatheringId: string): RoomStore {
     return {
       v: 1,
       left: Array.isArray(data.left) ? data.left.filter((x) => typeof x === 'string') : [],
-      tables: data.tables,
+      tables: data.tables.map((t) => ({ ...t, holdings: t.holdings ?? {}, holdSets: t.holdSets ?? [] })),
     }
   } catch {
     return emptyStore()
@@ -104,6 +106,8 @@ export function newTable(title: string, bggName: string | null): GameTableData {
     scores: {},
     dice: [],
     diceLog: [],
+    holdings: {},
+    holdSets: [],
   }
 }
 

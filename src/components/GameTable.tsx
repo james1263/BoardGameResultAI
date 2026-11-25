@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import RoomTimer from './RoomTimer'
+import TableHoldings from './TableHoldings'
 import {
   ICONS,
   MAX_ROWS,
@@ -658,7 +659,7 @@ function Setup({
 
 /* ───────────── 進行畫面 ───────────── */
 
-type Tab = 'players' | 'dice' | 'score'
+type Tab = 'players' | 'dice' | 'score' | 'hold'
 
 function Play({
   table,
@@ -687,11 +688,13 @@ function Play({
   const scoreOn = toolActive(table, 'score')
   const diceOn = toolActive(table, 'dice')
   const timerOn = toolActive(table, 'timer')
+  const holdOn = table.bggName === 'Rising Sun'
   const tabs: Tab[] = ['players']
   if (diceOn) tabs.push('dice')
   if (scoreOn) tabs.push('score')
+  if (holdOn) tabs.push('hold')
   const shownTab: Tab = tabs.includes(tab) ? tab : 'players'
-  const TAB_LABEL: Record<Tab, string> = { players: '玩家', dice: '骰子', score: '計分' }
+  const TAB_LABEL: Record<Tab, string> = { players: '玩家', dice: '骰子', score: '計分', hold: '持有' }
 
   function setRes(pid: string, rowId: string, value: number) {
     update((t) => ({
@@ -999,6 +1002,8 @@ function Play({
           </p>
         </>
       )}
+
+      {shownTab === 'hold' && <TableHoldings table={table} update={update} />}
 
       <div className="gtb-manage">
         <button type="button" className="gtb-link" onClick={() => setShowTools((v) => !v)}>
