@@ -10,6 +10,7 @@ import { useBackClose } from '../lib/useBackClose'
 import CoverImage from './CoverImage'
 import { TodayRatingModal } from './TodayRatingFlow'
 import RoomTimer from './RoomTimer'
+import GameTable from './GameTable'
 import '../styles/today-room.css'
 
 // 今日聚會：我的俱樂部最上面的卡片＋房間視窗（第一版）
@@ -50,6 +51,7 @@ function RoomDialog({
   onRate: (games: string[]) => void
 }) {
   useBackClose(onClose)
+  const [tableOpen, setTableOpen] = useState(false)
   const people = detail?.attendees ?? []
   const games = detail?.games ?? []
 
@@ -76,6 +78,8 @@ function RoomDialog({
           <p className="tr-muted">讀取中，或你不在這場的出席名單上。</p>
         ) : (
           <>
+            {!tableOpen && (
+              <>
             <p className="tr-section">今天的遊戲（{games.length}）</p>
             {games.length === 0 ? (
               <p className="tr-muted">這場還沒有指定遊戲。</p>
@@ -105,6 +109,22 @@ function RoomDialog({
               </ul>
             )}
 
+              </>
+            )}
+
+            <GameTable
+              gatheringId={gatheringId}
+              isAdmin={isAdmin}
+              games={games.map((game) => ({
+                b: game.b,
+                name: gameByName.get(game.b)?.name ?? game.n ?? game.b,
+              }))}
+              attendees={people.map((person) => person.n)}
+              onActiveChange={setTableOpen}
+            />
+
+            {!tableOpen && (
+              <>
             <RoomTimer gatheringId={gatheringId} isAdmin={isAdmin} />
 
             <p className="tr-section">出席（{people.length}）</p>
@@ -125,6 +145,8 @@ function RoomDialog({
               >
                 評分今天玩的遊戲
               </button>
+            )}
+              </>
             )}
           </>
         )}

@@ -277,6 +277,8 @@ export default function RoomTimer({
 
   const canAct = !!timer && !!curId && (isAdmin || curIsMe)
   const warn = !!cur && !cur.over && cur.left <= 10 && running
+  // 有設定每人總時間（總時間池）時像圍棋鐘：輪到的人或管理者點一下大區塊 = 結束回合
+  const goClock = canAct && running && !!timer && timer.mode !== 'turn'
 
   return (
     <div className="rt-root rt-root-x">
@@ -299,13 +301,19 @@ export default function RoomTimer({
 
       {timer && cur && !editing && (
         <>
-          <div className={`rt-clock${cur.over ? ' over' : warn ? ' warn' : ''}`}>
+          <div
+            className={`rt-clock${cur.over ? ' over' : warn ? ' warn' : ''}${goClock ? ' go' : ''}`}
+            role={goClock ? 'button' : undefined}
+            tabIndex={goClock ? 0 : undefined}
+            onClick={goClock && !busy ? () => void act('next') : undefined}
+          >
             <p className="rt-who">
               輪到：{curPlayer?.out_name ?? '（已離開）'}
               {curIsMe ? '（你）' : ''}
             </p>
             <p className="rt-time">{cur.over ? '0:00' : fmt(cur.left)}</p>
             <p className="rt-note">{running ? cur.note : '暫停中，按「開始」繼續'}</p>
+            {goClock && <p className="rt-note rt-gohint">點一下這塊＝結束回合</p>}
           </div>
 
           {canAct && (
@@ -335,6 +343,12 @@ export default function RoomTimer({
                 </button>
               )}
             </div>
+          )}
+
+          {canAct && (
+            <p className="rt-muted">
+              暫停＝時間凍結，還是同一位玩家；結束回合＝結算他用掉的時間，換下一位。
+            </p>
           )}
 
           <ul className="rt-list">

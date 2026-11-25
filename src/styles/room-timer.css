@@ -66,6 +66,24 @@
   border-color: #b3261e;
   background: #fdecea;
 }
+.rt-root.rt-root .rt-clock.go {
+  padding: 36px 8px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.rt-root.rt-root .rt-clock.go:active {
+  filter: brightness(0.94);
+}
+.rt-root.rt-root .rt-gohint {
+  margin-top: 4px;
+  font-weight: 700;
+  color: #2f5d3a;
+}
+:root[data-theme='dark'] .rt-root.rt-root .rt-gohint {
+  color: #9fd0aa;
+}
 .rt-root.rt-root .rt-who {
   margin: 0;
   font-size: 14px;

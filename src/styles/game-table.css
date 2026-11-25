@@ -1,0 +1,625 @@
+/* 聚會房間「遊戲桌」（GameTable.tsx）：全部 .gtb- 前綴、固定配色；用兩個 class 疊權重避免被全站深色規則蓋掉 */
+.gtb-root.gtb-root {
+  margin: 14px 0 6px;
+  padding: 12px;
+  border: 1px solid #d9d4bf;
+  border-radius: 12px;
+  background: #f6f3e8;
+  color: #26332a;
+}
+.gtb-root.gtb-root p,
+.gtb-root.gtb-root span,
+.gtb-root.gtb-root li,
+.gtb-root.gtb-root label,
+.gtb-root.gtb-root b,
+.gtb-root.gtb-root small,
+.gtb-root.gtb-root th,
+.gtb-root.gtb-root td,
+.gtb-root.gtb-root summary {
+  color: inherit;
+}
+.gtb-root.gtb-root .gtb-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gtb-root.gtb-root .gtb-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.gtb-root.gtb-root .gtb-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #dfe8d6;
+  color: #2f5d3a;
+}
+.gtb-root.gtb-root .gtb-right {
+  margin-left: auto;
+}
+.gtb-root.gtb-root .gtb-link {
+  border: 0;
+  background: none;
+  color: #2f5d3a;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.gtb-root.gtb-root .gtb-muted {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #6b6f60;
+}
+.gtb-root.gtb-root .gtb-error {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #b3261e;
+}
+.gtb-root.gtb-root .gtb-sub {
+  margin: 14px 0 6px;
+  font-size: 13px;
+  color: #6b6f60;
+}
+.gtb-root.gtb-root .gtb-steps {
+  margin: 10px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+.gtb-root.gtb-root .gtb-body {
+  margin-top: 6px;
+}
+.gtb-root.gtb-root .gtb-card {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #d9d4bf;
+}
+
+/* 輸入與按鈕 */
+.gtb-root.gtb-root .gtb-in {
+  min-height: 38px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid #b9c4ab;
+  background: #ffffff;
+  color: #26332a;
+  font-size: 15px;
+  min-width: 0;
+}
+.gtb-root.gtb-root .gtb-in:disabled {
+  opacity: 0.6;
+}
+.gtb-root.gtb-root .gtb-full {
+  width: 100%;
+  margin-top: 6px;
+  box-sizing: border-box;
+}
+.gtb-root.gtb-root .gtb-grow {
+  flex: 1;
+  min-width: 0;
+}
+.gtb-root.gtb-root .gtb-num {
+  width: 72px;
+  text-align: right;
+}
+.gtb-root.gtb-root .gtb-btn {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #b9c4ab;
+  background: #ffffff;
+  color: #26332a;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gtb-root.gtb-root .gtb-btn.main {
+  background: #2f5d3a;
+  border-color: #2f5d3a;
+  color: #ffffff;
+}
+.gtb-root.gtb-root .gtb-btn:disabled,
+.gtb-root.gtb-root .gtb-sq:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.gtb-root.gtb-root .gtb-btnrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.gtb-root.gtb-root .gtb-btnrow .gtb-btn {
+  flex: 1;
+  min-width: 110px;
+}
+.gtb-root.gtb-root .gtb-sq {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 8px;
+  border: 1px solid #b9c4ab;
+  background: #ffffff;
+  color: #26332a;
+  font-size: 15px;
+  cursor: pointer;
+}
+.gtb-root.gtb-root .gtb-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.gtb-root.gtb-root .gtb-line.gtb-wrap {
+  flex-wrap: wrap;
+}
+.gtb-root.gtb-root .gtb-lab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+.gtb-root.gtb-root .gtb-x {
+  font-size: 14px;
+}
+.gtb-root.gtb-root .gtb-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+/* 資源／計分項目編輯 */
+.gtb-root.gtb-root .gtb-rowcard {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #d9d4bf;
+}
+.gtb-root.gtb-root .gtb-ico {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 8px;
+  border: 1px solid #b9c4ab;
+  background: #f6f3e8;
+  font-size: 20px;
+  cursor: pointer;
+}
+.gtb-root.gtb-root .gtb-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.gtb-root.gtb-root .gtb-icons button {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #d9d4bf;
+  background: #ffffff;
+  font-size: 18px;
+  cursor: pointer;
+}
+.gtb-root.gtb-root .gtb-seg {
+  display: inline-flex;
+}
+.gtb-root.gtb-root .gtb-seg button {
+  min-width: 42px;
+  min-height: 38px;
+  border: 1px solid #b9c4ab;
+  background: #ffffff;
+  color: #26332a;
+  font-size: 16px;
+  cursor: pointer;
+}
+.gtb-root.gtb-root .gtb-seg button:first-child {
+  border-radius: 8px 0 0 8px;
+}
+.gtb-root.gtb-root .gtb-seg button:last-child {
+  border-radius: 0 8px 8px 0;
+  border-left: 0;
+}
+.gtb-root.gtb-root .gtb-seg button.on {
+  background: #2f5d3a;
+  border-color: #2f5d3a;
+  color: #ffffff;
+}
+.gtb-root.gtb-root .gtb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.gtb-root.gtb-root .gtb-chips button {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #b9c4ab;
+  background: #ffffff;
+  color: #26332a;
+  font-size: 13px;
+  cursor: pointer;
+}
+.gtb-root.gtb-root .gtb-chips button.on {
+  background: #dfe8d6;
+  border-color: #2f5d3a;
+}
+.gtb-root.gtb-root .gtb-chips button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.gtb-root.gtb-root .gtb-presets {
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #d9d4bf;
+}
+.gtb-root.gtb-root .gtb-tpl {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  min-height: 40px;
+  text-align: left;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid #b9c4ab;
+  background: #f6f3e8;
+  color: #26332a;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* 工具勾選 */
+.gtb-root.gtb-root .gtb-tools {
+  display: grid;
+  gap: 6px;
+}
+.gtb-root.gtb-root .gtb-tools label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #d9d4bf;
+  background: #ffffff;
+  font-size: 14px;
+}
+.gtb-root.gtb-root .gtb-tools label.on {
+  border-color: #2f5d3a;
+  background: #eef4e8;
+}
+.gtb-root.gtb-root .gtb-tools input {
+  width: 20px;
+  height: 20px;
+}
+.gtb-root.gtb-root .gtb-tools small {
+  display: block;
+  font-size: 12px;
+  color: #6b6f60;
+}
+
+/* 遊戲桌清單 */
+.gtb-root.gtb-root .gtb-tablelist {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.gtb-root.gtb-root .gtb-tablelist li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.gtb-root.gtb-root .gtb-tbtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 48px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid #b9c4ab;
+  background: #ffffff;
+  color: #26332a;
+  text-align: left;
+  cursor: pointer;
+}
+.gtb-root.gtb-root .gtb-tbtn span {
+  font-size: 12px;
+  color: #6b6f60;
+}
+.gtb-root.gtb-root .gtb-leave {
+  margin-top: 10px;
+  font-size: 13px;
+}
+.gtb-root.gtb-root .gtb-leave summary {
+  cursor: pointer;
+  color: #6b6f60;
+}
+
+/* 進行畫面 */
+.gtb-root.gtb-root .gtb-tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.gtb-root.gtb-root .gtb-tabs button {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid #b9c4ab;
+  background: #ffffff;
+  color: #26332a;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gtb-root.gtb-root .gtb-tabs button.on {
+  background: #2f5d3a;
+  border-color: #2f5d3a;
+  color: #ffffff;
+}
+.gtb-root.gtb-root .gtb-players {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.gtb-root.gtb-root .gtb-players > li {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #d9d4bf;
+}
+.gtb-root.gtb-root .gtb-players > li.open {
+  border-color: #2f5d3a;
+}
+.gtb-root.gtb-root .gtb-players > li.left {
+  opacity: 0.55;
+}
+.gtb-root.gtb-root .gtb-phead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gtb-root.gtb-root .gtb-pname {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 36px;
+  border: 0;
+  background: none;
+  color: #26332a;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+.gtb-root.gtb-root .gtb-pname small {
+  font-size: 12px;
+  color: #b3261e;
+}
+.gtb-root.gtb-root .gtb-sumline {
+  margin: 2px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.gtb-root.gtb-root .gtb-resedit {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+.gtb-root.gtb-root .gtb-resedit li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+.gtb-root.gtb-root .gtb-rname {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+/* 骰子 */
+.gtb-root.gtb-root .gtb-roll {
+  width: 100%;
+  margin-top: 8px;
+}
+.gtb-root.gtb-root .gtb-dice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.gtb-root.gtb-root .gtb-dice button {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0 8px;
+  border-radius: 10px;
+  border: 2px solid #2f5d3a;
+  background: #f6f3e8;
+  color: #26332a;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gtb-root.gtb-root .gtb-result {
+  margin: 8px 0 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+.gtb-root.gtb-root .gtb-log {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+/* 計分表 */
+.gtb-root.gtb-root .gtb-scroll {
+  margin-top: 10px;
+  overflow-x: auto;
+}
+.gtb-root.gtb-root .gtb-table {
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 100%;
+}
+.gtb-root.gtb-root .gtb-table th,
+.gtb-root.gtb-root .gtb-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid #e3decb;
+  text-align: center;
+  white-space: nowrap;
+}
+.gtb-root.gtb-root .gtb-table tbody th {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: #f6f3e8;
+}
+.gtb-root.gtb-root .gtb-table th small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: #6b6f60;
+}
+.gtb-root.gtb-root .gtb-table th.left {
+  opacity: 0.55;
+}
+.gtb-root.gtb-root .gtb-cell {
+  width: 56px;
+  text-align: right;
+}
+.gtb-root.gtb-root .gtb-auto {
+  display: inline-block;
+  min-width: 40px;
+  font-variant-numeric: tabular-nums;
+  color: #2f5d3a;
+  font-weight: 700;
+}
+.gtb-root.gtb-root .gtb-total td,
+.gtb-root.gtb-root .gtb-total th {
+  font-size: 16px;
+  font-weight: 700;
+}
+.gtb-root.gtb-root .gtb-rank td {
+  color: #2f5d3a;
+  font-weight: 700;
+}
+
+/* 工具管理 */
+.gtb-root.gtb-root .gtb-manage {
+  margin-top: 12px;
+}
+.gtb-root.gtb-root .gtb-toollist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.gtb-root.gtb-root .gtb-toollist li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+/* 深色模式 */
+:root[data-theme='dark'] .gtb-root.gtb-root {
+  background: #1f2a22;
+  border-color: #34443a;
+  color: #e6ece4;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-badge {
+  background: #2c4033;
+  color: #bfe0c6;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-link,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-auto,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-rank td {
+  color: #9fd0aa;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-muted,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-sub,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-tools small,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-tbtn span,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-table th small,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-leave summary {
+  color: #a3b0a5;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-error,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-pname small {
+  color: #ff9d94;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-card,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-rowcard,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-presets,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-players > li,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-tools label {
+  background: #17201a;
+  border-color: #34443a;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-tools label.on {
+  background: #22352a;
+  border-color: #3f8a53;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-players > li.open {
+  border-color: #3f8a53;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-in,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-btn,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-sq,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-seg button,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-chips button,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-tabs button,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-icons button,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-tbtn,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-pname {
+  background: #17201a;
+  border-color: #3d5646;
+  color: #e6ece4;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-pname {
+  background: none;
+  border: 0;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-ico,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-tpl,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-dice button {
+  background: #22352a;
+  border-color: #3d5646;
+  color: #e6ece4;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-btn.main,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-seg button.on,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-tabs button.on {
+  background: #3f8a53;
+  border-color: #3f8a53;
+  color: #ffffff;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-chips button.on {
+  background: #2c4033;
+  border-color: #3f8a53;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-table th,
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-table td {
+  border-bottom-color: #34443a;
+}
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-table tbody th {
+  background: #1f2a22;
+}
