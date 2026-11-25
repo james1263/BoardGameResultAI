@@ -1,7 +1,7 @@
 ﻿import CategoryChips from './components/CategoryChips'
 import SortControl from './components/SortControl'
 import NewArrivals from './components/NewArrivals'
-import LatestDiscussions from './components/LatestDiscussions'
+import './styles/board-entry.css'
 import RulebookPage from './components/RulebookPage'
 import {
   useCallback,
@@ -91,7 +91,6 @@ import './styles/fonts.css'
 const PIN_DAYS = 15
 
 const SEEN_NEW_KEY = 'boardgame-seen-new'
-const SHOW_DISCUSSIONS_KEY = 'boardgame-show-discussions'
 
 function loadSeenNew(): Set<string> {
   try {
@@ -199,6 +198,8 @@ function Library({
   const loyaltyAlerts = useLoyaltyAlerts(session?.user?.id ?? null, vip.isVip && !isAdmin)
   // 新留言數：只顯示在集點聚會頁「留言板」分頁上，不計入導覽列紅點
   const notesUnseen = useNotesUnseen(session?.user?.id ?? null, vip.isVip && !isAdmin)
+    const boardBadge =
+    notesUnseen.count > 99 ? '99+' : notesUnseen.count > 0 ? String(notesUnseen.count) : ''
   // 導覽列「俱樂部」的數字：想玩＋已玩的款數（跟「我的統計」那一列同一個算法）
   const clubCount = useMemo(() => {
     let total = 0
@@ -426,16 +427,7 @@ function Library({
     openGatherings()
   }
 
-  // 首頁「最新桌遊討論」：點一則→開那款遊戲詳細資料的「討論」分頁
-  function openGameDiscussion(game: LibraryGame) {
-    setReturnGame(null)
-    setCoverMessage('')
-    setRatingFromCheckin(false)
-    setSelectedTab('discussion')
-    setSelectedGame(game)
-  }
-
-  // 首頁「最新桌遊討論」：查看全部→開「聚會」視窗的留言板（和 returnToBoard 同一條路）
+    // 首頁「留言板」入口：開「聚會」視窗的留言板（和 returnToBoard 同一條路）
   function openAllDiscussions() {
     setJumpView({ view: 'board', bggName: null })
     openGatherings()
@@ -563,22 +555,7 @@ function Library({
     useState<NumericFilter>(saved.recommendPlayerCount)
   const [timeLimit, setTimeLimit] = useState<NumericFilter>(saved.timeLimit)
   const [showNew, setShowNew] = useState(saved.showNew)
-    // 首頁「最新桌遊討論」要不要顯示（只存在這支手機的瀏覽器；預設顯示）
-  const [showDiscussions, setShowDiscussions] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(SHOW_DISCUSSIONS_KEY) !== '0'
-    } catch {
-      return true
-    }
-  })
-  function changeShowDiscussions(value: boolean) {
-    setShowDiscussions(value)
-    try {
-      localStorage.setItem(SHOW_DISCUSSIONS_KEY, value ? '1' : '0')
-    } catch {
-      // 儲存失敗也不影響使用
-    }
-  }
+
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>(
     saved.ratingFilter,
   )
@@ -1162,7 +1139,20 @@ function Library({
               <FilterTags tags={filterTags} />
               <div className="hero-tools-row explore-meta">
                 <StatusLegend />
-                <ToolsButton onSelect={handleToolsChoice} />
+                <span className="board-entry-group">
+                  {(vip.isVip || isAdmin) && (
+                    <button
+                      type="button"
+                      className="explore-mine-btn board-entry-btn"
+                      aria-label={boardBadge ? `留言板，${boardBadge} 則新討論` : '留言板'}
+                      onClick={openAllDiscussions}
+                    >
+                      <span aria-hidden="true">💬</span> 留言板
+                      {boardBadge && <span className="board-entry-badge">{boardBadge}</span>}
+                    </button>
+                  )}
+                  <ToolsButton onSelect={handleToolsChoice} />
+                </span>
               </div>
             </div>
           </div>
@@ -1176,14 +1166,6 @@ function Library({
             onOpen={openGame}
           />
         )}
-
-        <LatestDiscussions
-          enabled={(vip.isVip || isAdmin) && showDiscussions}
-          games={statGames}
-          reloadKey={selectedGame === null && activePage === null ? 1 : 0}
-          onOpenGame={openGameDiscussion}
-          onViewAll={openAllDiscussions}
-        />
         <div className="explore-home explore-types">
           <div className="explore-types-row">
             <CategoryChips
@@ -1197,9 +1179,6 @@ function Library({
               <DisplayControl
                 showNew={showNew}
                 onShowNewChange={setShowNew}
-                canHideDiscussions={vip.isVip || isAdmin}
-                showDiscussions={showDiscussions}
-                onShowDiscussionsChange={changeShowDiscussions}
                 showCardInfo={showCardInfo}
                 onShowCardInfoChange={setShowCardInfo}
                 viewMode={viewMode}

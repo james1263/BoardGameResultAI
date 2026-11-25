@@ -1,0 +1,21 @@
+.board-entry-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.board-entry-btn {
+  position: relative;
+}
+.board-entry-badge {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #8b6b4a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
