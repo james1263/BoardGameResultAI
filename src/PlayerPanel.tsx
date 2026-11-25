@@ -10,7 +10,6 @@ import { VIP_BENEFITS } from './components/VipUpgradeDialog'
 import {
   THEME_LABELS,
   loadThemePref,
-  nextThemePref,
   saveThemePref,
   type ThemePref,
 } from './lib/theme'
@@ -95,8 +94,14 @@ export default function PlayerPanel() {
     return () => media.removeEventListener('change', onChange)
   }, [themePref])
 
+  const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  // 另一個選項：系統深色就給「淺色」，系統淺色就給「深色」
+  const otherPref: ThemePref = systemIsDark ? 'light' : 'dark'
+  // 已存的偏好若等於系統本身的顏色，等同「跟隨系統」
+  const shownPref: ThemePref = themePref === otherPref ? otherPref : 'system'
+
   function cycleTheme() {
-    const next = nextThemePref(themePref)
+    const next: ThemePref = shownPref === 'system' ? otherPref : 'system'
     setThemePref(next)
     saveThemePref(next)
   }
@@ -240,7 +245,7 @@ export default function PlayerPanel() {
                 {hideInLists ? '☐' : '☑'} 在 VIP 名單顯示我的暱稱
               </button>
               <button type="button" role="menuitem" onClick={cycleTheme}>
-                外觀：{THEME_LABELS[themePref]}
+                外觀：{THEME_LABELS[shownPref]}
               </button>
               <button type="button" role="menuitem" onClick={openDialog}>
                 {profile ? '修改暱稱與聯絡方式' : '設定暱稱'}

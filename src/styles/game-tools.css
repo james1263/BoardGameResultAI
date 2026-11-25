@@ -571,3 +571,112 @@
   background: #e3ecd0;
   border-color: #8fa57a;
 }
+
+/* ===== 深色模式 ===== */
+:root[data-theme="dark"] .gt-root.gt-root .gt-menu {
+  background: #263229;
+  border-color: #3f5143;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-menu-item { color: #e8efe0; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-menu-item:hover,
+:root[data-theme="dark"] .gt-root.gt-root .gt-menu-item:active { background: #34463a; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-menu-item.active { background: #3f5a45; }
+
+:root[data-theme="dark"] .gt-root.gt-root .gt-sheet {
+  background: #1f2a22;
+  color: #e8efe0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-head { background: #24472c; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-tile {
+  border-color: #5f8a6a;
+  background: #2a372d;
+  color: #e8efe0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-tile:active { background: #34463a; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-grid .gt-tile.fav {
+  background: #324a38;
+  border-color: #7fa889;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-tile.dragging { background: #34463a; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-tile.drop {
+  border-color: #c9a24a;
+  background: #4a3f1a;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-tile-name { color: #e8efe0; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-tile-empty {
+  border-color: #4a5c4e;
+  background: transparent;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-tile-empty .gt-tile-icon,
+:root[data-theme="dark"] .gt-root.gt-root .gt-tile-empty .gt-tile-name { color: #6f7f72; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-edit-bar,
+:root[data-theme="dark"] .gt-root.gt-root .gt-lock {
+  background: #4a3f1a;
+  color: #f0dc9a;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-field,
+:root[data-theme="dark"] .gt-root.gt-root .gt-check,
+:root[data-theme="dark"] .gt-root.gt-root .gt-dice-tip { color: #e8efe0; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-input {
+  border-color: #4a5c4e;
+  background: #1b251e;
+  color: #e8efe0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-formula { color: #9fd0a8; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-hint,
+:root[data-theme="dark"] .gt-root.gt-root .gt-counts-title,
+:root[data-theme="dark"] .gt-root.gt-root .gt-history-panel p { color: #9fae9a; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-primary,
+:root[data-theme="dark"] .gt-root.gt-root .gt-ok { background: #3b7a49; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-secondary {
+  border-color: #6fa57c;
+  background: transparent;
+  color: #b9dcc0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-dice-area {
+  border-color: #5f8a6a;
+  background: #2a372d;
+  color: #e8efe0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-die {
+  border-color: #6fa57c;
+  background: #1f2a22;
+  color: #b9dcc0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-counts {
+  border-color: #3f5143;
+  background: #2a372d;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-count {
+  border-color: #3f5143;
+  background: #1f2a22;
+  color: #6f7f72;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-count.has {
+  border-color: #6fa57c;
+  background: #34463a;
+  color: #e8efe0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-count:not(.has) .gt-count-face { background: #4a5c4e; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-msg { color: #ff9a86; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-history-btn { background: #3b7a49; }
+:root[data-theme="dark"] .gt-root.gt-root .gt-history-panel {
+  border-color: #3f5143;
+  background: #263229;
+  color: #e8efe0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-ladder-scroll,
+:root[data-theme="dark"] .gt-root.gt-root .gt-roster-panel {
+  border-color: #3f5143;
+  background: #2a372d;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-rank-list li {
+  border-bottom-color: #3f5143;
+  color: #e8efe0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-roster-item {
+  border-color: #4a5c4e;
+  background: #1f2a22;
+  color: #e8efe0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .gt-roster-item:active { background: #34463a; }
