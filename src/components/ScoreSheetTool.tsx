@@ -7,10 +7,13 @@ import {
   checkVip,
   deleteTemplate,
   fmt,
+  getResourceSnapshot,
   loadTemplates,
   newRowId,
+  pullAmount,
   rowPoints,
   saveTemplate,
+  setResourceSnapshot,
   toolOf,
   type SheetRow,
   type SheetTemplate,
@@ -39,10 +42,23 @@ type EditRow = {
   sign: 1 | -1
   multStr: string
   initStr: string
+  linked: boolean
+  fromStr: string
+  perStr: string
 }
 
 function newEditRow(): EditRow {
-  return { id: newRowId(), name: '', icon: '⭐', sign: 1, multStr: '1', initStr: '0' }
+  return {
+    id: newRowId(),
+    name: '',
+    icon: '⭐',
+    sign: 1,
+    multStr: '1',
+    initStr: '0',
+    linked: false,
+    fromStr: '',
+    perStr: '1',
+  }
 }
 
 function toEdit(rows: SheetRow[]): EditRow[] {
@@ -54,6 +70,9 @@ function toEdit(rows: SheetRow[]): EditRow[] {
     sign: r.sign,
     multStr: fmt(r.mult),
     initStr: String(r.init),
+    linked: Boolean(r.from),
+    fromStr: r.from ?? '',
+    perStr: String(r.per ?? 1),
   }))
 }
 
@@ -73,7 +92,7 @@ function fromEdit(rows: EditRow[], tool: ToolKind): SheetRow[] {
         init: Number.isFinite(i) ? Math.max(0, Math.min(MAX_VALUE, i)) : 0,
       }
     }
-    return {
+    const out: SheetRow = {
       id: r.id,
       name: r.name.trim(),
       icon: r.icon || '⭐',
@@ -82,6 +101,13 @@ function fromEdit(rows: EditRow[], tool: ToolKind): SheetRow[] {
       mult: Number.isFinite(m) ? Math.max(-1000, Math.min(1000, m)) : 1,
       init: 0,
     }
+    const from = r.linked ? r.fromStr.trim() : ''
+    if (from) {
+      const per = parseInt(r.perStr, 10)
+      out.from = from
+      out.per = Number.isFinite(per) ? Math.max(1, Math.min(MAX_VALUE, per)) : 1
+    }
+    return out
   })
 }
 
@@ -146,6 +172,9 @@ function SheetEditor({
   function check(): string {
     if (rows.length === 0) return '至少要有一列。'
     if (!rows.every((r) => r.name.trim().length > 0)) return '每一列都要填名稱。'
+    if (tool === 'score' && rows.some((r) => r.linked && r.fromStr.trim() === '')) {
+      return '勾了「取自資源」的列，要填資源名稱。'
+    }
     return ''
   }
 
@@ -215,7 +244,7 @@ function SheetEditor({
         <p className="gt-hint ss-help">
           {isRes
             ? '資源計數器：遊戲中用 ＋／− 記每個人的資源數量，不計分。「起始」是開局時的數量。'
-            : '計分表：每一列是一個算分項目，設好符號與「每個算幾分」，使用時只要輸入數字。'}
+            : '計分表：每一列是一個算分項目，設好符號與「每個算幾分」，使用時只要輸入數字。也可以勾「取自資源計數器」，使用時按「帶入」把資源數量換算成數字（資源名稱要和資源計數器裡的一樣）。'}
         </p>
 
         <ul className="ss-edit-list">
@@ -301,6 +330,7 @@ function SheetEditor({
                   </label>
                 </div>
               ) : (
+                <>
                 <div className="ss-edit-line ss-wrap">
                   <div className="ss-seg" role="group" aria-label="加分或扣分">
                     <button
@@ -319,7 +349,7 @@ function SheetEditor({
                     </button>
                   </div>
                   <label className="gt-field">
-                    每個
+                    {row.linked ? '算' : '每個'}
                     <input
                       className="gt-input ss-num"
                       inputMode="decimal"
@@ -329,6 +359,41 @@ function SheetEditor({
                     分
                   </label>
                 </div>
+                <div className="ss-edit-line ss-wrap">
+                  <label className="gt-check">
+                    <input
+                      type="checkbox"
+                      checked={row.linked}
+                      onChange={(event) => update(row.id, { linked: event.target.checked })}
+                    />
+                    取自資源計數器
+                  </label>
+                </div>
+                {row.linked && (
+                  <div className="ss-edit-line ss-wrap">
+                    <label className="gt-field">
+                      資源名稱
+                      <input
+                        className="gt-input ss-from"
+                        value={row.fromStr}
+                        maxLength={20}
+                        placeholder="例：木頭"
+                        onChange={(event) => update(row.id, { fromStr: event.target.value })}
+                      />
+                    </label>
+                    <label className="gt-field">
+                      每
+                      <input
+                        className="gt-input ss-num"
+                        inputMode="numeric"
+                        value={row.perStr}
+                        onChange={(event) => update(row.id, { perStr: event.target.value })}
+                      />
+                      個
+                    </label>
+                  </div>
+                )}
+                </>
               )}
             </li>
           ))}
@@ -457,6 +522,32 @@ function loadRun(tpl: SheetTemplate): Run {
   }
 }
 
+function PullIcon() {
+  return (
+    <svg
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ verticalAlign: '-0.12em' }}
+      aria-hidden="true"
+    >
+      <path d="M12 3v11M7 10l5 5 5-5M5 20h14" />
+    </svg>
+  )
+}
+
+function pullFail(name: string, p: number): string {
+  const snap = getResourceSnapshot()
+  if (!snap) return '還沒有資源數量。先用資源計數器輸入，再回來帶入。'
+  if (!snap.players[p]) return `資源計數器沒有第 ${p + 1} 位玩家（玩家依順序對應）。`
+  return `資源計數器裡找不到「${name}」，名稱要一樣。`
+}
+
 function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
   const rows = tpl.rows
   // 資源計數器不計分：沒有總分分頁、沒有每列分數
@@ -466,6 +557,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
   const [sel, setSel] = useState({ p: 0, i: 0 })
   const [open, setOpen] = useState<number | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [pullMsg, setPullMsg] = useState('')
   const fresh = useRef(true)
   const resetTimer = useRef<number | null>(null)
   const np = run.names.length
@@ -478,6 +570,12 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
       // 存不了就算了
     }
   }, [run, tpl.id])
+
+  // 資源計數器：把目前數量放進記憶體，計分表的「取自資源」按「帶入」時讀
+  useEffect(() => {
+    if (!isRes) return
+    setResourceSnapshot(tpl.title, rows, run.names, run.values)
+  }, [isRes, tpl.title, rows, run])
 
   useEffect(
     () => () => {
@@ -571,6 +669,48 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
       return { names, values }
     })
     if (sel.p > target - 1) goto(target - 1, 0)
+  }
+
+  function pull(i: number) {
+    const row = rows[i]
+    if (!row || !row.from) return
+    goto(sel.p, i)
+    const v = pullAmount(row, sel.p)
+    if (v === null) {
+      setPullMsg(pullFail(row.from, sel.p))
+      return
+    }
+    setVal(sel.p, row.id, v)
+    setPullMsg('')
+  }
+
+  function pullAll() {
+    const snap = getResourceSnapshot()
+    if (!snap) {
+      setPullMsg(pullFail('', 0))
+      return
+    }
+    const updates: Array<{ p: number; id: string; v: number }> = []
+    for (let p = 0; p < np; p += 1) {
+      for (const row of rows) {
+        if (!row.from) continue
+        const v = pullAmount(row, p)
+        if (v !== null) updates.push({ p, id: row.id, v })
+      }
+    }
+    if (updates.length === 0) {
+      setPullMsg('沒有可帶入的資料，請確認資源名稱與玩家人數。')
+      return
+    }
+    setRun((prev) => ({
+      ...prev,
+      values: prev.values.map((vals, k) => {
+        const next = { ...vals }
+        for (const u of updates) if (u.p === k) next[u.id] = u.v
+        return next
+      }),
+    }))
+    setPullMsg(`已帶入 ${updates.length} 格（來自「${snap.title}」）。`)
   }
 
   function handleReset() {
@@ -718,6 +858,9 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
                         <small className={row.sign === -1 ? 'neg' : ''}>
                           {row.sign === -1 ? '−' : '＋'}
                           {fmt(row.mult)} 分
+                          {row.from
+                            ? `・取自${row.from}${(row.per ?? 1) > 1 ? `，每 ${row.per} 個` : ''}`
+                            : ''}
                         </small>
                       )}
                     </span>
@@ -750,11 +893,32 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
                         ＋
                       </button>
                     )}
+                    {row.from && (
+                      <button
+                        type="button"
+                        className="ss-pull"
+                        aria-label={`從資源計數器帶入${row.name}`}
+                        title="從資源計數器帶入"
+                        onMouseDown={noFocus}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          pull(i)
+                        }}
+                      >
+                        <PullIcon />
+                      </button>
+                    )}
                     {!isRes && <span className="ss-sub">{fmt(rowPoints(row, v ?? 0))}</span>}
                   </li>
                 )
               })}
             </ul>
+            {pullMsg && <p className="gt-msg">{pullMsg}</p>}
+            {rows.some((r) => r.from) && (
+              <button type="button" className="ss-link ss-pull-all" onClick={pullAll}>
+                <PullIcon /> 全部帶入
+              </button>
+            )}
             <button type="button" className="ss-link ss-reset" onClick={handleReset}>
               {confirmReset ? '再按一次確定清空所有數字' : '清空所有數字'}
             </button>

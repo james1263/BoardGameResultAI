@@ -1,0 +1,64 @@
+/* 小工具第三批：標題列「＋ 工具」按鈕、選單、浮動視窗。固定配色，選擇器疊 .gt-root.gt-root */
+
+.gt-root.gt-root .gt-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.gt-root.gt-root .gt-plus {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.16);
+  color: inherit;
+  font-size: 18px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.gt-root.gt-root .gt-plus:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 選單蓋在浮動視窗之上 */
+.gt-root.gt-root.gt-plus-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  background: transparent;
+}
+
+/* 浮動視窗：蓋在小工具視窗上，不離開目前畫面 */
+.gt-root.gt-root.gt-float-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.5);
+}
+.gt-root.gt-root .gt-float-sheet.gt-sheet {
+  position: relative;
+  inset: auto;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 440px);
+  height: min(78vh, 640px);
+  max-height: 78vh;
+  margin: 0;
+  transform: none;
+  overflow: hidden;
+}
+.gt-root.gt-root .gt-float-sheet .gt-body {
+  flex: 1;
+  min-height: 0;
+}

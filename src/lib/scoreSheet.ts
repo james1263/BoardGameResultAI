@@ -16,6 +16,9 @@ export type SheetRow = {
   sign: 1 | -1
   mult: number
   init: number
+  // 計分表專用：取自資源計數器（資源名稱、每 per 個算 1 個單位）；沒設就是手動輸入
+  from?: string
+  per?: number
 }
 
 export type SheetTemplate = {
@@ -174,7 +177,7 @@ export function parseRows(raw: unknown): SheetRow[] {
     if (typeof item !== 'object' || item === null) continue
     const r = item as Record<string, unknown>
     const kind: RowKind = r.kind === 'hold' ? 'hold' : r.kind === 'score' ? 'score' : 'count'
-    out.push({
+    const row: SheetRow = {
       id: typeof r.id === 'string' && r.id ? r.id : newRowId(),
       name: typeof r.name === 'string' ? r.name : '',
       icon: typeof r.icon === 'string' && r.icon ? r.icon : '⭐',
@@ -182,9 +185,60 @@ export function parseRows(raw: unknown): SheetRow[] {
       sign: r.sign === -1 ? -1 : 1,
       mult: num(r.mult, 1),
       init: num(r.init, 0),
-    })
+    }
+    const from = typeof r.from === 'string' ? r.from.trim().slice(0, 20) : ''
+    if (from) {
+      row.from = from
+      row.per = Math.max(1, Math.min(MAX_VALUE, Math.round(num(r.per, 1))))
+    }
+    out.push(row)
   }
   return out.slice(0, MAX_ROWS)
+}
+
+// ───────────── 資源計數器目前的數量（只放記憶體，同一次開小工具視窗期間共用） ─────────────
+// 計分表的「取自資源」按「帶入」時才讀；關掉小工具視窗（GameTools）就清掉。不存瀏覽器、不存資料庫。
+
+export type ResourceSnapshot = {
+  title: string
+  players: Array<{ name: string; byName: Record<string, number> }>
+}
+
+let snapshot: ResourceSnapshot | null = null
+
+export function setResourceSnapshot(
+  title: string,
+  rows: SheetRow[],
+  names: string[],
+  values: Array<Record<string, number>>,
+): void {
+  snapshot = {
+    title,
+    players: names.map((name, p) => {
+      const byName: Record<string, number> = {}
+      for (const r of rows) byName[r.name.trim()] = values[p]?.[r.id] ?? 0
+      return { name, byName }
+    }),
+  }
+}
+
+export function getResourceSnapshot(): ResourceSnapshot | null {
+  return snapshot
+}
+
+export function clearResourceSnapshot(): void {
+  snapshot = null
+}
+
+// 第 player 位玩家在資源計數器裡的數量換算成這一列的數字（每 per 個算 1，無條件捨去）；找不到回傳 null
+export function pullAmount(row: SheetRow, player: number): number | null {
+  if (!row.from || !snapshot) return null
+  const p = snapshot.players[player]
+  if (!p) return null
+  const v = p.byName[row.from.trim()]
+  if (v === undefined) return null
+  const per = Math.max(1, row.per ?? 1)
+  return Math.max(0, Math.min(MAX_VALUE, Math.floor(v / per)))
 }
 
 type TemplateRpc = {

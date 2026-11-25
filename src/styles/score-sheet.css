@@ -630,3 +630,34 @@
   color: #e8efe0;
 }
 :root[data-theme="dark"] .gt-root.gt-root .ss-preset-chip:active { background: #34463a; }
+
+/* ===== 取自資源計數器（第三批） ===== */
+.gt-root.gt-root .ss-from {
+  width: 140px;
+}
+.gt-root.gt-root .ss-pull {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #2f5d3a;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #2f5d3a;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.gt-root.gt-root .ss-pull:active {
+  background: #e9efd9;
+}
+.gt-root.gt-root .ss-pull-all {
+  margin-top: 6px;
+  margin-right: 12px;
+}
+:root[data-theme="dark"] .gt-root.gt-root .ss-pull {
+  border-color: #6fa57c;
+  background: #1f2a22;
+  color: #b9dcc0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .ss-pull:active { background: #34463a; }

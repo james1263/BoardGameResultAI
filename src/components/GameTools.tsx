@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom'
 import { useBackClose } from '../lib/useBackClose'
 import { supabase } from '../lib/supabase'
 import ScoreSheetTool from './ScoreSheetTool'
+import { clearResourceSnapshot } from '../lib/scoreSheet'
 import '../styles/game-tools.css'
+import '../styles/tools-float.css'
 
 export type ToolView = 'grid' | 'dice' | 'ladder' | 'sheet' | 'counter'
 export type ToolChoice = ToolView | 'picker'
@@ -26,6 +28,34 @@ function LadderIcon() {
     </svg>
   )
 }
+
+// 「＋ 工具」圖示：自畫 SVG（不用表情符號，舊電腦不會變方框）
+function ToolPlusIcon() {
+  return (
+    <svg
+      width="1.2em"
+      height="1.2em"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <path d="M12 8v8M8 12h8" />
+    </svg>
+  )
+}
+
+// 在目前工具裡用浮動視窗打開的小工具（不離開目前畫面）
+type FloatKind = 'dice' | 'counter'
+const FLOAT_INFO: Record<FloatKind, { name: string; icon: string }> = {
+  dice: { name: '擲骰', icon: '🎲' },
+  counter: { name: '資源計數器', icon: '📦' },
+}
+const FLOAT_KINDS: FloatKind[] = ['dice', 'counter']
 
 const MENU_ITEMS: { id: ToolChoice; icon: ReactNode; name: string }[] = [
   { id: 'dice', icon: '🎲', name: '擲骰' },
@@ -1187,7 +1217,22 @@ export default function GameTools({
   onOpenPicker: () => void
 }) {
   const [history, setHistory] = useState<string[]>([])
+  const [plusMenu, setPlusMenu] = useState<{ left: number; top: number } | null>(null)
+  const [floatKind, setFloatKind] = useState<FloatKind | null>(null)
+  // 開過的浮動視窗一直掛著（只是藏起來），這樣關掉再開，裡面輸入的數字還在
+  const [floatUsed, setFloatUsed] = useState<FloatKind[]>([])
+  const plusRef = useRef<HTMLButtonElement>(null)
   useBackClose(onClose, view !== null)
+
+  // 換畫面就收起選單；關掉小工具視窗就清掉浮動視窗與資源數量（只放記憶體）
+  useEffect(() => {
+    setPlusMenu(null)
+    if (view === null) {
+      clearResourceSnapshot()
+      setFloatKind(null)
+      setFloatUsed([])
+    }
+  }, [view])
 
   if (view === null) return null
 
@@ -1216,6 +1261,29 @@ export default function GameTools({
       '🧰 小工具'
     )
 
+  const plusKinds = FLOAT_KINDS.filter(
+    (k) => !(k === 'dice' && view === 'dice') && !(k === 'counter' && view === 'counter'),
+  )
+  const showPlus = view !== 'grid' && plusKinds.length > 0
+
+  function togglePlusMenu() {
+    if (plusMenu) {
+      setPlusMenu(null)
+      return
+    }
+    const rect = plusRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const width = 168
+    const left = Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8))
+    setPlusMenu({ left, top: rect.bottom + 6 })
+  }
+
+  function openFloat(kind: FloatKind) {
+    setPlusMenu(null)
+    setFloatKind(kind)
+    setFloatUsed((cur) => (cur.includes(kind) ? cur : [...cur, kind]))
+  }
+
   // ✕：在擲骰、爬梯子裡回到小工具九格，在九格才關閉；點視窗外面直接回主畫面
   function handleX() {
     if (view === 'grid') onClose()
@@ -1223,6 +1291,7 @@ export default function GameTools({
   }
 
   return (
+    <>
     <div className="gt-root gt-backdrop" onClick={onClose}>
     <div
       className="gt-sheet"
@@ -1232,14 +1301,29 @@ export default function GameTools({
     >
       <div className="gt-head">
         <span className="gt-title">{title}</span>
-        <button
-          type="button"
-          className="gt-close"
-          aria-label={view === 'grid' ? '關閉' : '回到小工具'}
-          onClick={handleX}
-        >
-          ×
-        </button>
+        <span className="gt-head-actions">
+          {showPlus && (
+            <button
+              ref={plusRef}
+              type="button"
+              className="gt-plus"
+              aria-label="開啟其他工具"
+              aria-expanded={plusMenu !== null}
+              title="開啟其他工具"
+              onClick={togglePlusMenu}
+            >
+              <ToolPlusIcon />
+            </button>
+          )}
+          <button
+            type="button"
+            className="gt-close"
+            aria-label={view === 'grid' ? '關閉' : '回到小工具'}
+            onClick={handleX}
+          >
+            ×
+          </button>
+        </span>
       </div>
 
             <div className={view === 'sheet' || view === 'counter' ? 'gt-body gt-body-sheet' : 'gt-body'}>
@@ -1255,5 +1339,72 @@ export default function GameTools({
       </div>
     </div>
     </div>
+
+    {plusMenu &&
+      createPortal(
+        <div
+          className="gt-root gt-menu-backdrop gt-plus-backdrop"
+          onClick={() => setPlusMenu(null)}
+        >
+          <div
+            className="gt-menu"
+            role="menu"
+            style={{ left: plusMenu.left, top: plusMenu.top }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            {plusKinds.map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="menuitem"
+                className="gt-menu-item"
+                onClick={() => openFloat(k)}
+              >
+                <span aria-hidden="true">{FLOAT_INFO[k].icon}</span>
+                <span>{FLOAT_INFO[k].name}</span>
+              </button>
+            ))}
+          </div>
+        </div>,
+        document.body,
+      )}
+
+    {floatUsed.map((kind) => (
+      <div
+        key={kind}
+        className="gt-root gt-float-backdrop"
+        style={floatKind === kind ? undefined : { display: 'none' }}
+        onClick={() => setFloatKind(null)}
+      >
+        <div
+          className="gt-sheet gt-float-sheet"
+          role="dialog"
+          aria-label={FLOAT_INFO[kind].name}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="gt-head">
+            <span className="gt-title">
+              {FLOAT_INFO[kind].icon} {FLOAT_INFO[kind].name}
+            </span>
+            <button
+              type="button"
+              className="gt-close"
+              aria-label="關閉浮動視窗"
+              onClick={() => setFloatKind(null)}
+            >
+              ×
+            </button>
+          </div>
+          <div className={kind === 'counter' ? 'gt-body gt-body-sheet' : 'gt-body'}>
+            {kind === 'dice' ? (
+              <DiceTool history={history} onRecord={record} />
+            ) : (
+              <ScoreSheetTool key="float-counter" tool="resource" />
+            )}
+          </div>
+        </div>
+      </div>
+    ))}
+    </>
   )
 }
