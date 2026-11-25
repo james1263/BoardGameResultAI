@@ -421,8 +421,13 @@
   background: #d9dec9;
   font-size: 15px;
 }
+.gt-root.gt-root .ss-keypad .ss-key-prev {
+  grid-column: 4;
+  grid-row: 1;
+}
 .gt-root.gt-root .ss-keypad .ss-key-next {
-  grid-row: 2 / 4;
+  grid-column: 4;
+  grid-row: 2 / 5;
   background: #2f5d3a;
   color: #ffffff;
   font-size: 18px;

@@ -930,7 +930,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
                 {d}
               </button>
             ))}
-            <button type="button" className="ss-key-side" onClick={prev}>
+            <button type="button" className="ss-key-side ss-key-prev" onClick={prev}>
               上一格
             </button>
             {[4, 5, 6].map((d) => (
@@ -938,9 +938,6 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
                 {d}
               </button>
             ))}
-            <button type="button" className="ss-key-next" onClick={next}>
-              下一格
-            </button>
             {[1, 2, 3].map((d) => (
               <button key={d} type="button" onClick={() => press(d)}>
                 {d}
@@ -954,6 +951,9 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
             </button>
             <button type="button" className="ss-key-side" onClick={clearCell}>
               清除
+            </button>
+            <button type="button" className="ss-key-next" onClick={next}>
+              下一格
             </button>
           </div>
         </>
