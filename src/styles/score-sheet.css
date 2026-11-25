@@ -666,3 +666,35 @@
   color: #b9dcc0;
 }
 :root[data-theme="dark"] .gt-root.gt-root .ss-pull:active { background: #34463a; }
+
+
+/* 編輯器每列縮小（第三批後續）：列多時不要太高 */
+.gt-root.gt-root .ss-edit-row {
+  gap: 5px;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+.gt-root.gt-root .ss-edit-line {
+  gap: 4px;
+}
+.gt-root.gt-root .ss-edit-row .ss-icon-btn {
+  width: 32px;
+  height: 30px;
+  border-radius: 7px;
+  font-size: 17px;
+}
+.gt-root.gt-root .ss-edit-row .ss-mini {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 4px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+.gt-root.gt-root .ss-edit-row .gt-input {
+  min-height: 0;
+  height: 30px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
+}
