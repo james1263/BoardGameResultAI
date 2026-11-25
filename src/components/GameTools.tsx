@@ -50,12 +50,13 @@ function ToolPlusIcon() {
 }
 
 // 在目前工具裡用浮動視窗打開的小工具（不離開目前畫面）
-type FloatKind = 'dice' | 'counter'
+type FloatKind = 'dice' | 'counter' | 'sheet'
 const FLOAT_INFO: Record<FloatKind, { name: string; icon: string }> = {
   dice: { name: '擲骰', icon: '🎲' },
   counter: { name: '資源計數器', icon: '📦' },
+  sheet: { name: '計分表', icon: '🧮' },
 }
-const FLOAT_KINDS: FloatKind[] = ['dice', 'counter']
+const FLOAT_KINDS: FloatKind[] = ['dice', 'sheet', 'counter']
 
 const MENU_ITEMS: { id: ToolChoice; icon: ReactNode; name: string }[] = [
   { id: 'dice', icon: '🎲', name: '擲骰' },
@@ -1261,9 +1262,7 @@ export default function GameTools({
       '🧰 小工具'
     )
 
-  const plusKinds = FLOAT_KINDS.filter(
-    (k) => !(k === 'dice' && view === 'dice') && !(k === 'counter' && view === 'counter'),
-  )
+  const plusKinds = FLOAT_KINDS.filter((k) => k !== view)
   const showPlus = view !== 'grid' && plusKinds.length > 0
 
   function togglePlusMenu() {
@@ -1395,9 +1394,11 @@ export default function GameTools({
               ×
             </button>
           </div>
-          <div className={kind === 'counter' ? 'gt-body gt-body-sheet' : 'gt-body'}>
+          <div className={kind !== 'dice' ? 'gt-body gt-body-sheet' : 'gt-body'}>
             {kind === 'dice' ? (
               <DiceTool history={history} onRecord={record} />
+            ) : kind === 'sheet' ? (
+              <ScoreSheetTool key="float-sheet" tool="score" />
             ) : (
               <ScoreSheetTool key="float-counter" tool="resource" />
             )}
