@@ -3,18 +3,24 @@
 // 擴充（預設收起）：天人合一 Rise of Ix、不朽 Immortality、血脈 Bloodlines（含薩督卡指揮官與科技模組）、與原版混用、6 人遊戲。
 // 來源：英文官方規則書（Dire Wolf，Uprising，19 頁）、官方 Board Space Guide、官方 Rivals／Six-Player 補充（只取 6 人部分）、
 // 官方 Bloodlines 規則書（11 頁）、Universal Head（EOG）規則摘要 v1.1（玩家整理，非官方）、Condensed Rules（玩家整理，非官方）。
-// 沒有中文規則書：中文用詞全部自譯，標【待核對】。官方與玩家整理衝突時以官方為準。
+// 第二版新增：BGG 規則討論區（Uprising 與 Bloodlines）的討論串結論，標「BGG 討論（玩家整理，非官方）」；
+// 其中設計師（Sean McCarthy 等）的回覆標「設計師回覆」，引用官方 FAQ 的標「官方 FAQ（BGG 討論引用）」——FAQ 原文本檔沒有直接看過，請對照原件。
+// 沒有中文規則書：中文用詞全部自譯，標【待核對】。官方與玩家整理衝突時以官方為準；BGG 討論只補官方沒寫的空隙。
 // 卡牌（領袖、帝國牌、陰謀牌、衝突卡、合約、科技板塊）的個別效果沒有收錄；使用者另傳的 Card Inventory xlsx 沒有用於本檔。
 // 圖板與圖示上的數字（影響力軌獎勵、聯盟 VP、衝突卡獎勵）沒有逐項收錄，需看實物。
+// 逐則的非官方問答另放 faq/unofficial/duneImperiumUprisingUnofficial.ts；本檔只收「開桌前一定要知道」的幾點，避免重複。
 
 import type { ReviewSection } from './risingSun'
 
 const RB = '英文規則書'
 const BSG = '官方 Board Space Guide'
+const BGG = 'BGG 討論（玩家整理，非官方）'
+const BGGD = 'BGG 討論，設計師回覆'
+const FAQ = '官方 FAQ（BGG 討論引用）'
 
 export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string; sections: ReviewSection[] } = {
   bggName: 'Dune: Imperium – Uprising',
-  draftNote: '草稿：只有英文資料，中文用詞為自譯【待核對】；單人與 2 人對手模式沒有收錄。',
+  draftNote: '草稿：只有英文資料，中文用詞為自譯【待核對】；單人與 2 人對手模式沒有收錄；新增的 BGG 討論補充已標「玩家整理」，與官方衝突時以官方為準。',
   sections: [
     {
       title: '遊戲目標',
@@ -34,6 +40,11 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
         {
           text: '終局時可先打出並結算所有「終局」陰謀牌，再比 VP。',
           src: `${RB} 第 15 頁`,
+        },
+        {
+          label: '回合（turn）與輪（round）',
+          text: '「回合」是一次探員回合或一次揭示回合；「輪」是所有玩家輪流做完回合、再加上戰鬥階段。每輪每人有 1～4 個回合。這兩個詞很容易混淆。',
+          src: `${BGG}：Tracking troops acquired this turn? 串；設計師回覆`,
         },
       ],
     },
@@ -96,6 +107,11 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           src: `${RB} 第 9、20 頁`,
         },
         {
+          label: '付費→效果是一體結算',
+          text: '【玩家整理】「付費→效果」的組合一般不能被中途插入別的行動；社群也引用設計師的說法，把它套用到科技、空間與牌。例：Spy Drones 要先已經收回過間諜再翻開，才拿得到銷毀；不能先拿 1 索拉里、之後才收回間諜再補銷毀。',
+          src: `${BGGD}：Spy Drones 串`,
+        },
+        {
           label: '八種探員圖示',
           text: '皇帝、宇航公會、姐妹會、弗雷曼人、蘭茲拉特議會（綠色五邊形）、城市、香料貿易、間諜。',
           src: `${RB} 第 9 頁`,
@@ -107,8 +123,13 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
         },
         {
           label: '先打牌再派探員',
-          text: '在這個遊戲裡探員和牌緊密相連：不先打出一張允許的牌，就不能派探員。',
-          src: `${RB} 第 6 頁`,
+          text: '在這個遊戲裡探員和牌緊密相連：不先打出一張允許的牌，就不能派探員。探員回合一定是「打牌＋派探員」，不能只打牌不派。',
+          src: `${RB} 第 6 頁；${BGG}：First playthrough questions 串`,
+        },
+        {
+          label: '不能派到自己已有探員的空間',
+          text: '只有「別人的」探員可以靠間諜滲透；自己的探員會擋住自己。',
+          src: `${BGG}：Leader in game 串`,
         },
       ],
     },
@@ -126,6 +147,11 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           src: `${RB} 第 10 頁`,
         },
         {
+          label: '部署每個回合都可以再來一次',
+          text: '【玩家整理】「最多 2 個駐軍區部隊」是每個「派到戰鬥空間的探員回合」各一次，不是每輪一次。本回合招募的單位不論來源（陰謀牌、科技、空間、牌）都能部署，與招募時機無關；部署也可以放到回合最後才決定。實務上把新招募的放駐軍區靠衝突區的一邊、原有的放另一邊即可區分。',
+          src: `${BGG}：Confusion about moving units from garrison into conflict 串（2025 年 11 月）；Tracking troops acquired this turn? 串（3 月）`,
+        },
+        {
           label: '戰鬥空間清單（共 10 個）',
           text: '阿拉基恩、香料精煉廠、帝國盆地、研究站、錫埃奇塔布、哈加盆地、深沙漠，加上勢力區的 3 個：宇航公會巨型船（Heighliner）、沙漠戰術（Desert Tactics）、弗雷曼裝備（Fremkit）。',
           src: `${BSG}；${RB} 第 10 頁`,
@@ -134,6 +160,11 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           label: '沙蟲',
           text: '看到沙蟲圖示就召喚並「立即」部署 1 隻沙蟲到衝突區（沙蟲永遠不能放在駐軍區）。通常需要駐軍區上有「造物鉤（Maker Hooks）」標記（在錫埃奇塔布取得，拿到後整場遊戲保留）。沙蟲只在該回合衝突中，戰後回銀行。',
           src: `${RB} 第 10 頁；${RB} 第 20 頁`,
+        },
+        {
+          label: '召喚沙蟲不需要先派到戰鬥空間',
+          text: '【玩家整理】沙蟲圖示本身就是「召喚並立即部署到衝突區」，所以揭示回合的牌或陰謀牌（如 Unexpected Allies，付 2 水召喚、不需要造物鉤）也能直接把沙蟲放進衝突。現有卡片中，只有這張陰謀牌不需要造物鉤。',
+          src: `${BGG}：Unexpected allies – needs a sword icon or not? 串；Help me understand sand worms 串`,
         },
         {
           label: '護盾牆',
@@ -147,8 +178,8 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
       items: [
         {
           label: '① 揭示手牌',
-          text: '把手牌全部翻開放在面前（與之前探員回合打的牌分開放）。',
-          src: `${RB} 第 12 頁`,
+          text: '把手牌全部翻開放在面前（與之前探員回合打的牌分開放）。揭示效果（包含劍）是強制的；你唯一可以選擇的是要不要花說服力買牌。',
+          src: `${RB} 第 12 頁；${BGG}：Reveal turn strength optional? 串`,
         },
         {
           label: '② 結算揭示效果',
@@ -156,9 +187,19 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           src: `${RB} 第 12 頁`,
         },
         {
+          label: '說服力與劍進「池」',
+          text: '【玩家整理】依官方 FAQ，說服力與劍進一個池，即使提供它們的牌之後被銷毀也不會消失，所以可以先買牌再銷毀（例如 Calculus of Power）。',
+          src: `${FAQ}：Buy first trash second on reveal? 串（FAQ 第 2 頁）`,
+        },
+        {
           label: '購買卡牌',
           text: '可買帝國市場列的 5 張牌，或保留區的「準備道路（Prepare the Way）」與「香料必須流動（The Spice Must Flow）」。費用在牌右上角。說服力可以多來源合併支付買一張牌，也可以把單一來源拆開付給不同的牌；沒用掉的說服力會消失。買到的牌放進自己的棄牌堆。市場列少於 5 張就從帝國牌堆補，所以買完一張可以接著買補上來的牌。',
           src: `${RB} 第 12、13 頁`,
+        },
+        {
+          label: '揭示回合抽到的牌',
+          text: '依官方 FAQ：揭示回合中抽到牌（例如 Poison Snooper、Refocus）必須立刻揭示並使用；揭示之後（例如戰鬥獎勵、取得科技）抽到的牌留在手上，下一輪再抽 5 張，手牌就會比 5 張多。',
+          src: `${FAQ}：Steersman Passive ability during Reveal turn 串；Drawing an aquired card during reveal turn 串`,
         },
         {
           label: '設定戰力',
@@ -201,9 +242,19 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           src: `${RB} 第 14 頁`,
         },
         {
+          label: '加倍時「任選」獎勵怎麼選',
+          text: '【玩家整理】把獎勵結算兩次：每次各自選，兩次可以選一樣的；單次結算內不能在同一勢力拿超過獎勵上限（例：「任選兩個勢力各 +1」加倍後，可以是 2 個勢力各 +2、4 個勢力各 +1 或 1／1／2）。若獎勵是合約：拿一張、補一張、再拿第二張。',
+          src: `${BGG}：Winning Propaganda with worms 串；Doubling CHOAM Contract Reward 串`,
+        },
+        {
           label: '戰鬥圖示',
           text: '有三種：水晶刀（Crysknife）、沙漠鼠（Desert Mouse）、撲翼機（Ornithopter）。贏得衝突把那張卡放進供應區時，如果你已有另一張面朝上的衝突卡或目標卡有相同圖示，必須把這一對翻成面朝下並得 1 VP。',
           src: `${RB} 第 14 頁`,
+        },
+        {
+          label: '目標卡算已贏得的衝突卡',
+          text: '【玩家整理】開局的目標卡卡面寫「視為你已贏得的衝突卡」，所以可用來配對戰鬥圖示，也可算進 Grasp Arrakis 等陰謀牌的「翻衝突卡」；有玩家指出德文版沒印這句。',
+          src: `${BGG}：Intrigue: Grasp Arrakis 串；a question about endgame intrigue 串`,
         },
         {
           label: '萬用戰鬥圖示',
@@ -221,8 +272,8 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
         },
         {
           label: '影響力 2',
-          text: '到達 2 影響力得 1 VP；掉到 2 以下就失去那 1 VP。',
-          src: `${RB} 第 7 頁`,
+          text: '到達 2 影響力得 1 VP；掉到 2 以下就失去那 1 VP。每個人都能拿到，不是只有一個人。',
+          src: `${RB} 第 7 頁；${BGG}：Victory points 串（補充）`,
         },
         {
           label: '影響力 4',
@@ -272,9 +323,19 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           src: `${RB} 第 11 頁`,
         },
         {
+          label: '放置間諜是強制，但先收回是可選',
+          text: '設計師回覆：規則書寫 may 是措辭失誤，放置間諜其實是強制的（官方 FAQ 後來澄清）。但「供應區沒間諜時先收回一個」是可以不做的：全部間諜都在版圖上、又不想移動時，不收回就不放。付費→效果的「付費」仍可以不付。',
+          src: `${BGGD}：Is the icon that allows you to place a spy mandatory? 串`,
+        },
+        {
           label: '收回間諜',
           text: '看到收回間諜圖示，可把觀察站上的自己 1 個間諜放回供應區（通常是強力效果的費用）。',
           src: `${RB} 第 11 頁`,
+        },
+        {
+          label: '收回間諜的幾種方式',
+          text: '【玩家整理】①滲透或收集情報：必須是連到你派去那個空間的間諜；②當費用的收回圖示：版圖上任何位置的間諜都行；③「移動間諜」其實是先收回（沒效果）再放，也算收回過。「若你本回合收回過間諜」這種條件本身不讓你收回，要先用上面的方式。',
+          src: `${BGG}：Recalling a spy question 串；Placing a spy from an Intrigue card 串`,
         },
         {
           label: '滲透（Infiltrate）',
@@ -287,9 +348,19 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           src: `${RB} 第 11 頁`,
         },
         {
+          label: '收集情報要在最前面',
+          text: '【玩家整理】收集情報要是放下探員後的第一件事；放下探員之後才放好的間諜、或先打陰謀牌，都不能再補收集情報。可行的做法：先用陰謀牌或影響力獎勵把間諜放好，再打牌派探員到那個空間。',
+          src: `${BGG}：The Emperor influence track bonus that allows placing a spy 串；Edge case with gather intelligence 串`,
+        },
+        {
           label: '間諜探員圖示',
-          text: '可派探員到連著「你有間諜」的觀察站的空間，不需要收回間諜。',
-          src: `${RB} 第 11 頁`,
+          text: '可派探員到連著「你有間諜」的觀察站的空間，不需要收回間諜。圖示只決定「能去哪個空間」；到了之後仍可照常用那個間諜滲透或收集情報，不用滲透時也不必收回。',
+          src: `${RB} 第 11 頁；${BGG}：Spy Eye on occupied locations 串`,
+        },
+        {
+          label: '同一個觀察站可有兩個間諜',
+          text: '【玩家整理】兩人的間諜可並存，除非牌上寫明替換；Distraction 這類牌只是讓你能放在已有對手間諜的地方，不會取代對方。',
+          src: `${BGG}：2 Spies in the same spot 串；How does this card work? 串`,
         },
       ],
     },
@@ -310,6 +381,11 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           label: '牌組構築',
           text: '開局每人 10 張起始牌。新取得的帝國牌或保留牌先放進棄牌堆。有些效果可以「銷毀」牌，把它退出遊戲（保留牌退回保留區），讓牌組更精簡。',
           src: `${RB} 第 6 頁`,
+        },
+        {
+          label: '銷毀圖示是選擇性的',
+          text: '【玩家整理】牌上的「銷毀」圖示一般可以不做（除非是付費的一部分或銷毀自己）；用文字寫的「銷毀這張牌」才是強制。護盾牆爆破圖示也是選擇性的。',
+          src: `${BGG}：Do EVERYTHING in Agent box? 串；Treacherous Maneuver 串`,
         },
         {
           label: '第三個探員',
@@ -446,6 +522,11 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           text: '香料貿易圖示，戰鬥空間，有造物圖示。費用：3 水。得該空間累積的額外香料；並二選一：得 4 香料，或（有造物鉤時）召喚 2 隻沙蟲。',
           src: BSG,
         },
+        {
+          label: '問號費用也是費用',
+          text: '【玩家整理】空間左上角的「？」是費用：你要先選一項、付掉費用、再拿對應的獎勵，付費發生在任何牌或空間效果之前。所以不能用同回合的其他效果拿到的香料去付（例如 Kota 回合 1 戒指拿到的香料，要先有 1 香料才能選「付 1 香料換 4 索拉里」）。',
+          src: `${BGG}：Does Navigation Chamber affect Spice Refinery? 串；Kota + Signet turn 1 串`,
+        },
       ],
     },
     {
@@ -476,6 +557,11 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           text: '目標卡：洗牌後（不符合人數的放回盒子）每人隨機抽 1 張面朝上放在供應區；目標卡上有先手標記的玩家拿先手標記。',
           src: `${RB} 第 5 頁`,
         },
+        {
+          label: '同一位領袖／同家族領袖',
+          text: '【玩家整理】規則書第 2 頁建議不要讓同家族領袖同場，只是主題上的建議，不是限制。盒內牌堆 A、B 的標記只是印刷分堆，與遊戲無關。',
+          src: `${BGG}：Leader in game 串；When Do I have to use Deck A or Deck B 串`,
+        },
       ],
     },
     {
@@ -502,6 +588,26 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           text: '如果你拿合約的空間就是你本回合已派探員的空間，必須等之後的回合才能完成（你必須在派探員「當時」就已經有那張合約）。',
           src: `${RB} 第 16 頁`,
         },
+        {
+          label: '哪些合約可以同回合完成',
+          text: '【玩家整理】寫了版圖空間名稱的合約，要在派探員「之前」就持有才算；有別的觸發條件的合約（立即、取得任一聯盟、取得香料必須流動）可在拿到後同回合完成，要注意結算順序。例：先拿「取得聯盟」合約，再結算勢力上升，才可能同回合完成；香料必須流動合約可在探員回合拿到、同一輪揭示回合買牌時完成。',
+          src: `${BGG}：Accomplishing contracts key rules 串；completing Spice Must Flow contract in 1 turn 串`,
+        },
+        {
+          label: '陰謀牌先給合約',
+          text: '【玩家整理】若在打牌派探員「之前」先用陰謀牌拿到合約，再派到合約指定的空間，就可以完成。',
+          src: `${BGG}：Accomplishing contracts key rules 串（7 月）`,
+        },
+        {
+          label: 'CHOAM Demands',
+          text: '【玩家整理】這張牌讓你不經空間就完成一張自己持有的合約（包括同回合剛拿的），得到合約獎勵，但不會得到合約條件本身（例：收穫合約要求的香料）；派去的探員空間照常給效果。有人持不同說法，多數人採此看法。',
+          src: `${BGG}：CHOAM demands 串；completing Spice Must Flow contract in 1 turn 串`,
+        },
+        {
+          label: 'Shaddam 擱置的合約',
+          text: '【玩家整理】Shaddam 設置時擱置 2 張只有他能拿的合約；他取得合約時，可從版圖上 2 張或自己擱置的 2 張中選。',
+          src: `${BGG}：New player questions 串`,
+        },
       ],
     },
     {
@@ -527,6 +633,11 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           label: '每回合一次',
           text: '有此圖示的科技在自己的探員回合使用，每回合一次；用了翻成面朝下，下回合開始（回合開始階段）翻回來。',
           src: `${RB} 第 20 頁；Universal Head 摘要 第 7 頁`,
+        },
+        {
+          label: '科技的「取得效果」與貨船獎勵順序',
+          text: '【玩家整理】科技的取得效果只是一般效果，放進待辦堆，由你決定何時結算；收回貨船時獎勵順序也可自選（天人合一規則書第 5 頁）。',
+          src: `${BGG}：What is the timing of tech tile acquire effect 串（2025 年 9 月）`,
         },
         {
           label: '貨船與運輸軌',
@@ -606,8 +717,8 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
         },
         {
           label: '家族核彈（Family Atomics）',
-          text: '每人每場一次：在你的回合把標記退回盒子，移除帝國市場列全部牌，再從牌堆頂重發新的市場列。',
-          src: 'Universal Head 摘要 第 7、9 頁',
+          text: '每人每場一次：在你的回合把標記退回盒子，移除帝國市場列全部牌，再從牌堆頂重發新的市場列。【玩家整理】沒有這個擴充的玩家也常把它當房規使用（數位版內建），用硬幣當標記；若市場列卡住沒人想買，這是常見的解法。',
+          src: `Universal Head 摘要 第 7、9 頁；${BGG}：Imperium row (cards to buy) is never cleared? 串`,
         },
         {
           label: '變體',
@@ -642,13 +753,23 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
         },
         {
           label: '從供應區再招募',
-          text: '不能用一般方式從供應區招募指揮官。每個回合（探員或揭示）一次，可付 2 索拉里把供應區 1 個指揮官招募到駐軍區（或若本回合派探員到戰鬥空間則到衝突區）；這時不拿新的技能（因為不是「取得」）。同一回合最多 1 個。',
+          text: '不能用一般方式從供應區招募指揮官。每個回合（探員或揭示）一次，可付 2 索拉里把供應區 1 個指揮官招募到駐軍區（或若本回合派探員到戰鬥空間則到衝突區）；這時不拿新的技能（因為不是「取得」）。同一回合從供應區最多招 1 個。',
           src: '官方 Bloodlines 規則書 第 4 頁',
+        },
+        {
+          label: '官方範例：空間取得＋供應區各一',
+          text: '規則書範例：Brennen 派探員到 Deliver Supplies，付 2 索拉里招募空間上的指揮官並拿技能；他供應區另有兩個指揮官，再付 2 索拉里招 1 個，不拿技能。不能一次付 4 索拉里招供應區的 2 個。因此同回合可以「空間取得 1 個＋供應區招 1 個」。',
+          src: '官方 Bloodlines 規則書 第 4 頁（範例；BGG 討論引用）',
         },
         {
           label: '指揮官技能',
           text: '只要你衝突區有任意數量的指揮官，你全部的指揮官技能都有效；每個技能提供揭示回合的獎勵，或戰鬥結算時的額外戰力；每個技能每回合只作用一次，即使衝突區有多個指揮官。',
           src: '官方 Bloodlines 規則書 第 4 頁',
+        },
+        {
+          label: '技能要不要留指揮官在衝突區',
+          text: '設計師回覆：看技能文字有沒有「Reveal turn」。有「Reveal turn」的（如 Desperate、Driven）在揭示回合已拿到的資源或劍，之後即使撤退指揮官也保留；沒有的（Canny、Loyal、Fierce 等，以及皇帝 3 影響力給的劍）要結算戰鬥時衝突區還有指揮官才算戰力。早期討論中有玩家給過相反答案，後來都被更正。',
+          src: `${BGGD}：retreat Sardaukar Commander on reveal turn 串；Sardaukar abilities clarifications 串`,
         },
         {
           label: '新圖示',
@@ -664,6 +785,16 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           label: '領袖釐清',
           text: 'Chani：設置時把戰術標記放在領袖卡軌道上對應人數的格子；到最右格就重置回起始格；損失或撤退的部隊多到超過軌道末端，仍只重置、不為多出的部隊前進。Count Hasimir Fenring：銷毀陰謀牌不得索拉里。Esmar Tuek：設置時把 Tuek’s Sietch 空間放版圖旁，它是造物空間會累積香料；用印章戒指可在 Tuek’s Sietch 放 1 額外香料，並用你派到那裡的探員在同一回合拿走。Steersman Y’rkoon：你可隨時看自己面朝下的導航牌；失去再取得影響力，可能對同一勢力多次達到 2 影響力，每次打 1 張導航牌。',
           src: '官方 Bloodlines 規則書 第 12 頁',
+        },
+        {
+          label: 'Esmar Tuek 的「額外香料」',
+          text: '設計師回覆：「Take 1 bonus spice from a Maker board space」指從任一會累積香料的空間拿走 1 個實體香料標記；「額外香料」是專有名詞，不是「多拿一點」。若放在已有別人探員的 Tuek’s Sietch，香料留在那裡，探員的獎勵只在派探員的那個回合拿。',
+          src: `${BGGD}：Meaning of Esmar Tuek’s Signet Ring ability 串；${BGG}：Esmar Tuek 兩串`,
+        },
+        {
+          label: '尚無定論：Gaius Helen Mohiam',
+          text: '被動「你打出的牌具有間諜圖示」多數玩家認為所有牌都算；「只要可以收回間諜收集情報就必須」在放下探員後要先收集。她同時想用該間諜付陰謀牌費用能不能辦到，討論串爭議很大、沒有官方裁定，請先和同桌約定。',
+          src: `${BGG}：Gaius Helen Mohiam 兩串（未定）`,
         },
       ],
     },
@@ -701,6 +832,16 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           text: 'Forbidden Weapons：選擇給 3 戰力的選項時，必須在你至少有 1 影響力的勢力失去 1 影響力（若可以）。Ornithopter Fleet：你所有戰鬥圖示（含萬用）都視為撲翼機，取得時可能立即配對；擁有它時，水晶刀與沙漠鼠陰謀牌不能用來得 VP。',
           src: '官方 Bloodlines 規則書 第 12 頁',
         },
+        {
+          label: 'Navigation Chamber',
+          text: '【玩家整理】它讓「版圖空間」的印刷費用少 1（最低 0），不影響科技費用，與最高議會折扣互不相關。「？」費用也算費用：選 1 香料那一項再折成 0，Spice Refinery 仍可拿 4 索拉里。有玩家說已寫信給 Dire Wolf 並得到「可以」的回覆（轉述，非公開文件）。',
+          src: `${BGG}：Does Navigation Chamber affect Spice Refinery? 串；Navigation chamber, high council and tech tiles 串`,
+        },
+        {
+          label: 'Spy Drones',
+          text: '【玩家整理】它的「付費→效果」是一體結算：要在已經收回過間諜之後才翻開，才拿得到銷毀；不能先翻開拿索拉里、之後才補收回間諜。',
+          src: `${BGGD}：Spy Drones 串`,
+        },
       ],
     },
     {
@@ -718,6 +859,10 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
         {
           text: '血脈搭配原版帝國：5 個指揮官改放在 Conspire、Wealth、Foldspace、High Council、Rally Troops（4 人局第六個放 Hall of Oratory）；拿掉 2 張「Fierce」指揮官技能；不加新衝突卡；拿掉全部 CHOAM 組件，另外還要拿掉 5 張陰謀牌（False Orders、Grasp Arrakis、Insider Information、Ripples in the Sand、Sleeper Unit）、7 張帝國牌（Arrakis Observer、Eliminate Allies、Holy War、Intelligence Training ×2、Pointing the Way、Shrouded Counsel）、3 位領袖（Count Hasimir Fenring、Gaius Helen Mohiam、Liet Kynes）；用 Steersman Y’rkoon 時拿掉放置或收回間諜的那張導航牌。',
           src: '官方 Bloodlines 規則書 第 3 頁',
+        },
+        {
+          text: '【玩家整理】原版 8 位領袖可以用在 Uprising，平衡未知；香料必須流動與 Prepare the Way（取代 Arrakis Liaison）在 Uprising 已有新版；原版的單人（Hagal）牌不能用。',
+          src: `${BGG}：Components 串`,
         },
       ],
     },
@@ -740,6 +885,16 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
         {
           text: '建議與限制：不建議在 6 人局使用 Liet Kynes（沙蟲互動特殊）。6 人局的特殊空間（如卡爾薩格、哈比亞沙丘 Habbanya Erg、軍事支援等）見補充的 Six-Player Board Space Guide，本檔未收。',
           src: '官方 Six-Player 補充 第 2、8 頁',
+        },
+        {
+          label: '6 人局的薩督卡與沙蟲',
+          text: '穆阿迪布隊不能取得或招募薩督卡指揮官（規則在血脈規則書後面的 6 人部分）；皇帝隊沒有造物鉤，只能靠 Unexpected Allies 召喚沙蟲（造物鉤限制印在司令官個人板上，不在規則書內）。「贏得衝突時」的效果對司令官無效，因為司令官永遠不會贏得衝突（6 人規則第 6 頁側欄，BGG 討論引用）。',
+          src: `血脈規則書 6 人部分；${BGG}：6 player: can fremen players recruit sardaukar… 串；Planetary array for commanders 串`,
+        },
+        {
+          label: '6 人局領袖探員標記',
+          text: '【玩家整理】領袖探員標記就是一般探員，也要靠間諜才能去被佔住的空間；箭頭只用來決定啟動哪位隊友。',
+          src: `${BGG}：6v6 token agent 串`,
         },
       ],
     },
@@ -777,6 +932,16 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           text: '揭示回合中隨時可設定並更新戰力，讓像 Gurney Halleck 這種領袖能在揭示回合參考戰力。',
           src: `${RB} 第 13 頁`,
         },
+        {
+          label: 'Reverend Mother 類加倍能力',
+          text: '【玩家整理】加倍的是空間印好的獎勵，影響力軌上升是另外的效果，不會一起加倍。',
+          src: `${BGG}：Rev. Mother Ability Doubling 串`,
+        },
+        {
+          label: 'Calculus of Power',
+          text: '設計師回覆：揭示時它要銷毀的是「另一張」皇帝牌，不能銷毀自己；兩張 Calculus 也不能互相銷毀（其中一張已被銷毀，無法再使用能力）。',
+          src: `${BGGD}：Can you trash Calculus of Power to trigger its own reveal condition? 串`,
+        },
       ],
     },
     {
@@ -784,7 +949,7 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
       fold: true,
       items: [
         {
-          text: '【待核對】探員 Agent、揭示回合 Reveal turn、說服力 Persuasion、帝國市場列 Imperium Row、陰謀牌 Intrigue、衝突 Conflict、駐軍區 Garrison、索拉里 Solari、香料 Spice、造物鉤 Maker Hooks、沙蟲 Sandworm、護盾牆 Shield Wall、觀察站 Observation post、間諜 Spy、蘭茲拉特議會 Landsraad、宇航公會 Spacing Guild、姐妹會 Bene Gesserit、弗雷曼 Fremen、皇帝 Emperor、劍術大師 Swordmaster、聯盟 Alliance、影響力 Influence、合約 Contract、科技板塊 Tech tile、無畏艦 Dreadnought、貨船 Freighter、泰雷克斯 Tleilaxu、嫁接 Graft、指揮 Command、薩督卡指揮官 Sardaukar Commander。',
+          text: '【待核對】探員 Agent、揭示回合 Reveal turn、說服力 Persuasion、帝國市場列 Imperium Row、陰謀牌 Intrigue、衝突 Conflict、駐軍區 Garrison、索拉里 Solari、香料 Spice、造物鉤 Maker Hooks、沙蟲 Sandworm、護盾牆 Shield Wall、觀察站 Observation post、間諜 Spy、蘭茲拉特議會 Landsraad、宇航公會 Spacing Guild、姐妹會 Bene Gesserit、弗雷曼 Fremen、皇帝 Emperor、劍術大師 Swordmaster、聯盟 Alliance、影響力 Influence、合約 Contract、科技板塊 Tech tile、無畏艦 Dreadnought、貨船 Freighter、泰雷克斯 Tleilaxu、嫁接 Graft、指揮 Command、薩督卡指揮官 Sardaukar Commander、滲透 Infiltrate、收集情報 Gather Intelligence。',
           src: '自譯，無中文來源',
         },
       ],
@@ -794,8 +959,8 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
       fold: true,
       items: [
         {
-          text: '帝國特權：Universal Head 摘要寫「銷毀（trash）1 張陰謀牌來抽 1 張」，官方 Board Space Guide 與 Uprising 規則寫「棄掉（discard）」。內文採官方（棄掉）。',
-          src: `${BSG}；Universal Head 摘要 第 4 頁`,
+          text: '帝國特權：Universal Head 摘要寫「銷毀（trash）1 張陰謀牌來抽 1 張」，官方 Board Space Guide 與 Uprising 規則寫「棄掉（discard）」。內文採官方（棄掉）。BGG 討論指出規則書圖示說明寫「銷毀陰謀牌」、空間文字寫「棄掉」，本身自相矛盾；陰謀牌堆很少會用完，實際影響很小，沒有官方裁定。',
+          src: `${BSG}；Universal Head 摘要 第 4 頁；${BGG}：Should we Trash or discard the Intrigue card? 串`,
         },
         {
           text: '「每回合一次」科技：Condensed Rules 寫「once per turn」，官方規則書與 Bloodlines 規則書寫「once per round（每回合一次）」。內文採官方。',
@@ -806,7 +971,19 @@ export const DUNE_IMPERIUM_UPRISING_REVIEW: { bggName: string; draftNote: string
           src: `${BSG}；${RB} 第 10 頁；Universal Head 摘要 第 4 頁`,
         },
         {
-          text: '沒收錄：領袖個別能力、帝國牌／陰謀牌／衝突卡／合約／科技板塊的效果、影響力軌各格獎勵、聯盟 VP、目標卡配對、牌上圖示的逐一解讀；單人與 2 人對手（Rivals／House Hagal）依使用者決定不收。',
+          text: '放置間諜「may」：規則書用 may、官方 FAQ 寫強制；設計師在 BGG 說是措辭失誤，內文採強制（供應區沒有間諜時先收回則可不做）。',
+          src: `${RB} 第 11 頁；${BGGD}：Is the icon that allows you to place a spy mandatory? 串`,
+        },
+        {
+          text: '收集情報與陰謀牌：規則書要求放下探員後「立即」決定，但陰謀牌又寫「任何時間」。BGG 討論偏向「立即」優先（不能插入陰謀牌），也有人持相反意見，沒有官方裁定。Gaius Helen Mohiam 的相關問題同此，請見血脈區塊。',
+          src: `${BGG}：Edge case with gather intelligence and false orders 串；Gaius Helen Mohiam 串（未定）`,
+        },
+        {
+          text: 'Staban 的印章戒指（Unseen Network）放間諜後能不能先打陰謀牌再付費：多數人認為可以（數位版實測可行），也有人認為一體結算；沒有官方裁定，不收進正文。',
+          src: `${BGG}：Staban ring + Special Mission 串（未定）`,
+        },
+        {
+          text: '沒收錄：領袖個別能力、帝國牌／陰謀牌／衝突卡／合約／科技板塊的效果、影響力軌各格獎勵、聯盟 VP、目標卡配對、牌上圖示的逐一解讀；單人與 2 人對手（Rivals／House Hagal）依使用者決定不收。BGG 討論的逐則問答放在非官方 FAQ 檔。',
           src: '範圍說明',
         },
         {
