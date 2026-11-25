@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ICONS,
+  PRESET_GROUPS,
   MAX_ROWS,
   MAX_VALUE,
   checkVip,
@@ -10,12 +11,16 @@ import {
   newRowId,
   rowPoints,
   saveTemplate,
+  toolOf,
   type SheetRow,
   type SheetTemplate,
+  type ToolKind,
 } from '../lib/scoreSheet'
 import '../styles/score-sheet.css'
 
-// 小工具「計分表」：用範本（資源／分數的列表）計數與算分。
+// 兩個小工具共用這支元件：
+//   tool="resource"＝資源計數器：每人每項資源用 ＋／− 記數量，不計分。
+//   tool="score"   ＝計分表：每一列是算分項目（符號、每個算幾分），輸入數字後算總分與排名。
 // 單機使用：數字只存這支手機的瀏覽器（已儲存的範本才會記），不寫資料庫；範本本身才存資料庫。
 
 type Mode =
@@ -31,14 +36,13 @@ type EditRow = {
   id: string
   name: string
   icon: string
-  kind: 'count' | 'score'
   sign: 1 | -1
   multStr: string
   initStr: string
 }
 
 function newEditRow(): EditRow {
-  return { id: newRowId(), name: '', icon: '⭐', kind: 'count', sign: 1, multStr: '1', initStr: '0' }
+  return { id: newRowId(), name: '', icon: '⭐', sign: 1, multStr: '1', initStr: '0' }
 }
 
 function toEdit(rows: SheetRow[]): EditRow[] {
@@ -47,47 +51,62 @@ function toEdit(rows: SheetRow[]): EditRow[] {
     id: r.id,
     name: r.name,
     icon: r.icon,
-    kind: r.kind === 'count' ? 'count' : 'score',
     sign: r.sign,
     multStr: fmt(r.mult),
     initStr: String(r.init),
   }))
 }
 
-function fromEdit(rows: EditRow[]): SheetRow[] {
-  return rows.map((r) => {
+// 資源計數器的列一律是「計數」、不計分；計分表的列一律是「只算分」
+function fromEdit(rows: EditRow[], tool: ToolKind): SheetRow[] {
+  return rows.map((r): SheetRow => {
     const m = parseFloat(r.multStr)
     const i = parseInt(r.initStr, 10)
+    if (tool === 'resource') {
+      return {
+        id: r.id,
+        name: r.name.trim(),
+        icon: r.icon || '⭐',
+        kind: 'count',
+        sign: 1,
+        mult: 1,
+        init: Number.isFinite(i) ? Math.max(0, Math.min(MAX_VALUE, i)) : 0,
+      }
+    }
     return {
       id: r.id,
       name: r.name.trim(),
       icon: r.icon || '⭐',
-      kind: r.kind,
+      kind: 'score',
       sign: r.sign,
       mult: Number.isFinite(m) ? Math.max(-1000, Math.min(1000, m)) : 1,
-      init: r.kind === 'count' && Number.isFinite(i) ? Math.max(0, Math.min(MAX_VALUE, i)) : 0,
+      init: 0,
     }
   })
 }
 
 function SheetEditor({
   initial,
+  tool,
   isVip,
   onBack,
   onUse,
   onChanged,
 }: {
   initial: SheetTemplate
+  tool: ToolKind
   isVip: boolean
   onBack: () => void
   onUse: (tpl: SheetTemplate) => void
   onChanged: () => void
 }) {
+  const isRes = tool === 'resource'
   const [title, setTitle] = useState(initial.title)
   const [rows, setRows] = useState<EditRow[]>(() => toEdit(initial.rows))
   const [shared, setShared] = useState(initial.isShared)
   const [savedId, setSavedId] = useState<string | null>(initial.id)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
+  const [showPresets, setShowPresets] = useState(false)
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -109,6 +128,21 @@ function SheetEditor({
     })
   }
 
+  function addPreset(items: Array<{ name: string; icon: string }>) {
+    setRows((cur) => {
+      // 剛開編輯畫面只有一列空白時，先拿掉
+      const first = cur[0]
+      const base = cur.length === 1 && first && first.name.trim() === '' ? [] : cur
+      const next = [...base]
+      for (const it of items) {
+        if (next.length >= MAX_ROWS) break
+        if (next.some((r) => r.name === it.name)) continue
+        next.push({ ...newEditRow(), name: it.name, icon: it.icon })
+      }
+      return next
+    })
+  }
+
   function check(): string {
     if (rows.length === 0) return '至少要有一列。'
     if (!rows.every((r) => r.name.trim().length > 0)) return '每一列都要填名稱。'
@@ -123,7 +157,8 @@ function SheetEditor({
       isOfficial: initial.isOfficial,
       isShared: shared,
       mine: true,
-      rows: fromEdit(rows),
+      rows: fromEdit(rows, tool),
+      tool,
     }
   }
 
@@ -172,13 +207,15 @@ function SheetEditor({
             className="gt-input ss-grow"
             value={title}
             maxLength={40}
-            placeholder="例：星河交會 終局"
+            placeholder={isRes ? '例：星河交匯 資源' : '例：星河交匯 終局'}
             onChange={(event) => setTitle(event.target.value)}
           />
         </label>
 
         <p className="gt-hint ss-help">
-          計數＝遊戲中用 ＋／− 記數量；只算分＝只在算分時輸入。符號與「每個算幾分」設好後，使用時只要輸入數字。
+          {isRes
+            ? '資源計數器：遊戲中用 ＋／− 記每個人的資源數量，不計分。「起始」是開局時的數量。'
+            : '計分表：每一列是一個算分項目，設好符號與「每個算幾分」，使用時只要輸入數字。'}
         </p>
 
         <ul className="ss-edit-list">
@@ -197,7 +234,7 @@ function SheetEditor({
                   className="gt-input ss-grow"
                   value={row.name}
                   maxLength={20}
-                  placeholder="名稱（例：金幣）"
+                  placeholder={isRes ? '名稱（例：金幣）' : '項目（例：建築）'}
                   onChange={(event) => update(row.id, { name: event.target.value })}
                 />
                 <button type="button" className="ss-mini" aria-label="上移" onClick={() => move(index, -1)}>
@@ -234,7 +271,7 @@ function SheetEditor({
                     ))}
                   </div>
                   <label className="gt-field">
-                    自己輸入
+                    自己輸入（太新的圖示，舊電腦會變方框）
                     <input
                       className="gt-input ss-icon-input"
                       value=""
@@ -251,50 +288,8 @@ function SheetEditor({
                 </div>
               )}
 
-              <div className="ss-edit-line ss-wrap">
-                <div className="ss-seg" role="group" aria-label="類型">
-                  <button
-                    type="button"
-                    className={row.kind === 'count' ? 'on' : ''}
-                    onClick={() => update(row.id, { kind: 'count' })}
-                  >
-                    計數
-                  </button>
-                  <button
-                    type="button"
-                    className={row.kind === 'score' ? 'on' : ''}
-                    onClick={() => update(row.id, { kind: 'score' })}
-                  >
-                    只算分
-                  </button>
-                </div>
-                <div className="ss-seg" role="group" aria-label="加分或扣分">
-                  <button
-                    type="button"
-                    className={row.sign === 1 ? 'on' : ''}
-                    onClick={() => update(row.id, { sign: 1 })}
-                  >
-                    ＋
-                  </button>
-                  <button
-                    type="button"
-                    className={row.sign === -1 ? 'on neg' : ''}
-                    onClick={() => update(row.id, { sign: -1 })}
-                  >
-                    −
-                  </button>
-                </div>
-                <label className="gt-field">
-                  每個
-                  <input
-                    className="gt-input ss-num"
-                    inputMode="decimal"
-                    value={row.multStr}
-                    onChange={(event) => update(row.id, { multStr: event.target.value })}
-                  />
-                  分
-                </label>
-                {row.kind === 'count' && (
+              {isRes ? (
+                <div className="ss-edit-line ss-wrap">
                   <label className="gt-field">
                     起始
                     <input
@@ -304,8 +299,37 @@ function SheetEditor({
                       onChange={(event) => update(row.id, { initStr: event.target.value })}
                     />
                   </label>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="ss-edit-line ss-wrap">
+                  <div className="ss-seg" role="group" aria-label="加分或扣分">
+                    <button
+                      type="button"
+                      className={row.sign === 1 ? 'on' : ''}
+                      onClick={() => update(row.id, { sign: 1 })}
+                    >
+                      ＋
+                    </button>
+                    <button
+                      type="button"
+                      className={row.sign === -1 ? 'on neg' : ''}
+                      onClick={() => update(row.id, { sign: -1 })}
+                    >
+                      −
+                    </button>
+                  </div>
+                  <label className="gt-field">
+                    每個
+                    <input
+                      className="gt-input ss-num"
+                      inputMode="decimal"
+                      value={row.multStr}
+                      onChange={(event) => update(row.id, { multStr: event.target.value })}
+                    />
+                    分
+                  </label>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -318,6 +342,45 @@ function SheetEditor({
         >
           ＋ 新增一列（{rows.length}／{MAX_ROWS}）
         </button>
+
+        {isRes && (
+          <>
+            <button
+              type="button"
+              className="gt-secondary ss-add ss-preset-toggle"
+              onClick={() => setShowPresets((v) => !v)}
+            >
+              {showPresets ? '收起常用資源' : '＋ 從常用資源加入'}
+            </button>
+            {showPresets && (
+              <div className="ss-presets">
+                {PRESET_GROUPS.map((g) => (
+                  <div key={g.label} className="ss-preset-group">
+                    <div className="ss-preset-head">
+                      <span>{g.label}</span>
+                      <button type="button" className="ss-link" onClick={() => addPreset(g.items)}>
+                        整組加入
+                      </button>
+                    </div>
+                    <div className="ss-preset-chips">
+                      {g.items.map((it) => (
+                        <button
+                          key={it.name}
+                          type="button"
+                          className="ss-preset-chip"
+                          onClick={() => addPreset([it])}
+                        >
+                          {it.icon} {it.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <p className="gt-hint">點一個加一列，「整組加入」會把這一組全部加進來，之後都可以再改名稱與圖示。</p>
+              </div>
+            )}
+          </>
+        )}
 
         {isVip && (
           <label className="gt-check ss-share">
@@ -396,6 +459,8 @@ function loadRun(tpl: SheetTemplate): Run {
 
 function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
   const rows = tpl.rows
+  // 資源計數器不計分：沒有總分分頁、沒有每列分數
+  const isRes = toolOf(tpl) === 'resource'
   const [run, setRun] = useState<Run>(() => loadRun(tpl))
   const [tab, setTab] = useState<'input' | 'total'>('input')
   const [sel, setSel] = useState({ p: 0, i: 0 })
@@ -474,7 +539,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
   function next() {
     if (sel.i < rows.length - 1) goto(sel.p, sel.i + 1)
     else if (sel.p < np - 1) goto(sel.p + 1, 0)
-    else setTab('total')
+    else if (!isRes) setTab('total')
   }
 
   function prev() {
@@ -566,29 +631,31 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
           ‹ 返回
         </button>
         <span className="ss-bar-title">{tpl.title}</span>
-        <div className="ss-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'input'}
-            className={tab === 'input' ? 'on' : ''}
-            onClick={() => setTab('input')}
-          >
-            輸入
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'total'}
-            className={tab === 'total' ? 'on' : ''}
-            onClick={() => setTab('total')}
-          >
-            總分
-          </button>
-        </div>
+        {!isRes && (
+          <div className="ss-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'input'}
+              className={tab === 'input' ? 'on' : ''}
+              onClick={() => setTab('input')}
+            >
+              輸入
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'total'}
+              className={tab === 'total' ? 'on' : ''}
+              onClick={() => setTab('total')}
+            >
+              總分
+            </button>
+          </div>
+        )}
       </div>
 
-      {tab === 'input' ? (
+      {tab === 'input' || isRes ? (
         <>
           <div className="ss-chips">
             {run.names.map((name, p) => (
@@ -599,7 +666,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
                 onClick={() => goto(p, 0)}
               >
                 <span>{name}</span>
-                <b>{fmt(totalOf(p))}</b>
+                {!isRes && <b>{fmt(totalOf(p))}</b>}
               </button>
             ))}
           </div>
@@ -647,10 +714,12 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
                     </span>
                     <span className="ss-name">
                       {row.name}
-                      <small className={row.sign === -1 ? 'neg' : ''}>
-                        {row.sign === -1 ? '−' : '＋'}
-                        {fmt(row.mult)} 分
-                      </small>
+                      {!isRes && (
+                        <small className={row.sign === -1 ? 'neg' : ''}>
+                          {row.sign === -1 ? '−' : '＋'}
+                          {fmt(row.mult)} 分
+                        </small>
+                      )}
                     </span>
                     {row.kind === 'count' && (
                       <button
@@ -681,7 +750,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
                         ＋
                       </button>
                     )}
-                    <span className="ss-sub">{fmt(rowPoints(row, v ?? 0))}</span>
+                    {!isRes && <span className="ss-sub">{fmt(rowPoints(row, v ?? 0))}</span>}
                   </li>
                 )
               })}
@@ -772,7 +841,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
 
 /* ───────────── 主畫面：範本清單 ───────────── */
 
-export default function ScoreSheetTool() {
+export default function ScoreSheetTool({ tool = 'score' }: { tool?: ToolKind }) {
   const [mode, setMode] = useState<Mode>({ name: 'list' })
   const [list, setList] = useState<SheetTemplate[]>([])
   const [isVip, setIsVip] = useState(false)
@@ -790,7 +859,7 @@ export default function ScoreSheetTool() {
       setStatus('ready')
       return
     }
-    const res = await loadTemplates()
+    const res = await loadTemplates(tool)
     if (!alive.current) return
     if (res === null) {
       setStatus('error')
@@ -798,7 +867,7 @@ export default function ScoreSheetTool() {
       setList(res)
       setStatus('ready')
     }
-  }, [])
+  }, [tool])
 
   useEffect(() => {
     alive.current = true
@@ -810,7 +879,16 @@ export default function ScoreSheetTool() {
   }, [refresh])
 
   function blank(): SheetTemplate {
-    return { id: null, title: '', bggName: null, isOfficial: false, isShared: false, mine: true, rows: [] }
+    return {
+      id: null,
+      title: '',
+      bggName: null,
+      isOfficial: false,
+      isShared: false,
+      mine: true,
+      rows: [],
+      tool,
+    }
   }
 
   function copyOf(t: SheetTemplate): SheetTemplate {
@@ -841,6 +919,7 @@ export default function ScoreSheetTool() {
       <SheetEditor
         key={mode.draft.id ?? 'new'}
         initial={mode.draft}
+        tool={tool}
         isVip={isVip}
         onBack={() => setMode({ name: 'list' })}
         onUse={(tpl) => setMode({ name: 'play', tpl, from: { name: 'edit', draft: tpl } })}

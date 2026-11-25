@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import ScoreSheetTool from './ScoreSheetTool'
 import '../styles/game-tools.css'
 
-export type ToolView = 'grid' | 'dice' | 'ladder' | 'sheet'
+export type ToolView = 'grid' | 'dice' | 'ladder' | 'sheet' | 'counter'
 export type ToolChoice = ToolView | 'picker'
 
 // 🪜 是 2020 年才有的表情符號，舊系統會顯示成方框，所以梯子改用自己畫的圖示
@@ -32,6 +32,7 @@ const MENU_ITEMS: { id: ToolChoice; icon: ReactNode; name: string }[] = [
   { id: 'ladder', icon: <LadderIcon />, name: '爬梯子' },
   { id: 'picker', icon: '🎰', name: '挑三款' },
   { id: 'sheet', icon: '🧮', name: '計分表' },
+  { id: 'counter', icon: '📦', name: '資源計數器' },
 ]
 
 const GRID_SLOTS = 9
@@ -1075,7 +1076,7 @@ function ToolGrid({ onChoose }: { onChoose: (id: ToolChoice) => void }) {
         </div>
       )}
       <div className="gt-grid">
-        {order.map((id) => {
+        {order.map((id, index) => {
           const item = MENU_ITEMS.find((m) => m.id === id)
           if (!item) return null
           const dragging = drag?.id === id
@@ -1084,6 +1085,7 @@ function ToolGrid({ onChoose }: { onChoose: (id: ToolChoice) => void }) {
             editing && !dragging ? 'wiggle' : '',
             dragging ? 'dragging' : '',
             drag && drag.over === id ? 'drop' : '',
+            index < 3 ? 'fav' : '',
           ]
             .filter(Boolean)
             .join(' ')
@@ -1206,6 +1208,8 @@ export default function GameTools({
       <>
         <LadderIcon /> 爬梯子
       </>
+    ) : view === 'counter' ? (
+      '📦 資源計數器'
     ) : view === 'sheet' ? (
       '🧮 計分表'
     ) : (
@@ -1238,7 +1242,7 @@ export default function GameTools({
         </button>
       </div>
 
-      <div className={view === 'sheet' ? 'gt-body gt-body-sheet' : 'gt-body'}>
+            <div className={view === 'sheet' || view === 'counter' ? 'gt-body gt-body-sheet' : 'gt-body'}>
         {view === 'grid' && (
           <ToolGrid
             onChoose={(id) => (id === 'picker' ? openPicker() : onViewChange(id))}
@@ -1246,7 +1250,8 @@ export default function GameTools({
         )}
         {view === 'dice' && <DiceTool history={history} onRecord={record} />}
         {view === 'ladder' && <LadderTool />}
-        {view === 'sheet' && <ScoreSheetTool />}
+        {view === 'sheet' && <ScoreSheetTool key="sheet" tool="score" />}
+        {view === 'counter' && <ScoreSheetTool key="counter" tool="resource" />}
       </div>
     </div>
     </div>

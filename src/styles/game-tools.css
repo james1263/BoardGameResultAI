@@ -566,3 +566,8 @@
   padding: 6px 12px;
   font-size: 13px;
 }
+
+.gt-root.gt-root .gt-grid .gt-tile.fav {
+  background: #e3ecd0;
+  border-color: #8fa57a;
+}
