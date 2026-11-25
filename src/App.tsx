@@ -197,8 +197,8 @@ function Library({
   // 新加入的聚會、被移除的指定遊戲（也算在導覽列「集點聚會」的數字裡）
   const loyaltyAlerts = useLoyaltyAlerts(session?.user?.id ?? null, vip.isVip && !isAdmin)
   // 新留言數：只顯示在集點聚會頁「留言板」分頁上，不計入導覽列紅點
-  const notesUnseen = useNotesUnseen(session?.user?.id ?? null, vip.isVip && !isAdmin)
-    const boardBadge =
+  const notesUnseen = useNotesUnseen(session?.user?.id ?? null, vip.isVip || isAdmin)
+  const boardBadge =
     notesUnseen.count > 99 ? '99+' : notesUnseen.count > 0 ? String(notesUnseen.count) : ''
   // 導覽列「俱樂部」的數字：想玩＋已玩的款數（跟「我的統計」那一列同一個算法）
   const clubCount = useMemo(() => {
@@ -419,18 +419,27 @@ function Library({
     setActivePage('mylist')
   }
 
-  // 寫完心得／留言按 ✕：回到「聚會」的留言板分頁
+  // 寫完心得／留言按 ✕：回到留言板
   function returnToBoard() {
-    setWriteFromBoard(false)
-    setJumpView({ view: 'board', bggName: null })
-    setSelectedGame(null)
-    openGatherings()
+    openAllDiscussions()
   }
 
-    // 首頁「留言板」入口：開「聚會」視窗的留言板（和 returnToBoard 同一條路）
+  // 首頁「留言板」入口：直接開俱樂部裡的留言板畫面（管理者、VIP 都能進）
   function openAllDiscussions() {
+    setWriteFromBoard(false)
+    setReturnGame(null)
+    setSelectedGame(null)
+    setSelectedTab('overview')
+    setRatingFromCheckin(false)
+    setIsFilterOpen(false)
+    setInviteFocus(null)
+    setInviteKey((count) => count + 1)
+    setMyListMode('list')
+    setJumpCard(false)
+    setJumpGatheringId(null)
+    setJumpRatings(null)
     setJumpView({ view: 'board', bggName: null })
-    openGatherings()
+    setActivePage('mylist')
   }
   // 從遊戲詳細資料跳出去之後按 ✕：回到那款遊戲的詳細資料（討論或評分分頁）
   function returnToGame() {

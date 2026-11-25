@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { BoardGame } from './data/boardGames.generated'
 import { usePersonalCollection } from './lib/usePersonalCollection'
 import type { PlaySessionsApi } from './lib/useGamePlaySessions'
@@ -35,8 +35,6 @@ type ListedGame = BoardGame & { removedAt?: string | null }
 export type Tab = 'want' | 'played'
 export type MyListMode = 'list' | 'loyalty'
 type View = 'home' | 'stats' | 'ratings' | 'gatherings' | 'notes' | 'board' | 'submissions' | 'card'
-// 「聚會」頁的分頁按鈕：放大，才不容易沒注意到
-const BIG_TAB: CSSProperties = { flex: 1, fontSize: 17, padding: '14px 10px' }
 type StatsTab = 'overview' | 'want' | 'played' | 'score' | 'chart'
 type SortKey =
     | 'added'
@@ -372,17 +370,14 @@ export default function MyList({
     isAdmin,
     isVip,
     todayPending,
-    plannedUnseen = 0,
     onPlannedSeen,
     alertCount = 0,
     gameChanges = [],
     onAlertsSeen,
-    notesUnseen = 0,
     onNotesSeen,
     onClose,
     onBrowse,
     onOpenGame,
-    onOpenWrite,
     writeFromBoard = false,
     onReturnToBoard,
     returnToGame = false,
@@ -470,12 +465,6 @@ export default function MyList({
             onClose={() => setFavOpen(false)}
         />
     ) : null
-    // 「聚會」頁（VIP）的兩個分頁：未來聚會｜留言板（集點卡已搬到俱樂部）
-    function defaultLoyaltyTab(): 'upcoming' | 'board' {
-        if (mode === 'loyalty' && openView?.view === 'board' && isVip && !isAdmin) return 'board'
-        return 'upcoming'
-    }
-    const [loyaltyTab, setLoyaltyTab] = useState<'upcoming' | 'board'>(defaultLoyaltyTab)
     const [search, setSearch] = useState('')
     // 想玩、已玩各自記住排序（也記在這個瀏覽器）；切換分頁只清空搜尋
     const [sortWant, setSortWant] = useState<SortKey>(() => loadStatsView().sortWant)
@@ -518,6 +507,9 @@ export default function MyList({
         } else if ((view === 'notes' || view === 'ratings') && cameFromGame.current && onReturnToGame) {
             cameFromGame.current = false
             onReturnToGame()
+        } else if (view === 'board' && openView?.view === 'board') {
+            // 從首頁「留言板」按鈕直接進來：回主畫面，不經過俱樂部首頁
+            onClose()
         } else if (view === 'stats' && openView?.view === 'stats') {
             // 從主畫面「我的統計」直接進來：回主畫面，不經過俱樂部首頁
             onClose()
@@ -562,30 +554,25 @@ export default function MyList({
             // 從遊戲視窗「前往我的評分」進來時，開在我的評分頁；其他情況回首頁
             setView(openCard ? 'card' : openRatings ? 'ratings' : openView ? openView.view : 'home')
             setStatsTab('overview')
-            setLoyaltyTab(defaultLoyaltyTab())
             setSearch('')
             setShowHoursNote(false)
             setChartOpen(false)
         }
     }, [isOpen, mode])
-
-    // 看到「未來聚會」分頁就把目前的預計聚會記成已看過
+    // 打開「聚會」視窗（未來聚會）就把目前的預計聚會記成已看過
     const showUpcomingTab = isVip && !isAdmin
     useEffect(() => {
-        if (isOpen && mode === 'loyalty' && showUpcomingTab && loyaltyTab === 'upcoming') {
+        if (isOpen && mode === 'loyalty' && showUpcomingTab) {
             onPlannedSeen?.()
         }
-    }, [isOpen, mode, showUpcomingTab, loyaltyTab, onPlannedSeen])
+    }, [isOpen, mode, showUpcomingTab, onPlannedSeen])
 
-    // 看到留言板分頁就把新留言記成已看過；離開留言板分頁就清掉「前往留言板」帶來的遊戲名稱
+    // 打開留言板就把新留言記成已看過
     useEffect(() => {
-        if (isOpen && mode === 'loyalty' && showUpcomingTab && loyaltyTab === 'board') {
+        if (isOpen && mode !== 'loyalty' && view === 'board') {
             onNotesSeen?.()
         }
-    }, [isOpen, mode, showUpcomingTab, loyaltyTab, onNotesSeen])
-    useEffect(() => {
-        if (mode === 'loyalty' && loyaltyTab !== 'board') setViewFocus(null)
-    }, [mode, loyaltyTab])
+    }, [isOpen, mode, view, onNotesSeen])
 
     // 打開集點卡就把新加入的聚會、被移除的指定遊戲通知記成已看過
     useEffect(() => {
@@ -773,72 +760,8 @@ export default function MyList({
                             isAdmin={isAdmin}
                         />
                     )}
-                    {showUpcomingTab && (
-                        <div className="lb-tabs">
-                            <button
-                                type="button"
-                                className={`lb-tab ${loyaltyTab === 'upcoming' ? 'active' : ''}`}
-                                style={BIG_TAB}
-                                onClick={() => setLoyaltyTab('upcoming')}
-                            >
-                                未來聚會
-                                {plannedUnseen > 0 && (
-                                    <span
-                                        style={{
-                                            marginLeft: 6,
-                                            background: '#b5483a',
-                                            color: '#fff',
-                                            borderRadius: 999,
-                                            padding: '1px 7px',
-                                            fontSize: 12,
-                                            fontWeight: 700,
-                                        }}
-                                    >
-                                        {plannedUnseen}
-                                    </span>
-                                )}
-                            </button>
-                            <button
-                                type="button"
-                                className={`lb-tab ${loyaltyTab === 'board' ? 'active' : ''}`}
-                                style={BIG_TAB}
-                                onClick={() => setLoyaltyTab('board')}
-                            >
-                                留言板
-                                {notesUnseen > 0 && loyaltyTab !== 'board' && (
-                                    <span
-                                        style={{
-                                            marginLeft: 6,
-                                            background: '#a89478',
-                                            color: '#fff',
-                                            borderRadius: 999,
-                                            padding: '1px 7px',
-                                            fontSize: 12,
-                                            fontWeight: 700,
-                                        }}
-                                    >
-                                        {notesUnseen}
-                                    </span>
-                                )}
-                            </button>
-                        </div>
-                    )}
                     <div className="mylist-body">
-                        {showUpcomingTab && loyaltyTab === 'board' ? (
-                            <ClubBoard
-                                embedded
-                                boardGames={boardGames}
-                                isAdmin={isAdmin}
-                                isVip={isVip}
-                                onBack={() => setLoyaltyTab('upcoming')}
-                                onClose={onClose}
-                                onOpenGame={onOpenGame}
-                                onWrite={() => onOpenWrite?.(null, 'board')}
-                                initialSearch={
-                                    viewFocus ? (lookupGames.find((g) => g.bggName === viewFocus)?.name ?? '') : ''
-                                }
-                            />
-                        ) : showUpcomingTab && loyaltyTab === 'upcoming' ? (
+                        {showUpcomingTab ? (
                             <UpcomingGatherings
                                 embedded
                                 boardGames={boardGames}
@@ -849,7 +772,7 @@ export default function MyList({
                             />
                         ) : (
                             <p className="club-note" style={{ margin: 16 }}>
-                                「未來聚會」和「留言板」是 VIP 專屬。向管理者索取通關密碼，或參加聚會報到就能成為 VIP。
+                                「未來聚會」是 VIP 專屬。向管理者索取通關密碼，或參加聚會報到就能成為 VIP。
                             </p>
                         )}
                     </div>
@@ -898,7 +821,7 @@ export default function MyList({
                 boardGames={boardGames}
                 isAdmin={isAdmin}
                 isVip={isVip}
-                onBack={() => setView('home')}
+                onBack={leaveView}
                 onClose={onClose}
                 onOpenGame={onOpenGame}
                 onWrite={() => {
@@ -1243,10 +1166,10 @@ export default function MyList({
                                                                     {tab === 'played'
                                                                         ? lastOn && <small className="cs-sub">最近：{lastOn}</small>
                                                                         : total > 0 && (
-                                                                              <small className="cs-sub">
-                                                                                  玩過 {total} 次{lastOn && ` · 最近：${lastOn}`}
-                                                                              </small>
-                                                                          )}
+                                                                            <small className="cs-sub">
+                                                                                玩過 {total} 次{lastOn && ` · 最近：${lastOn}`}
+                                                                            </small>
+                                                                        )}
                                                                 </div>
                                                                 {tab === 'want' && (
                                                                     <button
