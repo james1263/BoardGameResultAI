@@ -430,7 +430,7 @@ export default function RulebookAssistant({
         setNotice(
             copied
                 ? '已複製。注意：內容會被送到你自己選的外部 AI 服務，不會留在本站。' +
-                'AI 回答得不錯的話，把它最後的回饋區塊貼到下方「AI 回饋投稿」，就能分享給大家。'
+                'AI 回答得不錯的話，把它最後的回饋區塊貼到下方「我的AI回覆」，就能分享給大家。'
                 : '複製失敗，請手動複製。',
         )
     }
@@ -800,7 +800,7 @@ export default function RulebookAssistant({
             {errata.length > 0 && (
                 <div className="er-box">
                     <p className="er-box-title">
-                        玩錯紀錄・AI 回饋（管理者記錄或玩家整理・已審核，非官方規則）・{errata.length} 筆
+                        玩錯紀錄・AI 回覆（管理者記錄或玩家整理・已審核，非官方規則）・{errata.length} 筆
                     </p>
                     <ul className="er-list">
                         {errata.map((e) => (
