@@ -5,6 +5,7 @@
 // 卡名與氏族名：官方 FAQ 2.0 有中文的用它的譯名，沒有的保留英文並標【中文名待核對】。
 // 標【待核對】：討論串裡的玩家回覆，手上的官方文件查不到，或中文規則書頁碼還沒對。
 // 2026-11-24 補入第二批（約 30 串，含各擴充討論區）：重複或與官方 FAQ 2.0 逐字相同的內容不重收；沒有結論或卡牌文字不明的討論串先不收（見對話說明）。
+// 2026-11-26 補入第三批（對應 BGG 討論區挑選清單的第 1、2 組：開發團隊與官方 FAQ 相關、鬼與怪物、Turtle 堡壘）：與官方 FAQ 2.0 重複的不收；玩家轉述 CMON／發行商的回覆一律標【待核對】。
 // 登記：只在 unofficialRegistry.ts 登記，key 是 'Rising Sun'（官方 FAQ 另有登記，兩者並存）。
 
 import type { GameFaqData } from '../types'
@@ -112,6 +113,27 @@ export const RISING_SUN_UNOFFICIAL_FAQ: GameFaqData = {
             },
           ],
         },
+        {
+          name: '規則書版本差異與勘誤',
+          items: [
+            {
+              q: '早期討論串和 WIP（製作中）規則書寫的「選政策行動的人先做」現在還對嗎？',
+              a: '不對（訓練除外）。WIP 規則書寫選擇政策行動的人先做；正式版改成：從選擇者左手邊開始順時針，選擇者最後做，只有「訓練」是選擇者先挑牌。有玩家說明改動的理由：選擇者通常是要用這個政策行動的人，放在最後做比較有利。因此「最後一個政策行動若是行軍，選的人就最後移動」是任何氏族都有的優勢，不是某個氏族專屬。（來源：BGG 討論串〈WIP and "Retail" rulebook differences. Who resolves mandates first?〉〈Player order in taking actions`〉）【待核對：玩家引用英文正式版規則書原句，中文規則書頁碼還沒對；以正式版（訓練先、其他選擇者最後）為準】',
+            },
+            {
+              q: '英文規則書有哪些已知筆誤？',
+              a: '玩家整理的兩處：第 16 頁訓練令寫成「每個招募令只能買一張季節卡」，應該是訓練令（官方網站的 PDF 已改正，建議以 PDF 為準）；第 24 頁戰鬥範例圖裡 Koi 氏族還有 2 個浪人，但 Koi 能力是戰爭階段開始時把浪人換成錢幣，所以多半是舊版範例殘留（也有人說浪人可能是之後才拿到，不一定是錯）。（來源：BGG 討論串〈Necessary Rule Book Edits〉〈Rulebook error ?〉）【待核對：玩家整理，中文規則書有沒有同樣問題還沒對；Koi 氏族中文名待核對】',
+            },
+            {
+              q: '2018 年 2 月前後的早期討論串，答案還可信嗎？',
+              a: '要小心。官方 FAQ 1.0（2018-01-31）之後，2.0（2018-03-03）推翻了好幾件事：戰鬥勝利才觸發的能力（如 Oni of Souls、Piety、Kitsune）現在要求單位到戰鬥結束時還活著且在場；福祿壽可以被殺、被切腹、被大怪獸壓扁；月氏族任何時刻一個地區都不能超過 2 個單位。看到舊串說可以或不可以時，先對照官方 FAQ 2.0（risingSunFaq）。（來源：BGG 討論串〈Official FAQ 2.0!〉〈Rising Sun Season cards (and thus Monsters) semi-official FAQ〉）【待核對：討論串玩家引用的官方 FAQ 原文，請以官方 FAQ 2.0 本身為準】',
+            },
+            {
+              q: '卡牌文字在眾籌預覽圖和正式版不一樣嗎？',
+              a: '核心盒的眾籌版與零售版內容相同；不同的是眾籌更新頁預覽時的文字，和最後印刷的有些差異，例如部分氏族的起始榮耀、正義（Righteousness）的字句：預覽寫「一個或多個單位被殺拿 1 VP」，印刷版是「每個被殺的單位拿 1 VP」，以印刷版為準。（來源：BGG 討論串〈Card text differences between retail nad KS〉〈When does the effect start/stop?〉）【待核對：玩家回覆，非官方；請以手上的實體卡為準】',
+            },
+          ],
+        },
       ],
     },
     {
@@ -152,6 +174,10 @@ export const RISING_SUN_UNOFFICIAL_FAQ: GameFaqData = {
               q: 'Nure-Onna 什麼時候可以加入戰鬥？打完一場還能再加入下一場嗎？',
               a: 'Nure-Onna 的「結算戰爭前」指戰鬥開始之前，不是戰鬥結束時；官方 FAQ 2.0 說明它可以跨航線進入有「下一個戰爭數字標記」的地區，即使那裡沒有戰鬥；回覆者說它打完第一場後若還活著，可以再跨航線加入下一場。（來源：BGG 討論串〈Nure-Onna clarificaton〉）【待核對：前半與官方 FAQ 2.0 同樣，只有「打完後還能再跨一次」是玩家回覆；卡牌中文名待核對】',
             },
+            {
+              q: '戰爭階段開始時的好幾個效果要比榮耀，沒有這類效果的玩家算「有關」嗎？',
+              a: '玩家共識：只有「有這類效果」的玩家才算有關；沒有的玩家（例如那個地方他沒有能力可用）不參與排序。例如大怪獸（蓮花）、撒砂婆婆（Turtle）、Fox 的放置武士三方同時發生時，榮耀最高的有效果者先決定自己先或後，再往下排；只有一個人有兩種效果時由他自己決定先後。也有人覺得整場戰爭階段都該算全員有關，沒有官方定論。（來源：BGG 討論串〈When is a player "involved" for honor-tiebraking "At the start of War"-abilities...〉〈Fox clan ability and Daikaiju〉）【待核對：玩家回覆，非官方；氏族與卡牌中文名待核對】',
+            },
           ],
         },
         {
@@ -169,6 +195,48 @@ export const RISING_SUN_UNOFFICIAL_FAQ: GameFaqData = {
             {
               q: '採收比戰力時，大名加成、怪物特殊戰力要算進去嗎？',
               a: '要。「戰力就是戰力」：任何需要比戰力的場合（採收、神殿、戰鬥）所有修正都算，包含大名的加成與怪物各自的戰力，例如河龍 5 戰力。討論串順帶指出規則書第 17 頁採收範例裡，Koi 的血之鬼戰力寫得有問題，但結論不變。（來源：BGG 討論串〈Harvest Rule Clarification〉）【待核對：玩家回覆；範例是否算錯是玩家看法，還沒對中文規則書】',
+            },
+          ],
+        },
+        {
+          name: '人質、尊敬與戰鬥加成',
+          items: [
+            {
+              q: '綁架人質一定會從對手那裡偷 1 VP 嗎？誠意（Sincerity）算額外偷嗎？',
+              a: '一定偷 1 VP，不論人質是靠戰爭優勢「綁架人質」或卡牌／怪物效果（例如撒砂婆婆）綁來的；這是玩家轉述 CMON 在 Facebook 的回覆。誠意（山組美德）是額外「獲得」的加成，不是多偷 1 分，而且每一次綁架人質都會觸發。偷 VP 的前提是對手手上有分可偷。（來源：BGG 討論串〈Some Rules Questions Answered By the Dev Team! [More rulings to be gathered here]〉〈Rising Sun Season cards (and thus Monsters) semi-official FAQ〉）【待核對：這些是玩家貼出的轉述（2018 年 2 月），不是文件；誠意中文名待核對，請以官方 FAQ 2.0 為準】',
+            },
+            {
+              q: '兩張尊敬（Respect）一次綁好幾個單位，VP 怎麼算？',
+              a: '玩家共識：每綁 1 個單位偷 1 VP，尊敬可疊兩張，一場戰鬥最多綁 3 個就是 3 VP；從不同氏族各綁一個，各偷各的，前提是對方有分可偷。尊敬只在戰鬥中綁架時才多綁，所以撒砂婆婆在戰爭階段開始時的綁架不能搭它（見官方 FAQ 2.0）。（來源：BGG 討論串〈Some Rules Questions Answered By the Dev Team!〉〈Take Hostage/"Respect" season card〉〈Persisting Questions〉）【待核對：玩家回覆，非官方；尊敬中文名待核對】',
+            },
+            {
+              q: '被綁架的單位歸還時，會回到原本的地區嗎？',
+              a: '不會，回到原主人的預備區。（來源：BGG 討論串〈Effects of Monsters with Killing/Hostage〉）【待核對：回覆者的 BGG 帳號標註為發行商，本身不是文件；請以官方 FAQ 2.0 與規則書為準】',
+            },
+          ],
+        },
+        {
+          name: '戰鬥開始時效果的互動',
+          items: [
+            {
+              q: '絡新婦、火龍、地龍在同一個地區，誰的效果先？',
+              a: '規則書：效果同時發生時，有關玩家中榮耀較高的決定自己的效果要先或後；同一位玩家的好幾個效果，由他自己決定順序。順序會影響結果：地龍先把火龍或絡新婦推出去，被推走的怪物就不會發動；若絡新婦已經先控制了單位，之後她被推走或殺死，被控制的單位仍留在她那邊直到戰鬥結束（對照官方 FAQ 2.0 絡新婦）。（來源：BGG 討論串〈Who goes first Jorogumo, Fire Dragon, Earth Dragon?〉〈Earth Dragon and Jorogumo questions〉〈One Player, Multiple Ability Timing Dispute〉）【待核對：玩家回覆，非官方；規則書頁碼中文版還沒對】',
+            },
+            {
+              q: '同一位玩家有火龍和絡新婦，可以用火龍殺掉絡新婦控制的單位嗎？',
+              a: '可以。被控制的單位在戰鬥結束前算控制者氏族的單位，所以火龍「也包含你自己 1 個單位」可以選它；同一位玩家的效果由他自己決定先後，先絡新婦、後火龍。（來源：BGG 討論串〈Jorogumo and Fire Dragon〉〈Rising Sun Season cards (and thus Monsters) semi-official FAQ〉）【待核對：玩家回覆；對照官方 FAQ 2.0「被控制的單位視為絡新婦氏族的單位」】',
+            },
+            {
+              q: '絡新婦控制的單位可以被對手綁架嗎？',
+              a: '沒有定論。控制者自己不能綁（它算控制者的單位）；原氏族能不能把它當對手單位綁走，討論串玩家有兩派，另有玩家指出被綁走的單位歸還時沒有人付 1 錢幣。建議同桌先講好。（來源：BGG 討論串〈Jorogumo - battle interaction questions〉〈Earth Dragon and Jorogumo questions〉）【待核對：玩家意見分歧，官方 FAQ 2.0 只說被控制的單位視為絡新婦氏族的單位】',
+            },
+            {
+              q: '地龍推走的單位要怎麼選？推走一個正要切腹的單位會怎樣？',
+              a: '由地龍擁有者決定推哪個單位、推到哪個相鄰地區或航線對岸（大名與神靈不能推）；若沒有合法目的地（例如周圍全是月氏族已滿 2 個），就推不出去。被地龍推走的單位即使該氏族贏了切腹競標，也只是擋下對手的切腹，自己那個被推走的單位不會死，因為它已不在地區。（來源：BGG 討論串〈Earth Dragon questions〉〈Earth Dragon vs 1 lone unit〉〈Can earth dragon end a battle?〉）【待核對：玩家回覆，非官方；對照官方 FAQ 2.0「地龍」「參與戰鬥」】',
+            },
+            {
+              q: '濡女（Nure-Onna）被地龍推出去之後，能再走回來嗎？',
+              a: '不能。濡女在該地區的戰爭結算前就跨航線加入，之後才輪到戰鬥開始時的效果；地龍在戰鬥開始時把她推出去，她已經用完加入的時機，不能再走回同一個地區。（來源：BGG 討論串〈Nure-Onna vs Earth Dragon〉〈"At the start of Battle" vs "Before resolving War" -or- Whats the deal with Nure-onna?〉）【待核對：玩家回覆，非官方】',
             },
           ],
         },
@@ -247,6 +315,10 @@ export const RISING_SUN_UNOFFICIAL_FAQ: GameFaqData = {
               q: '日氏族在神殿平手時，什麼時候觸發？有神靈降世時呢？',
               a: '一般規則下只有在神明回合結算神殿時才檢查誰控制神殿，日氏族在戰力平手時靠榮耀贏，才會觸發。若日氏族本來就控制那座神殿的神靈，贏得平手不算「獲得」控制，不觸發；從別人手上拿到神靈控制，才觸發，而且同一次只算一次。有神靈降世時，神靈可能在神明回合之外換手（例如榮耀變動時要重新檢查），但單純守住控制權不觸發。（來源：BGG 討論串〈Sun clan and draws at shrines doubt〉）【待核對：玩家回覆，日氏族能力文字引用的是擴充說明書；官方沒有逐項說明】',
             },
+            {
+              q: '日氏族三方榮耀平手贏兩次時，自己拿一次還是兩次？',
+              a: '兩種說法衝突。玩家轉述開發團隊 2018 年的回覆：每次靠榮耀贏過一個氏族就拿 1 錢幣與 1 VP，三方平手對兩位對手各贏一次，所以拿兩次、對手各失去一份。另一位玩家 2019 年說一次事件只拿 1 份，沒有出處。請以官方文件為準。（來源：BGG 討論串〈Some Rules Questions Answered By the Dev Team!〉〈Persisting Questions〉〈Sun Clan Ability: A Proposed Resolution〉）【待核對：兩種說法都是玩家轉述；以前者（有轉述開發團隊回覆）為較可能，但官方 FAQ 2.0 沒收錄，不要當成定論】',
+            },
           ],
         },
         {
@@ -258,7 +330,7 @@ export const RISING_SUN_UNOFFICIAL_FAQ: GameFaqData = {
             },
             {
               q: '骷髏之鬼（Oni of Skulls）與血之鬼（Oni of Blood）的「榮耀最低」，是和誰比？',
-              a: '只和「在這個地區有單位的玩家」比，不是全桌榮耀最低。只要這隻鬼在該地區，而你的榮耀比同地區其他玩家都低，就能用到能力；你不需要是全桌最低。【待核對：卡牌中文名待核對；玩家引用非官方 FAQ，卡牌原文是「在你榮耀最低的任何地區」】（來源：BGG 討論串〈monster season cards clarifications〉）',
+              a: '比的是同一場戰鬥裡有戰力的對手，不是全桌榮耀最低，也不需要站在榮耀軌最底。例如你榮耀排第 2、同地區唯一的對手排第 1，鬼就有 3 戰力。這隻鬼只對自己所在的地區有效（CMON 官方回覆）。「在場」怎麼認定，討論串較多人引用規則書的說法：開戰時有戰力的玩家整場戰鬥都算參與，就算他的單位後來被綁架、切腹或推走，仍算在比榮耀的對象裡（對照官方 FAQ 2.0「參與戰鬥」）；也有人主張只看地區裡還有單位的人，兩種說法並存，沒有官方定論。血之鬼（Oni of Blood）卡文類似，可套用同樣的討論。（來源：BGG 討論串〈monster season cards clarifications〉〈Question on Oni of Skulls〉〈Oni of Skulls Force after hostage〉）【待核對：卡牌中文名待核對；「參與者要算」是玩家引用規則書，非官方；請以卡牌原文「在你榮耀最低的任何地區」與官方回覆為準】',
             },
             {
               q: '大怪獸（Daikaiju）在戰爭階段開始時被「放置」到地區，會被瘟疫之鬼擋住嗎？',
@@ -304,6 +376,38 @@ export const RISING_SUN_UNOFFICIAL_FAQ: GameFaqData = {
               q: '怪物底座有數量限制嗎？',
               a: '沒有。每位玩家每種尺寸給 2 個底座，只是依一般情況製作的數量，不是上限；買超過 2 個同尺寸的怪物也可以。（來源：BGG 討論串〈Are monster bases intended to be limited?〉）【待核對：玩家回覆，非官方】',
             },
+            {
+              q: '憎惡之鬼（Oni of Spite）與 Oni of Hate 搭配風神，兩個地區都會觸發嗎？',
+              a: '都會。兩張卡寫的是「進入地區（任何原因）」，風神的兩次移動各算一次；憎惡之鬼這個組合有玩家轉述開發團隊回覆「每次都會觸發」。Oni of Hate 同理（進入時殺死較高榮耀玩家各 1 個武士或信徒），但這張卡的回覆是玩家共識，沒有轉述官方。（來源：BGG 討論串〈Some Rules Questions Answered By the Dev Team!〉〈Fujin with Oni of Hate or Oni of Spite〉）【待核對：Oni of Hate 中文名與卡面文字待核對；玩家共識，非官方】',
+            },
+            {
+              q: '背叛換上憎惡之鬼時，是先失去榮耀還是先換？',
+              a: '沒有官方答案。多數回覆採規則書描述的順序：先打破結盟、失去榮耀，再替換單位，所以憎惡之鬼進場時你的榮耀已經較低，可以偷分。少數回覆援引官方 FAQ 2.0「一個政策行動的事件視為同一時刻發生」，認為全部做完再看效果。玩家整理的 FAQ 寫「可能先扣榮耀」。（來源：BGG 討論串〈Oni of Spite + Betrayal timing question〉）【待核對：玩家意見；請以官方 FAQ 2.0 為準，沒答案時建議同桌先講好】',
+            },
+            {
+              q: '大怪獸（Daikaiju）會摧毀盟友的堡壘嗎？',
+              a: '沒有定論。卡文寫「敵方（enemy）堡壘」，規則書把盟友和敵人分開用字，不少玩家據此認為盟友的堡壘不受影響；另有人引用規則書「結盟的玩家在季節卡效果上仍視為對手」的句子，認為會壓。（來源：BGG 討論串〈Persisting Questions〉）【待核對：玩家意見分歧，沒有官方 FAQ；建議同桌先講好】',
+            },
+            {
+              q: '大怪獸可以被對手綁架嗎？Dragonfly 氏族能用調度把海裡的大怪獸移動嗎？',
+              a: '怪物一般可被綁架，只有大名與視同大名的單位免疫；大怪獸被放進地區後被對手綁架，是有玩家分享的實戰。大怪獸還在海裡時不算在地圖上（官方 FAQ 2.0），所以調度不能移動它，Dragonfly 氏族的飛行能力也用不上；它要等到戰爭階段開始時才被放進地區。（來源：BGG 討論串〈Can Monsters be taken hostage?〉〈Daikaiju and the Dragonfly Clan.〉）【待核對：玩家回覆，非官方；氏族中文名待核對】',
+            },
+            {
+              q: '戰爭階段開始，大怪獸要什麼時候選地區？',
+              a: '戰爭階段一開始就要決定放進哪個地區，不能等到戰鬥結算時才選；放進去之後才判斷該地區有沒有戰鬥，所以它可以放進原本沒有人爭的地區。（來源：BGG 討論串〈At what point does the Daikaiju appear?〉）【待核對：玩家回覆；對照官方 FAQ 2.0「戰爭階段開始時」】',
+            },
+            {
+              q: '福祿壽進場的那次招募，能多招募一個單位嗎？',
+              a: '不能。招募能放幾個單位，是用招募一開始地圖上的堡壘數量算好的，招募過程中福祿壽才進場，不會讓你多放一個。（來源：BGG 討論串〈Lucky god question regarding Fukurokuju〉〈Re: Summoning Strongholds〉）【待核對：玩家回覆；對照官方 FAQ 2.0「召喚」：一次招募視為同一次】',
+            },
+            {
+              q: '辯才天（Benten）可以強迫自己移動嗎？布袋（Hotei）算背叛嗎？',
+              a: '辯才天不能移動自己；布袋的能力「實質上等同背叛」神殿上的信徒。這兩條都是玩家轉述開發團隊在 Facebook 的回覆。（來源：BGG 討論串〈Some Rules Questions Answered By the Dev Team!〉）【待核對：玩家轉述（2018 年 2 月）；Hotei 中文名待核對；辯才天另見官方 FAQ 2.0】',
+            },
+            {
+              q: '狐妖（Kitsune）的 6 VP 是給誰？',
+              a: '給贏得「它所在地區」戰爭標記的人，不一定是擁有者，所以放在會被對手贏走的地方等於送分。官方 FAQ 2.0 規定要觸發，狐妖到戰鬥結束時必須還活著、在場。（來源：BGG 討論串〈About the Monster Kitsune〉）【待核對：玩家回覆；Kitsune 中文名待核對；請對照官方 FAQ 2.0「戰鬥獲勝」】',
+            },
           ],
         },
         {
@@ -320,6 +424,18 @@ export const RISING_SUN_UNOFFICIAL_FAQ: GameFaqData = {
             {
               q: 'Fox 氏族的起始榮耀、起始地區與收入是多少？',
               a: '討論串貼的資料：起始榮耀 6、起始地區 Kansai、季節收入 5；能力是戰爭階段開始時，可以在每個你沒有戰力的地區放 1 個武士。（來源：BGG 討論串〈Fox clan and other clans〉）【待核對：玩家貼的，非官方；Fox 氏族是促銷氏族，中文資料我沒有看過】',
+            },
+            {
+              q: 'Dragonfly 氏族的單位被地龍推走時，還能飛到任何地區嗎？',
+              a: '不能。氏族能力只在「Dragonfly 玩家自己移動自己的單位」時才有；地龍是別人在移動它，所以只能到相鄰地區或航線對岸，而且仍要付大蛇之道的錢。辯才天這類「讓你自己移動」的效果則是 Dragonfly 玩家在移動，能力有效。（來源：BGG 討論串〈Dragonfly special ability and Path of the Serpent card〉）【待核對：玩家共識，非官方；氏族中文名待核對】',
+            },
+            {
+              q: 'Fox 氏族「狡猾存在」放置的武士，算召喚嗎？會觸發忍者之道嗎？',
+              a: '不算。放置不等於召喚（官方 FAQ 2.0），所以「召喚後」的卡（如忍者之道）不會因為它觸發；忍者之道一次召喚事件也只能殺 1 個武士。（來源：BGG 討論串〈Official FAQ 2.0!〉）【待核對：玩家回覆，結論由官方 FAQ 2.0「放置」「召喚」推得；卡牌中文名待核對】',
+            },
+            {
+              q: '月氏族行軍要把單位移進已經有 2 個的地區，順序怎麼排？',
+              a: '要先把原本那個地區的單位移出去，再移進新的，因為官方 FAQ 2.0 說任何時刻都不能超過 2 個單位；實際玩時動作很快，有人覺得瞬間有 3 個也行，但先移出是最保險的做法。（來源：BGG 討論串〈Sincerity gain/steal, Moon movements and Sun tie rewards〉）【待核對：玩家意見；氏族名中文待核對】',
             },
           ],
         },
@@ -346,6 +462,18 @@ export const RISING_SUN_UNOFFICIAL_FAQ: GameFaqData = {
               q: '神靈降世說明紙上的規則與網路上的描述不一樣，哪個才對？',
               a: '以盒內說明紙為準。BGG 頁面上「消耗掉信徒」的版本是比較早的版本，後來在測試中改掉。（來源：BGG 討論串〈Two Rule Sets?〉）【待核對：玩家回覆，非官方】',
             },
+            {
+              q: '月讀命（Tsukuyomi）什麼時候發錢？沒有戰鬥也給嗎？',
+              a: '寫的是「在該地區結算戰爭之前」，不是戰鬥之前。所以只要有戰力就領 4 錢幣，就算最後沒有戰鬥也領；地龍、絡新婦這類「戰鬥開始時」的效果發生在之後，所以擋不掉月讀命發的錢。（來源：BGG 討論串〈tsukuyomi kami figure〉）【待核對：玩家回覆，非官方；月讀命中文名見快速複習】',
+            },
+            {
+              q: '風神（Fujin）在採收令加倍，贏得戰爭標記時也加倍嗎？',
+              a: '採收令加倍，贏得戰爭標記時只拿原本採收獎勵，不加倍。玩家引用神靈降世說明紙：風神的加倍只套用在採收令。（來源：BGG 討論串〈Rising Sun Season cards (and thus Monsters) semi-official FAQ〉）【待核對：玩家引用說明紙與玩家共識，非官方；風神中文名見快速複習】',
+            },
+            {
+              q: '神殿被清空、神靈沒有人控制時，那座神靈單位怎麼處理？',
+              a: '規則書沒寫。保守做法：單位留在版圖直到季末清理才移除，地區效果續存，但沒有人控制所以不算 1 戰力；龍神（Ryujin）則沒有效果。另有玩家認為應該直接回到神靈板塊。要看他們能不能在同桌談妥。（來源：BGG 討論串〈Rising Sun Season cards (and thus Monsters) semi-official FAQ〉）【待核對：玩家意見分歧，沒有官方定論】',
+            },
           ],
         },
         {
@@ -370,6 +498,65 @@ export const RISING_SUN_UNOFFICIAL_FAQ: GameFaqData = {
             {
               q: 'Path of the Kenin 與 Path of the Light 同時有，招募時可以連續放好幾次嗎？',
               a: '不行，各只能用一次。Kenin：召喚後可在堡壘多放 1 個武士；Light：招募結束時可多放 1 個信徒到神殿。討論串回覆者指出「放置」不等於「召喚」，Light 讓你放的信徒不是召喚，所以不能再觸發 Kenin。（來源：BGG 討論串〈Path of the Kenin + path of the light〉）【待核對：玩家回覆，非官方；卡牌中文名待核對】',
+            },
+            {
+              q: '兩張仁慈（Benevolence）搭配 Bonsai 氏族，能拿兩次嗎？',
+              a: '多半不能。依官方 FAQ 2.0，疊兩張仁慈要各給出 1 枚才拿兩份；Bonsai 買東西最多付 1 枚，所以只能給 1 枚，兩份回報只能兌現一份。訓練令的折扣也可以選擇不拿，把那 1 枚留下來付出去。給出去的錢是你剛花掉的那些錢中的 1 枚，收到的人不能拒收。（來源：BGG 討論串〈Rising Sun Season cards (and thus Monsters) semi-official FAQ〉〈Benevolence Season Card- Stacking Ability Question〉）【待核對：Bonsai 部分是玩家依官方 FAQ 2.0 推論；仁慈中文名待核對】',
+            },
+            {
+              q: '忍耐（Patience）平手時會觸發嗎？兩張慈悲（Mercy）呢？',
+              a: '忍耐：分數平手不算落後，不會觸發；兩張一起觸發就 2 VP。慈悲：兩張可疊加，放過對手單位拿 4 VP。以上是玩家轉述 CMON 在 Facebook 的回覆。另有玩家整理：忍者之道殺 1 個武士，搭配慈悲放過，結果是少 1 榮耀、多 2 VP。（來源：BGG 討論串〈Some Rules Questions Answered By the Dev Team!〉〈Rising Sun Season cards (and thus Monsters) semi-official FAQ〉）【待核對：轉述與玩家整理，非官方文件；卡牌中文名待核對】',
+            },
+          ],
+        },
+        {
+          name: '骷髏之鬼（Oni of Skulls）補充',
+          items: [
+            {
+              q: '骷髏之鬼的基礎戰力是多少？不是最低榮耀時是 0 嗎？',
+              a: '是 1。CMON 客服曾回信寫成 0，後來自己更正：依英文規則書第 16 頁，怪物預設 1 戰力，除非卡牌另外寫；骷髏之鬼的效果只是在「你榮耀最低的地區」把戰力變成 3。（來源：BGG 討論串〈Oni of Skulls Resolved Officially!〉〈Oni of Skulls (is this resolved officially?)〉）【待核對：依玩家貼出的客服郵件與引用規則書，文件手上沒有；請對照英文規則書第 7、16 頁】',
+            },
+            {
+              q: '戰鬥中榮耀改變（例如對手切腹拿榮耀），骷髏之鬼的戰力會跟著變嗎？',
+              a: '會。這個加成只在「戰鬥結果」比戰力時才計算（雇用浪人之後）。對手切腹拿到榮耀、超過你，鬼就可能從 3 變回 1；若鬼被綁架或殺死、不在地圖上，加成就沒了。（來源：BGG 討論串〈Effects of Monsters with Killing/Hostage〉〈Oni of Skull question〉）【待核對：玩家引用發行商帳號回覆，非文件；對照官方 FAQ 2.0「參與戰鬥」「戰鬥獲勝」】',
+            },
+            {
+              q: '最低榮耀的對手唯一的單位被我綁架了，鬼還是 3 戰力嗎？',
+              a: '多數回覆認為不是：他雖然沒單位，仍算參與這場戰鬥（還能下注浪人、算榮耀），所以你還不是最低，鬼維持 1 戰力；少數認為他已不在地區。對照官方 FAQ 2.0「參與戰鬥」，前者較合理。（來源：BGG 討論串〈Oni of Skulls Force after hostage〉）【待核對：玩家回覆，非官方】',
+            },
+          ],
+        },
+        {
+          name: '火龍（Fire Dragon）',
+          items: [
+            {
+              q: '火龍的「殺死一個單位」要怎麼選？會殺到自己嗎？',
+              a: '戰鬥開始時，火龍擁有者要在該地區每位玩家（包含自己、盟友）各選並殺死 1 個單位，其中包含自己的 1 個，但不能是火龍本身；大名不受影響。選擇權在火龍擁有者，連怪物也可以挑。（來源：BGG 討論串〈Fire dragon question.〉〈Fire Dragon: Who decides what it kills?〉〈Rising Sun Season cards (and thus Monsters) semi-official FAQ〉）【待核對：玩家引用怪物擴充包說明紙與卡文；中文說明紙頁碼還沒對】',
+            },
+            {
+              q: '我在那個地區只有火龍和大名，或只有火龍時，要殺誰？',
+              a: '殺不到自己的單位就算了，其他玩家照殺；若某位對手只有大名，他那份沒有目標，不影響其他人。如果你還有一個武士和大名，大名不是合法目標，武士就必須被殺，不能用「大名免疫」躲掉自己那一份。（來源：BGG 討論串〈Fire dragon question.〉）【待核對：玩家意見，非官方】',
+            },
+            {
+              q: '被火龍殺死的單位算進宮廷詩人（Imperial Poets）的分嗎？',
+              a: '算。被火龍殺的單位和戰鬥中其他死亡的單位一樣，計入宮廷詩人的 VP。（來源：BGG 討論串〈Fire dragon question.〉）【待核對：玩家回覆；宮廷詩人中文名待核對】',
+            },
+            {
+              q: '火龍被地龍推到別的地區，還會殺人嗎？',
+              a: '在原本那個地區的戰鬥，被推走的火龍不會在那裡殺人；但它被推進的地區如果之後才結算戰鬥，開戰時它在那裡，就會在那場戰鬥殺人。（來源：BGG 討論串〈Who goes first Jorogumo, Fire Dragon, Earth Dragon?〉）【待核對：玩家回覆，非官方】',
+            },
+          ],
+        },
+        {
+          name: 'Turtle 堡壘（不是單位）與各卡牌',
+          items: [
+            {
+              q: '瘟疫之鬼擋得住 Turtle 堡壘嗎？地區有瘟疫之鬼，Turtle 可以在那建堡壘嗎？',
+              a: '建堡壘（調度令放置）是「放置」不是「移動」，所以瘟疫之鬼擋不住。堡壘自己走進去：早期玩家有人說也擋；後來有玩家貼出 CMON 客服的回信，大意是 Turtle 堡壘不是單位、免疫這類效果，多數人改採擋不住。有玩家進一步推論風神也不能移動 Turtle 堡壘，但這和規則書第 26 頁「移動單位時可連堡壘一起移動」互相矛盾，沒有官方定論。（來源：BGG 討論串〈Oni of plagues vs Turtle Stronghold with marshal mandate〉〈Path of Serpent and Turtle clan strongholds〉）【待核對：客服回信是玩家貼的截圖摘要，文件手上沒有；氏族中文名待核對】',
+            },
+            {
+              q: 'Turtle 堡壘與各張卡的互動，有整理過的對照嗎？',
+              a: '有玩家整理（參考客服回覆與官方 FAQ 2.0）：堡壘是標記不是單位，所以不能被切腹、綁架、背叛，也不會被火龍、地龍選到；大怪獸摧毀它不會觸發正義、食人鬼、慈悲這類「殺死單位」的卡；放置堡壘不是召喚，「召喚後」的卡都不觸發；有 Turtle 堡壘沒有單位時，Way of the Ashitaru 不能用（要真的單位）；雷神不擋堡壘戰力（官方 FAQ 2.0）；須佐之男不擋堡壘移出。（來源：BGG 討論串〈Turtle strongholds - consolidating card effects.〉）【待核對：玩家整理，非官方；卡牌中文名待核對，請以官方 FAQ 2.0 為準】',
             },
           ],
         },

@@ -1,16 +1,13 @@
-james88713@outlook.com 5:20 下一步
+.james88713@outlook.com 照建議，另外我希望主畫面左上角的玩桌遊和骰子的圖示改成今天，想玩哪一款? 原本主畫面中的今天，想玩哪一款?  就可以移除 這樣就會看起來是以遊戲為主的畫面
 
-james50aj3g4@outlook.com 聖域bgg討論 6:50
+.james50aj3g4@outlook.com 聖域bgg討論
 
-james.boardgame@outlook.com 9:00
+james.boardgame@outlook.com
 
-james88713.claude@outlook.com 星河交匯 9:10 
-德文和西文輔助提到交易違約要罰分，官方英文規則沒有這條，我判斷可能是房規，沒收。：可以幫我註明嗎?
-快速複習檔 siderealConfluence.ts：要
-中文名用「星河交匯」
-要給我最終記分板
+.james88713.claude@outlook.com 星河交匯
 
-james50aj3g4.claude@outlook.com 9:40 瘋狂鬼宅繼續+你可以先幫我更新這個想法到生成後.md，我再去別的聊天室繼續這個改動(長按修改名稱或者長按秀出照片)可以嗎?
+
+.james50aj3g4.claude@outlook.com 瘋狂鬼宅繼續+你可以先幫我更新這個想法到生成後.md，我再去別的聊天室繼續這個改動(長按修改名稱或者長按秀出照片)可以嗎?
 
 james.boardgame@gmail.com 繼續旭日bgg討論 5:20
 
@@ -18,8 +15,8 @@ james88713.claude@gmail.com 6:40
 
 james50aj3g4.claude@gmail.com 8:00
 
-9:40 p46 繼續
-6:50 50aj繼續
+.p46 繼續
+.50aj繼續
 
 
 KEMET
@@ -34,3 +31,79 @@ KEMET
 21. 戰鬥後續：Question about the loser's retreat（43 則）、If I lose, do I have to recall?、Stay in the zone as a defender when you kill all enemy troops ?、You lost but killed all units of your opponent。這些與現有「戰敗後」條目相關，可補細節。
 22. 神諭卡時機：Can you play DI cards after a battle?、How many DI Cards with Day Icon can be played in a turn?、Diversion card（17 則）。
 23. 神祇與部隊：Divinities and Creatures in the same troop?、Gods "Alone on the Battlefield" and stacking limits、Can God benefit from POWER TILES for troops ？、Can you play the DI cards (tactical support or unhoped assistance) to add health to a god who is wounded?。
+
+RISING
+月氏族與神靈降世，規則最容易吵
+Moon Clan - 2 summons, 1 unit in province（第 4 頁、27 則）
+Swapping figures of the Moon clan with a marshal mandate（第 2 頁、26 則）
+Moon Clan shinto summoning（第 5 頁、22 則）
+Moon Clan multiple Shinto summoning（第 5 頁、21 則）
+Can the moon clan send a Shinto to a shrine if the first mandate is a recruit?（第 3 頁、18 則）
+Kami Unbound Question - Moving Shinto leads to 0 worshippers?（第 3 頁、32 則）
+Does Susanoo unbound block Shinto from climbing?（第 6 頁、31 則）
+Questions for Moon clan: brutality together with Kami unbound（第 6 頁、15 則）
+Shinto on maps（第 5 頁、14 則）
+What happens to Shinto after they climb the mountain?（第 5 頁、8 則）
+切腹、人質、浪人，三個很大的串群，你目前只收了零星幾則
+切腹：
+Take Hostages After Suppuku（第 6 頁、14 則）
+"killed figures" and seppuku（第 4 頁、14 則）
+Seppuku effect on hostages and ronin（第 4 頁、9 則）
+If Jikininki Seppokus does she still grant points?（第 4 頁、13 則）
+Seppuku and Hire Ronin（第 3 頁、10 則）
+Turtle Strongholds and seppuku（第 5 頁、9 則）
+Optional Sepukku（第 4 頁、6 則）
+人質：
+Hostages（第 6 頁、16 則）
+Take Hostage/"Respect" season card（第 5 頁、15 則）
+Respect（第 6 頁、13 則）
+Can you take hostages with not units left on the province?（第 2 頁、11 則）
+Taking hostages from any province?（第 5 頁、8 則）
+Hostage-taking clarification（第 5 頁、7 則）
+浪人：
+Koi Clan and Coins as Ronin（第 6 頁、26 則）
+Hiring Ronin（第 3 頁、13 則）
+Do coins on Koi's war tile count as in reserve?（第 6 頁、11 則）
+Kami Raijin and Ronin tokens（第 6 頁、11 則）
+Ronin - A rule we always got wrong（第 1 頁，1 個月前，最新）
+戰鬥與結盟
+Sun Clan Ability during a Harvest Mandate?（第 5 頁、68 則，全區最長）。日氏族你已經收了，這串可以補採收時的細節。
+Sun Clan Ability: Order Count as Tie Breaker?（第 5 頁、21 則）
+0 Force and Involved in Combat（第 4 頁、31 則）
+When is a player "involved" for honor-tiebraking "At the start of War"-abilities...（第 4 頁、14 則）
+What in case of a partial 3 way draw?（第 4 頁、12 則）
+Alliances Share Powers?（第 6 頁、14 則）
+Allied clans sharing clan powers?（第 6 頁、8 則）
+Battle: War Advantage Resolution（第 3 頁、8 則）
+War upgrades - in what order（第 1 頁、9 則）
+Order Resolution of Start of Battle Cards and Monsters questions.（第 4 頁、7 則）
+談判與交易，你只收了幾則
+Negotiation Clarity（第 4 頁、34 則）
+Can you negotiate with season cards?（第 5 頁、11 則）
+Giving away coins（第 3 頁、18 則）
+Giving anyway coins for no reason.（第 3 頁、11 則）
+No coins or Ronin to be traded in war phase - when does war phase begin?（第 4 頁、9 則）
+Is it allowed to show allies your mandates?（你已經收了）
+政策行動與季節卡
+Betray Mandate Clarification（第 4 頁、35 則）
+Question about Betrayal（第 6 頁、18 則）
+Can I target Daikaiju at Betray?（第 6 頁、18 則）
+Political Mandates Recruit and Marshal - When do allied players resolve their bonus?（第 4 頁、13 則）
+Why do the rules say not to shuffle the mandates?（第 5 頁、13 則）
+Path of the Serpent card questions（第 6 頁、11 則）
+Path of Serpent and Turtle clan strongholds（第 3 頁、16 則）
+Dragonfly special ability and Path of the Serpent card（第 4 頁、25 則）
+Stealing bushi with way of katana war upgrade question（第 5 頁、14 則）
+Turtle strongholds - consolidating card effects.（第 4 頁、4 則，6 個讚，很短但被讚過）
+Ninjas of Rising Sun Rules（第 3 頁、18 則，5 個讚）。這是擴充內容，你說過擴充都要收。
+Benevolence Season Card- Stacking Ability Question（第 6 頁、28 則）。官方 FAQ 只講了 2 張的情形，這串可以補。
+雜項與新手常錯
+The Rulebook for Rising Sun is really Bad, need clarification:（第 6 頁、21 則）
+Card clarifications needed（第 6 頁、20 則）
+Rule questions（第 4 頁、17 則）
+Persisting Questions（第 4 頁、15 則）
+End of game bonus question（第 4 頁、14 則）
+How to teach Rising Sun?（第 5 頁、15 則）。可以補進快速上手。
+Lotus clan "blackmail"（第 1 頁，9 個月前）
+Are other players allowed to see/know what mandate tile the lotus clan put down?（第 2 頁）
+How many times during the war phase am I obligated to reveal how many coins I have?（第 1 頁）
