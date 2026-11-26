@@ -4,6 +4,7 @@
 // 設計師回覆也只是論壇回覆，不是正式勘誤；與規則書、玩家輔助衝突時，以官方文件為準，衝突處標【待核對】。
 // 已用自己的話摘要；網址取自頁面上實際出現的連結，沒有網址的討論串只寫標題。
 // 本次修正舊條目：Hypnotic Cobra 對 Seth（依設計師回覆改寫）、Loot（設計師已確認要贏）、Heka-Ib（同一個移動行動內不行）、Urban Combat（設計師確認所有城市）、Vulture（補爭議）。
+// 2026-11 更新：對照 Kemet 玩家輔助 v50（KBS-Aid_EN_rev50_2024-06-02，英文，12 頁）。v50 已把 Sobek's Wrath 印成 +4；Loot、Urban Combat、Ouadjet、Horus 的 v50 文字與先前討論不同，已在各條註明並標【待核對】；更新板塊 21 張分組與 v50 一致；Organized Movement、Divine Extra、Restful Night 在 v50 也沒有。2026-11-26 第二次更新：依使用者貼來的 BGG 討論串內容，補入第一優先 9 組（取得規則、Perfect Architecture、Loot、Wrryt Storm／Shetyw Barrier、設計師 Bariot 澄清、新舊規則書、Bastet、Ouadjet 與眾神）；網頁截圖有被截斷的引文，已標明【待核對】，沒有補抓整串。BGG 的「Designer」標記只有 Jacques Bariot、Guillaume Montiage 是聖域設計師，其他帶該標記的帳號（例如另一款遊戲的設計師）不當設計師回覆。
 // 登記：只在 unofficialRegistry.ts 登記一次，key 是 'Kemet: Blood and Sand'（已登記，不用再動）。
 // 沒收：整理串中標示「To be added」的空白分類。
 
@@ -11,7 +12,7 @@ import type { GameFaqData } from '../types'
 
 export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
   sub: '玩家整理與設計師論壇回覆（BGG 討論串）',
-  note: '整理自 BGG 規則討論區的玩家 FAQ 整理串，以及 Rise of the Gods 規則討論區的多個討論串（含設計師在論壇的回覆）。都不是正式勘誤。板塊與生物名稱用英文原名，中文用詞為自譯，待核對。與規則書或玩家輔助不同時，以官方為準。',
+  note: '整理自 BGG 規則討論區的玩家 FAQ 整理串，以及 Rise of the Gods 規則討論區的多個討論串（含設計師在論壇的回覆）。都不是正式勘誤。板塊與生物名稱用英文原名，中文用詞為自譯，待核對。與規則書或玩家輔助不同時，以官方為準。2026-11 已對照 Kemet 玩家輔助 v50（2024-06-02）更新。',
   sources: [
     { label: 'Kemet: Blood and Sand FAQ Compilation Thread（BGG，玩家整理）' },
     { label: 'BGG 討論串 3543807（Urban Combat）', url: 'https://boardgamegeek.com/thread/3543807' },
@@ -29,6 +30,16 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
     { label: 'BGG 討論串 3559080（團隊模式神殿 PP）', url: 'https://boardgamegeek.com/thread/3559080' },
     { label: 'BGG 討論串 3721164（團隊模式勝利條件）', url: 'https://boardgamegeek.com/thread/3721164' },
     { label: 'BGG 討論串 3616097（部隊上限）', url: 'https://boardgamegeek.com/thread/3616097' },
+    { label: 'BGG 討論串 3490734（What does Wadjet do?）', url: 'https://boardgamegeek.com/thread/3490734' },
+    { label: 'BGG 討論串 3673278（Is the description of Loot wrong ?）', url: 'https://boardgamegeek.com/thread/3673278' },
+    { label: 'BGG 討論串 3549692（Loot 與 Macabre Aspiration）', url: 'https://boardgamegeek.com/thread/3549692' },
+    { label: 'BGG 討論串 3706368（Warrior Pilgrimage、Outpost、Loot）', url: 'https://boardgamegeek.com/thread/3706368' },
+    { label: 'BGG 討論串 3333106（新舊版本差異）', url: 'https://boardgamegeek.com/thread/3333106' },
+    { label: 'BGG 討論串 3346526（新舊規則書）', url: 'https://boardgamegeek.com/thread/3346526' },
+    { label: 'BGG 討論串 3794288（Bastet）', url: 'https://boardgamegeek.com/thread/3794288' },
+    { label: 'BGG 討論串 3681380（Ptahmose Servant 第一個效果）', url: 'https://boardgamegeek.com/thread/3681380' },
+    { label: 'BGG 討論串 2439404（Perfect Architecture: rules question，2020，含設計師回覆）', url: 'https://boardgamegeek.com/thread/2439404' },
+    { label: 'BGG 社群勘誤頁 kemet_bs_errata（玩家維護，非官方）', url: 'https://boardgamegeek.com/wiki/page/kemet_bs_errata' },
   ],
   groups: [
     {
@@ -81,6 +92,51 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
               q: '控制至少 2 座神殿拿 1 FP，控制 4 座神殿可以拿 2 FP 嗎？',
               a: '不行，是控制至少 2 座神殿拿 1 個神明 FP，不會依座數倍增。許多玩家原本以為每 2 座 1 FP，翻規則書第 11 頁 3.6.3 才發現。',
               src: 'BGG Rise of the Gods 規則區〈Team mode〉（玩家討論；設計師同樣說 4 座神殿也只得 1 FP）',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: '取得板塊（Acquire）與新舊規則書',
+      topics: [
+        {
+          name: '同一顏色一天能取得幾張',
+          items: [
+            {
+              q: '一個白天階段可以取得兩張同顏色的神力板塊嗎？',
+              a: '不行，一個白天階段同一顏色只能取得一張。2024 年 8 月，設計師 Guillaume Montiage 說他們在更新規則書：取得前要滿足的條件包括「不能已擁有圖案或圖示相同的板塊（不論顏色）」、「這個白天階段還沒取得過該顏色的板塊」、「付得起等於板塊等級的 PP（有效果可調整這個費用）」等；他並說玩家引用的新版措辭是對的、先前版本有誤植會更正。另有玩家推論「一天只能拿一張同色板塊」，設計師回覆「Yes, that…」，句子被截斷，看起來是同意【待核對】。Rise of the Gods 新舊版本差異串也有玩家說，這一點已獲官方答覆仍是一天一張。唯一的例外是 Ouadjet，見「神祇」分類。',
+              src: 'BGG B&S 規則區〈Acquire multiple tiles of the same colour in a turn〉（設計師回覆，2024-08，引文被截斷）；BGG 討論串 3333106（玩家轉述）',
+            },
+            {
+              q: '我同時控制自己的黑色金字塔和搶來的另一座黑色金字塔，一天可以買兩張黑色板塊嗎？',
+              a: '不行，還是一天一張。2021 年有玩家這樣回答（句子被截斷），2024 年設計師的取得條件也是以「顏色」限制，不是以金字塔數量。',
+              src: 'BGG〈Buy more than one power tile on a round〉（玩家回答，2021，引文被截斷）',
+            },
+            {
+              q: '取得條件裡那句「else in another color or without any Acquire token」是什麼意思？',
+              a: '玩家說明：這是處理你搶到別人的金字塔、而那個顏色你自己沒有的情況；要取得那個顏色的板塊，你需要有地方放取得標記。後半句的細節在截圖被截斷【待核對】。',
+              src: 'BGG〈Acquire multiple tiles of the same colour in a turn〉（玩家討論；設計師只確認措辭修正）',
+            },
+          ],
+        },
+        {
+          name: '取得費用與 Priestess',
+          items: [
+            {
+              q: '我有 Priestess（費用 −1），只有 3 PP，可以買 4 級板塊嗎？',
+              a: '玩家多數說可以：規則優先順序是神力板塊高於基本規則，所以 Priestess 降低的是取得費用。但取得條件字面寫「付得起等於等級的 PP（有效果可調整）」，有玩家（zephseven）認為字面上兩者講的不是同一件事；另一位玩家說設計意圖是可以。沒有設計師回覆【待核對】。',
+              src: 'BGG〈3.4.3 Acquire, requirement to be able to spend as many PP…〉（玩家討論，2022）',
+            },
+          ],
+        },
+        {
+          name: '新舊規則書差異',
+          items: [
+            {
+              q: 'Rise of the Gods 的新規則書和舊版有哪些被問到的差異？',
+              a: '2024 年 7 月玩家 DrZaat 逐項整理疑問；已有答覆的一項是「同一天同一顏色仍只能取得一張板塊」，其餘當時還在等。另一串指出敗者後續步驟的措辭不同：舊版寫「勝者在該區已沒有部隊時，敗者不能撤退」，新版改寫成「敗者選擇撤退或召回」（後半句被截斷），見「戰鬥結算」的「戰敗後」。WIP 版與正式版的戰鬥卡、神諭卡、板塊有沒有差異，提問沒有人回答【待核對】。',
+              src: 'BGG 討論串 3333106、3346526、〈Question about differences between wip and final versions?〉（玩家討論，無設計師回覆）',
             },
           ],
         },
@@ -209,7 +265,7 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
           items: [
             {
               q: '神祇可以用招募效果補血嗎？',
-              a: '一般不行，規則沒寫招募能治療；死了再招募才是滿血。荷魯斯有自己的回復效果。',
+              a: '一般不行，規則沒寫招募能治療；死了再招募才是滿血。荷魯斯有自己的回復效果。2026 年 5 月玩家（dcpepp）同意：神祇被殺後，下一回合可以免費以滿血重新放回，但原本佔著的神殿不會保留。',
               src: 'BGG 討論串 3694026（玩家討論）',
             },
             {
@@ -219,7 +275,7 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
             },
             {
               q: '荷魯斯的 LP 會到 0 嗎？戰鬥結束後還會回到 3 嗎？',
-              a: '荷魯斯最大 LP 是 3，LP 軌上第一格是 0，所以不存在「再降到 3」。LP 歸 0 就放回供應區，不會回復。',
+              a: 'v50 玩家輔助寫荷魯斯在「戰鬥結束步驟」把 LP 標記移到 LP 格 3，也就是每場戰鬥結束時（若還在場）回到 3 LP。LP 軌第一格是 0；LP 歸 0 就被殺、放回供應區，之後要重新招募，不會回復。先前玩家說「最大 LP 是 3、不存在再降到 3」，要和 v50 這段文字一起看，LP 歸 0 的當場戰鬥結束時會不會又被拉回 3 沒有人回答【待核對】。',
               src: 'BGG〈Questions about gods mode〉（設計師與玩家回覆）',
             },
             {
@@ -244,13 +300,13 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
             },
             {
               q: 'Sobek 的特殊戰鬥卡 Sobek’s Wrath 是「力量 +4」還是「把力量設為 4」？',
-              a: '玩家依最新玩家輔助草稿判斷是 +4（卡面少了加號是印刷筆誤）。取得 Sobek 時，這張卡進你的手牌（設計師），而且只在眾神模組中使用。',
+              a: 'v50 玩家輔助已印成「+4 力量」，並寫戰鬥結束時收回你所有的戰鬥卡；先前玩家依草稿判斷的 +4 與它一致（卡面少了加號是印刷筆誤）。取得 Sobek 時，這張卡進你的手牌（設計師），而且只在眾神模組中使用。',
               src: 'BGG 討論串 3731077、3522210（玩家討論＋設計師回覆）',
             },
             {
               q: 'Ouadjet 可以讓我同一回合買兩張同顏色的神力板塊嗎？',
-              a: '可以。設計師表示你可以買第二張同色板塊；她的移動與戰鬥效果只套用在她自己身上。有玩家質疑這違反取得規則，設計師回覆時間較晚，以設計師為準。',
-              src: 'BGG 討論串 3521466、3703036（設計師回覆＋玩家爭論）',
+              a: '可以。設計師表示你可以買第二張同色板塊；她的移動與戰鬥效果只套用在她自己身上。有玩家質疑這違反取得規則，設計師回覆時間較晚，以設計師為準。注意：v50 玩家輔助的 Ouadjet 文字是「每個白天階段一次，可把 1 個綠色行動標記放在你玩家板上已有綠色行動標記的已佔用行動格，並立刻結算該行動」，沒有提到買第二張同色板塊；這條是依較早的討論，兩邊可能是不同版本或不同讀法【待核對】。2026 年 5 月〈God powers clarification〉的新討論：有玩家（dcpepp）認為重做同一個行動，包括再做一次同色取得，是可行的，因為買板塊本來就受行動標記限制；另一位玩家（sNOOByTH）主張「重做行動」和「重做購買」不是同一回事；兩邊都沒有設計師回覆。〈What does Wadjet do?〉（玩家討論，2025）也有人說她適合搭配取得行動，用在只有兩座金字塔時能省 PP、一天拿兩張同色板塊。',
+              src: 'BGG 討論串 3521466、3703036、3490734、〈God powers clarification〉（設計師回覆＋玩家爭論）',
             },
             {
               q: 'Ouadjet 被殺、在供應區時，她的效果還有效嗎？',
@@ -259,8 +315,8 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
             },
             {
               q: 'Bastet 讓我控制的神殿多給 1 FP，再加我的其他神殿，會得 2 FP 嗎？',
-              a: '不會。神殿控制步驟最多只能得 1 個神明 FP，即使 Bastet 與其他神殿都控制。',
-              src: 'BGG 討論串 3531010（設計師回覆）',
+              a: '不會。神殿控制步驟最多只能得 1 個神明 FP，即使 Bastet 與其他神殿都控制。2026 年 11 月的新串（3794288）玩家補充：只要 Bastet 所在的神殿你有控制，每個夜晚都會得這 1 FP，但不會和「控制至少 2 座神殿得 1 FP」疊加。',
+              src: 'BGG 討論串 3531010（設計師回覆）；BGG 討論串 3794288（玩家回答）',
             },
           ],
         },
@@ -314,7 +370,7 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
           items: [
             {
               q: '輸家一定要撤退或召回嗎？可以留在原區嗎？',
-              a: '一定要二選一，即使勝者在該區已沒有部隊。舊版規則與舊設計師回覆說過可以留下，現行規則書（含 Blood and Sand 新版）沒有這個選項。',
+              a: '一定要二選一，即使勝者在該區已沒有部隊。舊版規則與舊設計師回覆說過可以留下，現行規則書（含 Blood and Sand 新版）沒有這個選項。2024 年的新舊規則書比較串（3346526）也提到：舊版規則書寫「勝者在該區已沒有部隊時，敗者不能撤退」，新版改寫成「敗者選擇撤退或召回」（後半句被截斷）。',
               src: 'BGG〈Loser’s Aftermath still unclear〉（玩家討論）',
             },
           ],
@@ -354,7 +410,7 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
           items: [
             {
               q: 'Urban Combat 3 級要在自己的城區才有效嗎？',
-              a: '不用。設計師說這張板塊在所有城市的任何城區都有效，不只你自己的；你圍攻對手城區也可以。玩家輔助之後會更新。',
+              a: '不用。設計師說這張板塊在所有城市的任何城區都有效，不只你自己的；你圍攻對手城區也可以。玩家輔助 v50 仍寫「你的城市」（your Cities），還沒更新；v50 另寫這張板塊有移動行動效果：你的部隊可進入 1 個對手城區，不必從相鄰區域出發【待核對】。',
               src: 'BGG 討論串 3543807（設計師回覆）',
             },
           ],
@@ -364,8 +420,33 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
           items: [
             {
               q: '可以用 Reinforcement Prayer 多付 PP 增加超過 2 個單位嗎？',
-              a: '不行。這張板塊是在「祈禱」行動時觸發，只能免費加至多 2 個單位，板塊上沒有給你招募行動，也沒有寫可以付費增加更多。',
+              a: '不行。這張板塊是在「祈禱」行動時觸發，只能免費在你的城區加共至多 2 個單位（v50：in your Districts，之後可能觸發戰鬥，比照招募），板塊上沒有給你招募行動，也沒有寫可以付費增加更多。',
               src: 'BGG 整理串中玩家 Jason 的回覆（玩家整理）',
+            },
+          ],
+        },
+        {
+          name: 'Perfect Architecture（藍，更新板塊）',
+          items: [
+            {
+              q: '對手控制了我的 3 級金字塔所在城區，FP 怎麼算？我控制別人的 3 級金字塔會得 FP 嗎？',
+              a: '設計師 Jacques Bariot 在 2020 年回覆：只有擁有這張板塊的人有這個能力，而且只對你自己城區內的金字塔有效。對手控制你的 3 級金字塔，他得不到 FP，你也沒有（臨時 FP 放回供應區）；你控制別人的 3 級金字塔，也不會因為這張板塊得 FP。v50 玩家輔助的文字與這個說法一致。',
+              src: 'BGG 討論串 2439404〈Perfect Architecture: rules question〉（設計師回覆，2020-06）；玩家輔助 v50 第 3 頁',
+            },
+            {
+              q: '4 級金字塔可以因為這張板塊得 2 FP 嗎？',
+              a: '不行。FP 是「每座金字塔」最多 1 點，不是每一層；這張板塊只是把拿到金字塔 FP 的門檻從 4 級降到 3 級。玩家回答，沒有設計師針對這點另外回覆。',
+              src: 'BGG〈Perfect Architecture〉（玩家討論，2021）',
+            },
+          ],
+        },
+        {
+          name: 'Wrryt Storm／Shetyw Barrier（取得特殊戰鬥卡）',
+          items: [
+            {
+              q: '取得 Wrryt Storm 或 Shetyw Barrier 之後，那張特殊戰鬥卡怎麼用？',
+              a: '板塊效果只在「取得時」發生一次：收回手上戰鬥卡，再從遊戲中移除 1 張換成特殊戰鬥卡。之後它和一般戰鬥卡一樣：打出就進棄牌堆，要等手上戰鬥卡都打完收回，或你取得另一張同樣會收回戰鬥卡的板塊時才回到手上。玩家回答，沒有設計師回覆；玩家另說兩張特殊卡的卡面圖和板塊圖不同【待核對】。',
+              src: 'BGG〈Wrryt Storm & Shetyw Barrier〉（玩家討論，2022）',
             },
           ],
         },
@@ -379,7 +460,7 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
           items: [
             {
               q: 'Deep Desert Snake 能抵銷黑色生物 Khnum’s Sphinx（2 級）「敵人進入該區多付 1 PP」的效果嗎？',
-              a: '不行。Deep Desert Snake 只在戰鬥中無效化對手生物的效果；Khnum’s Sphinx 的效果發生在移動時，不是戰鬥。',
+              a: '不行。Deep Desert Snake 只在戰鬥中無效化對手生物的效果；Khnum’s Sphinx 的效果發生在移動時，不是戰鬥。另有玩家轉貼並翻譯設計師 Jacques Bariot 的法文答覆（2021 年轉貼，答案開頭是「只有實際的戰鬥能力…」，後半被截斷）；那段原文把例子寫成 Griffin Sphinx，玩家指出應該是 Khnum’s Sphinx，並已改在社群勘誤頁。玩家 Rainbow Snake 也列舉 Phoenix 飛進你的城區同樣擋不掉。以上是轉貼，不是設計師直接發在 BGG【待核對】。',
               src: 'BGG 整理串（玩家整理）',
             },
             {
@@ -464,7 +545,7 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
             },
             {
               q: 'Divine Might 在白天階段是每個回合只觸發一次，還是每次 PP 效果都觸發？',
-              a: '玩家說法是白天階段一個回合只觸發一次（因為同時有「單一效果」的字句，但玩家輔助漏印），玩家輔助字面卻寫「每次」。討論裡有人指出這與 Energy Gain 每張牌得 1 PP 的裁定看起來矛盾，沒有設計師回覆【待核對】。',
+              a: '玩家說法是白天階段一個回合只觸發一次（因為同時有「單一效果」的字句，但玩家輔助漏印），玩家輔助字面（含 v50）卻寫「每次」。討論裡有人指出這與 Energy Gain 每張牌得 1 PP 的裁定看起來矛盾，沒有設計師回覆【待核對】。',
               src: 'BGG〈Amethyst Power tile Energy Gain Questions〉（玩家討論）',
             },
           ],
@@ -599,7 +680,7 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
           items: [
             {
               q: 'Ptahmose Servant 的效果只對綁定的部隊有效，還是取得後全域永久有效？',
-              a: '只對綁定的部隊有效，所有效果都屬於「tied troop」。實際上只和三角洲（神殿與聖所）有關，因為那裡才需要犧牲單位。它也不會讓部隊多一個傳送選項，只是降低傳送費用。',
+              a: '只對綁定的部隊有效，所有效果都屬於「tied troop」。實際上只和三角洲（神殿與聖所）有關，因為那裡才需要犧牲單位。它也不會讓部隊多一個傳送選項，只是降低傳送費用。不過 2026 年 3 月的新串（3681380）仍有玩家說第一個效果的歸屬要等設計師確認（認為文字印在綁定部隊欄位、且玩家輔助有筆誤），沒有設計師新回覆【待核對】。',
               src: 'BGG 討論串 3523950（設計師回覆）；BGG 討論串 3520143（設計師回覆）；玩家輔助 第 7 頁',
             },
           ],
@@ -609,8 +690,8 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
           items: [
             {
               q: 'Loot 要先贏得戰鬥嗎？',
-              a: '要。設計師確認必須是勝者（板塊圖示有勝者符號，法文版文字也寫了），並說之後會更新英文玩家輔助。最新的玩家輔助草稿寫：戰鬥結束步驟，如果你贏了，可以拿對手本場打出的 1 張神諭卡，或抽 2 張神諭卡（所以對手沒打神諭卡也能抽 2 張）。目前手上的玩家輔助 v5.3 還沒有「贏」這個條件。',
-              src: 'BGG 討論串 3535606、3535211、3549692（設計師與玩家回覆）；玩家輔助 第 7 頁',
+              a: '要。設計師確認必須是勝者（板塊圖示有勝者符號，法文版文字也寫了），並說之後會更新英文玩家輔助。最新的玩家輔助草稿寫：戰鬥結束步驟，如果你贏了，可以拿對手本場打出的 1 張神諭卡，或抽 2 張神諭卡（所以對手沒打神諭卡也能抽 2 張）。但 v50 玩家輔助（2024-06-02）的 Loot 文字是「若對手本場至少打出 1 張神諭卡，把其中 1 張加入手牌，或抽 2 張神諭卡」，沒有寫「贏」這個條件，和設計師回覆不一致；先依設計師與板塊圖示的勝者符號，等官方更新玩家輔助【待核對】。2025～2026 年的新討論串（3535606、3673278、3549692）玩家一致讀成「要贏」：板塊上有勝者（月桂冠）圖示、法文版文字有寫；有玩家引用較新的 WIP 玩家輔助，寫的是「If you win the battle…」；對手沒打神諭卡時，玩家讀成仍可抽 2 張，並說它和綠寶石 Macabre Aspiration 不同（Macabre 沒有勝者圖示）。這些新串裡沒有看到設計師的新回覆。',
+              src: 'BGG 討論串 3535606、3535211、3549692、3673278（設計師與玩家回覆）；玩家輔助 第 7 頁',
             },
           ],
         },
@@ -631,6 +712,16 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
               q: '「一部隊」的效果，我只有 1 個單位時算部隊嗎？',
               a: '算。設計師說 1 個單位就是 1 個單位的部隊。',
               src: 'BGG 討論串 3548051（設計師回覆）',
+            },
+          ],
+        },
+        {
+          name: 'Warrior Pilgrimage（琥珀 4 級）',
+          items: [
+            {
+              q: 'Warrior Pilgrimage 一定要加僕從才能招募嗎？',
+              a: '玩家（the_abiogenist，2026 年 5 月）的讀法：看你的部隊本來有沒有綁僕從。有，就可以對城區外的部隊做招募行動；沒有，就照一般招募放進城區。另一位玩家（sNOOByTH，2026 年 7 月）說他向開發者確認，這張板塊「圍繞僕從」：招募要滿足 (1) 有僕從準備放進城區，或 (2) 有僕從在部隊裡（城內城外都可以），你把單位招募進那支部隊；後面的條件在截圖被截斷。這是玩家轉述，不是官方回覆【待核對】。移動行動那一半，板塊寫明部隊必須綁有僕從。',
+              src: 'BGG 討論串 3706368（玩家討論，含玩家轉述開發者；引文被截斷）；玩家輔助 v50 第 7 頁',
             },
           ],
         },
@@ -709,7 +800,7 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
             },
             {
               q: '各 Game Up 各帶哪些更新板塊？（玩家整理對照表）',
-              a: 'Sacred Bull：Sacred Bull（紅，附公仔）、Perfect Architecture（藍）、Strategic Hold（鑽石）、Divine Support（黑瑪瑙）、Macabre Aspiration（綠寶石）。Sand Worm：Omniscience（紅）、Sandworm（藍，附公仔）、Night Ceremony（鑽石）、Tactical Reinforcement（黑瑪瑙）、Dark Knowledge（綠寶石）。Shield of Onyx：Horde（鑽石）、Shield of Onyx（黑瑪瑙）、Shield of Amethyst（紫水晶）、Supremacy（琥珀）、Unilateral Choice（綠寶石）。Hippo：Tactical Adaptation（紅）、Pitfall（紫水晶）、Hippopotamus（琥珀，附公仔）。Baboon：Urban Combat（藍）、Baboon（紫水晶，附公仔）、Architectural Adjustment（琥珀）。依這個對照，七種顏色各有 3 張更新板塊。',
+              a: 'Sacred Bull：Sacred Bull（紅，附公仔）、Perfect Architecture（藍）、Strategic Hold（鑽石）、Divine Support（黑瑪瑙）、Macabre Aspiration（綠寶石）。Sand Worm：Omniscience（紅）、Sandworm（藍，附公仔）、Night Ceremony（鑽石）、Tactical Reinforcement（黑瑪瑙）、Dark Knowledge（綠寶石）。Shield of Onyx：Horde（鑽石）、Shield of Onyx（黑瑪瑙）、Shield of Amethyst（紫水晶）、Supremacy（琥珀）、Unilateral Choice（綠寶石）。Hippo：Tactical Adaptation（紅）、Pitfall（紫水晶）、Hippopotamus（琥珀，附公仔）。Baboon：Urban Combat（藍）、Baboon（紫水晶，附公仔）、Architectural Adjustment（琥珀）。依這個對照，七種顏色各有 3 張更新板塊。2026-11 已用 v50 玩家輔助逐張對過：21 張更新板塊的顏色與分組一致。',
               src: 'BGG〈Component Identification and Clarification〉（玩家 keysersaucy 整理，非官方；未逐張對照實物）',
             },
             {
@@ -729,6 +820,16 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
             },
           ],
         },
+        {
+          name: '特殊戰鬥卡的名稱',
+          items: [
+            {
+              q: '藍寶石 2 級板塊寫 Shetyw Barrier，但戰鬥卡一覽的特殊戰鬥卡叫 Shetyw Defense，是同一張嗎？',
+              a: '應該是同一張：v50 玩家輔助的板塊文字寫「換成特殊戰鬥卡 Shetyw Barrier」，戰鬥卡一覽裡對應的卡（+3 力量、+3 護盾）叫 Shetyw Defense，是玩家輔助用字不一致，不是兩張不同的卡【推論，待核對】。',
+              src: '玩家輔助 v50 第 3、10 頁（本專案整理者比對）',
+            },
+          ],
+        },
       ],
     },
     {
@@ -739,17 +840,17 @@ export const KEMET_UNOFFICIAL_FAQ: GameFaqData = {
           items: [
             {
               q: 'Organized Movement（銀色行動）能搭配非移動行動使用嗎？',
-              a: '不行。板塊寫明需要使用一個移動行動，所以要花 1 個行動標記或 1 個銀色行動標記放在移動行動上，才能使用 Organized Movement 的金色行動。這張板塊在手上的玩家輔助裡沒有找到【待核對】。',
+              a: '不行。板塊寫明需要使用一個移動行動，所以要花 1 個行動標記或 1 個銀色行動標記放在移動行動上，才能使用 Organized Movement 的金色行動。這張板塊在手上的玩家輔助（含 v50）裡都沒有找到【待核對】。',
               src: 'BGG 整理串（玩家整理）',
             },
             {
               q: '有 Divine Extra 和白色 Priest of Ra 4 級，打一張要 2 PP 的戰鬥神諭卡（Protected Attack）要付多少？是先減再加倍，還是先加倍再減？',
-              a: '付 3 PP。Priest of Ra 的減免只對牌「第一次」的費用生效；如果決定再用一次效果，要額外多付 2 PP。Divine Extra 這張板塊在手上的玩家輔助裡沒有找到【待核對】。',
+              a: '付 3 PP。Priest of Ra 的減免只對牌「第一次」的費用生效；如果決定再用一次效果，要額外多付 2 PP。Divine Extra 這張板塊在手上的玩家輔助（含 v50）裡都沒有找到【待核對】。',
               src: 'BGG 整理串（玩家整理）',
             },
             {
               q: 'Late Fame 搭配金色 Restful Night 2 級，夜晚階段用 5 個老兵標記換，是不是可以拿 2 FP？',
-              a: '整理串答「是，得 2 FP」，出處是 Gamefound 的 Kolossal 專案頁（網址被截斷，無法還原）。Restful Night 這張板塊在手上的玩家輔助裡沒有找到【待核對】。',
+              a: '整理串答「是，得 2 FP」，出處是 Gamefound 的 Kolossal 專案頁（網址被截斷，無法還原）。Restful Night 這張板塊在手上的玩家輔助（含 v50）裡都沒有找到【待核對】。',
               src: 'BGG 整理串（玩家整理）',
             },
           ],
