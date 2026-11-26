@@ -117,3 +117,7 @@
     min-width: 0;
   }
 }
+/* 類型膠囊已搬進篩選面板，這一列只剩「屬性」與排序，靠右對齊 */
+.explore-types-row {
+  justify-content: flex-end;
+}

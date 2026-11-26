@@ -1,11 +1,11 @@
 // 星河交匯（Sidereal Confluence）資源預設值：給資源計數器「一鍵加入」用。
-// 暫時沒有被任何元件引用。快速複習檔把這款寫作「恆星匯流」，兩個中文名哪個為準〔未決定〕，bggName 是 Sidereal Confluence。
+// 暫時沒有被任何元件引用。中文名＝星河交匯（使用者 2026-11-26 決定；快速複習檔已改，其他檔案若還寫「恆星匯流」請搜尋替換），bggName 是 Sidereal Confluence。
 // 格式：每列照 scoreSheet.ts 的 SheetRow（kind 'count'、sign 1、mult 1），另加資料檔專用欄位 nameEn、note、src；轉成範本時拿掉這三個欄位。
 // 資源名稱用快速複習檔「通用資源」一節的用詞（綠＝食物與維生、白＝文化、棕＝工業、黑＝資訊、藍＝生物科技、黃＝電力、八角＝超科技），中文為 AI 自譯【待核對】。
 // 圖示限 Emoji 11（2018）以前；方塊顏色用同色圓點代替（綠🍀、棕🌰、黃🌕），因為桌上看的是顏色；🛑 是八角塊。
 // 起始資源：ods 的「Starting Race Card」列，是各物種起始卡上的起始庫存（9 個基本物種）；ods 作者與版本未標〔未驗證〕，使用前請對照手上的物種起始卡。
 // 交易相對價值：Faction Cheat Sheets v1.1（玩家整理）與 Teaching Guide 一致（1 分≈3 小方塊≈3 飛船≈2 大方塊≈1 八角塊），見 SIDEREAL_CONFLUENCE_TRADE_VALUE。
-// 沒收什麼：擴充 Bifurcation 的起始資源（含 ½ 標記、軌道，見 Cards 檔的 startRaw）、各物種專屬標記（只收 Faderan 認可標記、Zeth 使節標記、Im’dril 艦隊支援三個，見 EXTRA_ROWS）、勝利點（藏在屏風後、不可交易，不收）。
+// 沒收什麼：擴充 Bifurcation 的起始資源（含 ½ 標記、軌道，見 Cards 檔的 startRaw）、各物種專屬標記（只收 Faderan 認可標記、Zeth 使節標記、Im’dril 艦隊支援三個，見 EXTRA_ROWS）、勝利點（藏在屏風後、不可交易，不收；終局算分見 siderealConfluenceScoring.ts）。
 // 還沒做：綁定 bgg_name 的官方範本與上傳畫面（計分表／資源計數器目前沒有「官方範本」功能）。
 
 import type { SheetRow } from '../../lib/scoreSheet'

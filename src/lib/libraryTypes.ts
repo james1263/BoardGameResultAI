@@ -68,6 +68,20 @@ export function getMineGroup(entry: PersonalEntry | undefined): MineGroup {
 
 export const MAIN_CATEGORIES = ['策略', '陣營', '派對']
 
+// 類型多選的比對方式：or＝符合任一個、and＝同時符合全部
+export type CategoryMode = 'or' | 'and'
+
+export function matchesCategories(
+  gameCategories: string[],
+  selected: string[],
+  mode: CategoryMode,
+): boolean {
+  if (selected.length === 0) return true
+  return mode === 'or'
+    ? selected.some((c) => gameCategories.includes(c))
+    : selected.every((c) => gameCategories.includes(c))
+}
+
 // ---- 進階篩選用 ----
 
 // 難度五級（2026-10-27 使用者決定）：<1.8／<2.6／<3.2／<3.8／>=3.8

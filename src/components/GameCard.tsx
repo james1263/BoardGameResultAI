@@ -140,16 +140,16 @@ function GameCard({
 
           <div className="game-facts">
             <span>
-              <span title="最佳人數" aria-label="最佳人數">
+              <span data-col="best" title="最佳人數" aria-label="最佳人數">
                 <PairIcon /> {shortPlayers(game.bestPlayers)}
               </span>
-              <span title="推薦人數" aria-label="推薦人數">
+              <span data-col="recommend" title="推薦人數" aria-label="推薦人數">
                 <PersonIcon /> {shortPlayers(game.recommendPlayers)}
               </span>
             </span>
             <span>
-              <span title="遊戲時間（分鐘）">◷ {timeText}</span>
-              <span title="BGG 難度" aria-label="BGG 難度">
+              <span data-col="time" title="遊戲時間（分鐘）">◷ {timeText}</span>
+              <span data-col="difficulty" title="BGG 難度" aria-label="BGG 難度">
                 <BrainIcon /> {difficultyText}
               </span>
             </span>

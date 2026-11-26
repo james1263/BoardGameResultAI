@@ -7,7 +7,9 @@ import {
   RATING_FILTERS,
   RATING_FILTER_LABELS,
   TIME_LIMITS,
+  type CategoryMode,
   type DifficultyLevel,
+  type LibraryGame,
   type MineGroup,
   type NumericFilter,
   type RatingFilter,
@@ -15,6 +17,7 @@ import {
 import { BrainIcon, EyeIcon, PairIcon, PersonIcon } from './Icons'
 import '../styles/filter-icons.css'
 import InfoHint from './InfoHint'
+import CategoryFilter from './CategoryFilter'
 
 function NumberSelect({
   label,
@@ -56,6 +59,13 @@ export type FilterDrawerProps = {
 
   playerCounts: number[]
   groupSizes: number[]
+
+  games: LibraryGame[]
+  selectedCategories: string[]
+  categoryMode: CategoryMode
+  onToggleCategory: (category: string) => void
+  onCategoryModeChange: (mode: CategoryMode) => void
+  onClearCategories: () => void
 
   groupSize: NumericFilter
   setGroupSize: (value: NumericFilter) => void
@@ -138,6 +148,15 @@ export default function FilterDrawer(props: FilterDrawerProps) {
               清除篩選
             </button>
           </div>
+          <CategoryFilter
+            games={props.games}
+            selected={props.selectedCategories}
+            mode={props.categoryMode}
+            onToggle={props.onToggleCategory}
+            onModeChange={props.onCategoryModeChange}
+            onClear={props.onClearCategories}
+          />
+
           <div className="filter-group">
             <div className="filter-group-title">
               <span>

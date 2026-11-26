@@ -1,15 +1,15 @@
-// 開桌前快速複習：恆星匯流（Sidereal Confluence）
-// 範圍：單人模式不收（文件也沒有）；擴充一般要收，但這次文件裡沒有擴充，所以沒有擴充區塊。
-// 來源：①2020 官方規則書（WizKids，16 頁，頁碼＝書上頁碼＝PDF 頁）②2017 舊版規則書（8 頁，只用來對照）③官方教學指南 Teaching Guide（2 頁）④Player Aid／Cheat Sheet v1.4（1 頁，玩家整理，非官方，出處未標）。
+// 開桌前快速複習：星河交匯（Sidereal Confluence）
+// 範圍：單人模式不收（文件也沒有）；擴充一般要收：Bifurcation 擴充只收 9 個派系的摘要（玩家整理，使用者是否擁有擴充〔未驗證〕），擴充牌庫沒收。
+// 來源：①2020 官方規則書（WizKids，16 頁，頁碼＝書上頁碼＝PDF 頁）②2017 舊版規則書（8 頁，只用來對照）③官方教學指南 Teaching Guide（2 頁）④Player Aid／Cheat Sheet v1.4（1 頁，玩家整理，非官方，出處未標）⑤官方物種板說明（英文）九份：Kt’Zr’Kt’Rtl、Caylion、Kjasjavikalimm、Faderan（含遺跡世界頁）、Im’dril、Eni Et、Unity、Yengii、Zeth ⑥Sidereal_Confluence_Factions.pdf（含擴充 Bifurcation 的 9 個派系，玩家整理，非官方，出處未標）。
 // 沒有中文規則書，中文用詞全是 AI 自譯，標【待核對】；物種名稱保留英文。
-// 各物種的專屬規則在各自的物種板上（文件沒有），這裡只收規則書與速查表有寫的摘要。
+// 各物種的專屬規則以官方物種板說明為準（2026-11-26 補入）；各科技與殖民地卡的實際公式在 siderealConfluenceCards.ts。
 // 2020 版與 2017 版不同處以 2020 版為準，差異列在最後的收起區塊。
 
 import type { ReviewSection } from './risingSun'
 
 export const SIDEREAL_CONFLUENCE_REVIEW: { bggName: string; draftNote: string; sections: ReviewSection[] } = {
   bggName: 'Sidereal Confluence',
-  draftNote: '草稿：中文用詞為 AI 自譯【待核對】；沒有中文規則書與物種板，各物種專屬規則請看物種板。',
+  draftNote: '草稿：中文用詞為 AI 自譯【待核對】；沒有中文規則書與物種板，各物種專屬規則請看物種板（英文物種板說明已摘要，仍以實物為準）。',
   sections: [
     {
       title: '遊戲目標',
@@ -369,57 +369,164 @@ export const SIDEREAL_CONFLUENCE_REVIEW: { bggName: string; draftNote: string; s
       ],
     },
     {
-      title: '九個物種速查（玩家整理，非官方）',
+      title: '九個物種速查（官方物種板說明為主）',
       fold: true,
       items: [
         {
-          text: '來源是 Player Aid v1.4 速查表，出處未標；物種專屬規則請看物種板。殖民地支援／平手判定數字：Caylion 3／1、Eni Et 3／3、Faderan 4／7、Im’dril 0／8、Kjas 6／6、Kt’Zr’Kt’Rtl ∞／∞、Unity 1／4、Yengii 3／5、Zeth 3／2。這些數字也印在各物種的屏風上，與 2020 規則書的設置圖一致。',
-          src: 'Player Aid v1.4（玩家整理，非官方）；2020 官方規則書 第 4、6、7 頁',
+          text: '殖民地支援／平手判定數字：Caylion 3／1、Eni Et 3／3、Faderan 4／7、Im’dril 0／8、Kjas 6／6、Kt’Zr’Kt’Rtl ∞／∞、Unity 1／4、Yengii 3／5、Zeth 3／2。這些數字印在各物種的屏風與物種板上，與 2020 規則書的設置圖一致。難度（物種板）：Kt 1、Caylion 2、Kjas 2、Faderan 3、Zeth 3＊（新手多的局不要給）、Im’dril 4、Eni Et 5、Unity 5、Yengii 6。',
+          src: '官方物種板說明（各物種）；2020 官方規則書 第 3、4、6、7 頁',
         },
         {
           label: 'Kt’Zr’Kt’Rtl（最容易）',
-          text: '只需要綠色方塊，有便宜的殖民地可賣；起始轉換器可升級兩次；殖民地平手時永遠贏；有一批小殖民地可在交易階段打出（各花 1～2 個黃色方塊）。',
-          src: 'Player Aid v1.4（玩家整理，非官方）',
+          text: '只需要綠色方塊，有很多便宜的殖民地可賣。起始轉換器拆成兩張卡、成對擺放不能拆開重配，各自升級；租出去時當成一張卡。有一副公開的「虛空殖民地」牌庫，交易階段跑最上面沒有產出的轉換器（費用 1～2 個黃）就能打出，順序不拘；這些殖民地沒有 Kt 底色，交易出去就是永久轉讓，被當資源消耗時直接移出遊戲。殖民地支援無限；殖民地出價平手一律贏（視為殖民地比別人少，研究團隊出價不適用）；平手判定值無限。',
+          src: '官方物種板說明（Kt’Zr’Kt’Rtl）',
         },
         {
           label: 'Caylion',
-          text: '出價時殖民地出價減半（出 5 艘當 2.5 艘）；殖民地每個經濟階段產出兩次；幾乎只缺飛船。',
-          src: 'Player Aid v1.4（玩家整理，非官方）',
+          text: '殖民地出價減半、不進位（1 艘只算 0.5，低於最低出價 1，拿不到牌；奇數出價有小數，可用來避免平手），研究團隊出價不減半。拿到殖民地時放「×2 種子標記」，該殖民地的轉換器每個經濟階段可跑兩次（兩次仍與其他轉換器同時；升級殖民地的轉換器不翻倍；標記翻面後留在殖民地上，殖民地被交易時標記跟著走，被棄置時標記移出遊戲；別人交易給 Caylion 的殖民地不加標記，起始殖民地有標記）。幾乎只缺飛船。',
+          src: '官方物種板說明（Caylion）',
         },
         {
           label: 'Kjasjavikalimm',
-          text: '殖民地出價可在看到別人出價後拆成兩次出價（例如 7 拆成 4 加 3）；用領地板塊（花兩個殖民地與一些資源打出）建立很強的經濟，可相對獨立於他人。',
-          src: 'Player Aid v1.4（玩家整理，非官方）',
+          text: '設置時在殖民地軌上算兩位玩家（5 人局當 6 人）。殖民地出價可拆成兩半各出一次，盡量平均（4＝2＋2、5＝3＋2）：輪到時可拿最低出價不超過該半份的殖民地，或保留該半份；同回合不能再拆；兩次之間殖民地數量會變，平手判定也跟著變。有三塊領地板塊，視同卡片，用上方轉換器打出（花兩張殖民地與資源）、下方轉換器升級，都在交易階段跑，可借出一回合；不必在遊戲結束前全部打出。',
+          src: '官方物種板說明（Kjasjavikalimm）',
         },
         {
           label: 'Faderan',
-          text: '把認可標記當交易的一部分送人，對方下次發明科技時你得 1 分；遺跡世界：每回合一次，花 4 個白色資源與一個冰殖民地抽遺跡世界牌。',
-          src: 'Player Aid v1.4（玩家整理，非官方）',
+          text: '遺跡世界牌庫：背面朝上洗好；每回合一次，花 4 個白色資源與一個冰殖民地（放殖民地牌堆底），跑牌庫頂那張背面的轉換器並翻面打出。多數遺跡世界可交易、回合結束歸還（例外：Gift of the Duruntai）。認可標記：交易時送給別人，非 Faderan 玩家不能再轉手；對方發明科技時歸還 1 個，Faderan 從公共庫存得 1 分（同回合發明多個科技，每個歸還一個）。各遺跡世界的效果見下一區塊。',
+          src: '官方物種板說明（Faderan）',
         },
         {
           label: 'Im’dril',
-          text: '需要艦隊卡才能跑轉換器，艦隊卡要花資源打出；經濟很強但很吃資源（八角塊、黑、棕）；第一回合要先想好怎麼把艦隊打出來。',
-          src: 'Player Aid v1.4（玩家整理，非官方）；教學指南 第 2 頁',
+          text: '沒有殖民地支援：可以出價，但沒交易掉的話，經濟階段開始時要棄到殖民地牌堆底。轉換器要有艦隊支援：經濟卡左側標需要幾點，艦隊卡右側標提供幾點；一張艦隊的支援可拆給多個轉換器，一個轉換器也可由多張艦隊共同支撐。租出轉換器時要連同足夠的艦隊支援一起租，否則對方跑不了；收到沒有艦隊符號的別人的卡，不用支援。交易階段跑艦隊卡上的轉換器就能「發現」艦隊：進場並得 1 分，帶星號的艦隊一開始就在場。',
+          src: '官方物種板說明（Im’dril）',
         },
         {
           label: 'Eni Et',
-          text: '利息轉換器：投入一堆同樣資源、產出更多；自己不能跑利息轉換器，但可以借給別人；策略是讓別人都變強並從中賺到更多。',
-          src: 'Player Aid v1.4（玩家整理，非官方）',
+          text: '利息轉換器：投入一定數量同色資源、產出更多同色資源（通用方塊不需同色）；Eni Et 自己不能跑，只能升級與借出，升級後的規則與一般轉換器相同，但不一定比投入多。通用方塊投入時不會消耗、原樣通過，轉換器不會多產出通用方塊；通用方塊可和同大小的同色方塊混合投入，這時產出必須補成那一色。',
+          src: '官方物種板說明（Eni Et）',
         },
         {
           label: 'Unity',
-          text: '很多轉換器可吃任意顏色（大小要對）；灰色大小方塊可當同大小的任何資源；可花一個殖民地與資源引入少數獨特轉換器。',
-          src: 'Player Aid v1.4（玩家整理，非官方）',
+          text: '多數轉換器吃任意顏色（大小要對）並產出灰色通用方塊：大通用方塊可當黑、藍、黃，小通用方塊可當綠、白、棕。通用方塊可當通用投入，但很浪費；Zeth 偷不到通用方塊。殖民地只能支援 1 張，可以多拿第二張再交易或消耗，否則經濟階段開始時要棄掉；部分卡可用任何氣候的殖民地加資源打出或翻面。有四張電腦世界，用上方轉換器打出。需求：任何資源。',
+          src: '官方物種板說明（Unity）',
         },
         {
           label: 'Yengii（很難）',
-          text: '科技不分享，而是授權給個別玩家作為交易的一部分；科技分享獎勵用自己專屬的較小數字。',
-          src: 'Player Aid v1.4（玩家整理，非官方）；2020 官方規則書 第 14 頁',
+          text: '發明的科技不分享，其他人拿不到對應卡；別人發明的科技照常有。因此只領科技分享獎勵牌上 Yengii 專用的較小數字；發明時照常翻面，但攤在自己面前，不放到桌子中間。可以在交易中「授權」科技給別人，對方立刻找出自己物種牌庫的同名卡打出（發明的同一個交易階段就能授權）；授權不能用來救回已被壓在別張卡下面的卡。只有自己「有效」的研究團隊才算進研究團隊出價平手時的卡數。需求：每種資源一樣需要。',
+          src: '官方物種板說明（Yengii）',
         },
         {
           label: 'Zeth',
-          text: '若別人上個交易階段沒跟你交易，你可以偷他們；使節標記可給或交易給別人，讓他們更容易被偷；像在收保護費。不建議在新手居多的局中玩。',
-          src: 'Player Aid v1.4（玩家整理，非官方）；2020 官方規則書 第 3 頁',
+          text: '回合多一個「Zeth 竊取階段」（匯流階段之後、每回合結束，含最後一回合）：用紅色竊取轉換器偷別人的資源，只看大小與形狀、不看顏色，偷不到就偷到有多少為止。你上個交易階段交易過的玩家是安全的（用「Danger／Safe」標記記錄）；每個竊取轉換器只偷一個人，同一個人同回合不能被兩個竊取轉換器偷。竊取轉換器至少有兩種付費方式，對方有使節標記時有更便宜的選項（不消耗標記）。使節標記由 Zeth 交易（不能送出）給別人，別人不能互相交易或還給 Zeth；使節標記用完仍可跑「Envoys」，只是不產標記。被迫給出的捐贈品、以及 Zeth「Envoys」輸出的禮物，都不算交易，不提供保護；用捐贈品交易時要在交易當下講清楚，Zeth 可以拒絕。',
+          src: '官方物種板說明（Zeth）',
+        },
+      ],
+    },
+    {
+      title: 'Faderan 遺跡世界（官方物種板說明）',
+      fold: true,
+      items: [
+        {
+          label: 'Automated Transport Network',
+          text: '打出時從殖民地牌堆頂拿 2 張殖民地；持有者殖民地支援 +2（可借給別人一回合）；Im’dril 拿到可用它把殖民地留到經濟階段。',
+          src: '官方物種板說明（Faderan Relic Worlds 頁）；FactionsCards.pdf；義大利文卡面（The Grand Armilla）；中文自譯【待核對】',
+        },
+        {
+          label: 'Star’s Ruin',
+          text: '打出時得 2 分，再加上目前科技分享獎勵的分數（越早打越高）；之後沒有任何效果。',
+          src: '官方物種板說明（Faderan Relic Worlds 頁）；FactionsCards.pdf；義大利文卡面（The Grand Armilla）；中文自譯【待核對】',
+        },
+        {
+          label: 'Transmutive Decomposer',
+          text: '打出時得 1 分；和其他經濟轉換器一樣，不能收同一個經濟階段由別的轉換器產出的飛船。',
+          src: '官方物種板說明（Faderan Relic Worlds 頁）；FactionsCards.pdf；義大利文卡面（The Grand Armilla）；中文自譯【待核對】',
+        },
+        {
+          label: 'Nalgorian Grindstone',
+          text: '打出時得 1 分；要跑它的轉換器得先交 1 分回公共庫存，沒有分數就不能跑；同一經濟階段別的轉換器的產出不能當它的輸入。',
+          src: '官方物種板說明（Faderan Relic Worlds 頁）；FactionsCards.pdf；義大利文卡面（The Grand Armilla）；中文自譯【待核對】',
+        },
+        {
+          label: 'Gift of the Duruntai',
+          text: '每回合第一次被交易時，交出去的人拿到卡上列的資源，Faderan 得 1 個藍色（生物科技）方塊；同回合第二次交易沒有資源；這張卡沒有 Faderan 底色，回合結束不歸還；若 Faderan 是該回合第一個把它交易出去的人，就拿到全部資源。',
+          src: '官方物種板說明（Faderan Relic Worlds 頁）；FactionsCards.pdf；義大利文卡面（The Grand Armilla）；中文自譯【待核對】',
+        },
+        {
+          label: 'Contextual Integrator Cache',
+          text: '打出時，數非 Faderan 玩家手上的認可標記，每 3 個（進位）Faderan 得 1 分；持有認可標記的玩家發明用小或大方塊的科技時，費用少 1 個方塊（八角塊不適用，多個標記不疊加，也不能選擇不用或留到之後）。',
+          src: '官方物種板說明（Faderan Relic Worlds 頁）；FactionsCards.pdf；義大利文卡面（The Grand Armilla）；中文自譯【待核對】',
+        },
+        {
+          label: 'Relic Detector',
+          text: '打出時得 1 分；多一個交易階段的轉換器：棄 3 個綠與 1 個任意氣候殖民地（殖民地放牌堆底）抽一張遺跡世界，可和遺跡世界背面的轉換器同回合跑，所以一回合最多出兩張；不可交易。',
+          src: '官方物種板說明（Faderan Relic Worlds 頁）；FactionsCards.pdf；義大利文卡面（The Grand Armilla）；中文自譯【待核對】',
+        },
+        {
+          label: 'Paradise Converter',
+          text: '打出時得到卡上列的方塊；交易階段每回合一次，可把 1 個任意氣候的殖民地換成 2 分（殖民地放牌堆底）。',
+          src: '官方物種板說明（Faderan Relic Worlds 頁）；FactionsCards.pdf；義大利文卡面（The Grand Armilla）；中文自譯【待核對】',
+        },
+        {
+          label: 'The Grand Armilla',
+          text: '打出時得 1 分；轉換器：不需投入，產出 4 艘飛船（義大利文卡面）。',
+          src: '官方物種板說明（Faderan Relic Worlds 頁）；FactionsCards.pdf；義大利文卡面（The Grand Armilla）；中文自譯【待核對】',
+        },
+        {
+          label: '沒有文字的三張',
+          text: 'Library of Entelechy、Barian Trade Armada、Thil’s Demiring 三張只找到轉換器公式，沒有效果文字，請看實物卡。',
+          src: 'Sidereal_Confluence_Card_List.ods（只有公式）',
+        },
+      ],
+    },
+    {
+      title: '擴充 Bifurcation 的九個派系（玩家整理，非官方）',
+      fold: true,
+      items: [
+        {
+          label: 'Caylion Collaborative（難度 3）',
+          text: '計畫（Project）卡要靠「票」才能啟動：別人各有 2 票、你只有 1 票；你把計畫卡借給別人換票，再依雙方協議分配計畫卡的產出。計畫卡不受 Eni Et 工程師服務標記與 Kt’Zr’Kt’Rtl Technophiles 回溯標記影響。適合想當全場焦點的新手（同桌有老手），或全桌最有魅力的老手。',
+          src: 'Sidereal_Confluence_Factions.pdf；Sidereal_Confluence_FactionsCards.pdf（玩家整理，非官方；擴充）；中文自譯【待核對】',
+        },
+        {
+          label: 'Eni Et Engineers（難度 4）',
+          text: '產出「服務標記」，附在白色箭頭轉換器上，把它的投入減半（無條件進位）；殖民地與勝利點不算資源。適合觀察力強、會在桌上找最佳用途的玩家。',
+          src: 'Sidereal_Confluence_Factions.pdf；Sidereal_Confluence_FactionsCards.pdf（玩家整理，非官方；擴充）；中文自譯【待核對】',
+        },
+        {
+          label: 'Faderan Society of Falling Light（難度 7，殖民地支援 8）',
+          text: '不分享科技、也拿不到別人發明的科技，不領科技分享獎勵；研究團隊出價可拆成兩半；發明費用減半（進位）、得分減半（捨去）。發明過的團隊帶「後悔標記」，可成套交易換當下的分享獎勵，但終局每個 −1 分、不能再轉手；出價順序先看後悔標記少的人。難度極高，給非常熟的玩家。',
+          src: 'Sidereal_Confluence_Factions.pdf；Sidereal_Confluence_FactionsCards.pdf（玩家整理，非官方；擴充）；中文自譯【待核對】',
+        },
+        {
+          label: 'Im’dril Grand Fleet（難度 5）',
+          text: '沒有殖民地支援（可以出價，但必須交易或消耗掉）；產出可自由交易的「軌道工廠」，永久附在殖民地上增產；艦隊支援只有起始的 5 點、不能再增加，所以經濟有天花板。適合能在後期湊出經濟的熟手。',
+          src: 'Sidereal_Confluence_Factions.pdf；Sidereal_Confluence_FactionsCards.pdf（玩家整理，非官方；擴充）；中文自譯【待核對】',
+        },
+        {
+          label: 'Kjasjavikalimm Independent Nations（難度 4）',
+          text: '起始卡產的方塊全是「捐贈品」，自己也很需要別人的捐贈品與別人的科技；有兩張起始卡只收別人的捐贈品（顏色不拘），起始卡只能靠燒掉別人的科技升級（回合結束不歸還）。適合能快速交易、肯吃點虧讓資源流動的熟手。',
+          src: 'Sidereal_Confluence_Factions.pdf；Sidereal_Confluence_FactionsCards.pdf（玩家整理，非官方；擴充）；中文自譯【待核對】',
+        },
+        {
+          label: 'Kt’Zr’Kt’Rtl Technophiles（難度 5）',
+          text: '起始轉換器拆成兩張卡、各自升級；有一整副「Kit 研究團隊」牌，在交易階段用上面的紫箭頭徵召；自己發明這些科技要多付一個八角塊，別人不用；這些科技只要是你發明、或被分享／授權給你，就能拿來升級起始卡；Retrocontinuity 科技每個交易階段能把一個白色箭頭當紫色（Eni Et 利息與 Caylion 計畫除外），但同階段不能被消耗。',
+          src: 'Sidereal_Confluence_Factions.pdf；Sidereal_Confluence_FactionsCards.pdf（玩家整理，非官方；擴充）；中文自譯【待核對】',
+        },
+        {
+          label: 'Deep Unity（難度 2＊）',
+          text: '由骰子決定經濟：設置時與每回合匯流階段開始擲骰，決定在場的卡與領地板，永遠有 4 個經濟轉換器；雙骰翻面、三骰連起始卡一起翻面；骰子操控卡由消耗科技「種下」，可在交易階段重新指定。部分轉換器吃通用輸入、產出通用方塊。難度標 2＊，星號意義來源未標〔未驗證〕。適合想要明確短期目標、在當下交易的玩家。',
+          src: 'Sidereal_Confluence_Factions.pdf；Sidereal_Confluence_FactionsCards.pdf（玩家整理，非官方；擴充）；中文自譯【待核對】',
+        },
+        {
+          label: 'Yengii Jii（難度 4）',
+          text: '把「Jii 限制」標記賣給別人，換 Yengii 專用的科技分享獎勵（每回合最多兩次，標記不可由別人轉手）：被限制的玩家與他借出的卡（Eni Et 利息與 Caylion 計畫除外）不能消耗該色資源，卻會多產出該色；每人最多持有 7 個限制（每色一個）；Jii 不能限制自己；Unity 通用方塊不能當被限制的色。影響度標 2＊，星號意義來源未標〔未驗證〕。需求：每種資源一樣需要。',
+          src: 'Sidereal_Confluence_Factions.pdf；Sidereal_Confluence_FactionsCards.pdf（玩家整理，非官方；擴充）；中文自譯【待核對】',
+        },
+        {
+          label: 'Zeth Charity Syndicate（難度 5，殖民地支援 0）',
+          text: '別人手上有「不受歡迎者」卡，只有他們能升級、只有 Syndicate 能跑（有數量上限）；殖民地軌道少一個玩家；用「跨殖民」標記標在贏到的殖民地上：有人拿走那個殖民地就能升級自己的起始卡，對方棄掉它時 Syndicate 拿回標記並得 1 分。需求資源來源未標。',
+          src: 'Sidereal_Confluence_Factions.pdf；Sidereal_Confluence_FactionsCards.pdf（玩家整理，非官方；擴充）；中文自譯【待核對】',
         },
       ],
     },
@@ -438,6 +545,11 @@ export const SIDEREAL_CONFLUENCE_REVIEW: { bggName: string; draftNote: string; s
           src: '2020 官方規則書 第 16 頁',
         },
         {
+          label: 'Faderan 重抽（玩家自訂）',
+          text: 'Faderan 遺跡世界：全員同意才能用；第 1～2 回合抽到遺跡世界時，可以棄掉重抽，每局限一次。',
+          src: 'Faderan Cheat Sheet v1.1（玩家整理，非官方，不是官方規則）',
+        },
+        {
           label: '精確計分',
           text: '最後不加半分，改成八角塊 6/12 分、大方塊 3/12 分、小方塊 2/12 分；更精準但算得比較久。',
           src: '2020 官方規則書 第 16 頁（2017 舊版寫大方塊 4/12、小方塊 3/12，與 ½ 分換算不合，見下方）',
@@ -448,6 +560,11 @@ export const SIDEREAL_CONFLUENCE_REVIEW: { bggName: string; draftNote: string; s
       title: '新手建議',
       fold: true,
       items: [
+        {
+          label: '交易大約價值',
+          text: '1 分大約等於 1 個八角塊、2 個大方塊、3 個小方塊或 3 艘飛船（小方塊與飛船約 1 點、大方塊約 1.5 點、八角塊與 1 分各約 3 點）。只是談判參考，不是規則。',
+          src: '教學指南 第 1 頁；Player Aid（玩家整理，非官方）',
+        },
         {
           label: '別隨機選物種',
           text: '每個物種的玩法差很多，要選符合自己風格的。新手建議順序：Kt’Zr’Kt’Rtl 最容易，其次 Caylion、Kjasjavikalimm、Faderan；上手快的新手也可玩 Im’dril；Eni Et、Unity 要很主動、強勢地交易；Yengii 給玩過幾次的人；Zeth 要避免在新手居多的局出現。',
@@ -495,14 +612,19 @@ export const SIDEREAL_CONFLUENCE_REVIEW: { bggName: string; draftNote: string; s
           src: '2017 舊版規則書 第 7 頁；2020 官方規則書 第 12 頁',
         },
         {
+          label: '違約罰分',
+          text: '德文與西文玩家輔助都寫了「交易違約要罰分」，與 2020 規則書第 10 頁一致（每個方塊或飛船扣 1 分，每張卡、八角塊或分數扣 2 分），不是房規。',
+          src: 'Siderische_Konfluenz_-_Spielhilfe_v1_0；AYUDA_DE_JUEGO_SC；2020 官方規則書 第 10 頁',
+        },
+        {
           label: '速查表出處',
           text: 'Player Aid v1.4 的出處沒標，物種摘要只當參考；與物種板衝突以物種板為準。',
           src: 'Player Aid v1.4',
         },
         {
           label: '文件缺漏',
-          text: '沒有物種板、物種專屬規則、各科技與殖民地卡的實際效果，也沒有擴充或官方 FAQ。這些需要看實物。',
-          src: '本次提供的四份文件',
+          text: '物種板說明（英文）已補入；仍沒有各科技與殖民地卡的實際效果文字（公式見 siderealConfluenceCards.ts）、擴充的官方物種板與官方 FAQ。這些需要看實物。',
+          src: '2026-11-26 補入物種板說明後的狀態',
         },
       ],
     },

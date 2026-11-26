@@ -9,14 +9,14 @@
 // 來源不一致與待確認：
 // 1. 難度順序：2020 規則書（經快速複習檔）把 Zeth 排在最後；Race Guide 與 ods 都給 Zeth 難度 3（Race Guide 另註「有任何新手就不要給」）。本檔照 Race Guide／ods 填 3，並在 summaryZh 註明。
 // 2. 玩家輔助版本：快速複習檔引用 Player Aid v1.4，這次使用者上傳的是 v1.1；v1.1 沒有物種速查，所以物種摘要改以 Race Guide 為準。
-// 3. 星河交匯與恆星匯流兩個中文名並存〔未決定〕。
+// 3. 〔已決定〕中文名用「星河交匯」（使用者 2026-11-26）；快速複習檔已改，其他地方若還寫「恆星匯流」請搜尋替換。
 // 4. 符號 O：Im’dril「Fleet Support」六張卡的費用（OOB→$ 等）與 Faderan「Gift of the Duruntai」的產出（➪OTgb+T）用了 O，但 ods Syntax 只說 O＝Im’dril Grand Fleet 的大軌道（擴充），基本版不該出現；依 Race Guide（Im’dril 需要八角、黑、棕）推測是八角塊 U 的筆誤，〔未驗證〕，已保留原字串。
 // 5. Faderan 起始卡另標 NR、Caylion 的 1 Colony with x2：意義〔未驗證〕，照原字串保留。
 // 6. 分享獎勵表（SIDEREAL_SHARING_BONUS）來自 ods Confluence 列，4～10 人、第 1～6 回合各剛好對應一筆（已用腳本驗證），但與實體匯流牌是否一致〔未驗證〕；3 人局只有擴充有。
 // 7. Race Guide 的「需求資源」顏色來自表格裡的圖示，已用 Teaching Guide 的文字（Kt、Kjas 要黃，Faderan 要白，Caylion 缺飛船）與派系卡圖面交叉對過；擴充派系的需求用派系卡圖面，與同物種的基本派系相同（Deep Unity、Charity Syndicate 圖面沒標）。
 // 8. 〔已解決〕匈牙利文版把 Faderan「Tudás tallér」（認可標記）寫成「遊戲結束時值 1 分」；官方英文派系說明寫「Worth 1 Point to you later」，且只在持有者發明科技、歸還標記時得 1 分，匈牙利文是譯誤，以英文為準。
 // 9. Deep Unity 難度「2＊」、Caylion Collaborative 與 Yengii Jii 影響度的「＊」，來源只印星號、沒說明意義〔未驗證〕；本檔 difficulty 欄照 ods 填數字。
-// 11. 西班牙文、德文玩家輔助提到「交易違約要罰分」（德文：每個方塊或飛船、每張卡或八角塊各扣若干分，數字在圖示裡看不清）；官方英文規則只寫「交易有約束力」，沒有罰分，不收〔未驗證，可能是玩家的房規〕。
+// 11. 交易違約罰分：2020 官方規則書第 10 頁已有（每個方塊或飛船扣 1 分，每張卡、八角塊或分數扣 2 分，分數可為負），快速複習檔已收；德文、西班牙文玩家輔助寫的是同一條，不是房規。已列入 siderealConfluenceScoring.ts 的違約扣分列。
 // 12. 資源名稱的各語言對照（核對用）：綠＝西 Comida／德 Biomasse；白＝西 Cultura／德 Kulturgut；棕＝西 Industria／德 Industriegut；黑＝西 Información／德 Daten；藍＝西 Biotecnología／德 Biotechnologie；黃＝西 Energía／德 Energiecache（義大利文規則書寫 Power）；八角＝Ultratech。與快速複習檔的名稱對應一致。
 // 10. Caylion 種子標記：Cheat Sheets 說是「轉換器跑兩次」，不是「產出翻倍」，只有轉換器需要投入時才有差別；Race Guide 寫「兩次」，一致。
 

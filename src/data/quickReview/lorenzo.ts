@@ -2,7 +2,8 @@
 // 格式比照 risingSun.ts／paxPamir.ts：先看主要區塊，較少用的內容（設置、擴充、領袖卡一覽、逐出教會板塊）預設收起。
 // 範圍：基本遊戲＋進階規則（領袖卡）＋擴充「Houses of Renaissance」＋擴充「The Pazzi Conspiracy」。沒有單人模式（文件也沒有），所以不收。
 // 來源：①英文規則書（Cranio Creations，含兩個擴充，頁碼＝PDF 頁＝書上印刷頁）②英文速查表 Leaders／Families／Card icons／Excommunication Tiles
-//      ③舊版英文領袖速查（Quick Reference，2 頁）④中文部落格整理（非官方，譯自規則書，38 頁；只用來取中文用詞與交叉核對）。
+//      ③舊版英文領袖速查（Quick Reference，2 頁，44 張）④中文部落格整理（非官方，譯自規則書，38 頁；只用來取中文用詞與交叉核對）。
+//      ⑤2026-11-27 增補：46 張領袖＋12 家族總表（英文）、法文領袖表、荷蘭文參考手冊（BGG 使用者自製，2025 年第 1 版，含發展卡文字與領袖所屬盒別）；只拿來交叉核對，領袖與家族的完整卡表在 lorenzoCards.ts。
 // 中文用詞取自中文部落格（家族成員、發展卡、領地、建築、角色、投資、議會特權…）；部落格沒有的（擴充專用名詞、領袖卡名）是 AI 自譯或保留英文，標【待核對】。
 // 圖片上的數字沒有文字，這裡沒收，需看實物：各發展卡費用與效果、高塔各層獎勵數字、個人獎勵板塊內容、信仰軌每格分數、特殊標記背面各種獎勵。
 
@@ -413,6 +414,10 @@ export const LORENZO_REVIEW: { bggName: string; draftNote: string; sections: Rev
           src: '英文速查表 Excommunication Tiles；英文規則書 第 14、20 頁',
         },
         {
+          text: '荷蘭文參考手冊的逐出教會板塊（第 20、21 頁）沒有「打出領袖要額外付費」「移除一張已打出領袖」「每張領袖扣 5 分」這三塊，只出現在英文速查表；是否為促銷版或較新版加入不明【待核對】。',
+          src: '荷蘭文參考手冊 第 20、21 頁；英文速查表 Excommunication Tiles',
+        },
+        {
           text: '「少拿」類逐出教會：若你有好幾張卡都會給同一種資源，每張卡算一個來源，所以每張都會少 1。',
           src: '英文規則書 第 14 頁',
         },
@@ -429,7 +434,7 @@ export const LORENZO_REVIEW: { bggName: string; draftNote: string; sections: Rev
         { label: 'Filippo Brunelleschi', text: '需求：5 建築。永久：放進已被佔據的高塔，不用付 3 元。', src: '英文規則書 第 13 頁' },
         { label: 'Lorenzo de’ Medici', text: '需求：35 分。永久：複製其他玩家已打出的一張領袖卡的能力；選定後不能更改。', src: '英文規則書 第 13 頁' },
         { label: 'Sigismondo Malatesta', text: '需求：7 軍事、3 信仰。永久：無色家族成員點數 +3（可再增加）。', src: '英文規則書 第 13 頁' },
-        { label: 'Sisto IV', text: '需求：6 木、6 石、6 元、6 僕人。永久：梵諦岡發言支持教會時，多得 5 分。', src: '英文規則書 第 13 頁' },
+        { label: 'Sisto IV', text: '需求：6 木、6 石、6 元、6 僕人。永久：梵諦岡發言時選擇支持教會（不是被逐出教會），多得 5 分。', src: '英文規則書 第 13 頁' },
         { label: 'Girolamo Savonarola', text: '需求：18 元。每輪：+1 信仰。', src: '英文規則書 第 13 頁' },
         { label: 'Cesare Borgia', text: '需求：3 建築、12 元、2 信仰。永久：拿領地時不用滿足軍事點數需求。', src: '英文規則書 第 13 頁' },
         { label: 'Michelangelo Buonarroti', text: '需求：10 石。每輪：+3 元。', src: '英文規則書 第 13 頁' },
@@ -441,7 +446,7 @@ export const LORENZO_REVIEW: { bggName: string; draftNote: string; sections: Rev
         { label: 'Sandro Botticelli', text: '需求：10 木。每輪：+2 軍事、+1 分。', src: '英文規則書 第 13 頁' },
         { label: 'Ludovico III Gonzaga', text: '需求：15 僕人。每輪：+1 議會特權。', src: '英文規則書 第 13 頁' },
         { label: 'Ludovico il Moro', text: '需求：2 領地、2 角色、2 建築、2 投資。永久：有色家族成員點數視為 5（可再增加）。', src: '英文規則書 第 13 頁' },
-        { label: 'Pico della Mirandola', text: '需求：4 投資、2 建築。永久：拿發展卡時，卡片費用中的錢折抵 3 元（不折抵被佔據高塔的 3 元）。', src: '英文規則書 第 13 頁' },
+        { label: 'Pico della Mirandola', text: '需求：4 投資、2 建築。永久：拿發展卡時，卡片費用中的錢折抵 3 元（卡片費用要有錢才折抵；不折抵被佔據高塔的 3 元）。', src: '英文規則書 第 13 頁' },
       ],
     },
     {
@@ -482,8 +487,8 @@ export const LORENZO_REVIEW: { bggName: string; draftNote: string; sections: Rev
         { label: 'Carlo VIII', text: '需求：6 僕人、5 軍事、5 信仰。永久：每個僕人增加 2 點（不是 1 點）。', src: '擴充 第 24 頁' },
         { label: 'Niccolò Machiavelli', text: '需求：3 領地、20 分、1 張領袖卡。永久：獲得分數（任何來源）時多得 1 分。', src: '擴充 第 24 頁' },
         { label: 'Jacopo Salviati', text: '需求：3 建築、8 軍事。永久：獲得議會特權時，多拿 1 個不同的。（速查表拼成 Salivate。）', src: '擴充 第 24 頁；速查表' },
-        { label: 'Beato Angelico（只在速查表）', text: '需求：10 信仰。每輪：收穫，點數 6，只啟動 1 張領地。來源不明，見最下方。【待核對】', src: '英文速查表 Leaders' },
-        { label: 'Vitellozzo Vitelli（只在速查表）', text: '需求：15 軍事。每輪：生產，點數 6，只啟動 1 張建築。來源不明，見最下方。【待核對】', src: '英文速查表 Leaders' },
+        { label: 'Beato Angelico（只在總表）', text: '需求：10 信仰。每輪：收穫，點數 6，只啟動 1 張領地。來源不明，見最下方。【待核對】', src: '英文速查表 Leaders；46 張領袖總表 第 1 頁' },
+        { label: 'Vitellozzo Vitelli（只在總表）', text: '需求：15 軍事。每輪：生產，點數 6，只啟動 1 張建築。來源不明，見最下方。【待核對】', src: '英文速查表 Leaders；46 張領袖總表 第 1 頁' },
       ],
     },
     {
@@ -670,13 +675,13 @@ export const LORENZO_REVIEW: { bggName: string; draftNote: string; sections: Rev
       items: [
         {
           label: '【待核對】Francesco Sforza',
-          text: '英文規則書與舊版速查：收穫點數 1 只能靠僕人增加，農民／農夫類發展卡也不能加。較新的速查表寫「可用僕人或卡片效果增加」，但同一張表的 Leonardo da Vinci 又寫只能用僕人。暫以規則書為準。',
-          src: '英文規則書 第 13 頁；舊版速查 第 1 頁；英文速查表 Leaders',
+          text: '英文規則書與舊版速查：收穫點數 1 只能靠僕人增加，農民／農夫類發展卡也不能加。較新的速查表寫「可用僕人或卡片效果增加」，但同一張表的 Leonardo da Vinci 又寫只能用僕人。暫以規則書為準。荷蘭文參考手冊第 16 頁也寫「只能用僕人」，與規則書一致；法文表格寫「照常增加」。',
+          src: '英文規則書 第 13 頁；舊版速查 第 1 頁；英文速查表 Leaders；荷蘭文參考手冊 第 16 頁',
         },
         {
           label: '【待核對】Beato Angelico、Vitellozzo Vitelli',
-          text: '這兩張只出現在英文速查表（共 46 張領袖），規則書與舊版速查的清單只有 44 張（基本 20＋Houses 20＋Pazzi 4），兩個擴充的零件清單也沒提到。可能是促銷或新版加入的卡，請看實物或盒內。',
-          src: '英文速查表 Leaders；擴充 第 15、21 頁',
+          text: '這兩張只出現在英文速查表與 46 張領袖總表（共 46 張），規則書、舊版速查與荷蘭文參考手冊的清單都只有 44 張（基本 20＋Houses 20＋Pazzi 4），兩個擴充的零件清單也沒提到。推測是促銷或新版加入的卡，來源仍不明，請看實物或盒內。',
+          src: '英文速查表 Leaders；46 張領袖總表 第 1 頁；擴充 第 15、21 頁',
         },
         {
           label: '【待核對】無色家族成員放不了',

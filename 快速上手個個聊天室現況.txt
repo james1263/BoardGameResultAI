@@ -1,22 +1,28 @@
-.james88713@outlook.com 照建議，另外我希望主畫面左上角的玩桌遊和骰子的圖示改成今天，想玩哪一款? 原本主畫面中的今天，想玩哪一款?  就可以移除 這樣就會看起來是以遊戲為主的畫面
+.james88713@outlook.com 11:30
 
-.james50aj3g4@outlook.com 聖域bgg討論
+.james50aj3g4@outlook.com 聖域bgg討論 11:30
 
-james.boardgame@outlook.com
+.james.boardgame@outlook.com 11:20 src/data/component/lorenzoCards.ts:58:7 - error TS6133: 'S2' is declared but its value is never read.
 
-.james88713.claude@outlook.com 星河交匯
+58 const S2 = '46 張總表 v3 第 1 頁；舊版速查'
+         ~~
 
 
-.james50aj3g4.claude@outlook.com 瘋狂鬼宅繼續+你可以先幫我更新這個想法到生成後.md，我再去別的聊天室繼續這個改動(長按修改名稱或者長按秀出照片)可以嗎?
+Found 1 error.->可以下一個聊天室來處理james50aj3g4.claude的接續長按問題<Reference_sheet_Lorenzo_il_Magnifico_NL_Versie01.pdf做得太好了，希望以後可以加入長按秀出圖片的行列> 
 
-james.boardgame@gmail.com 繼續旭日bgg討論 5:20
+.james88713.claude@outlook.com 11:40 更新卡表與公開資源資料蒐集清單
 
-james88713.claude@gmail.com 6:40
 
-james50aj3g4.claude@gmail.com 8:00
+.james50aj3g4.claude@outlook.com 你可以先幫我更新這個想法到生成後.md，我再去別的聊天室繼續這個改動(長按修改名稱或者長按秀出照片)可以嗎?鬼宅以後的怪物我再額外拍給你 我手邊沒有中文 11:10
 
-.p46 繼續
-.50aj繼續
+.james.boardgame@gmail.com 好 要做 11:10 旭日 然後下一個聊天室
+
+james88713.claude@gmail.com 
+
+james50aj3g4.claude@gmail.com
+
+.p46 繼續 11:40
+.50aj繼續 11:40
 
 
 KEMET

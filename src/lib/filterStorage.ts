@@ -1,4 +1,5 @@
 import type {
+  CategoryMode,
   DifficultyLevel,
   MineGroup,
   NumericFilter,
@@ -12,6 +13,8 @@ const FILTERS_VERSION = 1
 
 export type SavedFilters = {
   selectedCategories: string[]
+  // 類型多選：or＝符合任一、and＝同時符合全部（預設 or）
+  categoryMode: CategoryMode
   difficultyLevels: DifficultyLevel[]
   groupSize: NumericFilter
   groupSizeMax: NumericFilter
@@ -31,6 +34,7 @@ export type SavedFilters = {
 
 export const DEFAULT_FILTERS: SavedFilters = {
   selectedCategories: [],
+  categoryMode: 'or',
   difficultyLevels: [],
   groupSize: '',
   groupSizeMax: '',
@@ -88,6 +92,13 @@ export function loadFilters(): SavedFilters {
 
     return {
       selectedCategories: asStringArray(f.selectedCategories),
+      // 舊資料沒有這個欄位：以前類型一律是「同時符合」，多於一個類型時維持 and，避免結果突然變多
+      categoryMode:
+        f.categoryMode === 'and' || f.categoryMode === 'or'
+          ? f.categoryMode
+          : asStringArray(f.selectedCategories).length > 1
+            ? 'and'
+            : 'or',
       difficultyLevels: (Array.isArray(f.difficultyLevels)
         ? f.difficultyLevels
         : []

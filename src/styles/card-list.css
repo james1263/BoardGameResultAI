@@ -253,3 +253,39 @@
     align-self: center;
   }
 }
+/* ---------- 「屬性」面板：欄位顯示／隱藏與順序（App.tsx 用 --lv-cols、--o-* 與 lv-hide-* 控制） ----------
+   data-col 在 GameCard.tsx；表頭的欄位由 App.tsx 依順序直接輸出 */
+.game-grid.view-list.lv-info .game-card .game-facts>span {
+  display: contents;
+}
+
+.game-grid.view-list.lv-info [data-col="best"] {
+  order: var(--o-best, 1);
+}
+
+.game-grid.view-list.lv-info [data-col="recommend"] {
+  order: var(--o-recommend, 2);
+}
+
+.game-grid.view-list.lv-info [data-col="time"] {
+  order: var(--o-time, 3);
+}
+
+.game-grid.view-list.lv-info [data-col="difficulty"] {
+  order: var(--o-difficulty, 4);
+}
+
+.game-grid.view-list.lv-info .game-card .game-admin-line {
+  order: 5;
+}
+
+.game-grid.view-list.lv-info .game-card .lv-actions {
+  order: 6;
+}
+
+.game-grid.view-list.lv-hide-best [data-col="best"],
+.game-grid.view-list.lv-hide-recommend [data-col="recommend"],
+.game-grid.view-list.lv-hide-time [data-col="time"],
+.game-grid.view-list.lv-hide-difficulty [data-col="difficulty"] {
+  display: none;
+}

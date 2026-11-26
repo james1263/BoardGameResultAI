@@ -1,4 +1,3 @@
-﻿import CategoryChips from './components/CategoryChips'
 import SortControl from './components/SortControl'
 import NewArrivals from './components/NewArrivals'
 import './styles/board-entry.css'
@@ -10,6 +9,7 @@ import {
   useMemo,
   useState,
   type ChangeEvent,
+  type CSSProperties,
 } from 'react'
 import './App.css'
 import {
@@ -64,8 +64,18 @@ import CoverImage from './components/CoverImage'
 import TopBar, { type NavPage } from './components/TopBar'
 import { useBackClose } from './lib/useBackClose'
 import { loadFilters, saveFilters } from './lib/filterStorage'
+import { matchesCategories, type CategoryMode } from './lib/libraryTypes'
 import FilterDrawer from './components/FilterDrawer'
-import DisplayControl from './components/DisplayControl'
+import PropertiesControl from './components/PropertiesControl'
+import {
+  LIST_COLUMN_LABELS,
+  LIST_COLUMN_WIDTHS,
+  LIST_COLUMN_KEYS,
+  loadListColumns,
+  saveListColumns,
+  type ListColumnKey,
+  type ListColumnsState,
+} from './lib/listColumns'
 import FilterTags, { type FilterTag } from './components/FilterTags'
 import GameCard from './components/GameCard'
 import GameModal from './components/GameModal'
@@ -550,6 +560,9 @@ function Library({
       boardGames.some((game) => game.category.includes(category)),
     ),
   )
+  const [categoryMode, setCategoryMode] = useState<CategoryMode>(
+    saved.categoryMode,
+  )
   const [difficultyLevels, setDifficultyLevels] = useState<DifficultyLevel[]>(
     saved.difficultyLevels,
   )
@@ -621,6 +634,7 @@ function Library({
   useEffect(() => {
     saveFilters({
       selectedCategories,
+      categoryMode,
       difficultyLevels,
       groupSize,
       groupSizeMax,
@@ -637,6 +651,7 @@ function Library({
     })
   }, [
     selectedCategories,
+    categoryMode,
     difficultyLevels,
     groupSize,
     groupSizeMax,
@@ -653,6 +668,26 @@ function Library({
   ])
 
   const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode)
+
+  // 清單欄位（屬性）：顯示／隱藏與順序，存在這支瀏覽器
+  const [listColumns, setListColumns] = useState<ListColumnsState>(loadListColumns)
+
+  function changeListColumns(next: ListColumnsState) {
+    setListColumns(next)
+    saveListColumns(next)
+  }
+
+  const visibleListColumns = listColumns.order.filter(
+    (key) => !listColumns.hidden.includes(key),
+  )
+  const listGridStyle = {
+    '--lv-cols': `48px minmax(0, 1fr) ${visibleListColumns
+      .map((key) => LIST_COLUMN_WIDTHS[key])
+      .join(' ')}${visibleListColumns.length > 0 ? ' ' : ''}${isAdmin ? '116px ' : ''}72px`,
+    ...Object.fromEntries(
+      listColumns.order.map((key, index) => [`--o-${key}`, index + 1]),
+    ),
+  } as CSSProperties
 
   function changeViewMode(mode: ViewMode) {
     setViewMode(mode)
@@ -703,12 +738,9 @@ function Library({
         return false
       }
 
-      // 多選類型使用 AND：必須同時符合所有已選類型。
+      // 多選類型：依 categoryMode，任一（or）或同時符合全部（and）。
       if (
-        selectedCategories.length > 0 &&
-        !selectedCategories.every((category) =>
-          game.category.includes(category),
-        )
+        !matchesCategories(game.category, selectedCategories, categoryMode)
       ) {
         return false
       }
@@ -818,6 +850,7 @@ function Library({
   }, [
     searchText,
     selectedCategories,
+    categoryMode,
     difficultyLevels,
     groupRange,
     bestPlayerCount,
@@ -894,10 +927,7 @@ function Library({
       }
 
       if (
-        selectedCategories.length > 0 &&
-        !selectedCategories.every((category) =>
-          game.category.includes(category),
-        )
+        !matchesCategories(game.category, selectedCategories, categoryMode)
       ) {
         return false
       }
@@ -930,6 +960,7 @@ function Library({
   }, [
     searchText,
     selectedCategories,
+    categoryMode,
     difficultyLevels,
     groupRange,
     bestPlayerCount,
@@ -953,8 +984,8 @@ function Library({
     Number(groupByMine) +
     hiddenGroups.length
 
-  // 進階篩選條件數（不含類型膠囊；搜尋文字也不算）
-  const advancedFilterCount = activeFilterCount - selectedCategories.length
+  // 篩選條件數（類型已搬進篩選面板，所以含類型；搜尋文字不算）
+  const advancedFilterCount = activeFilterCount
 
   function toggleCategory(category: string) {
     setSelectedCategories((current) =>
@@ -980,8 +1011,18 @@ function Library({
     )
   }
 
-  // 搜尋框下方的「已套用篩選」標籤（類型膠囊本來就看得到，不重複列）
+  // 搜尋框下方的「已套用篩選」標籤
   const filterTags: FilterTag[] = []
+  for (const category of selectedCategories) {
+    filterTags.push({
+      key: `cat-${category}`,
+      label:
+        selectedCategories.length > 1
+          ? `類型（${categoryMode === 'or' ? '任一' : '全部'}）：${category}`
+          : `類型：${category}`,
+      onRemove: () => toggleCategory(category),
+    })
+  }
   if (groupRange !== null) {
     filterTags.push({
       key: 'people',
@@ -1177,21 +1218,16 @@ function Library({
         )}
         <div className="explore-home explore-types">
           <div className="explore-types-row">
-            <CategoryChips
-              games={boardGames}
-              selected={selectedCategories}
-              onToggle={toggleCategory}
-              onClear={() => setSelectedCategories([])}
-              resultCount={displayedGameCount}
-            />
             <div className="heading-actions explore-sort">
-              <DisplayControl
+              <PropertiesControl
                 showNew={showNew}
                 onShowNewChange={setShowNew}
                 showCardInfo={showCardInfo}
                 onShowCardInfoChange={setShowCardInfo}
                 viewMode={viewMode}
                 onViewModeChange={changeViewMode}
+                columns={listColumns}
+                onColumnsChange={changeListColumns}
               />
               <SortControl
                 sortBy={effectiveSortBy}
@@ -1220,6 +1256,12 @@ function Library({
             displayedGameCount={displayedGameCount}
             clearDisabled={searchText === '' && activeFilterCount === 0}
             onClear={clearFilters}
+            games={boardGames}
+            selectedCategories={selectedCategories}
+            categoryMode={categoryMode}
+            onToggleCategory={toggleCategory}
+            onCategoryModeChange={setCategoryMode}
+            onClearCategories={() => setSelectedCategories([])}
             playerCounts={playerCounts}
             groupSizes={groupSizes}
             groupSize={groupSize}
@@ -1251,15 +1293,20 @@ function Library({
           {displayedGameCount > 0 ? (
             <div
               className={`game-grid view-${viewMode}${viewMode === 'list' ? (showCardInfo ? ' lv-info' : ' lv-noinfo') : ''
-                }${viewMode === 'list' && isAdmin ? ' lv-admin' : ''}`}
+                }${viewMode === 'list' && isAdmin ? ' lv-admin' : ''}${viewMode === 'list'
+                  ? LIST_COLUMN_KEYS.filter((key) => listColumns.hidden.includes(key))
+                    .map((key) => ` lv-hide-${key}`)
+                    .join('')
+                  : ''
+                }`}
+              style={viewMode === 'list' ? listGridStyle : undefined}
             >
               {viewMode === 'list' && showCardInfo && (
                 <div className="lv-head" aria-hidden="true">
                   <span className="lv-h-name">桌遊</span>
-                  <span>最佳人數</span>
-                  <span>推薦人數</span>
-                  <span>時間</span>
-                  <span>難度</span>
+                  {visibleListColumns.map((key: ListColumnKey) => (
+                    <span key={key}>{LIST_COLUMN_LABELS[key]}</span>
+                  ))}
                   {isAdmin && <span>RE／綜合</span>}
                   <span />
                 </div>
