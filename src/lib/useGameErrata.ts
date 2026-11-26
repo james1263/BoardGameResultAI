@@ -20,7 +20,7 @@ export type Errata = {
   verified?: boolean
   reject_reason?: string
   is_mine?: boolean
-  // 'errata'＝玩錯紀錄（預設）；'ai_answer'＝規則助手的 AI 回饋
+  // 'errata'＝玩錯紀錄（預設）；'ai_answer'＝規則助手的 AI 回覆（舊稱 AI 回饋）
   kind?: string
 }
 
@@ -129,7 +129,7 @@ function errataErrorText(text: string): string {
   if (text.includes('game not found')) return '找不到這款遊戲。'
   if (text.includes('not found')) return '找不到這筆投稿，可能已被審核或刪除。'
   if (text.includes('reason required')) return '退回時請寫原因。'
-  if (text.includes('page required')) return 'AI 回饋一定要有依據頁碼。'
+  if (text.includes('page required')) return 'AI 回覆一定要有依據頁碼。'
   if (text.includes('bad kind')) return '投稿類型不正確。'
   if (text.includes('not vip')) return '只有 VIP 可以投稿。'
   if (text.includes('not admin')) return '只有管理者可以審核。'
@@ -267,7 +267,7 @@ export function usePendingErrata(enabled: boolean) {
 // 玩家整理的標籤文字（管理者記錄回傳空字串）
 export function errataTag(e: { from_player?: boolean; kind?: string; verified?: boolean }): string {
   if (!e.from_player) return ''
-  const base = e.kind === 'ai_answer' ? '玩家整理・AI 回答（已審核）' : '玩家整理・已審核'
+  const base = e.kind === 'ai_answer' ? '玩家整理・AI 回覆（已審核）' : '玩家整理・已審核'
   return e.verified ? base : base + '・【未驗證】'
 }
 
