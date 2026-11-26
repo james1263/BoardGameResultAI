@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { askConfirm } from '../lib/askConfirm'
 import {
   deleteMyErrata,
@@ -28,6 +28,8 @@ export default function GameErrata({
   hideSubmit,
   embedded = false,
   api: sharedApi,
+  openRequest = false,
+  onOpenHandled,
 }: {
   bggName: string
   isAdmin: boolean
@@ -39,6 +41,9 @@ export default function GameErrata({
   embedded?: boolean
   // 外面已讀好的資料（入口卡片的數量與彈窗共用同一份）
   api?: GameErrataApi
+  // 外面（彈窗標題列的「我要投稿」）要求打開投稿視窗；打開後呼叫 onOpenHandled
+  openRequest?: boolean
+  onOpenHandled?: () => void
 }) {
   const ownApi = useGameErrata(bggName, !sharedApi)
   const { items, loading, error, reload } = sharedApi ?? ownApi
@@ -126,6 +131,15 @@ export default function GameErrata({
     setMessage('已刪除。')
     reload()
   }
+
+  useEffect(() => {
+    if (!openRequest) return
+    resetForm()
+    setMessage('')
+    setFormOpen(true)
+    onOpenHandled?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openRequest])
 
   const formBlock =
     formOpen ? (
@@ -349,9 +363,16 @@ export default function GameErrata({
 
   if (embedded) return <div className="ge-embedded">{body}</div>
 
+  // 規則助手（只看、不投稿）：沒有任何紀錄就整個不顯示
+  if (hideSubmit && !loading && !error && approved.length === 0 && mine.length === 0) return null
+
+  const hasAi = approved.some((item) => item.kind === 'ai_answer')
+
   return (
     <details className="ov-fold er-fold" open={defaultOpen || undefined}>
-      <summary>玩錯紀錄・AI 回饋（{approved.length}）</summary>
+      <summary>
+        {hasAi ? '玩錯紀錄・我的AI回覆' : '玩錯紀錄'}（{approved.length}）
+      </summary>
       <div className="ov-fold-body">{body}</div>
     </details>
   )

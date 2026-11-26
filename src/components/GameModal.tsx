@@ -53,7 +53,7 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key']
 
-// 「規則」分頁放規則相關入口（規則連結與影片、開桌前快速複習、FAQ・玩錯紀錄・AI 回饋）。
+// 「規則」分頁放規則相關入口（規則連結與影片、開桌前快速複習、官方FAQ・BGG討論・玩錯紀錄・我的AI回覆）。
 // 外部傳 initialTab='rules' 會開到規則分頁，並直接開「規則連結」彈窗。
 // 僅供參考的遊戲只有「概覽」與「規則」兩個分頁
 const REFERENCE_TABS: readonly TabKey[] = ['overview', 'rules']
@@ -68,7 +68,7 @@ const SHEET_TITLES: Record<SheetKey, string> = {
   rules: '規則連結與影片',
   background: '遊戲背景',
   expansions: '擴充',
-  errata: '玩錯紀錄・AI 回饋',
+  errata: '玩錯紀錄',
   rating: '我的評分',
   review: '開桌前快速複習',
 }
@@ -192,6 +192,9 @@ export default function GameModal({
   // 底部彈窗的全螢幕閱讀（快速複習、FAQ 類彈窗用）
   const [sheetFull, setSheetFull] = useState(false)
   const [showAllWall, setShowAllWall] = useState(false)
+  // 標題列「我要投稿」按下後通知彈窗裡的元件打開投稿視窗（處理完歸零）
+  const [submitReq, setSubmitReq] = useState(false)
+  const clearSubmitReq = useCallback(() => setSubmitReq(false), [])
   const docsApi = useGameDocuments(game.bggName)
   const vip = useVip()
   // 入口卡片的數量與底部彈窗共用同一份資料（只讀一次）
@@ -206,6 +209,7 @@ export default function GameModal({
   const exitFull = useCallback(() => setSheetFull(false), [])
   useEffect(() => {
     setSheetFull(false)
+    setSubmitReq(false)
     if (sheet !== 'review') {
       setQrNoteOpen(false)
       setQrPanelOpen(false)
@@ -277,13 +281,18 @@ export default function GameModal({
   // 入口卡片：只顯示原本就有權限、且有資料（或管理者本來就看得到）的入口
   const bgHasData =
     !!bgApi.data && (bgApi.data.content !== '' || bgApi.data.links.length > 0)
-  const errataCount = errataApi.items.filter(
+  const approvedErrata = errataApi.items.filter(
     (item) => !item.status || item.status === 'approved',
-  ).length
+  )
+  // 我的AI回覆（kind=ai_answer）和玩錯紀錄分開計數
+  const aiCount = approvedErrata.filter((item) => item.kind === 'ai_answer').length
+  const errataCount = approvedErrata.length - aiCount
   const faq = getGameFaq(game.bggName)
   // BGG 討論・非官方 FAQ：玩家整理的設計師回覆／討論，和官方 FAQ 分開標示
   const unofficial = getUnofficialFaq(game.bggName)
   const canSeeErrata = (vip.isVip || isAdmin) && !game.referenceOnly
+  // 規則連結與影片的「我要投稿」：VIP 投稿、管理者直接新增（和 GameDocuments 原本的條件相同）
+  const canSubmitLink = (vip.isVip || isAdmin) && !game.referenceOnly
 
   // 概覽分頁的入口：遊戲本身的資料
   const overviewEntries: SheetEntry[] = []
@@ -309,22 +318,33 @@ export default function GameModal({
   if (getQuickReview(game.bggName) && (vip.isVip || isAdmin) && !game.referenceOnly) {
     ruleEntries.push({ key: 'review', icon: '⚡', sub: '目標・流程・行動・得分' })
   }
-  // FAQ、BGG 討論・非官方 FAQ、玩錯紀錄、AI 回饋合併成一張卡，進去後每一區都有標籤註明類型
-  const hasAnyFaq = !!faq || !!unofficial
+  // 官方 FAQ、BGG 討論、玩錯紀錄、我的AI回覆合併成一張卡（重要性由左到右：官方 FAQ > BGG 討論 > 玩錯紀錄）。
+  // 數量是 0 的項目不寫進名稱；名稱和彈窗裡的分頁一致。
+  // 有權限（VIP／管理者）但全部都沒資料時，卡片仍保留（標題列有「我要投稿」）。
+  const faqN = faq ? countFaqItems(faq) : 0
+  const unoN = unofficial ? countFaqItems(unofficial) : 0
   const titleParts: string[] = []
-  if (faq) titleParts.push('FAQ')
-  // 玩錯紀錄・AI 回饋：有資料（或還在讀取、或整張卡片沒有別的資料可顯示）才寫進名稱
-  const showErrataTitle =
-    canSeeErrata && (errataApi.loading || errataCount > 0 || (!faq && !unofficial))
-  if (showErrataTitle) titleParts.push('玩錯紀錄', 'AI回饋')
-  if (unofficial) titleParts.push('BGG討論')
+  const subParts: string[] = []
+  if (faqN > 0) {
+    titleParts.push('官方FAQ')
+    subParts.push(`官方 FAQ ${faqN} 則`)
+  }
+  if (unoN > 0) {
+    titleParts.push('BGG討論')
+    subParts.push(`BGG 討論 ${unoN} 則`)
+  }
+  // 玩錯紀錄：有資料、還在讀取、或整張卡片沒有別的資料可顯示（只剩投稿入口）才寫進名稱
+  if (canSeeErrata && (errataApi.loading || errataCount > 0 || (aiCount === 0 && titleParts.length === 0))) {
+    titleParts.push('玩錯紀錄')
+    subParts.push(errataCount > 0 ? `玩錯紀錄 ${errataCount} 則` : '可投稿')
+  }
+  if (canSeeErrata && aiCount > 0) {
+    titleParts.push('我的AI回覆')
+    subParts.push(`我的AI回覆 ${aiCount} 則`)
+  }
   const errataTitle = titleParts.length > 0 ? titleParts.join('．') : SHEET_TITLES.errata
-  if (hasAnyFaq || canSeeErrata) {
-    const parts: string[] = []
-    if (faq) parts.push(`FAQ ${countFaqItems(faq)} 則`)
-    if (unofficial) parts.push(`非官方 ${countFaqItems(unofficial)} 則`)
-    if (showErrataTitle) parts.push(`玩錯紀錄 ${errataCount} 則`)
-    ruleEntries.push({ key: 'errata', icon: '💡', sub: parts.join('・'), title: errataTitle })
+  if (titleParts.length > 0) {
+    ruleEntries.push({ key: 'errata', icon: '💡', sub: subParts.join('・'), title: errataTitle })
   }
   // 預留：新手上手小遊戲
   // ruleEntries.push({ key: 'tutorial', icon: '🎓', sub: '邊玩邊學規則' })
@@ -806,6 +826,14 @@ export default function GameModal({
                 >
                   🔍 篩選
                 </button>
+              ) : (sheet === 'rules' && canSubmitLink) || (sheet === 'errata' && canSeeErrata) ? (
+                <button
+                  type="button"
+                  className="gm-sheet-filterbtn"
+                  onClick={() => setSubmitReq(true)}
+                >
+                  {isAdmin ? '＋ 新增' : '我要投稿'}
+                </button>
               ) : undefined
             }
           >
@@ -816,6 +844,9 @@ export default function GameModal({
                 isAdmin={isAdmin}
                 bggName={game.bggName}
                 canSubmit={vip.isVip && !isAdmin && !game.referenceOnly}
+                hideAddButton
+                openRequest={sheet === 'rules' && submitReq}
+                onOpenHandled={clearSubmitReq}
               />
             )}
             {sheet === 'background' && (
@@ -875,6 +906,8 @@ export default function GameModal({
                 errataApi={errataApi}
                 showErrata={canSeeErrata}
                 includeUnofficial
+                openRequest={sheet === 'errata' && submitReq}
+                onOpenHandled={clearSubmitReq}
               />
             )}
             {sheet === 'review' && (

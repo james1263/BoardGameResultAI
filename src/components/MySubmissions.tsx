@@ -367,7 +367,7 @@ function SubPanel({
   )
 }
 
-// 俱樂部「我的投稿」：玩錯紀錄、規則連結／影片、詞庫；AI 回答投稿導到規則助手
+// 俱樂部「我的投稿」：玩錯紀錄、規則連結／影片、詞庫；我的AI回覆投稿導到規則助手
 export default function MySubmissions({
   boardGames,
   onBack,
@@ -392,7 +392,7 @@ export default function MySubmissions({
     { key: 'errata', label: '玩錯紀錄', badge: pendingErrata },
     { key: 'link', label: '規則連結', badge: pendingOf('link') },
     { key: 'glossary', label: '詞庫', badge: pendingOf('glossary') },
-    { key: 'ai', label: 'AI 回答' },
+    { key: 'ai', label: '我的AI回覆' },
   ]
 
   return (
@@ -485,9 +485,9 @@ export default function MySubmissions({
 
           {tab === 'ai' && (
             <div className="er-board">
-              <h4 className="er-list-title">讓好的 AI 回答，成為大家都能參考的知識</h4>
+              <h4 className="er-list-title">讓好的 AI 回覆，成為大家都能參考的知識</h4>
               <p className="er-note">
-                AI 回答投稿由「規則助手」統一處理，因為要先在那裡提問、取得規則書片段。
+                我的AI回覆投稿由「規則助手」統一處理，因為要先在那裡提問、取得規則書片段。
               </p>
               <ol className="er-note" style={{ paddingLeft: 20 }}>
                 <li>到規則助手搜尋遊戲並提問，按「複製給我的 AI」。</li>

@@ -11,64 +11,94 @@ const TIP_FAQ = '出版商發布的官方問答，與規則書衝突時以官方
 const TIP_ERRATA = '玩家實際玩錯後整理的常見錯誤，以及規則助手裡被認可的好答案。'
 const TIP_BGG = '非官方：玩家製作的教學筆記與 BGG 討論整理，與官方衝突時以官方為準。'
 
-// 「FAQ・玩錯紀錄・AI 回饋・BGG 討論」：三個分頁，一次只看一種資料。
+// 「官方 FAQ・BGG 討論・玩錯紀錄（含我的AI回覆）」：最多三個分頁，一次只看一種資料。
+// 分頁順序＝重要性：官方 FAQ → BGG 討論 → 玩錯紀錄。沒有資料的分頁不顯示（玩錯紀錄在讀取中、或你有待審／被退回的投稿時仍會顯示）。
+// 「我要投稿」按鈕在彈窗標題列（GameModal），按下去用 openRequest 通知這裡切到玩錯紀錄並打開投稿視窗。
 // 搜尋：分頁列最左邊一個放大鏡，按下去分頁列變搜尋框，搜的是目前所在的分頁（目前只有官方 FAQ、BGG 討論）。
-// 說明文字：不再有「說明」收合列；手機長按分頁標籤、電腦滑鼠停在標籤上才會跳出氣泡。
+// 說明文字：手機長按分頁標籤、電腦滑鼠停在標籤上才會跳出氣泡。
 export default function GameQa({
   bggName,
   isAdmin,
   errataApi,
   showErrata,
   includeUnofficial = false,
+  openRequest = false,
+  onOpenHandled,
 }: {
   bggName: string
   isAdmin: boolean
   errataApi: ReturnType<typeof useGameErrata>
-  // 玩錯紀錄・AI 回饋只有 VIP／管理者看得到（和原本的權限相同）
+  // 玩錯紀錄・我的AI回覆只有 VIP／管理者看得到（和原本的權限相同）
   showErrata: boolean
   // true＝BGG 討論也放在這裡的分頁（GameModal 要同時拿掉自己另外掛的那一區，否則會出現兩次）
   includeUnofficial?: boolean
+  // 標題列「我要投稿」按下後為 true；這裡處理完會呼叫 onOpenHandled
+  openRequest?: boolean
+  onOpenHandled?: () => void
 }) {
   const faqData = getGameFaq(bggName)
   const unofficialData = includeUnofficial ? getUnofficialFaq(bggName) : null
+  const faqN = faqData ? countFaqItems(faqData) : 0
+  const unoN = unofficialData ? countFaqItems(unofficialData) : 0
+  const approved = errataApi.items.filter((i) => !i.status || i.status === 'approved')
+  const aiN = approved.filter((i) => i.kind === 'ai_answer').length
+  const errN = approved.length - aiN
+  const mineOpenN = errataApi.items.filter(
+    (i) => i.is_mine && (i.status === 'pending' || i.status === 'rejected'),
+  ).length
+
+  const [tab, setTab] = useState<Tab | null>(null)
+  const [searching, setSearching] = useState(false)
+  const [query, setQuery] = useState('')
+  // 按「我要投稿」時，就算玩錯紀錄還是 0 筆也要出現這個分頁（投稿視窗掛在裡面）
+  const [forceErrata, setForceErrata] = useState(false)
+  const [submitNow, setSubmitNow] = useState(false)
 
   const tabs: { key: Tab; label: string; full: string; count: number | null; tip: string }[] = []
-  if (faqData) {
+  if (faqData && faqN > 0) {
     const note = getFaqNote(bggName, 'official')
     tabs.push({
       key: 'faq',
       label: '官方 FAQ',
       full: '官方 FAQ',
-      count: countFaqItems(faqData),
+      count: faqN,
       tip: note ? `${TIP_FAQ}\n${note}` : TIP_FAQ,
     })
   }
-  if (showErrata) {
-    const approved = errataApi.items.filter((i) => !i.status || i.status === 'approved')
-    tabs.push({
-      key: 'errata',
-      label: '玩錯・AI',
-      full: '玩錯紀錄・AI 回饋',
-      count: errataApi.loading ? null : approved.length,
-      tip: TIP_ERRATA,
-    })
-  }
-  if (unofficialData) {
+  if (unofficialData && unoN > 0) {
     const note = getFaqNote(bggName, 'unofficial')
     tabs.push({
       key: 'bgg',
       label: 'BGG 討論',
       full: 'BGG 討論',
-      count: countFaqItems(unofficialData),
+      count: unoN,
       tip: note ? `${TIP_BGG}\n${note}` : TIP_BGG,
     })
   }
+  if (showErrata && (errataApi.loading || approved.length > 0 || mineOpenN > 0 || forceErrata)) {
+    tabs.push({
+      key: 'errata',
+      label: aiN === 0 ? '玩錯紀錄' : errN > 0 ? '玩錯・AI回覆' : '我的AI回覆',
+      full: aiN === 0 ? '玩錯紀錄' : errN > 0 ? '玩錯紀錄・我的AI回覆' : '我的AI回覆',
+      count: errataApi.loading ? null : approved.length,
+      tip: TIP_ERRATA,
+    })
+  }
 
-  const [tab, setTab] = useState<Tab | null>(null)
-  const [searching, setSearching] = useState(false)
-  const [query, setQuery] = useState('')
   const active: Tab | null = tabs.some((t) => t.key === tab) ? tab : (tabs[0]?.key ?? null)
   const canSearch = active === 'faq' || active === 'bgg'
+
+  // ---- 標題列「我要投稿」：切到玩錯紀錄並打開投稿視窗 ----
+  useEffect(() => {
+    if (!openRequest) return
+    setForceErrata(true)
+    setTab('errata')
+    setSearching(false)
+    setQuery('')
+    setSubmitNow(true)
+    onOpenHandled?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openRequest])
 
   // ---- 說明氣泡：手機長按 450ms、電腦滑鼠停 300ms ----
   const [tip, setTip] = useState<{ text: string; x: number; y: number } | null>(null)
@@ -115,42 +145,48 @@ export default function GameQa({
 
   return (
     <div className="gqa">
-      <div className="gqa-bar">
-        {searching && canSearch ? (
-          <div className="gqa-searchbox">
-            <svg className="gqa-ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
-              <path d="M16.5 16.5L21 21" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <input
-              type="search"
-              className="gqa-search"
-              autoFocus
-              placeholder={searchPlaceholder}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              aria-label={searchPlaceholder}
-            />
-            <button type="button" className="gqa-cancel" onClick={closeSearch}>
-              取消
-            </button>
-          </div>
-        ) : (
-          <>
-            <button
-              type="button"
-              className="gqa-sbtn"
-              aria-label="搜尋"
-              title={canSearch ? '搜尋這個分頁' : '這個分頁暫時不能搜尋'}
-              disabled={!canSearch}
-              onClick={() => setSearching(true)}
-            >
-              <svg className="gqa-ico" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      {tabs.length === 0 ? (
+        <p className="er-note">
+          {showErrata
+            ? '這款還沒有 FAQ 或玩錯紀錄。可以點右上角「我要投稿」。'
+            : '這款還沒有資料。'}
+        </p>
+      ) : (
+        <div className="gqa-bar">
+          {searching && canSearch ? (
+            <div className="gqa-searchbox">
+              <svg className="gqa-ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                 <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
                 <path d="M16.5 16.5L21 21" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
-            </button>
-            {tabs.length > 0 && (
+              <input
+                type="search"
+                className="gqa-search"
+                autoFocus
+                placeholder={searchPlaceholder}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                aria-label={searchPlaceholder}
+              />
+              <button type="button" className="gqa-cancel" onClick={closeSearch}>
+                取消
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="gqa-sbtn"
+                aria-label="搜尋"
+                title={canSearch ? '搜尋這個分頁' : '這個分頁暫時不能搜尋'}
+                disabled={!canSearch}
+                onClick={() => setSearching(true)}
+              >
+                <svg className="gqa-ico" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
+                  <path d="M16.5 16.5L21 21" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
               <div className="gqa-tabs" role="tablist" aria-label="資料類型">
                 {tabs.map((t) => (
                   <button
@@ -189,10 +225,10 @@ export default function GameQa({
                   </button>
                 ))}
               </div>
-            )}
-          </>
-        )}
-      </div>
+            </>
+          )}
+        </div>
+      )}
 
       {tip &&
         createPortal(
@@ -208,18 +244,6 @@ export default function GameQa({
         </section>
       )}
 
-      {active === 'errata' && showErrata && (
-        <section className="gqa-panel gqa-panel-errata">
-          <GameErrata
-            key={`${bggName}-errata`}
-            bggName={bggName}
-            isAdmin={isAdmin}
-            embedded
-            api={errataApi}
-          />
-        </section>
-      )}
-
       {active === 'bgg' && unofficialData && (
         <section className="gqa-panel gqa-panel-bgg">
           <GameFaq
@@ -229,6 +253,21 @@ export default function GameQa({
             hideSearch
             externalQuery={query}
             hideNotes
+          />
+        </section>
+      )}
+
+      {active === 'errata' && showErrata && (
+        <section className="gqa-panel gqa-panel-errata">
+          <GameErrata
+            key={`${bggName}-errata`}
+            bggName={bggName}
+            isAdmin={isAdmin}
+            embedded
+            hideSubmit
+            api={errataApi}
+            openRequest={submitNow}
+            onOpenHandled={() => setSubmitNow(false)}
           />
         </section>
       )}

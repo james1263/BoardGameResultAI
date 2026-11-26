@@ -38,10 +38,17 @@ function LinkAdd({
   api,
   bggName,
   isAdmin,
+  hideButton = false,
+  openRequest = false,
+  onOpenHandled,
 }: {
   api: GameDocumentsApi
   bggName: string
   isAdmin: boolean
+  // true＝按鈕已搬到彈窗標題列，這裡只負責投稿視窗
+  hideButton?: boolean
+  openRequest?: boolean
+  onOpenHandled?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const [url, setUrl] = useState('')
@@ -53,6 +60,15 @@ function LinkAdd({
   const [titleHint, setTitleHint] = useState('')
   // 記住自動帶入的標題：換貼別的連結時可覆蓋，自己改過的標題則不動
   const autoTitleRef = useRef('')
+
+  useEffect(() => {
+    if (!openRequest) return
+    setMessage('')
+    setError('')
+    setOpen(true)
+    onOpenHandled?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openRequest])
 
   // 貼 YouTube／Bilibili 連結時自動帶入影片名稱（Bilibili 要管理者，走 Edge Function video-title）
   useEffect(() => {
@@ -151,18 +167,20 @@ function LinkAdd({
   return (
     <div className="er-form">
       {message && <p className="er-note">{message}</p>}
-      <button
-        type="button"
-        className="ma-btn"
-        style={{ width: '100%', padding: '12px' }}
-        onClick={() => {
-          setMessage('')
-          setError('')
-          setOpen(true)
-        }}
-      >
-        {isAdmin ? '＋ 新增連結' : '＋ 投稿規則連結／影片'}
-      </button>
+      {!hideButton && (
+        <button
+          type="button"
+          className="ma-btn"
+          style={{ width: '100%', padding: '12px' }}
+          onClick={() => {
+            setMessage('')
+            setError('')
+            setOpen(true)
+          }}
+        >
+          {isAdmin ? '＋ 新增連結' : '＋ 投稿規則連結／影片'}
+        </button>
+      )}
       {open && (
         <UploadModal
           title={isAdmin ? '新增連結' : '投稿規則連結／影片'}
@@ -211,12 +229,19 @@ export default function GameDocuments({
   isAdmin,
   bggName,
   canSubmit = false,
+  hideAddButton = false,
+  openRequest = false,
+  onOpenHandled,
 }: {
   api: GameDocumentsApi
   isAdmin: boolean
   bggName: string
   // VIP（非管理者）可投稿連結
   canSubmit?: boolean
+  // true＝「我要投稿」按鈕在彈窗標題列，這裡不再畫自己的按鈕
+  hideAddButton?: boolean
+  openRequest?: boolean
+  onOpenHandled?: () => void
 }) {
   const { docs, isLoading, loadError, deleteDoc } = api
   const [error, setError] = useState('')
@@ -306,7 +331,16 @@ export default function GameDocuments({
         )
       })}
 
-      {(isAdmin || canSubmit) && <LinkAdd api={api} bggName={bggName} isAdmin={isAdmin} />}
+      {(isAdmin || canSubmit) && (
+        <LinkAdd
+          api={api}
+          bggName={bggName}
+          isAdmin={isAdmin}
+          hideButton={hideAddButton}
+          openRequest={openRequest}
+          onOpenHandled={onOpenHandled}
+        />
+      )}
       {isAdmin && (
         <div className="er-form">
           <button
