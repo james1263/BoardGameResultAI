@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { CategoryMode, LibraryGame } from '../lib/libraryTypes'
+import InfoHint from './InfoHint'
 
 // 三個主體類型固定排最前面，其餘是副類型
 const MAIN_CATEGORIES = ['策略', '派對', '陣營']
@@ -65,7 +66,10 @@ export default function CategoryFilter({
   return (
     <div className="filter-group cat-filter">
       <div className="filter-group-title">
-        <span>類型</span>
+        <span>
+          類型
+          <InfoHint text="OR：符合所選類型中任何一個就會列出。AND：必須同時符合所有已選類型才會列出。" />
+        </span>
         {selected.length > 0 && (
           <button type="button" className="cat-filter-clear" onClick={onClear}>
             清除類型
@@ -80,7 +84,7 @@ export default function CategoryFilter({
           aria-pressed={mode === 'or'}
           onClick={() => onModeChange('or')}
         >
-          包含任一
+          OR
         </button>
         <button
           type="button"
@@ -88,14 +92,10 @@ export default function CategoryFilter({
           aria-pressed={mode === 'and'}
           onClick={() => onModeChange('and')}
         >
-          包含全部
+          AND
         </button>
       </div>
-      <p className="filter-group-hint cat-mode-hint">
-        {mode === 'or'
-          ? '符合所選類型中任何一個就會列出。'
-          : '必須同時符合所有已選類型才會列出。'}
-      </p>
+      <div className="cat-mode-gap" />
 
       <div className="filter-pills">
         {MAIN_CATEGORIES.filter((name) => counts.has(name)).map(pill)}

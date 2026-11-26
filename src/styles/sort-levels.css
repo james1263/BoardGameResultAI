@@ -1,0 +1,116 @@
+/* 首頁「＋排序」：次要排序（第一層相同時才看下一層，最多再加 2 層） */
+
+.sort-levels {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.sort-levels-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--c-line, #ddd3bf);
+  border-radius: 999px;
+  background: var(--c-paper, #fffefa);
+  color: var(--c-ink, #34463c);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sort-levels-btn:hover,
+.sort-levels-btn.open,
+.sort-levels-btn.active {
+  border-color: var(--c-forest, #3f7d58);
+}
+
+.sort-levels-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(320px, 86vw);
+  padding: 14px;
+  border: 1px solid var(--c-line, #ddd3bf);
+  border-radius: 14px;
+  background: var(--c-paper, #fffefa);
+  color: var(--c-ink, #34463c);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  text-align: left;
+}
+
+.sort-levels-tip {
+  margin: 0;
+  color: var(--c-ink-soft, #7a8570);
+  font-size: 12px;
+}
+
+.sort-levels-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sort-levels-step {
+  flex: none;
+  color: var(--c-ink-soft, #7a8570);
+  font-size: 12px;
+}
+
+.sort-levels-row select {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 8px;
+  border: 1px solid var(--c-line, #ddd3bf);
+  border-radius: 10px;
+  background: var(--c-paper, #fffefa);
+  color: var(--c-ink, #34463c);
+  font-size: 16px;
+}
+
+.sort-levels-dir,
+.sort-levels-remove {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--c-line, #ddd3bf);
+  border-radius: 10px;
+  background: var(--c-paper, #fffefa);
+  color: var(--c-ink, #34463c);
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.sort-levels-dir:hover,
+.sort-levels-remove:hover {
+  border-color: var(--c-forest, #3f7d58);
+}
+
+.sort-levels-add {
+  align-self: flex-start;
+  padding: 6px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--c-forest, #3f7d58);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .explore-types-row .explore-sort .sort-levels {
+    flex: none;
+  }
+}

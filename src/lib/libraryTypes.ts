@@ -26,6 +26,22 @@ export type SortKey =
   | 'myOverall'
   | 'myComposite'
 
+// 次要排序（第一層相同時才看這一層）
+export type ExtraSort = { key: SortKey; direction: 'asc' | 'desc' }
+
+// 管理者專用與使用者專用的排序依據：不屬於這個身分的一律不生效
+export function isSortKeyAllowed(
+  key: SortKey,
+  isAdmin: boolean,
+  hasSession: boolean,
+): boolean {
+  if (key === 'classicGameRanking' || key === 'scoreRank') return isAdmin
+  if (key === 'myOverall' || key === 'myComposite') {
+    return !isAdmin && hasSession
+  }
+  return true
+}
+
 export type NumericFilter = number | ''
 
 export type ViewMode = 'list' | 'grid-4' | 'grid-9'

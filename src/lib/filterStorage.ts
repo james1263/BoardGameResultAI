@@ -1,6 +1,7 @@
 import type {
   CategoryMode,
   DifficultyLevel,
+  ExtraSort,
   MineGroup,
   NumericFilter,
   RatingFilter,
@@ -26,6 +27,8 @@ export type SavedFilters = {
   hiddenGroups: MineGroup[]
   sortBy: SortKey
   sortDirection: 'asc' | 'desc'
+  // 次要排序（最多 2 層）
+  extraSorts: ExtraSort[]
   // 顯示設定（不算篩選條件，清除篩選不會重設）
   showCardInfo: boolean
   // 顯示「新加入桌遊」那一排（預設打勾；舊的「只看新遊戲」值已不使用）
@@ -46,6 +49,7 @@ export const DEFAULT_FILTERS: SavedFilters = {
   hiddenGroups: [],
   sortBy: 'rankingEngine',
   sortDirection: 'asc',
+  extraSorts: [],
   showCardInfo: true,
   showNew: true,
 }
@@ -78,6 +82,27 @@ function asStringArray(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string')
     : []
+}
+
+function loadExtraSorts(value: unknown): ExtraSort[] {
+  if (!Array.isArray(value)) return []
+  const result: ExtraSort[] = []
+  for (const item of value) {
+    if (!item || typeof item !== 'object') continue
+    const r = item as Record<string, unknown>
+    const key = r.key as SortKey
+    if (
+      !SORT_KEYS.includes(key) ||
+      key === 'bestPlayers' ||
+      key === 'recommendPlayers' ||
+      result.some((x) => x.key === key)
+    ) {
+      continue
+    }
+    result.push({ key, direction: r.direction === 'desc' ? 'desc' : 'asc' })
+    if (result.length >= 2) break
+  }
+  return result
 }
 
 // 讀取失敗、版本不對、欄位不合，都退回預設值，不影響使用
@@ -125,6 +150,7 @@ export function loadFilters(): SavedFilters {
           ? (f.sortBy as SortKey)
           : 'rankingEngine',
       sortDirection: f.sortDirection === 'desc' ? 'desc' : 'asc',
+      extraSorts: loadExtraSorts(f.extraSorts),
       showCardInfo: f.showCardInfo !== false,
       showNew: f.showNew !== false,
     }

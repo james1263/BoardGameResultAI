@@ -1,4 +1,5 @@
 import SortControl from './components/SortControl'
+import SortLevels from './components/SortLevels'
 import NewArrivals from './components/NewArrivals'
 import './styles/board-entry.css'
 import RulebookPage from './components/RulebookPage'
@@ -64,7 +65,12 @@ import CoverImage from './components/CoverImage'
 import TopBar, { type NavPage } from './components/TopBar'
 import { useBackClose } from './lib/useBackClose'
 import { loadFilters, saveFilters } from './lib/filterStorage'
-import { matchesCategories, type CategoryMode } from './lib/libraryTypes'
+import {
+  isSortKeyAllowed,
+  matchesCategories,
+  type CategoryMode,
+  type ExtraSort,
+} from './lib/libraryTypes'
 import FilterDrawer from './components/FilterDrawer'
 import PropertiesControl from './components/PropertiesControl'
 import {
@@ -606,6 +612,18 @@ function Library({
       setSortDirection(MY_SCORE_DIRECTION)
     }
   }
+  // 次要排序：第一層相同時才看；不屬於這個身分的、或和第一層重複的不生效
+  const [extraSorts, setExtraSorts] = useState<ExtraSort[]>(saved.extraSorts)
+  const hasSession = !!session
+  const effectiveExtraSorts = useMemo(
+    () =>
+      extraSorts.filter(
+        (s) =>
+          s.key !== effectiveSortBy &&
+          isSortKeyAllowed(s.key, isAdmin, hasSession),
+      ),
+    [extraSorts, effectiveSortBy, isAdmin, hasSession],
+  )
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   // 手機返回鍵／iPhone 右滑：導覽頁面或進階篩選開著時，先關視窗，不要退回上一個網頁（例如登入頁）
   useBackClose(() => {
@@ -646,6 +664,7 @@ function Library({
       hiddenGroups,
       sortBy,
       sortDirection,
+      extraSorts,
       showCardInfo,
       showNew,
     })
@@ -663,6 +682,7 @@ function Library({
     hiddenGroups,
     sortBy,
     sortDirection,
+    extraSorts,
     showCardInfo,
     showNew,
   ])
@@ -783,18 +803,22 @@ function Library({
       return true
     })
 
-    const direction = sortDirection === 'asc' ? 1 : -1
-    const sortBy = effectiveSortBy
-
-    const sorted = filtered.sort((a, b) => {
-      if (sortBy === 'name') {
+    type SortItem = (typeof boardGames)[number]
+    const compareBy = (
+      key: SortKey,
+      dir: 'asc' | 'desc',
+      a: SortItem,
+      b: SortItem,
+    ): number => {
+      const direction = dir === 'asc' ? 1 : -1
+      if (key === 'name') {
         return a.name.localeCompare(b.name, 'zh-Hant') * direction
       }
 
       let aValue: number | null
       let bValue: number | null
 
-      switch (sortBy) {
+      switch (key) {
         case 'bggScore':
           aValue = a.bggScore
           bValue = b.bggScore
@@ -840,6 +864,18 @@ function Library({
       }
 
       return compareNullableNumbers(aValue, bValue, direction)
+    }
+
+    const levels = [
+      { key: effectiveSortBy, direction: sortDirection },
+      ...effectiveExtraSorts,
+    ]
+    const sorted = filtered.sort((a, b) => {
+      for (const level of levels) {
+        const result = compareBy(level.key, level.direction, a, b)
+        if (result !== 0) return result
+      }
+      return 0
     })
 
     // 置頂的新遊戲放最前面（任何排序都一樣），其餘維持原排序
@@ -862,6 +898,7 @@ function Library({
     ratings.getMine,
     effectiveSortBy,
     sortDirection,
+    effectiveExtraSorts,
     boardGames,
   ])
 
@@ -1018,7 +1055,7 @@ function Library({
       key: `cat-${category}`,
       label:
         selectedCategories.length > 1
-          ? `類型（${categoryMode === 'or' ? '任一' : '全部'}）：${category}`
+          ? `類型（${categoryMode === 'or' ? 'OR' : 'AND'}）：${category}`
           : `類型：${category}`,
       onRemove: () => toggleCategory(category),
     })
@@ -1240,6 +1277,13 @@ function Library({
                     current === 'asc' ? 'desc' : 'asc',
                   )
                 }
+              />
+              <SortLevels
+                primaryKey={effectiveSortBy}
+                extraSorts={extraSorts}
+                onChange={setExtraSorts}
+                isAdmin={isAdmin}
+                hasSession={hasSession}
               />
             </div>
           </div>
