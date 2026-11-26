@@ -11,8 +11,9 @@ import {
 import { type GameTableData } from '../lib/gameTable'
 import '../styles/table-holdings.css'
 
-// 旭日「持有」分頁（4a：只存這支手機；資料在 table.holdings＝{玩家id:{卡id:張數}}、table.holdSets＝這桌用到的組別）
+// 旭日「持有」分頁（4b-1：存在資料庫，同桌的人即時看到；資料在 table.holdings＝{玩家id:{卡id:張數}}、table.holdSets＝這桌用到的組別）
 // 同桌所有人都看得到彼此持有的卡，點卡名看中文效果（效果為自譯、待核對）。
+// 誰能改：管理者改全部；玩家只能改自己綁定的那一格（canEdit 由外面決定）；組別只有管理者能改。
 
 type Kind = SeasonCardKind | 'kami'
 type Item = {
@@ -54,11 +55,23 @@ const ALL_ITEMS: Item[] = [
 const ITEM_BY_ID = new Map(ALL_ITEMS.map((i) => [i.id, i]))
 const SET_KEYS = Object.keys(SEASON_CARD_SETS)
 
-type Update = (fn: (t: GameTableData) => GameTableData) => void
-
-export default function TableHoldings({ table, update }: { table: GameTableData; update: Update }) {
+export default function TableHoldings({
+  table,
+  isAdmin,
+  canEdit,
+  onCount,
+  onSets,
+}: {
+  table: GameTableData
+  isAdmin: boolean
+  canEdit: (playerId: string) => boolean
+  onCount: (playerId: string, itemId: string, count: number) => void
+  onSets: (sets: string[]) => void
+}) {
   const [view, setView] = useState<'edit' | 'stats'>('edit')
-  const [pid, setPid] = useState<string>(table.players[0]?.id ?? '')
+  const [pid, setPid] = useState<string>(
+    () => table.players.find((p) => canEdit(p.id))?.id ?? table.players[0]?.id ?? '',
+  )
   const [showSets, setShowSets] = useState(false)
   const [seasonF, setSeasonF] = useState<'all' | SeasonKey>('all')
   const [kindF, setKindF] = useState<'all' | Kind>('all')
@@ -79,23 +92,17 @@ export default function TableHoldings({ table, update }: { table: GameTableData;
   )
 
   const player = table.players.find((p) => p.id === pid) ?? table.players[0]
+  const editable = !!player && canEdit(player.id)
 
   function toggleSet(key: string) {
-    if (key === 'core') return
-    update((t) => {
-      const cur = t.holdSets.length > 0 ? t.holdSets : ['core']
-      return { ...t, holdSets: cur.includes(key) ? cur.filter((x) => x !== key) : [...cur, key] }
-    })
+    if (key === 'core' || !isAdmin) return
+    const cur = table.holdSets.length > 0 ? table.holdSets : ['core']
+    onSets(cur.includes(key) ? cur.filter((x) => x !== key) : [...cur, key])
   }
 
   function setCount(playerId: string, item: Item, n: number) {
     const v = Math.max(0, Math.min(item.max, Math.round(n)))
-    update((t) => {
-      const mine = { ...(t.holdings[playerId] ?? {}) }
-      if (v === 0) delete mine[item.id]
-      else mine[item.id] = v
-      return { ...t, holdings: { ...t.holdings, [playerId]: mine } }
-    })
+    onCount(playerId, item.id, v)
   }
 
   function countOf(playerId: string, id: string): number {
@@ -138,14 +145,16 @@ export default function TableHoldings({ table, update }: { table: GameTableData;
 
       {showSets && (
         <div className="gtb-card">
-          <p className="gtb-sub">勾選這局有用到的牌組（核心盒必選；神靈在「山組」）</p>
+          <p className="gtb-sub">
+            {isAdmin ? '勾選這局有用到的牌組（核心盒必選；神靈在「山組」）' : '這局用到的牌組（只有管理者能改）'}
+          </p>
           <div className="gtb-chips">
             {SET_KEYS.map((k) => (
               <button
                 key={k}
                 type="button"
                 className={sets.includes(k) ? 'on' : ''}
-                disabled={k === 'core'}
+                disabled={k === 'core' || !isAdmin}
                 onClick={() => toggleSet(k)}
               >
                 {sets.includes(k) ? '✓ ' : ''}
@@ -169,6 +178,11 @@ export default function TableHoldings({ table, update }: { table: GameTableData;
               )
             })}
           </div>
+          {player && !editable && (
+            <p className="gtb-muted">
+              {table.closed ? '這桌已結束，只能看。' : '這位的持有只有他本人或管理者能改，你可以先看。'}
+            </p>
+          )}
 
           <p className="gtb-sub">篩選</p>
           <div className="gtb-chips">
@@ -205,11 +219,23 @@ export default function TableHoldings({ table, update }: { table: GameTableData;
                           {item.set !== 'core' && item.kind !== 'kami' ? `・${SEASON_CARD_SETS[item.set]}` : ''}
                         </small>
                       </button>
-                      <button type="button" className="gtb-sq" aria-label={`${item.name} 減 1`} disabled={n <= 0} onClick={() => setCount(player.id, item, n - 1)}>
+                      <button
+                        type="button"
+                        className="gtb-sq"
+                        aria-label={`${item.name} 減 1`}
+                        disabled={!editable || n <= 0}
+                        onClick={() => setCount(player.id, item, n - 1)}
+                      >
                         －
                       </button>
                       <span className="gth-n">{n}</span>
-                      <button type="button" className="gtb-sq" aria-label={`${item.name} 加 1`} disabled={n >= item.max} onClick={() => setCount(player.id, item, n + 1)}>
+                      <button
+                        type="button"
+                        className="gtb-sq"
+                        aria-label={`${item.name} 加 1`}
+                        disabled={!editable || n >= item.max}
+                        onClick={() => setCount(player.id, item, n + 1)}
+                      >
                         ＋
                       </button>
                     </div>

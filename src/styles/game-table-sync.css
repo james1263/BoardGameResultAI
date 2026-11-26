@@ -1,0 +1,29 @@
+/* 遊戲桌同步版（4b-1）新增的小樣式：綁定帳號、「你」標籤、唯讀數字。沿用 game-table.css 的配色 */
+.gtb-root.gtb-root .gtb-bound {
+  flex: none;
+  font-size: 14px;
+}
+.gtb-root.gtb-root .gtb-bind {
+  max-width: 150px;
+}
+.gtb-root.gtb-root .gtb-me {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #dfe8d6;
+  color: #2f5d3a;
+  font-size: 12px;
+  font-weight: 700;
+}
+.gtb-root.gtb-root .gtb-rovalue {
+  min-width: 40px;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+:root[data-theme='dark'] .gtb-root.gtb-root .gtb-me {
+  background: #2c4033;
+  color: #bfe0c6;
+}

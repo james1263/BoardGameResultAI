@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import RoomTimer from './RoomTimer'
 import TableHoldings from './TableHoldings'
+import { supabase } from '../lib/supabase'
+import { useSession } from '../lib/useSession'
 import {
   ICONS,
   MAX_ROWS,
@@ -25,12 +27,13 @@ import {
   clampValue,
   diceSummaryText,
   diceTemplate,
+  emptyDice,
   faceTotal,
-  fillValues,
   linkedResource,
   loadStore,
   newDiceGroup,
-  newTable,
+  newDraft,
+  resValue,
   rollDie,
   rollGroup,
   saveStore,
@@ -38,18 +41,26 @@ import {
   toolActive,
   totalOf,
   uid,
+  type DiceBox,
   type DiceGroup,
+  type Draft,
   type GameTableData,
-  type RoomStore,
+  type LocalStore,
+  type TablePlayer,
   type TableTool,
 } from '../lib/gameTable'
+import { useRoomTables, type RoomTablesApi } from '../lib/gameTableSync'
 import '../styles/game-table.css'
+import '../styles/game-table-sync.css'
 
-// 聚會房間的「遊戲桌」（4a：只存這支手機；只有管理者能開桌與設定）
-// 流程：開桌（遊戲、工具、玩家）→ 資源設定 → 計分表設定 → 進行畫面（玩家、骰子、計分、計時器）
-// 同步（多支手機看同一桌）是 4b。
+// 聚會房間的「遊戲桌」（4b-1 同步版）
+// 桌子、玩家、數字存在資料庫，同一場聚會的人即時看到同一桌。
+// 管理者：開桌、設定、改所有數字；玩家：只能改「綁定給自己的那一格」；沒綁定的只能看。
+// 流程：開桌（遊戲、工具、玩家）→ 資源設定 → 計分表設定 → 開始（這時才寫進資料庫）→ 進行畫面
+// 這支手機自己留的：離場名單、設定到一半的草稿、骰子。
 
-type Update = (fn: (t: GameTableData) => GameTableData) => void
+type Member = { userId: string | null; name: string }
+type RosterRow = { out_user_id: string; out_name: string; out_me: boolean }
 
 function useArm() {
   const [armed, setArmed] = useState<string | null>(null)
@@ -433,83 +444,92 @@ function DiceEditor({
 }
 
 /* ───────────── 開桌設定（第 1 步：遊戲、工具、玩家；第 2、3 步：資源、計分表） ───────────── */
+// 設定只存在這支手機（草稿），按「開始這桌」才一次寫進資料庫，別人才看得到。
 
 type Step = 'basic' | 'resource' | 'score'
 
 function Setup({
-  table,
+  draft,
   update,
   games,
-  attendees,
+  members,
   leftNames,
+  busy,
+  message,
   onBack,
+  onStart,
 }: {
-  table: GameTableData
-  update: Update
+  draft: Draft
+  update: (fn: (d: Draft) => Draft) => void
   games: Array<{ b: string; name: string }>
-  attendees: string[]
+  members: Member[]
   leftNames: string[]
+  busy: boolean
+  message: string
   onBack: () => void
+  onStart: () => void
 }) {
   const steps: Step[] = useMemo(() => {
     const s: Step[] = ['basic']
-    if (table.tools.includes('resource')) s.push('resource')
-    if (table.tools.includes('score')) s.push('score')
+    if (draft.tools.includes('resource')) s.push('resource')
+    if (draft.tools.includes('score')) s.push('score')
     return s
-  }, [table.tools])
+  }, [draft.tools])
   const [index, setIndex] = useState(0)
   const [guest, setGuest] = useState('')
   const [msg, setMsg] = useState('')
   const step = steps[Math.min(index, steps.length - 1)]
-  const taken = new Set(table.players.map((p) => p.name.trim()))
-  const free = attendees.filter((n) => !taken.has(n))
+  const takenNames = new Set(draft.players.map((p) => p.name.trim()))
+  const takenIds = new Set(draft.players.map((p) => p.userId).filter((x): x is string => !!x))
+  const free = members.filter((m) => !takenNames.has(m.name) && !(m.userId && takenIds.has(m.userId)))
 
-  function addPlayer(name: string) {
+  function addPlayer(name: string, userId: string | null) {
     const n = name.trim().slice(0, 12)
     if (!n) return
-    update((t) => {
-      if (t.players.length >= MAX_PLAYERS) return t
-      if (t.players.some((p) => p.name.trim() === n)) return t
-      return { ...t, players: [...t.players, { id: uid(), name: n, left: leftNames.includes(n) }] }
+    update((d) => {
+      if (d.players.length >= MAX_PLAYERS) return d
+      if (d.players.some((p) => p.name.trim() === n || (userId !== null && p.userId === userId))) return d
+      return { ...d, players: [...d.players, { id: uid(), name: n, userId }] }
     })
   }
 
   function importAll() {
-    update((t) => {
-      const have = new Set(t.players.map((p) => p.name.trim()))
-      const add = attendees
-        .filter((n) => !have.has(n) && !leftNames.includes(n))
-        .slice(0, Math.max(0, MAX_PLAYERS - t.players.length))
-        .map((n) => ({ id: uid(), name: n, left: false }))
-      return { ...t, players: [...t.players, ...add] }
+    update((d) => {
+      const haveNames = new Set(d.players.map((p) => p.name.trim()))
+      const haveIds = new Set(d.players.map((p) => p.userId).filter((x): x is string => !!x))
+      const add = members
+        .filter((m) => !haveNames.has(m.name) && !(m.userId && haveIds.has(m.userId)) && !leftNames.includes(m.name))
+        .slice(0, Math.max(0, MAX_PLAYERS - d.players.length))
+        .map((m) => ({ id: uid(), name: m.name.slice(0, 12), userId: m.userId }))
+      return { ...d, players: [...d.players, ...add] }
     })
   }
 
   function toggleTool(tool: TableTool) {
-    update((t) => ({
-      ...t,
-      tools: t.tools.includes(tool) ? t.tools.filter((x) => x !== tool) : [...t.tools, tool],
+    update((d) => ({
+      ...d,
+      tools: d.tools.includes(tool) ? d.tools.filter((x) => x !== tool) : [...d.tools, tool],
     }))
   }
 
   function problem(): string {
     if (step === 'basic') {
-      if (!table.title.trim()) return '請選擇遊戲或輸入名稱。'
-      if (table.tools.length === 0) return '至少選一個工具。'
-      if (table.players.length < 2) return '至少 2 位玩家。'
-      if (table.players.some((p) => !p.name.trim())) return '玩家名稱不能空白。'
-      if (new Set(table.players.map((p) => p.name.trim())).size !== table.players.length) return '玩家名稱不能重複。'
-      if (attendees.length > 0 && table.players.length > attendees.length) {
-        return `這桌人數不能超過聚會出席人數（${attendees.length} 人）。`
+      if (!draft.title.trim()) return '請選擇遊戲或輸入名稱。'
+      if (draft.tools.length === 0) return '至少選一個工具。'
+      if (draft.players.length < 2) return '至少 2 位玩家。'
+      if (draft.players.some((p) => !p.name.trim())) return '玩家名稱不能空白。'
+      if (new Set(draft.players.map((p) => p.name.trim())).size !== draft.players.length) return '玩家名稱不能重複。'
+      if (members.length > 0 && draft.players.length > members.length) {
+        return `這桌人數不能超過聚會出席人數（${members.length} 人）。`
       }
     }
     if (step === 'resource') {
-      if (table.resRows.length === 0) return '至少 1 種資源。'
-      if (table.resRows.some((r) => !r.name.trim())) return '資源名稱不能空白。'
+      if (draft.resRows.length === 0) return '至少 1 種資源。'
+      if (draft.resRows.some((r) => !r.name.trim())) return '資源名稱不能空白。'
     }
     if (step === 'score') {
-      if (table.scoreRows.length === 0) return '至少 1 個計分項目。'
-      if (table.scoreRows.some((r) => !r.name.trim())) return '計分項目名稱不能空白。'
+      if (draft.scoreRows.length === 0) return '至少 1 個計分項目。'
+      if (draft.scoreRows.some((r) => !r.name.trim())) return '計分項目名稱不能空白。'
     }
     return ''
   }
@@ -522,7 +542,7 @@ function Setup({
       setIndex(index + 1)
       return
     }
-    update((t) => fillValues({ ...t, phase: 'play' }))
+    onStart()
   }
 
   const last = index >= steps.length - 1
@@ -540,10 +560,10 @@ function Setup({
           {games.length > 0 && (
             <select
               className="gtb-in gtb-full"
-              value={table.bggName ?? ''}
+              value={draft.bggName ?? ''}
               onChange={(e) => {
                 const g = games.find((x) => x.b === e.target.value)
-                update((t) => ({ ...t, bggName: g ? g.b : null, title: g ? g.name : t.title }))
+                update((d) => ({ ...d, bggName: g ? g.b : null, title: g ? g.name : d.title }))
               }}
             >
               <option value="">其他（自己輸入名稱）</option>
@@ -556,17 +576,17 @@ function Setup({
           )}
           <input
             className="gtb-in gtb-full"
-            value={table.title}
+            value={draft.title}
             maxLength={30}
             placeholder="這桌的名稱（例：旭日）"
-            onChange={(e) => update((t) => ({ ...t, title: e.target.value, bggName: null }))}
+            onChange={(e) => update((d) => ({ ...d, title: e.target.value, bggName: null }))}
           />
 
           <p className="gtb-sub">要用的工具（中途也能再加）</p>
           <div className="gtb-tools">
             {ALL_TOOLS.map((tool) => (
-              <label key={tool} className={table.tools.includes(tool) ? 'on' : ''}>
-                <input type="checkbox" checked={table.tools.includes(tool)} onChange={() => toggleTool(tool)} />
+              <label key={tool} className={draft.tools.includes(tool) ? 'on' : ''}>
+                <input type="checkbox" checked={draft.tools.includes(tool)} onChange={() => toggleTool(tool)} />
                 <span>
                   {TOOL_INFO[tool].icon} {TOOL_INFO[tool].label}
                   <small>{TOOL_INFO[tool].hint}</small>
@@ -576,18 +596,23 @@ function Setup({
           </div>
 
           <p className="gtb-sub">
-            玩家（{table.players.length}／{MAX_PLAYERS}）：請輸入遊戲裡用的暱稱，例如家族名
+            玩家（{draft.players.length}／{MAX_PLAYERS}）：從聚會成員帶入的玩家會綁定帳號，本人就能自己改自己的數字
           </p>
           <ul className="gtb-list">
-            {table.players.map((p) => (
+            {draft.players.map((p) => (
               <li key={p.id} className="gtb-line">
                 <input
                   className="gtb-in gtb-grow"
                   value={p.name}
                   maxLength={12}
-                  onChange={(e) => update((t) => ({ ...t, players: t.players.map((x) => (x.id === p.id ? { ...x, name: e.target.value } : x)) }))}
+                  onChange={(e) => update((d) => ({ ...d, players: d.players.map((x) => (x.id === p.id ? { ...x, name: e.target.value } : x)) }))}
                 />
-                <button type="button" className="gtb-sq" aria-label="移除玩家" onClick={() => update((t) => ({ ...t, players: t.players.filter((x) => x.id !== p.id) }))}>
+                {p.userId && (
+                  <span className="gtb-bound" title="已綁定帳號" aria-label="已綁定帳號">
+                    🔗
+                  </span>
+                )}
+                <button type="button" className="gtb-sq" aria-label="移除玩家" onClick={() => update((d) => ({ ...d, players: d.players.filter((x) => x.id !== p.id) }))}>
                   ✕
                 </button>
               </li>
@@ -600,21 +625,21 @@ function Setup({
           </div>
           {free.length > 0 && (
             <div className="gtb-chips">
-              {free.map((n) => (
-                <button key={n} type="button" onClick={() => addPlayer(n)}>
-                  ＋ {n}
-                  {leftNames.includes(n) ? '（已離場）' : ''}
+              {free.map((m) => (
+                <button key={m.userId ?? m.name} type="button" onClick={() => addPlayer(m.name, m.userId)}>
+                  ＋ {m.name}
+                  {leftNames.includes(m.name) ? '（已離場）' : ''}
                 </button>
               ))}
             </div>
           )}
           <div className="gtb-line">
-            <input className="gtb-in gtb-grow" value={guest} maxLength={12} placeholder="手動加入訪客或家族名" onChange={(e) => setGuest(e.target.value)} />
+            <input className="gtb-in gtb-grow" value={guest} maxLength={12} placeholder="手動加入訪客或家族名（不綁帳號）" onChange={(e) => setGuest(e.target.value)} />
             <button
               type="button"
               className="gtb-btn"
               onClick={() => {
-                addPlayer(guest)
+                addPlayer(guest, null)
                 setGuest('')
               }}
             >
@@ -627,7 +652,7 @@ function Setup({
       {step === 'resource' && (
         <>
           <p className="gtb-muted">設定這桌有哪些資源與起始數量。開始後只能新增，不能刪除。</p>
-          <RowsEditor kind="resource" rows={table.resRows} onChange={(rows) => update((t) => ({ ...t, resRows: rows }))} locked={new Set()} resNames={[]} />
+          <RowsEditor kind="resource" rows={draft.resRows} onChange={(rows) => update((d) => ({ ...d, resRows: rows }))} locked={new Set()} resNames={[]} />
         </>
       )}
 
@@ -636,21 +661,22 @@ function Setup({
           <p className="gtb-muted">設定終局計分項目。有設定資源時，項目可以「取自資源」自動換算。</p>
           <RowsEditor
             kind="score"
-            rows={table.scoreRows}
-            onChange={(rows) => update((t) => ({ ...t, scoreRows: rows }))}
+            rows={draft.scoreRows}
+            onChange={(rows) => update((d) => ({ ...d, scoreRows: rows }))}
             locked={new Set()}
-            resNames={table.resRows.map((r) => r.name.trim()).filter(Boolean)}
+            resNames={draft.resRows.map((r) => r.name.trim()).filter(Boolean)}
           />
         </>
       )}
 
       {msg && <p className="gtb-error">{msg}</p>}
+      {message && <p className="gtb-error">{message}</p>}
       <div className="gtb-btnrow">
-        <button type="button" className="gtb-btn" onClick={index === 0 ? onBack : () => setIndex(index - 1)}>
-          {index === 0 ? '‹ 回房間' : '上一步'}
+        <button type="button" className="gtb-btn" disabled={busy} onClick={index === 0 ? onBack : () => setIndex(index - 1)}>
+          {index === 0 ? '‹ 回房間（草稿會保留）' : '上一步'}
         </button>
-        <button type="button" className="gtb-btn main" onClick={next}>
-          {last ? '開始這桌' : '下一步'}
+        <button type="button" className="gtb-btn main" disabled={busy} onClick={next}>
+          {busy ? '建立中…' : last ? '開始這桌' : '下一步'}
         </button>
       </div>
     </div>
@@ -663,16 +689,24 @@ type Tab = 'players' | 'dice' | 'score' | 'hold'
 
 function Play({
   table,
-  update,
+  api,
   gatheringId,
   isAdmin,
+  myId,
+  box,
+  onBox,
+  members,
   onLeft,
   onBack,
 }: {
   table: GameTableData
-  update: Update
+  api: RoomTablesApi
   gatheringId: string
   isAdmin: boolean
+  myId: string | null
+  box: DiceBox
+  onBox: (fn: (b: DiceBox) => DiceBox) => void
+  members: Member[]
   onLeft: (name: string, left: boolean) => void
   onBack: () => void
 }) {
@@ -683,8 +717,11 @@ function Play({
   const [draftRows, setDraftRows] = useState<SheetRow[]>([])
   const [diceEdit, setDiceEdit] = useState<DiceGroup | null>(null)
   const [showTools, setShowTools] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [guest, setGuest] = useState('')
+  const [manageMsg, setManageMsg] = useState('')
 
-  const resOn = table.tools.includes('resource') && !table.disabled.includes('resource')
+  const resOn = toolActive(table, 'resource')
   const scoreOn = toolActive(table, 'score')
   const diceOn = toolActive(table, 'dice')
   const timerOn = toolActive(table, 'timer')
@@ -696,74 +733,69 @@ function Play({
   const shownTab: Tab = tabs.includes(tab) ? tab : 'players'
   const TAB_LABEL: Record<Tab, string> = { players: '玩家', dice: '骰子', score: '計分', hold: '持有' }
 
-  function setRes(pid: string, rowId: string, value: number) {
-    update((t) => ({
-      ...t,
-      res: { ...t.res, [pid]: { ...(t.res[pid] ?? {}), [rowId]: clampValue(value) } },
-    }))
+  // 誰能改：桌子沒結束，而且是管理者，或這一格綁定的就是我
+  function canEdit(p: TablePlayer): boolean {
+    return !table.closed && (isAdmin || (myId !== null && p.userId === myId))
   }
-
-  function setScore(pid: string, rowId: string, value: number) {
-    update((t) => ({
-      ...t,
-      scores: { ...t.scores, [pid]: { ...(t.scores[pid] ?? {}), [rowId]: clampValue(value) } },
-    }))
-  }
+  const hasMine = myId !== null && table.players.some((p) => p.userId === myId)
 
   function startEdit(kind: 'resource' | 'score') {
     setDraftRows(kind === 'resource' ? table.resRows : table.scoreRows)
     setEditing(kind)
   }
 
-  function finishEdit() {
-    if (!editing) return
+  async function finishEdit() {
+    if (!editing || saving) return
     if (draftRows.some((r) => !r.name.trim())) return
-    update((t) => fillValues(editing === 'resource' ? { ...t, resRows: draftRows } : { ...t, scoreRows: draftRows }))
-    setEditing(null)
+    const rows = draftRows.map((r) => ({ ...r, name: r.name.trim() }))
+    setSaving(true)
+    const ok = await api.saveSetup(table, editing === 'resource' ? { resRows: rows } : { scoreRows: rows })
+    setSaving(false)
+    if (ok) setEditing(null)
   }
 
   function addTool(tool: TableTool) {
-    update((t) => ({ ...t, tools: t.tools.includes(tool) ? t.tools : [...t.tools, tool] }))
+    if (!table.tools.includes(tool)) void api.saveSetup(table, { tools: [...table.tools, tool] })
     if (tool === 'resource') startEdit('resource')
     if (tool === 'score') startEdit('score')
-    if (tool === 'dice') setDiceEdit(newDiceGroup())
+    if (tool === 'dice') {
+      setTab('dice')
+      setDiceEdit(newDiceGroup())
+    }
   }
 
   function toggleDisabled(tool: TableTool) {
-    update((t) => ({
-      ...t,
-      disabled: t.disabled.includes(tool) ? t.disabled.filter((x) => x !== tool) : [...t.disabled, tool],
-    }))
+    void api.saveSetup(table, {
+      disabled: table.disabled.includes(tool) ? table.disabled.filter((x) => x !== tool) : [...table.disabled, tool],
+    })
   }
 
   function saveDice(g: DiceGroup) {
-    update((t) => {
-      const exists = t.dice.some((x) => x.id === g.id)
-      return { ...t, dice: exists ? t.dice.map((x) => (x.id === g.id ? g : x)) : [...t.dice, g] }
+    onBox((b) => {
+      const exists = b.groups.some((x) => x.id === g.id)
+      return { ...b, groups: exists ? b.groups.map((x) => (x.id === g.id ? g : x)) : [...b.groups, g] }
     })
     setDiceEdit(null)
   }
 
-  function logRoll(t: GameTableData, g: DiceGroup, results: string[]): string[] {
-    const name = g.name || `骰子 ${t.dice.findIndex((x) => x.id === g.id) + 1}`
-    return [`${name}：${summarize(results)}`, ...t.diceLog].slice(0, 5)
+  function logRoll(b: DiceBox, g: DiceGroup, results: string[]): string[] {
+    const name = g.name || `骰子 ${b.groups.findIndex((x) => x.id === g.id) + 1}`
+    return [`${name}：${summarize(results)}`, ...b.log].slice(0, 5)
   }
 
   function roll(g: DiceGroup) {
     const results = rollGroup(g)
-    update((t) => ({
-      ...t,
-      dice: t.dice.map((x) => (x.id === g.id ? { ...x, results } : x)),
-      diceLog: logRoll(t, g, results),
+    onBox((b) => ({
+      groups: b.groups.map((x) => (x.id === g.id ? { ...x, results } : x)),
+      log: logRoll(b, g, results),
     }))
   }
 
   function reroll(g: DiceGroup, index: number) {
     const results = g.results.map((r, i) => (i === index ? rollDie(g.faces) : r))
-    update((t) => ({
-      ...t,
-      dice: t.dice.map((x) => (x.id === g.id ? { ...x, results } : x)),
-      diceLog: logRoll(t, g, results),
+    onBox((b) => ({
+      groups: b.groups.map((x) => (x.id === g.id ? { ...x, results } : x)),
+      log: logRoll(b, g, results),
     }))
   }
 
@@ -776,6 +808,31 @@ function Play({
     })
     return { totals, rank }
   }, [table])
+
+  // 玩家管理（管理者）
+  const boundIds = new Set(table.players.map((p) => p.userId).filter((x): x is string => !!x))
+  const takenNames = new Set(table.players.map((p) => p.name.trim()))
+  const freeMembers = members.filter((m) => !takenNames.has(m.name) && !(m.userId && boundIds.has(m.userId)))
+
+  async function addMember(name: string, userId: string | null) {
+    const n = name.trim().slice(0, 12)
+    if (!n) return
+    if (takenNames.has(n)) return setManageMsg('這桌已經有同名的玩家。')
+    if (table.players.length >= MAX_PLAYERS) return setManageMsg(`最多 ${MAX_PLAYERS} 位玩家。`)
+    setManageMsg('')
+    await api.addPlayer(table.id, n, userId)
+  }
+
+  function rename(p: TablePlayer, value: string) {
+    const n = value.trim().slice(0, 12)
+    if (!n || n === p.name) return
+    if (table.players.some((x) => x.id !== p.id && x.name.trim() === n)) {
+      setManageMsg('這桌已經有同名的玩家。')
+      return
+    }
+    setManageMsg('')
+    void api.updatePlayer(p, { name: n })
+  }
 
   if (editing) {
     const locked = new Set((editing === 'resource' ? table.resRows : table.scoreRows).map((r) => r.id))
@@ -794,11 +851,11 @@ function Play({
           {editing === 'resource' ? '新增的資源，每位玩家從起始數量開始。' : '新增的計分項目，所有人先是 0。'}
         </p>
         <div className="gtb-btnrow">
-          <button type="button" className="gtb-btn" onClick={() => setEditing(null)}>
+          <button type="button" className="gtb-btn" disabled={saving} onClick={() => setEditing(null)}>
             取消
           </button>
-          <button type="button" className="gtb-btn main" onClick={finishEdit}>
-            完成
+          <button type="button" className="gtb-btn main" disabled={saving} onClick={() => void finishEdit()}>
+            {saving ? '儲存中…' : '完成'}
           </button>
         </div>
       </div>
@@ -817,46 +874,55 @@ function Play({
         ))}
       </div>
 
+      {table.closed && <p className="gtb-muted">這桌已結束，只能看不能改。</p>}
+      {!table.closed && !isAdmin && !hasMine && (
+        <p className="gtb-muted">你還沒有被綁定到這桌的玩家格，目前只能看；需要編輯請找管理者幫你綁定。</p>
+      )}
+
       {shownTab === 'players' && (
         <>
           <ul className="gtb-players">
             {table.players.map((p) => {
               const open = openPlayer === p.id
+              const mine = myId !== null && p.userId === myId
               return (
                 <li key={p.id} className={`${p.left ? 'left' : ''}${open ? ' open' : ''}`}>
                   <div className="gtb-phead">
                     <button type="button" className="gtb-pname" onClick={() => setOpenPlayer(open ? null : p.id)} aria-expanded={open}>
                       <b>{p.name}</b>
+                      {mine && <span className="gtb-me">你</span>}
                       {p.left && <small>已離場</small>}
                     </button>
-                    <button type="button" className="gtb-link" onClick={() => onLeft(p.name, !p.left)}>
-                      {p.left ? '取消離場' : '離場'}
-                    </button>
+                    {isAdmin && (
+                      <button type="button" className="gtb-link" onClick={() => onLeft(p.name, !p.left)}>
+                        {p.left ? '取消離場' : '離場'}
+                      </button>
+                    )}
                   </div>
                   {resOn && !open && (
                     <p className="gtb-sumline">
                       {table.resRows.map((r) => (
                         <span key={r.id}>
                           {r.icon}
-                          {table.res[p.id]?.[r.id] ?? 0}
+                          {resValue(table, p.id, r)}
                         </span>
                       ))}
                     </p>
                   )}
-                  {resOn && open && (
+                  {resOn && open && canEdit(p) && (
                     <ul className="gtb-resedit">
                       {table.resRows.map((r) => {
-                        const v = table.res[p.id]?.[r.id] ?? 0
+                        const v = resValue(table, p.id, r)
                         return (
                           <li key={r.id}>
                             <span className="gtb-rname">
                               {r.icon} {r.name}
                             </span>
-                            <button type="button" className="gtb-sq" aria-label={`${r.name} 減 1`} onClick={() => setRes(p.id, r.id, v - 1)}>
+                            <button type="button" className="gtb-sq" aria-label={`${r.name} 減 1`} onClick={() => api.setValue(p.id, 'res', r.id, v - 1)}>
                               －
                             </button>
-                            <input className="gtb-in gtb-num" type="number" min={0} value={v} onChange={(e) => setRes(p.id, r.id, Number(e.target.value))} />
-                            <button type="button" className="gtb-sq" aria-label={`${r.name} 加 1`} onClick={() => setRes(p.id, r.id, v + 1)}>
+                            <input className="gtb-in gtb-num" type="number" min={0} value={v} onChange={(e) => api.setValue(p.id, 'res', r.id, Number(e.target.value))} />
+                            <button type="button" className="gtb-sq" aria-label={`${r.name} 加 1`} onClick={() => api.setValue(p.id, 'res', r.id, v + 1)}>
                               ＋
                             </button>
                           </li>
@@ -864,11 +930,23 @@ function Play({
                       })}
                     </ul>
                   )}
+                  {resOn && open && !canEdit(p) && (
+                    <ul className="gtb-resedit">
+                      {table.resRows.map((r) => (
+                        <li key={r.id}>
+                          <span className="gtb-rname">
+                            {r.icon} {r.name}
+                          </span>
+                          <span className="gtb-rovalue">{resValue(table, p.id, r)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               )
             })}
           </ul>
-          {!resOn && <p className="gtb-muted">這桌沒有用資源計數器；可在下方「工具」加入。</p>}
+          {!resOn && <p className="gtb-muted">這桌沒有用資源計數器{isAdmin ? '；可在下方「工具與設定」加入。' : '。'}</p>}
         </>
       )}
 
@@ -878,8 +956,9 @@ function Play({
             <DiceEditor initial={diceEdit} onSave={saveDice} onCancel={() => setDiceEdit(null)} />
           ) : (
             <>
-              {table.dice.length === 0 && <p className="gtb-muted">還沒有骰子組，按「＋ 新增骰子組」。</p>}
-              {table.dice.map((g, gi) => (
+              <p className="gtb-muted">骰子只存在這支手機，別人看不到你的結果。</p>
+              {box.groups.length === 0 && <p className="gtb-muted">還沒有骰子組，按「＋ 新增骰子組」。</p>}
+              {box.groups.map((g, gi) => (
                 <div key={g.id} className="gtb-card">
                   <div className="gtb-line">
                     <b className="gtb-grow">{g.name || `骰子 ${gi + 1}`}</b>
@@ -889,7 +968,7 @@ function Play({
                     <button
                       type="button"
                       className="gtb-link"
-                      onClick={() => press(`dd-${g.id}`, () => update((t) => ({ ...t, dice: t.dice.filter((x) => x.id !== g.id) })))}
+                      onClick={() => press(`dd-${g.id}`, () => onBox((b) => ({ ...b, groups: b.groups.filter((x) => x.id !== g.id) })))}
                     >
                       {armed === `dd-${g.id}` ? '再按一次刪除' : '刪除'}
                     </button>
@@ -915,14 +994,14 @@ function Play({
                   )}
                 </div>
               ))}
-              <button type="button" className="gtb-btn" disabled={table.dice.length >= MAX_DICE_GROUPS} onClick={() => setDiceEdit(newDiceGroup())}>
-                ＋ 新增骰子組（{table.dice.length}／{MAX_DICE_GROUPS}）
+              <button type="button" className="gtb-btn" disabled={box.groups.length >= MAX_DICE_GROUPS} onClick={() => setDiceEdit(newDiceGroup())}>
+                ＋ 新增骰子組（{box.groups.length}／{MAX_DICE_GROUPS}）
               </button>
-              {table.diceLog.length > 0 && (
+              {box.log.length > 0 && (
                 <>
                   <p className="gtb-sub">最近 5 次</p>
                   <ul className="gtb-log">
-                    {table.diceLog.map((x, i) => (
+                    {box.log.map((x, i) => (
                       <li key={i}>{x}</li>
                     ))}
                   </ul>
@@ -965,7 +1044,7 @@ function Play({
                         </th>
                         {table.players.map((p) => (
                           <td key={p.id}>
-                            {link ? (
+                            {link || !canEdit(p) ? (
                               <span className="gtb-auto">{cellValue(table, row, p.id)}</span>
                             ) : (
                               <input
@@ -973,7 +1052,7 @@ function Play({
                                 type="number"
                                 min={0}
                                 value={table.scores[p.id]?.[row.id] ?? 0}
-                                onChange={(e) => setScore(p.id, row.id, Number(e.target.value))}
+                                onChange={(e) => api.setValue(p.id, 'score', row.id, Number(e.target.value))}
                               />
                             )}
                           </td>
@@ -1003,75 +1082,152 @@ function Play({
         </>
       )}
 
-      {shownTab === 'hold' && <TableHoldings table={table} update={update} />}
+      {shownTab === 'hold' && (
+        <TableHoldings
+          table={table}
+          isAdmin={isAdmin}
+          canEdit={(pid) => {
+            const p = table.players.find((x) => x.id === pid)
+            return !!p && canEdit(p)
+          }}
+          onCount={(pid, itemId, count) => api.setValue(pid, 'hold', itemId, count)}
+          onSets={(sets) => void api.saveSetup(table, { holdSets: sets })}
+        />
+      )}
 
-      <div className="gtb-manage">
-        <button type="button" className="gtb-link" onClick={() => setShowTools((v) => !v)}>
-          {showTools ? '收起工具與設定' : '工具與設定'}
-        </button>
-        {showTools && (
-          <div className="gtb-card">
-            <p className="gtb-sub">工具（只能加入或停用，不能刪除）</p>
-            <ul className="gtb-toollist">
-              {ALL_TOOLS.map((tool) => {
-                const has = table.tools.includes(tool)
-                const off = table.disabled.includes(tool)
-                return (
-                  <li key={tool}>
-                    <span>
-                      {TOOL_INFO[tool].icon} {TOOL_INFO[tool].label}
-                      {has && off ? '（已停用）' : ''}
-                    </span>
-                    {!has ? (
-                      <button type="button" className="gtb-btn" onClick={() => addTool(tool)}>
-                        加入
-                      </button>
-                    ) : off ? (
-                      <button type="button" className="gtb-btn" onClick={() => toggleDisabled(tool)}>
-                        重新啟用
-                      </button>
-                    ) : (
-                      <button type="button" className="gtb-btn" onClick={() => press(`off-${tool}`, () => toggleDisabled(tool))}>
-                        {armed === `off-${tool}` ? '再按一次停用' : '停用'}
-                      </button>
-                    )}
+      {isAdmin && (
+        <div className="gtb-manage">
+          <button type="button" className="gtb-link" onClick={() => setShowTools((v) => !v)}>
+            {showTools ? '收起工具與設定' : '工具與設定'}
+          </button>
+          {showTools && (
+            <div className="gtb-card">
+              <p className="gtb-sub">工具（只能加入或停用，不能刪除）</p>
+              <ul className="gtb-toollist">
+                {ALL_TOOLS.map((tool) => {
+                  const has = table.tools.includes(tool)
+                  const off = table.disabled.includes(tool)
+                  return (
+                    <li key={tool}>
+                      <span>
+                        {TOOL_INFO[tool].icon} {TOOL_INFO[tool].label}
+                        {has && off ? '（已停用）' : ''}
+                      </span>
+                      {!has ? (
+                        <button type="button" className="gtb-btn" onClick={() => addTool(tool)}>
+                          加入
+                        </button>
+                      ) : off ? (
+                        <button type="button" className="gtb-btn" onClick={() => toggleDisabled(tool)}>
+                          重新啟用
+                        </button>
+                      ) : (
+                        <button type="button" className="gtb-btn" onClick={() => press(`off-${tool}`, () => toggleDisabled(tool))}>
+                          {armed === `off-${tool}` ? '再按一次停用' : '停用'}
+                        </button>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+              <div className="gtb-btnrow">
+                {table.tools.includes('resource') && (
+                  <button type="button" className="gtb-btn" onClick={() => startEdit('resource')}>
+                    ＋ 新增資源種類
+                  </button>
+                )}
+                {table.tools.includes('score') && (
+                  <button type="button" className="gtb-btn" onClick={() => startEdit('score')}>
+                    ＋ 新增計分項目
+                  </button>
+                )}
+              </div>
+
+              <p className="gtb-sub">玩家與帳號綁定（綁定的人可以自己改自己的數字；移除玩家會一併刪掉他的數字）</p>
+              <ul className="gtb-list">
+                {table.players.map((p) => (
+                  <li key={`${p.id}-${p.name}`} className="gtb-line gtb-wrap">
+                    <input
+                      className="gtb-in gtb-grow"
+                      defaultValue={p.name}
+                      maxLength={12}
+                      aria-label="玩家名稱"
+                      onBlur={(e) => rename(p, e.target.value)}
+                    />
+                    <select
+                      className="gtb-in gtb-bind"
+                      aria-label="綁定帳號"
+                      value={p.userId ?? ''}
+                      onChange={(e) => void api.updatePlayer(p, { userId: e.target.value || null })}
+                    >
+                      <option value="">未綁定（訪客）</option>
+                      {members
+                        .filter((m) => m.userId && (m.userId === p.userId || !boundIds.has(m.userId)))
+                        .map((m) => (
+                          <option key={m.userId} value={m.userId ?? ''}>
+                            {m.name}
+                          </option>
+                        ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="gtb-link"
+                      onClick={() => press(`rp-${p.id}`, () => void api.removePlayer(p.id))}
+                    >
+                      {armed === `rp-${p.id}` ? '再按一次移除' : '移除'}
+                    </button>
                   </li>
-                )
-              })}
-            </ul>
-            <div className="gtb-btnrow">
-              {table.tools.includes('resource') && (
-                <button type="button" className="gtb-btn" onClick={() => startEdit('resource')}>
-                  ＋ 新增資源種類
-                </button>
+                ))}
+              </ul>
+              {freeMembers.length > 0 && table.players.length < MAX_PLAYERS && (
+                <div className="gtb-chips">
+                  {freeMembers.map((m) => (
+                    <button key={m.userId ?? m.name} type="button" onClick={() => void addMember(m.name, m.userId)}>
+                      ＋ {m.name}
+                    </button>
+                  ))}
+                </div>
               )}
-              {table.tools.includes('score') && (
-                <button type="button" className="gtb-btn" onClick={() => startEdit('score')}>
-                  ＋ 新增計分項目
+              <div className="gtb-line">
+                <input className="gtb-in gtb-grow" value={guest} maxLength={12} placeholder="加入訪客（不綁帳號）" onChange={(e) => setGuest(e.target.value)} />
+                <button
+                  type="button"
+                  className="gtb-btn"
+                  onClick={() => {
+                    void addMember(guest, null)
+                    setGuest('')
+                  }}
+                >
+                  加入
                 </button>
-              )}
+              </div>
+              {manageMsg && <p className="gtb-error">{manageMsg}</p>}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <div className="gtb-btnrow">
         <button type="button" className="gtb-btn" onClick={onBack}>
           ‹ 回房間
         </button>
-        <button
-          type="button"
-          className="gtb-btn"
-          onClick={() => press('close', () => update((t) => ({ ...t, closed: !t.closed })))}
-        >
-          {table.closed ? '重新開啟這桌' : armed === 'close' ? '再按一次，結束這桌' : '結束這桌'}
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            className="gtb-btn"
+            onClick={() => press('close', () => void api.saveSetup(table, { closed: !table.closed }))}
+          >
+            {table.closed ? '重新開啟這桌' : armed === 'close' ? '再按一次，結束這桌' : '結束這桌'}
+          </button>
+        )}
       </div>
     </div>
   )
 }
 
 /* ───────────── 入口：房間視窗裡的「遊戲桌」區塊 ───────────── */
+
+type View = { kind: 'list' } | { kind: 'setup' } | { kind: 'table'; id: string }
 
 export default function GameTable({
   gatheringId,
@@ -1086,71 +1242,183 @@ export default function GameTable({
   attendees: string[]
   onActiveChange: (active: boolean) => void
 }) {
-  const [store, setStore] = useState<RoomStore>(() => loadStore(gatheringId))
-  const [openId, setOpenId] = useState<string | null>(null)
+  const session = useSession()
+  const myId = session?.user?.id ?? null
+  const api = useRoomTables(gatheringId)
+  const [local, setLocal] = useState<LocalStore>(() => loadStore(gatheringId))
+  const [view, setView] = useState<View>({ kind: 'list' })
+  const [roster, setRoster] = useState<Member[]>([])
+  const [busy, setBusy] = useState(false)
+  const [startMsg, setStartMsg] = useState('')
   const { armed, press } = useArm()
 
   useEffect(() => {
-    saveStore(gatheringId, store)
-  }, [gatheringId, store])
+    saveStore(gatheringId, local)
+  }, [gatheringId, local])
 
   useEffect(() => {
-    onActiveChange(openId !== null)
-  }, [openId, onActiveChange])
+    onActiveChange(view.kind !== 'list')
+  }, [view.kind, onActiveChange])
 
-  const table = openId ? (store.tables.find((t) => t.id === openId) ?? null) : null
+  // 聚會成員（含帳號 id），給管理者帶入玩家、綁定帳號用
+  useEffect(() => {
+    if (!isAdmin) return
+    let alive = true
+    void supabase.rpc('get_room_players', { p_gathering: gatheringId }).then((res) => {
+      if (!alive || res.error) return
+      const rows = (res.data ?? []) as RosterRow[]
+      setRoster(rows.map((r) => ({ userId: r.out_user_id, name: r.out_name })))
+    })
+    return () => {
+      alive = false
+    }
+  }, [gatheringId, isAdmin])
 
-  function updateTable(id: string, fn: (t: GameTableData) => GameTableData) {
-    setStore((cur) => ({ ...cur, tables: cur.tables.map((t) => (t.id === id ? fn(t) : t)) }))
-  }
+  const members = useMemo<Member[]>(
+    () => (roster.length > 0 ? roster : attendees.map((n) => ({ userId: null, name: n }))),
+    [roster, attendees],
+  )
 
-  // 離場是聚會層級：記在這場聚會，也同步標到所有還沒結束的桌子
+  // 離場名單只存在管理者這支手機，套到每桌的玩家上
+  const tables = useMemo(
+    () =>
+      api.tables.map((t) => ({
+        ...t,
+        players: t.players.map((p) => ({ ...p, left: local.left.includes(p.name) })),
+      })),
+    [api.tables, local.left],
+  )
+  const shown = tables.filter((t) => isAdmin || t.phase === 'play')
+  const table = view.kind === 'table' ? (tables.find((t) => t.id === view.id) ?? null) : null
+
+  // 開著的那桌被刪掉（例如管理者刪了）就回到清單
+  useEffect(() => {
+    if (view.kind === 'table' && api.loaded && !table) setView({ kind: 'list' })
+  }, [view, api.loaded, table])
+
   function setLeft(name: string, left: boolean) {
-    setStore((cur) => ({
+    setLocal((cur) => ({
       ...cur,
       left: left ? (cur.left.includes(name) ? cur.left : [...cur.left, name]) : cur.left.filter((x) => x !== name),
-      tables: cur.tables.map((t) =>
-        t.closed ? t : { ...t, players: t.players.map((p) => (p.name === name ? { ...p, left } : p)) },
-      ),
     }))
   }
 
-  function openNew() {
-    const t = newTable('', null)
-    setStore((cur) => ({ ...cur, tables: [...cur.tables, t] }))
-    setOpenId(t.id)
+  function updateDraft(fn: (d: Draft) => Draft) {
+    setLocal((cur) => (cur.draft ? { ...cur, draft: fn(cur.draft) } : cur))
   }
 
-  function deleteTable(id: string) {
-    setStore((cur) => ({ ...cur, tables: cur.tables.filter((t) => t.id !== id) }))
+  function openSetup() {
+    setStartMsg('')
+    setLocal((cur) => (cur.draft ? cur : { ...cur, draft: newDraft() }))
+    setView({ kind: 'setup' })
   }
 
-  if (!isAdmin) return null
+  async function startDraft() {
+    if (!local.draft || busy) return
+    setBusy(true)
+    setStartMsg('')
+    const r = await api.createFromDraft(local.draft)
+    setBusy(false)
+    if (!r.id) {
+      setStartMsg(r.message || '建立失敗，請再試一次。')
+      return
+    }
+    setLocal((cur) => ({ ...cur, draft: null }))
+    setView({ kind: 'table', id: r.id })
+  }
 
-  if (table) {
+  async function removeTable(id: string) {
+    const ok = await api.deleteTable(id)
+    if (!ok) return
+    setLocal((cur) => {
+      const dice = { ...cur.dice }
+      delete dice[id]
+      return { ...cur, dice }
+    })
+  }
+
+  const errorLine = api.error ? (
+    <p className="gtb-error">
+      {api.error}{' '}
+      <button type="button" className="gtb-link" onClick={api.clearError}>
+        知道了
+      </button>
+    </p>
+  ) : null
+
+  // 一般出席者：沒有桌就不顯示這個區塊
+  if (!isAdmin && (!api.loaded || shown.length === 0)) return null
+
+  if (view.kind === 'setup' && isAdmin && local.draft) {
     return (
       <div className="gtb-root gtb-root-x">
         <div className="gtb-head">
-          <p className="gtb-title">{table.title.trim() || '新的一桌'}</p>
-          <span className="gtb-badge">{table.phase === 'setup' ? '設定中' : table.closed ? '已結束' : '進行中'}</span>
+          <p className="gtb-title">{local.draft.title.trim() || '新的一桌'}</p>
+          <span className="gtb-badge">設定中</span>
         </div>
+        {errorLine}
+        <Setup
+          draft={local.draft}
+          update={updateDraft}
+          games={games}
+          members={members}
+          leftNames={local.left}
+          busy={busy}
+          message={startMsg}
+          onBack={() => setView({ kind: 'list' })}
+          onStart={() => void startDraft()}
+        />
+      </div>
+    )
+  }
+
+  if (table) {
+    const box = local.dice[table.id] ?? emptyDice()
+    return (
+      <div className="gtb-root gtb-root-x">
+        <div className="gtb-head">
+          <p className="gtb-title">{table.title.trim() || '未命名的一桌'}</p>
+          <span className="gtb-badge">{table.phase === 'setup' ? '未完成' : table.closed ? '已結束' : '進行中'}</span>
+        </div>
+        {errorLine}
         {table.phase === 'setup' ? (
-          <Setup
-            table={table}
-            update={(fn) => updateTable(table.id, fn)}
-            games={games}
-            attendees={attendees}
-            leftNames={store.left}
-            onBack={() => setOpenId(null)}
-          />
+          <div className="gtb-body">
+            <p className="gtb-muted">這桌沒有設定完成（可能是中途斷線），請刪除後重新開一桌。</p>
+            <div className="gtb-btnrow">
+              <button type="button" className="gtb-btn" onClick={() => setView({ kind: 'list' })}>
+                ‹ 回房間
+              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  className="gtb-btn"
+                  onClick={() =>
+                    press(`del-${table.id}`, () => {
+                      setView({ kind: 'list' })
+                      void removeTable(table.id)
+                    })
+                  }
+                >
+                  {armed === `del-${table.id}` ? '再按一次刪除' : '刪除這桌'}
+                </button>
+              )}
+            </div>
+          </div>
         ) : (
           <Play
+            key={table.id}
             table={table}
-            update={(fn) => updateTable(table.id, fn)}
+            api={api}
             gatheringId={gatheringId}
             isAdmin={isAdmin}
+            myId={myId}
+            box={box}
+            onBox={(fn) =>
+              setLocal((cur) => ({ ...cur, dice: { ...cur.dice, [table.id]: fn(cur.dice[table.id] ?? emptyDice()) } }))
+            }
+            members={members}
             onLeft={setLeft}
-            onBack={() => setOpenId(null)}
+            onBack={() => setView({ kind: 'list' })}
           />
         )}
       </div>
@@ -1161,38 +1429,60 @@ export default function GameTable({
     <div className="gtb-root gtb-root-x">
       <div className="gtb-head">
         <p className="gtb-title">遊戲桌</p>
-        <button type="button" className="gtb-link gtb-right" onClick={openNew}>
-          ＋ 開新桌
-        </button>
+        {isAdmin && (
+          <button type="button" className="gtb-link gtb-right" onClick={openSetup}>
+            ＋ 開新桌
+          </button>
+        )}
       </div>
-      {store.tables.length === 0 ? (
-        <p className="gtb-muted">還沒有開桌。按「開新桌」選遊戲、工具與玩家。資料只存在這支手機。</p>
+      {errorLine}
+      {!api.loaded ? (
+        <p className="gtb-muted">讀取中…</p>
+      ) : shown.length === 0 && !local.draft ? (
+        <p className="gtb-muted">還沒有開桌。按「開新桌」選遊戲、工具與玩家，開桌後這場聚會的人都看得到。</p>
       ) : (
         <ul className="gtb-tablelist">
-          {store.tables.map((t) => (
+          {isAdmin && local.draft && (
+            <li>
+              <button type="button" className="gtb-tbtn" onClick={openSetup}>
+                <b>{local.draft.title.trim() || '未命名的一桌'}</b>
+                <span>設定到一半（只在這支手機）・繼續</span>
+              </button>
+              <button
+                type="button"
+                className="gtb-link"
+                onClick={() => press('draft', () => setLocal((cur) => ({ ...cur, draft: null })))}
+              >
+                {armed === 'draft' ? '再按一次放棄' : '放棄'}
+              </button>
+            </li>
+          )}
+          {shown.map((t) => (
             <li key={t.id}>
-              <button type="button" className="gtb-tbtn" onClick={() => setOpenId(t.id)}>
+              <button type="button" className="gtb-tbtn" onClick={() => setView({ kind: 'table', id: t.id })}>
                 <b>{t.title.trim() || '未命名的一桌'}</b>
                 <span>
-                  {t.players.length} 人・{t.phase === 'setup' ? '設定中' : t.closed ? '已結束' : '進行中'}
+                  {t.players.length} 人・{t.phase === 'setup' ? '未完成' : t.closed ? '已結束' : '進行中'}
                 </span>
               </button>
-              <button type="button" className="gtb-link" onClick={() => press(`del-${t.id}`, () => deleteTable(t.id))}>
-                {armed === `del-${t.id}` ? '再按一次刪除' : '刪除'}
-              </button>
+              {isAdmin && (
+                <button type="button" className="gtb-link" onClick={() => press(`del-${t.id}`, () => void removeTable(t.id))}>
+                  {armed === `del-${t.id}` ? '再按一次刪除' : '刪除'}
+                </button>
+              )}
             </li>
           ))}
         </ul>
       )}
-      {attendees.length > 0 && (
+      {isAdmin && members.length > 0 && (
         <details className="gtb-leave">
-          <summary>出席者離場（離場的人不會被一鍵帶入新桌）</summary>
+          <summary>出席者離場（離場的人不會被一鍵帶入新桌；只記在這支手機）</summary>
           <div className="gtb-chips">
-            {attendees.map((n) => {
-              const left = store.left.includes(n)
+            {members.map((m) => {
+              const left = local.left.includes(m.name)
               return (
-                <button key={n} type="button" className={left ? 'on' : ''} onClick={() => setLeft(n, !left)}>
-                  {n}
+                <button key={m.userId ?? m.name} type="button" className={left ? 'on' : ''} onClick={() => setLeft(m.name, !left)}>
+                  {m.name}
                   {left ? '・已離場' : ''}
                 </button>
               )
@@ -1203,4 +1493,3 @@ export default function GameTable({
     </div>
   )
 }
-
