@@ -1,4 +1,5 @@
-﻿import HomeToolbar from './components/HomeToolbar'
+import SortControl from './components/SortControl'
+import SortLevels from './components/SortLevels'
 import NewArrivals from './components/NewArrivals'
 import './styles/board-entry.css'
 import RulebookPage from './components/RulebookPage'
@@ -59,6 +60,7 @@ import {
   isNewUntilActive,
 } from './lib/libraryTypes'
 import { getPlayerSortValue, compareNullableNumbers } from './lib/gameFormat'
+import StatusLegend from './components/StatusLegend'
 import CoverImage from './components/CoverImage'
 import TopBar, { type NavPage } from './components/TopBar'
 import { useBackClose } from './lib/useBackClose'
@@ -70,11 +72,15 @@ import {
   type ExtraSort,
 } from './lib/libraryTypes'
 import FilterDrawer from './components/FilterDrawer'
+import PropertiesControl from './components/PropertiesControl'
 import {
   LIST_COLUMN_LABELS,
   LIST_COLUMN_WIDTHS,
   LIST_COLUMN_KEYS,
+  loadListColumns,
+  saveListColumns,
   type ListColumnKey,
+  type ListColumnsState,
 } from './lib/listColumns'
 import FilterTags, { type FilterTag } from './components/FilterTags'
 import GameCard from './components/GameCard'
@@ -683,14 +689,23 @@ function Library({
 
   const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode)
 
-  // 清單欄位固定全部顯示、照預設順序（欄位設定介面已拿掉）
-  const visibleListColumns: ListColumnKey[] = [...LIST_COLUMN_KEYS]
+  // 清單欄位（屬性）：顯示／隱藏與順序，存在這支瀏覽器
+  const [listColumns, setListColumns] = useState<ListColumnsState>(loadListColumns)
+
+  function changeListColumns(next: ListColumnsState) {
+    setListColumns(next)
+    saveListColumns(next)
+  }
+
+  const visibleListColumns = listColumns.order.filter(
+    (key) => !listColumns.hidden.includes(key),
+  )
   const listGridStyle = {
     '--lv-cols': `48px minmax(0, 1fr) ${visibleListColumns
       .map((key) => LIST_COLUMN_WIDTHS[key])
       .join(' ')}${visibleListColumns.length > 0 ? ' ' : ''}${isAdmin ? '116px ' : ''}72px`,
     ...Object.fromEntries(
-      LIST_COLUMN_KEYS.map((key, index) => [`--o-${key}`, index + 1]),
+      listColumns.order.map((key, index) => [`--o-${key}`, index + 1]),
     ),
   } as CSSProperties
 
@@ -1173,38 +1188,59 @@ function Library({
       <main>
         <section className="hero">
           <div className="hero-inner">
+            <div className="hero-copy">
+              <h1>
+                今天，想玩<span>哪一款？</span>
+              </h1>
+            </div>
             <div className="hero-tools">
-              <HomeToolbar
-                searchText={searchText}
-                onSearchChange={setSearchText}
-                sortBy={effectiveSortBy}
-                onSortByChange={handleSetSortBy}
-                sortDirection={sortDirection}
-                onToggleDirection={() =>
-                  setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))
-                }
-                extraSorts={extraSorts}
-                onExtraSortsChange={setExtraSorts}
-                isAdmin={isAdmin}
-                hasSession={hasSession}
-                filterCount={advancedFilterCount - Number(groupByMine) - hiddenGroups.length}
-                onOpenFilter={() => setIsFilterOpen(true)}
-                showNew={showNew}
-                onShowNewChange={setShowNew}
-                showCardInfo={showCardInfo}
-                onShowCardInfoChange={setShowCardInfo}
-                viewMode={viewMode}
-                onViewModeChange={changeViewMode}
-                hiddenGroups={hiddenGroups}
-                onHiddenGroupsChange={setHiddenGroups}
-                groupByMine={groupByMine}
-                onGroupByMineChange={setGroupByMine}
-                showBoard={vip.isVip || isAdmin}
-                boardBadge={boardBadge}
-                onOpenBoard={openAllDiscussions}
-                rightSlot={<ToolsButton onSelect={handleToolsChoice} />}
-              />
+              <label className="search-box">
+                <span aria-hidden="true">⌕</span>
+                <input
+                  type="search"
+                  placeholder="搜尋桌遊名稱，例如：璀璨寶石"
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  aria-label="搜尋桌遊名稱"
+                />
+                <button
+                  type="button"
+                  className="search-filter-btn"
+                  aria-label={
+                    advancedFilterCount > 0
+                      ? `更多篩選（已套用 ${advancedFilterCount} 項，顯示 ${displayedGameCount} / ${boardGames.length} 款）`
+                      : '更多篩選'
+                  }
+                  onClick={() => setIsFilterOpen(true)}
+                >
+                  <span aria-hidden="true">☰</span>
+                  {advancedFilterCount > 0 ? (
+                    <span>
+                      {displayedGameCount} / {boardGames.length}
+                    </span>
+                  ) : (
+                    <span>篩選</span>
+                  )}
+                </button>
+              </label>
               <FilterTags tags={filterTags} />
+              <div className="hero-tools-row explore-meta">
+                <StatusLegend />
+                <span className="board-entry-group">
+                  {(vip.isVip || isAdmin) && (
+                    <button
+                      type="button"
+                      className="explore-mine-btn board-entry-btn"
+                      aria-label={boardBadge ? `留言板，${boardBadge} 則新討論` : '留言板'}
+                      onClick={openAllDiscussions}
+                    >
+                      <span aria-hidden="true">💬</span> 留言板
+                      {boardBadge && <span className="board-entry-badge">{boardBadge}</span>}
+                    </button>
+                  )}
+                  <ToolsButton onSelect={handleToolsChoice} />
+                </span>
+              </div>
             </div>
           </div>
         </section>
@@ -1217,6 +1253,48 @@ function Library({
             onOpen={openGame}
           />
         )}
+        <div className="explore-home explore-types">
+          <div className="explore-types-row">
+            <div className="heading-actions explore-sort">
+              <PropertiesControl
+                showNew={showNew}
+                onShowNewChange={setShowNew}
+                showCardInfo={showCardInfo}
+                onShowCardInfoChange={setShowCardInfo}
+                viewMode={viewMode}
+                onViewModeChange={changeViewMode}
+                columns={listColumns}
+                onColumnsChange={changeListColumns}
+              />
+              <SortControl
+                sortBy={effectiveSortBy}
+                isAdmin={isAdmin}
+                showMyScores={!!session}
+                setSortBy={handleSetSortBy}
+                hideDirection
+                sortDirection={sortDirection}
+                onToggleDirection={() =>
+                  setSortDirection((current) =>
+                    current === 'asc' ? 'desc' : 'asc',
+                  )
+                }
+              />
+              <SortLevels
+                primaryKey={effectiveSortBy}
+                primaryDirection={sortDirection}
+                onTogglePrimary={() =>
+                  setSortDirection((current) =>
+                    current === 'asc' ? 'desc' : 'asc',
+                  )
+                }
+                extraSorts={extraSorts}
+                onChange={setExtraSorts}
+                isAdmin={isAdmin}
+                hasSession={hasSession}
+              />
+            </div>
+          </div>
+        </div>
 
         <section className="library">
           <div className="section-heading explore-head">
@@ -1266,6 +1344,11 @@ function Library({
           {displayedGameCount > 0 ? (
             <div
               className={`game-grid view-${viewMode}${viewMode === 'list' ? (showCardInfo ? ' lv-info' : ' lv-noinfo') : ''
+                }${viewMode === 'list' && isAdmin ? ' lv-admin' : ''}${viewMode === 'list'
+                  ? LIST_COLUMN_KEYS.filter((key) => listColumns.hidden.includes(key))
+                    .map((key) => ` lv-hide-${key}`)
+                    .join('')
+                  : ''
                 }`}
               style={viewMode === 'list' ? listGridStyle : undefined}
             >

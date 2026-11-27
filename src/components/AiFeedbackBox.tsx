@@ -3,7 +3,7 @@ import { submitErrata } from '../lib/useGameErrata'
 import { useIsAdmin } from '../lib/useIsAdmin'
 import { clearFeedbackCtx, parseFeedback, type FeedbackCtx } from '../lib/aiAnswer'
 
-// AI 回饋投稿：貼上 AI 回覆最後的回饋區塊，檢查核對碼與頁碼後送出待審核。
+// AI 回覆投稿：貼上 AI 回覆最後的回饋區塊，檢查核對碼與頁碼後送出待審核。
 // 規則助手與詞庫頁共用；管理者與 VIP 都可以投稿。
 export default function AiFeedbackBox({
     bggName,
@@ -65,7 +65,7 @@ export default function AiFeedbackBox({
 
     return (
         <div className="er-box ra2-fb" ref={boxRef}>
-            <p className="er-box-title">AI 回饋投稿</p>
+            <p className="er-box-title">AI 回覆投稿</p>
             {sent ? (
                 <p className="er-note">
                     {isAdmin ? '已直接核准並公開。' : '已送出，管理者審核通過後才會公開。謝謝你分享！'}

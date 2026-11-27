@@ -2,7 +2,7 @@ import { errataTag, ERRATA_MAX_CONTENT, type Errata } from './useGameErrata'
 import { scopeLabel } from './docLabels'
 import type { RulebookChunk } from './useRulebookSearch'
 
-// 規則助手與詞庫頁共用：複製給 AI 的內容、AI 回饋的核對碼與解析。
+// 規則助手與詞庫頁共用：複製給 AI 的內容、AI 回覆投稿的核對碼與解析。
 
 export async function copyText(text: string): Promise<boolean> {
     try {
@@ -25,7 +25,7 @@ export function chunkScope(c: RulebookChunk): string {
     return scopeLabel(x.doc_scope, x.doc_expansion)
 }
 
-// AI 回饋投稿：只收「複製給我的 AI」之後、帶著核對碼與頁碼的固定格式
+// AI 回覆投稿：只收「複製給我的 AI」之後、帶著核對碼與頁碼的固定格式
 export type FeedbackCtx = { code: string; pages: number[]; ts: number }
 const FEEDBACK_TTL = 24 * 60 * 60 * 1000
 function fbKey(bggName: string): string {
@@ -158,7 +158,7 @@ export function buildAnswerPrompt(args: {
 答案：（只放【依文件】的結論，繁體中文，600 字內）
 依據：（只寫上面片段標示的頁碼，例如 第 4 頁、第 11 頁；文件沒有依據就寫「無」）
 ===結束===
-區塊之後再另起一行，原話告訴我：「如果這個回答對你有幫助，可以把上面『===規則助手回饋 v1===』到『===結束===』整段貼回規則助手的「AI 回饋投稿」欄，管理者審核後會分享給大家。」
+區塊之後再另起一行，原話告訴我：「如果這個回答對你有幫助，可以把上面『===規則助手回饋 v1===』到『===結束===』整段貼回規則助手的「AI 回覆投稿」欄，管理者審核後會分享給大家。」
 
 問題：${q}
 

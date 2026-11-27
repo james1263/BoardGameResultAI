@@ -36,12 +36,16 @@ function optionList(isAdmin: boolean, showMyScores: boolean) {
 
 export default function SortLevels({
   primaryKey,
+  primaryDirection,
+  onTogglePrimary,
   extraSorts,
   onChange,
   isAdmin,
   hasSession,
 }: {
   primaryKey: SortKey
+  primaryDirection: 'asc' | 'desc'
+  onTogglePrimary: () => void
   extraSorts: ExtraSort[]
   onChange: (next: ExtraSort[]) => void
   isAdmin: boolean
@@ -85,6 +89,15 @@ export default function SortLevels({
     onChange(extraSorts.filter((_, i) => i !== index))
   }
 
+  const primaryShown: 'asc' | 'desc' =
+    primaryKey === 'scoreRank'
+      ? primaryDirection === 'asc'
+        ? 'desc'
+        : 'asc'
+      : primaryDirection
+  const primaryLabel =
+    options.find((o) => o.value === primaryKey)?.label ?? ''
+
   const activeCount = extraSorts.filter(
     (s) => isSortKeyAllowed(s.key, isAdmin, hasSession) && s.key !== primaryKey,
   ).length
@@ -97,17 +110,31 @@ export default function SortLevels({
         aria-expanded={open}
         aria-label={
           activeCount > 0
-            ? `次要排序，已設定 ${activeCount} 層`
-            : '新增次要排序'
+            ? `排序設定，目前${primaryShown === 'asc' ? '升冪' : '降冪'}，另有 ${activeCount} 層次要排序`
+            : `排序設定，目前${primaryShown === 'asc' ? '升冪' : '降冪'}`
         }
         onClick={() => setOpen((v) => !v)}
       >
-        <span aria-hidden="true">＋</span>
-        {activeCount > 0 ? <span>{activeCount}</span> : <span>排序</span>}
+        <span aria-hidden="true">{primaryShown === 'asc' ? '↑' : '↓'}</span>
+        <span>{activeCount > 0 ? `+${activeCount}` : '排序'}</span>
       </button>
 
       {open && (
         <div className="sort-levels-panel" role="dialog" aria-label="次要排序">
+          <div className="sort-levels-row">
+            <span className="sort-levels-step">先依</span>
+            <span className="sort-levels-primary">{primaryLabel}</span>
+            <button
+              type="button"
+              className="sort-levels-dir"
+              aria-label={
+                primaryShown === 'asc' ? '切換為降冪排序' : '切換為升冪排序'
+              }
+              onClick={onTogglePrimary}
+            >
+              {primaryShown === 'asc' ? '↑' : '↓'}
+            </button>
+          </div>
           <p className="sort-levels-tip">
             第一層相同時，才依下面的順序再排。
           </p>

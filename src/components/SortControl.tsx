@@ -7,6 +7,7 @@ export default function SortControl({
   onToggleDirection,
   isAdmin = false,
   showMyScores = false,
+  hideDirection = false,
 }: {
   sortBy: SortKey
   setSortBy: (value: SortKey) => void
@@ -15,6 +16,8 @@ export default function SortControl({
   isAdmin?: boolean
   // 一般使用者（已登入）才有「我的整體分數／我的綜合評分」
   showMyScores?: boolean
+  // 升降冪鈕改放進「排序」面板時隱藏
+  hideDirection?: boolean
 }) {
   // 綜合分數＝700 減 score_rank，內部由小到大等於畫面上由大到小，所以標示要反過來
   const flip = sortBy === 'scoreRank'
@@ -51,6 +54,7 @@ export default function SortControl({
         <option value="bggDifficulty">BGG 難度</option>
         <option value="bggTime">遊戲時間</option>
       </select>
+      {!hideDirection && (
       <button
         type="button"
         className="sort-dir"
@@ -61,6 +65,7 @@ export default function SortControl({
       >
         {shownDirection === 'asc' ? '↑ 升冪' : '↓ 降冪'}
       </button>
+      )}
     </div>
   )
 }

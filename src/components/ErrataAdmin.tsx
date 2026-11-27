@@ -258,7 +258,7 @@ export default function ErrataAdmin({
             <div className="er-title">
               《{item.game_name || item.bgg_name}》{item.title}
               {item.kind === 'ai_answer' && (
-                <small className="er-src"> ・AI 回饋（請回規則書核對頁碼與答案）</small>
+                <small className="er-src"> ・AI 回覆（請回規則書核對頁碼與答案）</small>
               )}
             </div>
             <ErrataBody content={item.content} />
@@ -381,7 +381,7 @@ export default function ErrataAdmin({
                   {item.title}
                   {item.from_player && (
                     <small className="er-src">
-                      {' '}・玩家投稿{item.kind === 'ai_answer' ? '・AI 回饋' : ''}（{item.status === 'rejected' ? '已退回' : '已核准'}）
+                      {' '}・玩家投稿{item.kind === 'ai_answer' ? '・AI 回覆' : ''}（{item.status === 'rejected' ? '已退回' : '已核准'}）
                     </small>
                   )}
                 </div>
@@ -483,7 +483,7 @@ export default function ErrataAdmin({
                     <div className="er-title">
                       {row.title}
                       <small className="er-src">
-                        {' '}・{row.from_player ? (row.kind === 'ai_answer' ? '玩家投稿（AI 回饋）' : '玩家投稿') : '管理者記錄'}・
+                        {' '}・{row.from_player ? (row.kind === 'ai_answer' ? '玩家投稿（AI 回覆）' : '玩家投稿') : '管理者記錄'}・
                         {row.status === 'pending' ? '待審核' : row.status === 'rejected' ? '已退回' : '已核准'}
                       </small>
                     </div>
