@@ -197,7 +197,7 @@ export function parseRows(raw: unknown): SheetRow[] {
 }
 
 // ───────────── 資源計數器目前的數量（只放記憶體，同一次開小工具視窗期間共用） ─────────────
-// 計分表的「取自資源」按「帶入」時才讀；關掉小工具視窗（GameTools）就清掉。不存瀏覽器、不存資料庫。
+// 計分表的「取自資源」即時讀這裡；關掉小工具視窗或移除資源計數器就清掉。不存瀏覽器、不存資料庫。
 
 export type ResourceSnapshot = {
   title: string
@@ -205,6 +205,19 @@ export type ResourceSnapshot = {
 }
 
 let snapshot: ResourceSnapshot | null = null
+const listeners = new Set<() => void>()
+
+function emit(): void {
+  listeners.forEach((fn) => fn())
+}
+
+// 計分表訂閱資源數量的變動（資源計數器每改一次，連動的計分列就跟著重算）
+export function subscribeResourceSnapshot(fn: () => void): () => void {
+  listeners.add(fn)
+  return () => {
+    listeners.delete(fn)
+  }
+}
 
 export function setResourceSnapshot(
   title: string,
@@ -220,6 +233,7 @@ export function setResourceSnapshot(
       return { name, byName }
     }),
   }
+  emit()
 }
 
 export function getResourceSnapshot(): ResourceSnapshot | null {
@@ -227,7 +241,15 @@ export function getResourceSnapshot(): ResourceSnapshot | null {
 }
 
 export function clearResourceSnapshot(): void {
+  if (snapshot === null) return
   snapshot = null
+  emit()
+}
+
+// 目前資源計數器裡有哪些資源名稱（給計分表設定「取自資源」時挑）
+export function resourceNames(): string[] {
+  const first = snapshot?.players[0]
+  return first ? Object.keys(first.byName) : []
 }
 
 // 第 player 位玩家在資源計數器裡的數量換算成這一列的數字（每 per 個算 1，無條件捨去）；找不到回傳 null
@@ -239,6 +261,15 @@ export function pullAmount(row: SheetRow, player: number): number | null {
   if (v === undefined) return null
   const per = Math.max(1, row.per ?? 1)
   return Math.max(0, Math.min(MAX_VALUE, Math.floor(v / per)))
+}
+
+// 即時連動：none＝這一列沒有連動；missing＝連動的資源已不存在（改手動輸入）；ok＝目前換算出的數字
+export type LiveAmount = { state: 'none' } | { state: 'missing' } | { state: 'ok'; value: number }
+
+export function liveAmount(row: SheetRow, player: number): LiveAmount {
+  if (!row.from) return { state: 'none' }
+  const v = pullAmount(row, player)
+  return v === null ? { state: 'missing' } : { state: 'ok', value: v }
 }
 
 type TemplateRpc = {

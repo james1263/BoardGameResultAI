@@ -6,29 +6,33 @@ import {
   deleteTemplate,
   fmt,
   getResourceSnapshot,
+  liveAmount,
   loadTemplates,
   newRowId,
-  pullAmount,
+  resourceNames,
   rowPoints,
   saveTemplate,
   setResourceSnapshot,
+  subscribeResourceSnapshot,
   toolOf,
   type SheetRow,
   type SheetTemplate,
   type ToolKind,
 } from '../lib/scoreSheet'
 import IconPresetPicker from './IconPresetPicker'
+import { WS_MAX_NAME, WS_MAX_PLAYERS, WS_MIN_PLAYERS, resizeNames } from '../lib/toolWorkspace'
 import '../styles/score-sheet.css'
 
 // 兩個小工具共用這支元件：
 //   tool="resource"＝資源計數器：每人每項資源用 ＋／− 記數量，不計分。
 //   tool="score"   ＝計分表：每一列是算分項目（符號、每個算幾分），輸入數字後算總分與排名。
 // 單機使用：數字只存這支手機的瀏覽器（已儲存的範本才會記），不寫資料庫；範本本身才存資料庫。
+// 在小工具工作區裡：設定（範本清單與編輯）按「下一步」交給工作區；玩家名單由工作區共用；
+// 計分表「取自資源」的列即時讀資源計數器的數字（資源被移除就顯示「資源已不存在」，改手動輸入）。
 
 type Mode =
   | { name: 'list' }
   | { name: 'edit'; draft: SheetTemplate }
-  | { name: 'play'; tpl: SheetTemplate; from: Mode }
 
 const RUN_KEY = 'boardgame-sheet-run|'
 
@@ -116,6 +120,7 @@ function SheetEditor({
   isVip,
   onBack,
   onUse,
+  useLabel,
   onChanged,
 }: {
   initial: SheetTemplate
@@ -123,6 +128,7 @@ function SheetEditor({
   isVip: boolean
   onBack: () => void
   onUse: (tpl: SheetTemplate) => void
+  useLabel: string
   onChanged: () => void
 }) {
   const isRes = tool === 'resource'
@@ -230,6 +236,11 @@ function SheetEditor({
         <span className="ss-bar-title">{savedId ? '編輯表單' : '新增表單'}</span>
         <span className="ss-bar-space" />
       </div>
+      <datalist id="ss-res-names">
+        {resourceNames().map((n) => (
+          <option key={n} value={n} />
+        ))}
+      </datalist>
       <div className="ss-scroll">
         <label className="gt-field ss-title-field">
           名稱
@@ -351,7 +362,7 @@ function SheetEditor({
                         checked={row.linked}
                         onChange={(event) => update(row.id, { linked: event.target.checked })}
                       />
-                      取自資源計數器（選填，使用時按「帶入」；名稱要和資源計數器一樣）
+                      取自資源計數器（選填，資源數字改了這裡會即時跟著變）
                     </label>
                   </div>
                 )}
@@ -364,6 +375,7 @@ function SheetEditor({
                         value={row.fromStr}
                         maxLength={20}
                         placeholder="例：木頭"
+                        list="ss-res-names"
                         onChange={(event) => update(row.id, { fromStr: event.target.value })}
                       />
                     </label>
@@ -432,7 +444,7 @@ function SheetEditor({
 
         <div className="gt-actions ss-actions">
           <button type="button" className="gt-primary" onClick={handleUse}>
-            開始使用
+            {useLabel}
           </button>
           {isVip ? (
             <button type="button" className="gt-secondary" disabled={busy} onClick={() => void handleSave()}>
@@ -449,7 +461,7 @@ function SheetEditor({
 
 /* ───────────── 使用：輸入與總分 ───────────── */
 
-type Run = { names: string[]; values: Array<Record<string, number>> }
+type Run = { values: Array<Record<string, number>> }
 
 function makeValues(tpl: SheetTemplate): Record<string, number> {
   const v: Record<string, number> = {}
@@ -458,25 +470,19 @@ function makeValues(tpl: SheetTemplate): Record<string, number> {
 }
 
 function defaultRun(tpl: SheetTemplate, np: number): Run {
-  return {
-    names: Array.from({ length: np }, (_, i) => `玩家${i + 1}`),
-    values: Array.from({ length: np }, () => makeValues(tpl)),
-  }
+  return { values: Array.from({ length: np }, () => makeValues(tpl)) }
 }
 
-function loadRun(tpl: SheetTemplate): Run {
-  const fallback = defaultRun(tpl, 4)
-  if (!tpl.id) return fallback
+// 只讀回每位玩家的數字；玩家名單由工作區共用，不存在這裡
+function loadRun(tpl: SheetTemplate, np: number): Run {
+  const run = defaultRun(tpl, np)
+  if (!tpl.id) return run
   try {
     const raw = localStorage.getItem(RUN_KEY + tpl.id)
-    if (!raw) return fallback
+    if (!raw) return run
     const p = JSON.parse(raw) as Partial<Run>
-    if (!Array.isArray(p.names) || !Array.isArray(p.values)) return fallback
-    const n = Math.max(2, Math.min(8, p.names.length))
-    const run = defaultRun(tpl, n)
-    for (let i = 0; i < n; i += 1) {
-      const nm = p.names[i]
-      if (typeof nm === 'string') run.names[i] = nm.slice(0, 12)
+    if (!Array.isArray(p.values)) return run
+    for (let i = 0; i < np; i += 1) {
       const saved = p.values[i] as Record<string, unknown> | undefined
       const target = run.values[i]
       if (saved && typeof saved === 'object' && target) {
@@ -488,49 +494,36 @@ function loadRun(tpl: SheetTemplate): Run {
     }
     return run
   } catch {
-    return fallback
+    return run
   }
 }
 
-function PullIcon() {
-  return (
-    <svg
-      width="1em"
-      height="1em"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.4}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ verticalAlign: '-0.12em' }}
-      aria-hidden="true"
-    >
-      <path d="M12 3v11M7 10l5 5 5-5M5 20h14" />
-    </svg>
-  )
-}
-
-function pullFail(name: string, p: number): string {
-  const snap = getResourceSnapshot()
-  if (!snap) return '還沒有資源數量。先用資源計數器輸入，再回來帶入。'
-  if (!snap.players[p]) return `資源計數器沒有第 ${p + 1} 位玩家（玩家依順序對應）。`
-  return `資源計數器裡找不到「${name}」，名稱要一樣。`
-}
-
-function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
+export function PlayView({
+  tpl,
+  names,
+  onNames,
+  active,
+}: {
+  tpl: SheetTemplate
+  names: string[]
+  onNames: (names: string[]) => void
+  active: boolean
+}) {
   const rows = tpl.rows
   // 資源計數器不計分：沒有總分分頁、沒有每列分數
   const isRes = toolOf(tpl) === 'resource'
-  const [run, setRun] = useState<Run>(() => loadRun(tpl))
+  const np = names.length
+  const [run, setRun] = useState<Run>(() => loadRun(tpl, np))
   const [tab, setTab] = useState<'input' | 'total'>('input')
   const [sel, setSel] = useState({ p: 0, i: 0 })
   const [open, setOpen] = useState<number | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
-  const [pullMsg, setPullMsg] = useState('')
   const fresh = useRef(true)
   const resetTimer = useRef<number | null>(null)
-  const np = run.names.length
+  const [, setTick] = useState(0)
+
+  // 資源計數器的數字一變，連動的計分列就重新算
+  useEffect(() => subscribeResourceSnapshot(() => setTick((n) => n + 1)), [])
 
   useEffect(() => {
     if (!tpl.id) return
@@ -541,11 +534,22 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
     }
   }, [run, tpl.id])
 
-  // 資源計數器：把目前數量放進記憶體，計分表的「取自資源」按「帶入」時讀
+  // 玩家人數（工作區共用）變了：這個表的數字跟著補齊或截掉
+  useEffect(() => {
+    setRun((prev) => {
+      if (prev.values.length === np) return prev
+      const values = prev.values.slice(0, np)
+      while (values.length < np) values.push(makeValues(tpl))
+      return { values }
+    })
+    setSel((cur) => (cur.p > np - 1 ? { p: np - 1, i: 0 } : cur))
+  }, [np, tpl])
+
+  // 資源計數器：把目前數量放進記憶體，計分表「取自資源」的列即時讀
   useEffect(() => {
     if (!isRes) return
-    setResourceSnapshot(tpl.title, rows, run.names, run.values)
-  }, [isRes, tpl.title, rows, run])
+    setResourceSnapshot(tpl.title, rows, names, run.values)
+  }, [isRes, tpl.title, rows, names, run])
 
   useEffect(
     () => () => {
@@ -555,11 +559,21 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
   )
 
   useEffect(() => {
-    if (tab !== 'input') return
+    if (!active || tab !== 'input') return
     document.querySelector('[data-ss-active="1"]')?.scrollIntoView({ block: 'nearest' })
-  }, [sel, tab])
+  }, [sel, tab, active])
+
+  // 連動的列：資源還在 → 用資源換算的數字（不能手動改）；資源不在 → 手動輸入
+  function isLive(row: SheetRow, p: number): boolean {
+    return !isRes && liveAmount(row, p).state === 'ok'
+  }
 
   function valueOf(p: number, id: string): number | undefined {
+    const row = rows.find((r) => r.id === id)
+    if (row && !isRes) {
+      const live = liveAmount(row, p)
+      if (live.state === 'ok') return live.value
+    }
     return run.values[p]?.[id]
   }
 
@@ -583,7 +597,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
 
   function press(d: number) {
     const row = rows[sel.i]
-    if (!row) return
+    if (!row || isLive(row, sel.p)) return
     const base = fresh.current ? 0 : (valueOf(sel.p, row.id) ?? 0)
     fresh.current = false
     setVal(sel.p, row.id, Math.min(MAX_VALUE, base * 10 + d))
@@ -591,7 +605,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
 
   function backspace() {
     const row = rows[sel.i]
-    if (!row) return
+    if (!row || isLive(row, sel.p)) return
     const base = fresh.current ? 0 : (valueOf(sel.p, row.id) ?? 0)
     fresh.current = false
     setVal(sel.p, row.id, Math.floor(base / 10))
@@ -599,7 +613,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
 
   function clearCell() {
     const row = rows[sel.i]
-    if (!row) return
+    if (!row || isLive(row, sel.p)) return
     fresh.current = false
     setVal(sel.p, row.id, 0)
   }
@@ -624,63 +638,10 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
   }
 
   function setPlayers(n: number) {
-    const target = Math.max(2, Math.min(8, n))
-    setRun((prev) => {
-      if (target === prev.names.length) return prev
-      if (target < prev.names.length) {
-        return { names: prev.names.slice(0, target), values: prev.values.slice(0, target) }
-      }
-      const names = [...prev.names]
-      const values = [...prev.values]
-      while (names.length < target) {
-        names.push(`玩家${names.length + 1}`)
-        values.push(makeValues(tpl))
-      }
-      return { names, values }
-    })
+    const target = Math.max(WS_MIN_PLAYERS, Math.min(WS_MAX_PLAYERS, n))
+    if (target === np) return
+    onNames(resizeNames(names, target))
     if (sel.p > target - 1) goto(target - 1, 0)
-  }
-
-  function pull(i: number) {
-    const row = rows[i]
-    if (!row || !row.from) return
-    goto(sel.p, i)
-    const v = pullAmount(row, sel.p)
-    if (v === null) {
-      setPullMsg(pullFail(row.from, sel.p))
-      return
-    }
-    setVal(sel.p, row.id, v)
-    setPullMsg('')
-  }
-
-  function pullAll() {
-    const snap = getResourceSnapshot()
-    if (!snap) {
-      setPullMsg(pullFail('', 0))
-      return
-    }
-    const updates: Array<{ p: number; id: string; v: number }> = []
-    for (let p = 0; p < np; p += 1) {
-      for (const row of rows) {
-        if (!row.from) continue
-        const v = pullAmount(row, p)
-        if (v !== null) updates.push({ p, id: row.id, v })
-      }
-    }
-    if (updates.length === 0) {
-      setPullMsg('沒有可帶入的資料，請確認資源名稱與玩家人數。')
-      return
-    }
-    setRun((prev) => ({
-      ...prev,
-      values: prev.values.map((vals, k) => {
-        const next = { ...vals }
-        for (const u of updates) if (u.p === k) next[u.id] = u.v
-        return next
-      }),
-    }))
-    setPullMsg(`已帶入 ${updates.length} 格（來自「${snap.title}」）。`)
   }
 
   function handleReset() {
@@ -701,7 +662,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
     function onKey(event: KeyboardEvent) {
       const t = event.target as HTMLElement | null
       if (t && ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return
-      if (tab !== 'input') return
+      if (!active || tab !== 'input') return
       if (event.key.length === 1 && event.key >= '0' && event.key <= '9') {
         press(Number(event.key))
         event.preventDefault()
@@ -720,10 +681,18 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
     return () => window.removeEventListener('keydown', onKey)
   })
 
+  function liveText(row: SheetRow, p: number): string {
+    if (!row.from) return ''
+    const per = (row.per ?? 1) > 1 ? `，每 ${row.per} 個` : ''
+    return liveAmount(row, p).state === 'ok'
+      ? `・即時取自「${row.from}」${per}`
+      : `・資源「${row.from}」已不存在，請手動輸入`
+  }
+
   const noFocus = (event: { preventDefault: () => void }) => event.preventDefault()
 
   // 總分排行（同分同名次）
-  const ranked = run.names
+  const ranked = names
     .map((name, p) => ({ p, name, total: totalOf(p) }))
     .sort((a, b) => b.total - a.total)
   const rankNo = ranked.map((item, k) => {
@@ -732,14 +701,11 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
     return r
   })
 
-  const currentName = run.names[sel.p] ?? ''
+  const currentName = names[sel.p] ?? ''
 
   return (
     <div className="ss-root">
       <div className="ss-bar">
-        <button type="button" className="ss-link" onClick={onBack}>
-          ‹ 返回
-        </button>
         <span className="ss-bar-title">{tpl.title}</span>
         {!isRes && (
           <div className="ss-tabs" role="tablist">
@@ -768,7 +734,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
       {tab === 'input' || isRes ? (
         <>
           <div className="ss-chips">
-            {run.names.map((name, p) => (
+            {names.map((name, p) => (
               <button
                 key={p}
                 type="button"
@@ -785,14 +751,11 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
             <input
               className="gt-input ss-pname"
               value={currentName}
-              maxLength={12}
+              maxLength={WS_MAX_NAME}
               aria-label="玩家名稱"
               onChange={(event) => {
                 const v = event.target.value
-                setRun((prev) => ({
-                  ...prev,
-                  names: prev.names.map((n, k) => (k === sel.p ? v : n)),
-                }))
+                onNames(names.map((n, k) => (k === sel.p ? v : n)))
               }}
             />
             <span className="ss-count">
@@ -828,9 +791,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
                         <small className={row.sign === -1 ? 'neg' : ''}>
                           {row.sign === -1 ? '−' : '＋'}
                           {fmt(row.mult)} 分
-                          {row.from
-                            ? `・取自${row.from}${(row.per ?? 1) > 1 ? `，每 ${row.per} 個` : ''}`
-                            : ''}
+                          {liveText(row, sel.p)}
                         </small>
                       )}
                     </span>
@@ -848,7 +809,7 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
                         −
                       </button>
                     )}
-                    <span className="ss-val">{v === undefined ? '–' : v}</span>
+                    <span className={`ss-val${isLive(row, sel.p) ? ' ss-live' : ''}`}>{v === undefined ? '–' : v}</span>
                     {row.kind === 'count' && (
                       <button
                         type="button"
@@ -863,32 +824,11 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
                         ＋
                       </button>
                     )}
-                    {row.from && (
-                      <button
-                        type="button"
-                        className="ss-pull"
-                        aria-label={`從資源計數器帶入${row.name}`}
-                        title="從資源計數器帶入"
-                        onMouseDown={noFocus}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          pull(i)
-                        }}
-                      >
-                        <PullIcon />
-                      </button>
-                    )}
                     {!isRes && <span className="ss-sub">{fmt(rowPoints(row, v ?? 0))}</span>}
                   </li>
                 )
               })}
             </ul>
-            {pullMsg && <p className="gt-msg">{pullMsg}</p>}
-            {rows.some((r) => r.from) && (
-              <button type="button" className="ss-link ss-pull-all" onClick={pullAll}>
-                <PullIcon /> 全部帶入
-              </button>
-            )}
             <button type="button" className="ss-link ss-reset" onClick={handleReset}>
               {confirmReset ? '再按一次確定清空所有數字' : '清空所有數字'}
             </button>
@@ -977,9 +917,14 @@ function PlayView({ tpl, onBack }: { tpl: SheetTemplate; onBack: () => void }) {
 
 export default function ScoreSheetTool({
   tool = 'score',
+  onPick,
+  pickLabel,
   onExit,
 }: {
   tool?: ToolKind
+  // 選好（或剛設定好）表單：交給工作區，由它加進工具並顯示工作畫面
+  onPick: (tpl: SheetTemplate) => void
+  pickLabel: string
   onExit?: () => void
 }) {
   const [mode, setMode] = useState<Mode>({ name: 'list' })
@@ -1071,15 +1016,11 @@ export default function ScoreSheetTool({
         tool={tool}
         isVip={isVip}
         onBack={() => (list.length === 0 && onExit ? onExit() : setMode({ name: 'list' }))}
-        onUse={(tpl) => setMode({ name: 'play', tpl, from: { name: 'edit', draft: tpl } })}
+        onUse={onPick}
+        useLabel={pickLabel}
         onChanged={() => void refresh()}
       />
     )
-  }
-
-  if (mode.name === 'play') {
-    const from = mode.from
-    return <PlayView tpl={mode.tpl} onBack={() => setMode(from)} />
   }
 
   if (status === 'loading') {
@@ -1107,8 +1048,8 @@ export default function ScoreSheetTool({
           </span>
         </div>
         <div className="ss-item-btns">
-          <button type="button" className="gt-primary ss-sm" onClick={() => setMode({ name: 'play', tpl: t, from: { name: 'list' } })}>
-            使用
+          <button type="button" className="gt-primary ss-sm" onClick={() => onPick(t)}>
+            {pickLabel}
           </button>
           {t.mine ? (
             <>
