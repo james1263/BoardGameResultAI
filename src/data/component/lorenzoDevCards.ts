@@ -1,0 +1,213 @@
+// 偉大的羅倫佐（Lorenzo il Magnifico）發展卡 168 張：基本 96 張、Houses of Renaissance 48 張、The Pazzi Conspiracy 24 張。bggName：'Lorenzo il Magnifico: Big Box'。
+// 暫時沒有被任何元件引用；「持有」類畫面（誰拿了哪些發展卡、各色張數）與名詞長按看圖還沒做，這個檔先放資料。
+//
+// 為什麼要有：發展卡是公開的，而且效果會左右這款最重要的判斷（誰在拚領地、誰靠角色加點、誰的投資終局很高）；
+// 對手個人圖板上有哪些卡，現場要一張一張湊過去看，這份資料讓以後可以直接看他的清單與張數。
+//
+// 來源：Reference_sheet_Lorenzo_il_Magnifico_NL_Versie01.pdf（荷蘭文參考手冊，BGG 使用者 happygamer031276 自製，2025 年第 1 版）第 3～15 頁（卡號與效果文字）。
+//   我沒有對照實物或英文規則書逐張核對〔未驗證〕；費用、高塔層數、骰子點數需求都不在文字層，只在圖上，所以這裡沒收（看 lorenzoTerms.ts 的圖片）。
+// 中文：用詞沿用快速複習 lorenzo.ts（領地＝綠、建築＝黃、角色＝藍、投資＝紫、僕人、元、軍事點數、信仰點數、議會特權、特殊標記）；
+//   由荷蘭文自譯，一律【待核對】。bonusfiche 譯成「特殊標記」；gunst in het raadhuis 譯成「議會特權」。
+// 欄位：n＝卡號（#001～#168，每張在三盒間不重複）；set＝所屬盒別；type＝顏色（territory 領地、building 建築、character 角色、venture 投資）；
+//   immediate＝打出（拿到）當下的立即效果；permanent＝永久效果（領地與建築是每次啟動時的產出、角色是常駐能力、投資是終局分）。
+// 卡號分段（由圖片確認）：基本 001～024 領地、025～048 建築、049～072 角色、073～096 投資；Houses 097～108 領地、109～120 建築、121～132 角色、133～144 投資；
+//   Pazzi 145～150 領地、151～156 角色、157～162 建築、163～168 投資。
+// 不一致與待確認：
+//   ①#152（Pazzi 角色）：荷蘭文手冊寫「收穫的 −3 懲罰，改用第二個生產區」，疑似把「收穫區」寫成「生產區」，這裡照意思寫成「第二個收穫區」【待核對】。
+//   ②#137、#139、#151、#153：荷蘭文手冊文字層的排列錯亂（效果行被排到鄰近卡片上），這四張由我依圖片與文字對回，建議核對。
+//   ③#104（Houses 領地）：「Ontvang 3 strafpunten」我譯成「失去 3 分」【待核對】。
+//   ④沒有英文原文可對；如要發布，建議用英文規則書／擴充說明逐張核對。
+// 沒收：費用、骰子點數、高塔層數、卡面插圖說明（看圖）。
+
+export type LorenzoDevSet = 'base' | 'houses' | 'pazzi'
+export type LorenzoDevType = 'territory' | 'building' | 'character' | 'venture'
+
+export type LorenzoDevCard = {
+  id: string
+  n: number
+  set: LorenzoDevSet
+  type: LorenzoDevType
+  immediate: string[]
+  permanent: string[]
+  src: string
+}
+
+export const LORENZO_DEV_TYPE_LABEL: Record<LorenzoDevType, string> = {
+  territory: '領地（綠）',
+  building: '建築（黃）',
+  character: '角色（藍）',
+  venture: '投資（紫）',
+}
+
+const S = '荷蘭文參考手冊'
+
+export const LORENZO_DEV_CARDS: LorenzoDevCard[] = [
+  { id: 'dev-001', n: 1, set: 'base', type: 'territory', immediate: [], permanent: ['獲得 1 元'], src: `${S} 第 3 頁` },
+  { id: 'dev-002', n: 2, set: 'base', type: 'territory', immediate: ['獲得 1 木'], permanent: ['獲得 1 木'], src: `${S} 第 3 頁` },
+  { id: 'dev-003', n: 3, set: 'base', type: 'territory', immediate: [], permanent: ['獲得 1 元、1 僕人'], src: `${S} 第 3 頁` },
+  { id: 'dev-004', n: 4, set: 'base', type: 'territory', immediate: ['獲得 2 石'], permanent: ['獲得 2 石'], src: `${S} 第 3 頁` },
+  { id: 'dev-005', n: 5, set: 'base', type: 'territory', immediate: ['獲得 1 木'], permanent: ['獲得 3 木'], src: `${S} 第 3 頁` },
+  { id: 'dev-006', n: 6, set: 'base', type: 'territory', immediate: ['獲得 2 軍事點數、1 僕人'], permanent: ['獲得 1 信仰點數、1 石'], src: `${S} 第 3 頁` },
+  { id: 'dev-007', n: 7, set: 'base', type: 'territory', immediate: [], permanent: ['獲得 2 軍事點數、1 石'], src: `${S} 第 3 頁` },
+  { id: 'dev-008', n: 8, set: 'base', type: 'territory', immediate: ['獲得 3 元'], permanent: ['獲得 1 個議會特權'], src: `${S} 第 3 頁` },
+  { id: 'dev-009', n: 9, set: 'base', type: 'territory', immediate: ['獲得 1 元'], permanent: ['獲得 2 元'], src: `${S} 第 3 頁` },
+  { id: 'dev-010', n: 10, set: 'base', type: 'territory', immediate: ['獲得 1 僕人'], permanent: ['獲得 1 軍事點數、2 木'], src: `${S} 第 3 頁` },
+  { id: 'dev-011', n: 11, set: 'base', type: 'territory', immediate: ['獲得 2 僕人、1 石'], permanent: ['獲得 1 僕人、2 石'], src: `${S} 第 3 頁` },
+  { id: 'dev-012', n: 12, set: 'base', type: 'territory', immediate: ['獲得 1 木'], permanent: ['獲得 3 石'], src: `${S} 第 3 頁` },
+  { id: 'dev-013', n: 13, set: 'base', type: 'territory', immediate: ['獲得 2 僕人、1 木'], permanent: ['獲得 1 元、2 木'], src: `${S} 第 4 頁` },
+  { id: 'dev-014', n: 14, set: 'base', type: 'territory', immediate: ['獲得 1 信仰點數'], permanent: ['獲得 1 信仰點數'], src: `${S} 第 4 頁` },
+  { id: 'dev-015', n: 15, set: 'base', type: 'territory', immediate: [], permanent: ['獲得 2 軍事點數、2 僕人'], src: `${S} 第 4 頁` },
+  { id: 'dev-016', n: 16, set: 'base', type: 'territory', immediate: ['獲得 4 元'], permanent: ['獲得 1 元、1 石、2 木'], src: `${S} 第 4 頁` },
+  { id: 'dev-017', n: 17, set: 'base', type: 'territory', immediate: ['獲得 1 元、1 僕人'], permanent: ['獲得 3 元'], src: `${S} 第 4 頁` },
+  { id: 'dev-018', n: 18, set: 'base', type: 'territory', immediate: ['獲得 1 分、1 木'], permanent: ['獲得 2 分、2 木'], src: `${S} 第 4 頁` },
+  { id: 'dev-019', n: 19, set: 'base', type: 'territory', immediate: ['獲得 2 軍事點數'], permanent: ['獲得 4 分、1 木'], src: `${S} 第 4 頁` },
+  { id: 'dev-020', n: 20, set: 'base', type: 'territory', immediate: ['獲得 3 分'], permanent: ['獲得 1 分、2 石'], src: `${S} 第 4 頁` },
+  { id: 'dev-021', n: 21, set: 'base', type: 'territory', immediate: ['獲得 1 個議會特權、1 石'], permanent: ['獲得 4 分、1 石'], src: `${S} 第 4 頁` },
+  { id: 'dev-022', n: 22, set: 'base', type: 'territory', immediate: ['獲得 1 信仰點數'], permanent: ['獲得 1 元、1 信仰點數'], src: `${S} 第 4 頁` },
+  { id: 'dev-023', n: 23, set: 'base', type: 'territory', immediate: ['獲得 2 分、2 元'], permanent: ['獲得 3 軍事點數、1 僕人'], src: `${S} 第 4 頁` },
+  { id: 'dev-024', n: 24, set: 'base', type: 'territory', immediate: ['獲得 2 軍事點數、1 僕人'], permanent: ['獲得 1 軍事點數、2 僕人'], src: `${S} 第 4 頁` },
+  { id: 'dev-025', n: 25, set: 'base', type: 'building', immediate: ['獲得 5 分'], permanent: ['每有 1 張建築，獲得 1 元'], src: `${S} 第 4 頁` },
+  { id: 'dev-026', n: 26, set: 'base', type: 'building', immediate: ['獲得 5 分'], permanent: ['每有 1 張領地，獲得 1 元'], src: `${S} 第 4 頁` },
+  { id: 'dev-027', n: 27, set: 'base', type: 'building', immediate: ['獲得 6 分'], permanent: ['每有 1 張投資，獲得 1 元'], src: `${S} 第 5 頁` },
+  { id: 'dev-028', n: 28, set: 'base', type: 'building', immediate: ['獲得 6 分'], permanent: ['每有 1 張角色，獲得 1 元'], src: `${S} 第 5 頁` },
+  { id: 'dev-029', n: 29, set: 'base', type: 'building', immediate: ['獲得 3 分'], permanent: ['付 1 木 換 3 元；或付 2 木 換 5 元'], src: `${S} 第 5 頁` },
+  { id: 'dev-030', n: 30, set: 'base', type: 'building', immediate: ['獲得 2 分'], permanent: ['付 1 石 換 3 元；或付 2 石 換 5 元'], src: `${S} 第 5 頁` },
+  { id: 'dev-031', n: 31, set: 'base', type: 'building', immediate: ['獲得 1 信仰點數'], permanent: ['付 1 元 換 1 信仰點數'], src: `${S} 第 5 頁` },
+  { id: 'dev-032', n: 32, set: 'base', type: 'building', immediate: ['獲得 1 分'], permanent: ['付 1 元 換 1 個議會特權'], src: `${S} 第 5 頁` },
+  { id: 'dev-033', n: 33, set: 'base', type: 'building', immediate: ['獲得 3 分'], permanent: ['付 3 元 換 2 木、2 石'], src: `${S} 第 5 頁` },
+  { id: 'dev-034', n: 34, set: 'base', type: 'building', immediate: ['獲得 4 分'], permanent: ['付 1 元 換 3 分；或付 2 元 換 5 分'], src: `${S} 第 5 頁` },
+  { id: 'dev-035', n: 35, set: 'base', type: 'building', immediate: ['獲得 5 分'], permanent: ['付 1 木 換 3 分；或付 3 木 換 7 分'], src: `${S} 第 5 頁` },
+  { id: 'dev-036', n: 36, set: 'base', type: 'building', immediate: ['獲得 6 分'], permanent: ['付 1 石 換 3 分；或付 3 石 換 7 分'], src: `${S} 第 5 頁` },
+  { id: 'dev-037', n: 37, set: 'base', type: 'building', immediate: ['獲得 4 分'], permanent: ['付 1 僕人、1 木、1 石 換 6 分'], src: `${S} 第 5 頁` },
+  { id: 'dev-038', n: 38, set: 'base', type: 'building', immediate: ['獲得 2 分、1 信仰點數'], permanent: ['信仰軌後退 1 格，換 2 元、2 分'], src: `${S} 第 5 頁` },
+  { id: 'dev-039', n: 39, set: 'base', type: 'building', immediate: ['獲得 3 分'], permanent: ['付 1 僕人 換 3 軍事點數'], src: `${S} 第 5 頁` },
+  { id: 'dev-040', n: 40, set: 'base', type: 'building', immediate: ['獲得 8 分'], permanent: ['獲得 2 軍事點數、2 分'], src: `${S} 第 5 頁` },
+  { id: 'dev-041', n: 41, set: 'base', type: 'building', immediate: ['獲得 7 分'], permanent: ['獲得 5 元'], src: `${S} 第 6 頁` },
+  { id: 'dev-042', n: 42, set: 'base', type: 'building', immediate: ['獲得 8 分'], permanent: ['付 4 元 換 3 木、3 石'], src: `${S} 第 6 頁` },
+  { id: 'dev-043', n: 43, set: 'base', type: 'building', immediate: ['獲得 10 分'], permanent: ['獲得 3 分'], src: `${S} 第 6 頁` },
+  { id: 'dev-044', n: 44, set: 'base', type: 'building', immediate: ['獲得 9 分'], permanent: ['獲得 2 分、1 個議會特權'], src: `${S} 第 6 頁` },
+  { id: 'dev-045', n: 45, set: 'base', type: 'building', immediate: ['獲得 9 分'], permanent: ['付 1 元 換 2 僕人、4 分'], src: `${S} 第 6 頁` },
+  { id: 'dev-046', n: 46, set: 'base', type: 'building', immediate: ['獲得 5 分、1 信仰點數'], permanent: ['付 1 木或 1 石，換 2 信仰點數'], src: `${S} 第 6 頁` },
+  { id: 'dev-047', n: 47, set: 'base', type: 'building', immediate: ['獲得 7 分'], permanent: ['付 1 僕人 換 3 軍事點數、1 分'], src: `${S} 第 6 頁` },
+  { id: 'dev-048', n: 48, set: 'base', type: 'building', immediate: ['獲得 7 分、3 信仰點數'], permanent: ['獲得 1 分'], src: `${S} 第 6 頁` },
+  { id: 'dev-049', n: 49, set: 'base', type: 'character', immediate: ['獲得 3 軍事點數'], permanent: ['拿領地時，點數 +2'], src: `${S} 第 6 頁` },
+  { id: 'dev-050', n: 50, set: 'base', type: 'character', immediate: [], permanent: ['拿建築時，點數 +2，且費用少付 1 木或 1 石'], src: `${S} 第 6 頁` },
+  { id: 'dev-051', n: 51, set: 'base', type: 'character', immediate: [], permanent: ['拿角色時，點數 +2，且費用少付 1 元'], src: `${S} 第 6 頁` },
+  { id: 'dev-052', n: 52, set: 'base', type: 'character', immediate: ['獲得 1 個議會特權'], permanent: ['拿投資時，點數 +2'], src: `${S} 第 6 頁` },
+  { id: 'dev-053', n: 53, set: 'base', type: 'character', immediate: [], permanent: ['收穫行動點數 +2'], src: `${S} 第 6 頁` },
+  { id: 'dev-054', n: 54, set: 'base', type: 'character', immediate: [], permanent: ['生產行動點數 +2'], src: `${S} 第 6 頁` },
+  { id: 'dev-055', n: 55, set: 'base', type: 'character', immediate: ['獲得 4 信仰點數'], permanent: ['從打出這張卡起，不再獲得高塔第 5、7 層的獎勵'], src: `${S} 第 7 頁` },
+  { id: 'dev-056', n: 56, set: 'base', type: 'character', immediate: ['執行任一顏色的行動，點數 4（可用僕人增加）；獲得 1 信仰點數'], permanent: [], src: `${S} 第 7 頁` },
+  { id: 'dev-057', n: 57, set: 'base', type: 'character', immediate: ['從領地欄拿 1 張點數 6 以下的卡（可用僕人或卡片效果調整點數）；獲得 2 軍事點數'], permanent: [], src: `${S} 第 7 頁` },
+  { id: 'dev-058', n: 58, set: 'base', type: 'character', immediate: ['從建築欄拿 1 張點數 6 以下的卡，這張卡費用少付 1 木或 1 石（可用僕人或卡片效果調整點數）'], permanent: [], src: `${S} 第 7 頁` },
+  { id: 'dev-059', n: 59, set: 'base', type: 'character', immediate: ['從角色欄拿 1 張點數 6 以下的卡，這張卡費用少付 2 元（可用僕人或卡片效果調整點數）'], permanent: [], src: `${S} 第 7 頁` },
+  { id: 'dev-060', n: 60, set: 'base', type: 'character', immediate: ['啟動投資欄中 1 張點數 6 以下的卡（可用僕人或卡片效果調整點數）；獲得 1 個議會特權'], permanent: [], src: `${S} 第 7 頁` },
+  { id: 'dev-061', n: 61, set: 'base', type: 'character', immediate: [], permanent: ['收穫行動點數 +3'], src: `${S} 第 7 頁` },
+  { id: 'dev-062', n: 62, set: 'base', type: 'character', immediate: [], permanent: ['生產行動點數 +3'], src: `${S} 第 7 頁` },
+  { id: 'dev-063', n: 63, set: 'base', type: 'character', immediate: ['獲得 3 信仰點數'], permanent: [], src: `${S} 第 7 頁` },
+  { id: 'dev-064', n: 64, set: 'base', type: 'character', immediate: ['獲得 3 個不同的議會特權'], permanent: [], src: `${S} 第 7 頁` },
+  { id: 'dev-065', n: 65, set: 'base', type: 'character', immediate: ['每有 1 張領地，獲得 2 分'], permanent: [], src: `${S} 第 7 頁` },
+  { id: 'dev-066', n: 66, set: 'base', type: 'character', immediate: ['每有 1 張建築，獲得 2 分'], permanent: [], src: `${S} 第 7 頁` },
+  { id: 'dev-067', n: 67, set: 'base', type: 'character', immediate: ['每有 1 張角色，獲得 2 分'], permanent: [], src: `${S} 第 7 頁` },
+  { id: 'dev-068', n: 68, set: 'base', type: 'character', immediate: ['每有 1 張投資，獲得 2 分'], permanent: [], src: `${S} 第 7 頁` },
+  { id: 'dev-069', n: 69, set: 'base', type: 'character', immediate: ['收穫行動，點數 4（可用僕人或卡片效果調整）；獲得 2 信仰點數'], permanent: [], src: `${S} 第 8 頁` },
+  { id: 'dev-070', n: 70, set: 'base', type: 'character', immediate: ['生產行動，點數 4（可用僕人或卡片效果調整）；獲得 1 信仰點數'], permanent: [], src: `${S} 第 8 頁` },
+  { id: 'dev-071', n: 71, set: 'base', type: 'character', immediate: ['軍事軌每 2 格，獲得 1 分'], permanent: [], src: `${S} 第 8 頁` },
+  { id: 'dev-072', n: 72, set: 'base', type: 'character', immediate: ['從任一欄拿 1 張點數 7 以下的卡；獲得 1 個議會特權'], permanent: [], src: `${S} 第 8 頁` },
+  { id: 'dev-073', n: 73, set: 'base', type: 'venture', immediate: ['獲得 5 軍事點數'], permanent: ['終局獲得 4 分'], src: `${S} 第 8 頁` },
+  { id: 'dev-074', n: 74, set: 'base', type: 'venture', immediate: ['獲得 1 信仰點數'], permanent: ['終局獲得 5 分'], src: `${S} 第 8 頁` },
+  { id: 'dev-075', n: 75, set: 'base', type: 'venture', immediate: ['獲得 2 軍事點數、1 個議會特權'], permanent: ['終局獲得 3 分'], src: `${S} 第 8 頁` },
+  { id: 'dev-076', n: 76, set: 'base', type: 'venture', immediate: ['獲得 2 個不同的議會特權'], permanent: ['終局獲得 4 分'], src: `${S} 第 8 頁` },
+  { id: 'dev-077', n: 77, set: 'base', type: 'venture', immediate: ['獲得 3 元'], permanent: ['終局獲得 5 分'], src: `${S} 第 8 頁` },
+  { id: 'dev-078', n: 78, set: 'base', type: 'venture', immediate: ['獲得 4 僕人'], permanent: ['終局獲得 4 分'], src: `${S} 第 8 頁` },
+  { id: 'dev-079', n: 79, set: 'base', type: 'venture', immediate: ['獲得 2 信仰點數'], permanent: ['終局獲得 5 分'], src: `${S} 第 8 頁` },
+  { id: 'dev-080', n: 80, set: 'base', type: 'venture', immediate: ['獲得 3 信仰點數'], permanent: ['終局獲得 1 分'], src: `${S} 第 8 頁` },
+  { id: 'dev-081', n: 81, set: 'base', type: 'venture', immediate: ['獲得 6 軍事點數'], permanent: ['終局獲得 5 分'], src: `${S} 第 8 頁` },
+  { id: 'dev-082', n: 82, set: 'base', type: 'venture', immediate: ['獲得 2 信仰點數'], permanent: ['終局獲得 6 分'], src: `${S} 第 8 頁` },
+  { id: 'dev-083', n: 83, set: 'base', type: 'venture', immediate: ['獲得 3 軍事點數、1 個議會特權'], permanent: ['終局獲得 2 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-084', n: 84, set: 'base', type: 'venture', immediate: ['獲得 5 元、1 個議會特權'], permanent: ['終局獲得 3 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-085', n: 85, set: 'base', type: 'venture', immediate: ['收穫行動，點數 4（可用僕人或卡片效果調整）'], permanent: ['終局獲得 5 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-086', n: 86, set: 'base', type: 'venture', immediate: ['獲得 5 僕人'], permanent: ['終局獲得 4 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-087', n: 87, set: 'base', type: 'venture', immediate: ['獲得 5 元、1 信仰點數'], permanent: ['終局獲得 5 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-088', n: 88, set: 'base', type: 'venture', immediate: ['獲得 3 信仰點數'], permanent: ['終局獲得 4 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-089', n: 89, set: 'base', type: 'venture', immediate: ['獲得 7 軍事點數'], permanent: ['終局獲得 6 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-090', n: 90, set: 'base', type: 'venture', immediate: ['拿任一顏色點數 7 以下的卡；獲得 1 信仰點數'], permanent: ['終局獲得 5 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-091', n: 91, set: 'base', type: 'venture', immediate: ['獲得 4 軍事點數、1 個議會特權'], permanent: ['終局獲得 4 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-092', n: 92, set: 'base', type: 'venture', immediate: ['獲得 3 信仰點數'], permanent: ['終局獲得 3 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-093', n: 93, set: 'base', type: 'venture', immediate: ['獲得 3 木、3 石、3 元'], permanent: ['終局獲得 7 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-094', n: 94, set: 'base', type: 'venture', immediate: ['生產行動，點數 3（可用僕人或卡片效果調整）'], permanent: ['終局獲得 5 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-095', n: 95, set: 'base', type: 'venture', immediate: ['獲得 4 信仰點數'], permanent: ['終局獲得 8 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-096', n: 96, set: 'base', type: 'venture', immediate: ['獲得 2 信仰點數'], permanent: ['終局獲得 10 分'], src: `${S} 第 9 頁` },
+  { id: 'dev-097', n: 97, set: 'houses', type: 'territory', immediate: [], permanent: ['獲得 1 特殊標記'], src: `${S} 第 10 頁` },
+  { id: 'dev-098', n: 98, set: 'houses', type: 'territory', immediate: ['拿 1 個特殊標記'], permanent: ['把你的 1 個特殊標記永久放在這張卡上；每次啟動這張卡，就多拿該標記上的獎勵'], src: `${S} 第 10 頁` },
+  { id: 'dev-099', n: 99, set: 'houses', type: 'territory', immediate: [], permanent: ['每有 1 張投資，獲得 1 木，最多等於骰子點數'], src: `${S} 第 10 頁` },
+  { id: 'dev-100', n: 100, set: 'houses', type: 'territory', immediate: [], permanent: ['每有 1 張角色，獲得 1 石，最多等於骰子點數'], src: `${S} 第 10 頁` },
+  { id: 'dev-101', n: 101, set: 'houses', type: 'territory', immediate: [], permanent: ['獲得 2 信仰點數'], src: `${S} 第 10 頁` },
+  { id: 'dev-102', n: 102, set: 'houses', type: 'territory', immediate: ['獲得 1 僕人、1 石、1 木、1 元'], permanent: ['獲得 2 分'], src: `${S} 第 10 頁` },
+  { id: 'dev-103', n: 103, set: 'houses', type: 'territory', immediate: [], permanent: ['獲得 5 分'], src: `${S} 第 10 頁` },
+  { id: 'dev-104', n: 104, set: 'houses', type: 'territory', immediate: ['失去 3 分'], permanent: ['獲得 1 石、1 木、1 元、1 僕人'], src: `${S} 第 10 頁` },
+  { id: 'dev-105', n: 105, set: 'houses', type: 'territory', immediate: ['獲得 2 特殊標記'], permanent: ['獲得 1 信仰點數、2 分、2 元'], src: `${S} 第 10 頁` },
+  { id: 'dev-106', n: 106, set: 'houses', type: 'territory', immediate: ['獲得 2 木、2 石、2 元'], permanent: ['獲得 3 分'], src: `${S} 第 10 頁` },
+  { id: 'dev-107', n: 107, set: 'houses', type: 'territory', immediate: ['獲得 2 信仰點數'], permanent: ['每有 1 張建築，獲得 1 分，最多等於骰子點數'], src: `${S} 第 10 頁` },
+  { id: 'dev-108', n: 108, set: 'houses', type: 'territory', immediate: ['獲得 3 分'], permanent: ['獲得 2 木、2 石、2 元'], src: `${S} 第 10 頁` },
+  { id: 'dev-109', n: 109, set: 'houses', type: 'building', immediate: ['獲得 2 分'], permanent: ['付 1 元 換 1 特殊標記'], src: `${S} 第 11 頁` },
+  { id: 'dev-110', n: 110, set: 'houses', type: 'building', immediate: ['獲得 4 分'], permanent: ['獲得 1 個特殊標記；或付 3 個特殊標記，無視需求打出 1 張領袖卡'], src: `${S} 第 11 頁` },
+  { id: 'dev-111', n: 111, set: 'houses', type: 'building', immediate: ['獲得 2 分'], permanent: ['付 1 石換 1 元、1 分；次數最多等於骰子點數'], src: `${S} 第 11 頁` },
+  { id: 'dev-112', n: 112, set: 'houses', type: 'building', immediate: ['獲得 2 分'], permanent: ['付 1 木換 1 元、1 分；次數最多等於骰子點數'], src: `${S} 第 11 頁` },
+  { id: 'dev-113', n: 113, set: 'houses', type: 'building', immediate: ['獲得 5 分'], permanent: ['啟動你的 1 張建築卡，無視點數需求'], src: `${S} 第 11 頁` },
+  { id: 'dev-114', n: 114, set: 'houses', type: 'building', immediate: ['獲得 4 分、1 信仰點數'], permanent: ['啟動你的 1 張領地卡，無視點數需求'], src: `${S} 第 11 頁` },
+  { id: 'dev-115', n: 115, set: 'houses', type: 'building', immediate: ['獲得 6 分、1 特殊標記'], permanent: ['付 1 特殊標記 換 5 分'], src: `${S} 第 11 頁` },
+  { id: 'dev-116', n: 116, set: 'houses', type: 'building', immediate: ['獲得 7 分'], permanent: ['付 1 木、1 石 換 3 信仰點數'], src: `${S} 第 11 頁` },
+  { id: 'dev-117', n: 117, set: 'houses', type: 'building', immediate: ['獲得 7 分'], permanent: ['每張你已打出的領袖卡，獲得 2 分'], src: `${S} 第 11 頁` },
+  { id: 'dev-118', n: 118, set: 'houses', type: 'building', immediate: ['獲得 2 分'], permanent: ['獲得 7 分'], src: `${S} 第 11 頁` },
+  { id: 'dev-119', n: 119, set: 'houses', type: 'building', immediate: ['獲得 15 分'], permanent: ['每次執行點數 1 以上的收穫行動，失去 3 分'], src: `${S} 第 11 頁` },
+  { id: 'dev-120', n: 120, set: 'houses', type: 'building', immediate: ['獲得 8 分'], permanent: ['獲得 3 信仰點數'], src: `${S} 第 11 頁` },
+  { id: 'dev-121', n: 121, set: 'houses', type: 'character', immediate: ['拿 1 張領袖卡；獲得 1 信仰點數'], permanent: [], src: `${S} 第 11 頁` },
+  { id: 'dev-122', n: 122, set: 'houses', type: 'character', immediate: ['獲得 2 張領袖卡'], permanent: [], src: `${S} 第 11 頁` },
+  { id: 'dev-123', n: 123, set: 'houses', type: 'character', immediate: ['獲得 1 特殊標記'], permanent: ['收穫或生產時，骰子點數 +1'], src: `${S} 第 12 頁` },
+  { id: 'dev-124', n: 124, set: 'houses', type: 'character', immediate: ['獲得 1 特殊標記'], permanent: ['每次打出領袖卡，獲得 1 個特殊標記'], src: `${S} 第 12 頁` },
+  { id: 'dev-125', n: 125, set: 'houses', type: 'character', immediate: ['無視需求打出 1 張領袖卡'], permanent: [], src: `${S} 第 12 頁` },
+  { id: 'dev-126', n: 126, set: 'houses', type: 'character', immediate: ['獲得 1 特殊標記'], permanent: ['放進已被佔據的高塔，不用再付 3 元'], src: `${S} 第 12 頁` },
+  { id: 'dev-127', n: 127, set: 'houses', type: 'character', immediate: ['獲得 2 分'], permanent: ['每次打出領袖卡，可無視卡上的 1 項需求'], src: `${S} 第 12 頁` },
+  { id: 'dev-128', n: 128, set: 'houses', type: 'character', immediate: ['獲得 2 特殊標記'], permanent: ['把你的 1 個特殊標記永久放在這張卡上；每次啟動這張卡，就多拿該標記上的獎勵'], src: `${S} 第 12 頁` },
+  { id: 'dev-129', n: 129, set: 'houses', type: 'character', immediate: ['每張你已打出的領袖卡，獲得 3 分'], permanent: [], src: `${S} 第 12 頁` },
+  { id: 'dev-130', n: 130, set: 'houses', type: 'character', immediate: ['從棄牌堆拿 1 張角色，不用付費用（不能是第 5 塔的特殊發展卡，卡背是灰色）'], permanent: [], src: `${S} 第 12 頁` },
+  { id: 'dev-131', n: 131, set: 'houses', type: 'character', immediate: ['每 1 點信仰點數，獲得 1 分'], permanent: [], src: `${S} 第 12 頁` },
+  { id: 'dev-132', n: 132, set: 'houses', type: 'character', immediate: ['從棄牌堆拿 1 張投資，不用付費用（不能是第 5 塔的特殊發展卡，卡背是灰色）'], permanent: [], src: `${S} 第 12 頁` },
+  { id: 'dev-133', n: 133, set: 'houses', type: 'venture', immediate: ['獲得 2 特殊標記'], permanent: ['終局每個沒用掉的特殊標記，獲得 2 分（最多 12 分）'], src: `${S} 第 12 頁` },
+  { id: 'dev-134', n: 134, set: 'houses', type: 'venture', immediate: ['獲得 2 木、2 石'], permanent: ['終局每 1 木＋1 石一組，獲得 2 分（最多 12 分）'], src: `${S} 第 12 頁` },
+  { id: 'dev-135', n: 135, set: 'houses', type: 'venture', immediate: ['獲得 3 僕人'], permanent: ['終局每 1 個僕人，獲得 1 分（最多 12 分）'], src: `${S} 第 12 頁` },
+  { id: 'dev-136', n: 136, set: 'houses', type: 'venture', immediate: ['軍事軌移到目前最高那位玩家的上一格'], permanent: ['終局獲得 5 分'], src: `${S} 第 12 頁` },
+  { id: 'dev-137', n: 137, set: 'houses', type: 'venture', immediate: ['獲得 2 軍事點數'], permanent: ['終局軍事軌每 2 格，獲得 1 分'], src: `${S} 第 13 頁` },
+  { id: 'dev-138', n: 138, set: 'houses', type: 'venture', immediate: ['獲得 5 信仰點數；拿 1 個特殊標記'], permanent: ['終局獲得 5 分'], src: `${S} 第 13 頁` },
+  { id: 'dev-139', n: 139, set: 'houses', type: 'venture', immediate: ['拿 3 個特殊標記'], permanent: ['終局獲得 3 分'], src: `${S} 第 13 頁` },
+  { id: 'dev-140', n: 140, set: 'houses', type: 'venture', immediate: ['啟動你的 2 張領地卡，無視點數需求'], permanent: ['終局獲得 6 分'], src: `${S} 第 13 頁` },
+  { id: 'dev-141', n: 141, set: 'houses', type: 'venture', immediate: ['獲得 2 軍事點數'], permanent: ['終局獲得 15 分'], src: `${S} 第 13 頁` },
+  { id: 'dev-142', n: 142, set: 'houses', type: 'venture', immediate: ['獲得 3 特殊標記'], permanent: ['終局獲得 12 分'], src: `${S} 第 13 頁` },
+  { id: 'dev-143', n: 143, set: 'houses', type: 'venture', immediate: ['獲得 4 信仰點數'], permanent: ['終局獲得 10 分'], src: `${S} 第 13 頁` },
+  { id: 'dev-144', n: 144, set: 'houses', type: 'venture', immediate: ['啟動你的 2 張建築卡，無視點數需求'], permanent: ['終局獲得 12 分'], src: `${S} 第 13 頁` },
+  { id: 'dev-145', n: 145, set: 'pazzi', type: 'territory', immediate: ['獲得 5 元'], permanent: ['分數軌後退 1 格'], src: `${S} 第 13 頁` },
+  { id: 'dev-146', n: 146, set: 'pazzi', type: 'territory', immediate: ['獲得 3 木、3 石'], permanent: ['分數軌後退 2 格'], src: `${S} 第 13 頁` },
+  { id: 'dev-147', n: 147, set: 'pazzi', type: 'territory', immediate: ['獲得 1 木、1 僕人'], permanent: ['獲得 3 木或 3 僕人（擇一）'], src: `${S} 第 13 頁` },
+  { id: 'dev-148', n: 148, set: 'pazzi', type: 'territory', immediate: ['獲得 1 軍事點數、1 信仰點數'], permanent: ['獲得 2 軍事點數或 1 信仰點數（擇一）'], src: `${S} 第 13 頁` },
+  { id: 'dev-149', n: 149, set: 'pazzi', type: 'territory', immediate: ['獲得 2 木、2 石'], permanent: ['獲得 3 石或 3 木（擇一）'], src: `${S} 第 14 頁` },
+  { id: 'dev-150', n: 150, set: 'pazzi', type: 'territory', immediate: ['獲得 2 元、2 僕人'], permanent: ['獲得 1 分、3 信仰點數'], src: `${S} 第 14 頁` },
+  { id: 'dev-151', n: 151, set: 'pazzi', type: 'character', immediate: ['獲得 1 石'], permanent: ['生產行動用第二個生產區時，不受 −3 的懲罰'], src: `${S} 第 14 頁` },
+  { id: 'dev-152', n: 152, set: 'pazzi', type: 'character', immediate: ['獲得 1 木'], permanent: ['收穫行動用第二個收穫區時，不受 −3 的懲罰'], src: `${S} 第 14 頁` },
+  { id: 'dev-153', n: 153, set: 'pazzi', type: 'character', immediate: ['用另一位玩家（任選）的建築卡執行生產行動，點數 3（可用僕人或卡片效果調整）'], permanent: ['今後所有生產行動點數 +1'], src: `${S} 第 14 頁` },
+  { id: 'dev-154', n: 154, set: 'pazzi', type: 'character', immediate: ['用另一位玩家（任選）的領地卡執行收穫行動，點數 2（可用僕人調整）'], permanent: ['今後所有收穫行動點數 +1'], src: `${S} 第 14 頁` },
+  { id: 'dev-155', n: 155, set: 'pazzi', type: 'character', immediate: ['獲得 3 分；每位對手要棄掉 1 張領地或建築（他們自選，有才要棄）'], permanent: [], src: `${S} 第 14 頁` },
+  { id: 'dev-156', n: 156, set: 'pazzi', type: 'character', immediate: ['獲得 2 個議會特權；每位對手要棄掉 1 張角色或投資（他們自選）'], permanent: [], src: `${S} 第 14 頁` },
+  { id: 'dev-157', n: 157, set: 'pazzi', type: 'building', immediate: ['獲得 3 分'], permanent: ['付 1 分 換 1 個議會特權'], src: `${S} 第 14 頁` },
+  { id: 'dev-158', n: 158, set: 'pazzi', type: 'building', immediate: ['獲得 2 個議會特權'], permanent: ['每位對手，你付 1 分；然後每位對手選擇：給你 2 元，或給你 3 分'], src: `${S} 第 14 頁` },
+  { id: 'dev-159', n: 159, set: 'pazzi', type: 'building', immediate: ['獲得 5 分'], permanent: ['棄掉 1 張角色，換 7 分'], src: `${S} 第 14 頁` },
+  { id: 'dev-160', n: 160, set: 'pazzi', type: 'building', immediate: ['獲得 2 軍事點數'], permanent: ['每位對手，你獲得 1 軍事點數；每位對手要給你 2 僕人或 3 分（他們選）'], src: `${S} 第 14 頁` },
+  { id: 'dev-161', n: 161, set: 'pazzi', type: 'building', immediate: ['獲得 5 分'], permanent: ['執行市場上任一空格的行動，或獲得 1 個議會特權（擇一）'], src: `${S} 第 14 頁` },
+  { id: 'dev-162', n: 162, set: 'pazzi', type: 'building', immediate: ['獲得 8 分'], permanent: ['棄掉 1 張你已打出的領袖卡，換 6 分'], src: `${S} 第 14 頁` },
+  { id: 'dev-163', n: 163, set: 'pazzi', type: 'venture', immediate: ['每位其他玩家要給你 1 木、1 石、1 元或 1 僕人（他們選）'], permanent: ['終局獲得 4 分'], src: `${S} 第 15 頁` },
+  { id: 'dev-164', n: 164, set: 'pazzi', type: 'venture', immediate: ['抽 2 張新領袖卡'], permanent: ['終局每張你已打出的領袖卡，獲得 2 分'], src: `${S} 第 15 頁` },
+  { id: 'dev-165', n: 165, set: 'pazzi', type: 'venture', immediate: ['每位其他玩家要給你 2 木、2 石、2 元或 2 僕人（他們選）'], permanent: ['終局獲得 6 分'], src: `${S} 第 15 頁` },
+  { id: 'dev-166', n: 166, set: 'pazzi', type: 'venture', immediate: ['獲得 3 元'], permanent: ['終局每張你已打出的建築，獲得 2 分'], src: `${S} 第 15 頁` },
+  { id: 'dev-167', n: 167, set: 'pazzi', type: 'venture', immediate: ['每位其他玩家要給你 3 木、3 石、3 元或 3 僕人（他們選）'], permanent: ['終局獲得 8 分'], src: `${S} 第 15 頁` },
+  { id: 'dev-168', n: 168, set: 'pazzi', type: 'venture', immediate: ['拿任一顏色點數 7 以下的卡'], permanent: ['終局獲得 7 分'], src: `${S} 第 15 頁` },
+]
