@@ -307,3 +307,17 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* 屬性面板裡的「評分狀態」（三選一）：沿用 .fs-seg */
+.ht-rating-label {
+  border-bottom: 0;
+}
+
+.ht-rating-seg {
+  margin: 0 0 10px;
+}
+
+.fs-seg button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

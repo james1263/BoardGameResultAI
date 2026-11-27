@@ -1187,7 +1187,12 @@ function Library({
                 onExtraSortsChange={setExtraSorts}
                 isAdmin={isAdmin}
                 hasSession={hasSession}
-                filterCount={advancedFilterCount - Number(groupByMine) - hiddenGroups.length}
+                filterCount={
+                  advancedFilterCount -
+                  Number(groupByMine) -
+                  hiddenGroups.length -
+                  Number(ratingFilterActive)
+                }
                 onOpenFilter={() => setIsFilterOpen(true)}
                 showNew={showNew}
                 onShowNewChange={setShowNew}
@@ -1199,6 +1204,9 @@ function Library({
                 onHiddenGroupsChange={setHiddenGroups}
                 groupByMine={groupByMine}
                 onGroupByMineChange={setGroupByMine}
+                ratingFilter={ratingFilter}
+                onRatingFilterChange={setRatingFilter}
+                canFilterByRating={canFilterByRating}
                 showBoard={vip.isVip || isAdmin}
                 boardBadge={boardBadge}
                 onOpenBoard={openAllDiscussions}
@@ -1249,9 +1257,6 @@ function Library({
             setTimeLimit={setTimeLimit}
             difficultyLevels={difficultyLevels}
             toggleDifficultyLevel={toggleDifficultyLevel}
-            ratingFilter={ratingFilter}
-            setRatingFilter={setRatingFilter}
-            canFilterByRating={canFilterByRating}
             hiddenGroups={hiddenGroups}
             toggleMineGroup={toggleMineGroup}
             groupByMine={groupByMine}

@@ -4,15 +4,19 @@ import {
   MINE_GROUPS,
   MINE_GROUP_LABELS,
   NEW_GAME_DAYS,
+  RATING_FILTERS,
+  RATING_FILTER_LABELS,
   isSortKeyAllowed,
   type ExtraSort,
   type MineGroup,
+  type RatingFilter,
   type SortKey,
   type ViewMode,
 } from '../lib/libraryTypes'
 import { useBackClose } from '../lib/useBackClose'
 import ViewToggle from './ViewToggle'
 import '../styles/home-toolbar.css'
+import '../styles/filter-sheet.css'
 
 const MAX_EXTRA_SORTS = 2
 
@@ -169,6 +173,9 @@ export default function HomeToolbar({
   onHiddenGroupsChange,
   groupByMine,
   onGroupByMineChange,
+  ratingFilter,
+  onRatingFilterChange,
+  canFilterByRating,
   showBoard,
   boardBadge,
   onOpenBoard,
@@ -196,6 +203,10 @@ export default function HomeToolbar({
   onHiddenGroupsChange: (next: MineGroup[]) => void
   groupByMine: boolean
   onGroupByMineChange: (value: boolean) => void
+  // 評分狀態（我評過／我還沒評）：屬於「我的紀錄」，所以放在屬性面板
+  ratingFilter: RatingFilter
+  onRatingFilterChange: (value: RatingFilter) => void
+  canFilterByRating: boolean
   // 留言板圖示（VIP／管理者才有）
   showBoard?: boolean
   boardBadge?: string | number | null
@@ -484,6 +495,31 @@ export default function HomeToolbar({
                   />
                 </label>
               ))}
+              <div className="ht-prop-row ht-rating-label">
+                <span>評分狀態</span>
+              </div>
+              {!canFilterByRating && (
+                <p className="fs-tip">評分資料讀取完成後才能使用。</p>
+              )}
+              <div
+                className="fs-seg ht-rating-seg"
+                role="radiogroup"
+                aria-label="評分狀態"
+              >
+                {RATING_FILTERS.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={ratingFilter === value}
+                    className={ratingFilter === value ? 'on' : ''}
+                    disabled={!canFilterByRating && value !== 'all'}
+                    onClick={() => onRatingFilterChange(value)}
+                  >
+                    {RATING_FILTER_LABELS[value]}
+                  </button>
+                ))}
+              </div>
             </>
           )}
         </Sheet>

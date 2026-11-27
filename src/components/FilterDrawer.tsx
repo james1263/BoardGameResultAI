@@ -4,14 +4,12 @@ import {
   DIFFICULTY_LEVELS,
   DIFFICULTY_LEVEL_INFO,
   MAIN_CATEGORIES,
-  RATING_FILTER_LABELS,
   TIME_LIMITS,
   type CategoryMode,
   type DifficultyLevel,
   type LibraryGame,
   type MineGroup,
   type NumericFilter,
-  type RatingFilter,
 } from '../lib/libraryTypes'
 import '../styles/home-toolbar.css'
 import '../styles/filter-sheet.css'
@@ -50,10 +48,6 @@ export type FilterDrawerProps = {
   difficultyLevels: DifficultyLevel[]
   toggleDifficultyLevel: (level: DifficultyLevel) => void
 
-  ratingFilter: RatingFilter
-  setRatingFilter: (value: RatingFilter) => void
-  canFilterByRating: boolean
-
   hiddenGroups: MineGroup[]
   toggleMineGroup: (group: MineGroup) => void
   groupByMine: boolean
@@ -67,7 +61,6 @@ type PropKey =
   | 'recommend'
   | 'time'
   | 'difficulty'
-  | 'rating'
 
 const PROPS: { key: PropKey; label: string; icon: string }[] = [
   { key: 'cat', label: '類型', icon: '≡' },
@@ -76,7 +69,6 @@ const PROPS: { key: PropKey; label: string; icon: string }[] = [
   { key: 'recommend', label: '推薦人數', icon: '#' },
   { key: 'time', label: '遊戲時間', icon: '◷' },
   { key: 'difficulty', label: 'BGG 難度', icon: '#' },
-  { key: 'rating', label: '評分狀態', icon: '★' },
 ]
 
 type Page = { kind: 'pick' } | { kind: 'edit'; prop: PropKey }
@@ -132,8 +124,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
     recommendPlayerCount,
     timeLimit,
     difficultyLevels,
-    ratingFilter,
-    canFilterByRating,
   } = props
 
   const [page, setPage] = useState<Page>({ kind: 'pick' })
@@ -173,7 +163,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
     recommend: recommendPlayerCount !== '',
     time: timeLimit !== '',
     difficulty: difficultyLevels.length > 0,
-    rating: ratingFilter !== 'all',
   }
   const activeProps = PROPS.filter((p) => active[p.key])
 
@@ -195,8 +184,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
         return DIFFICULTY_LEVELS.filter((l) => difficultyLevels.includes(l))
           .map((l) => DIFFICULTY_LEVEL_INFO[l].name)
           .join('、')
-      case 'rating':
-        return RATING_FILTER_LABELS[ratingFilter]
     }
   }
 
@@ -220,9 +207,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
         break
       case 'difficulty':
         for (const level of difficultyLevels) props.toggleDifficultyLevel(level)
-        break
-      case 'rating':
-        props.setRatingFilter('all')
         break
     }
   }
@@ -371,26 +355,6 @@ export default function FilterDrawer(props: FilterDrawerProps) {
               />
             ))}
           </div>
-        )
-      case 'rating':
-        return (
-          <>
-            {!canFilterByRating && <p className="fs-tip">登入後才能使用。</p>}
-            <div className="fs-list">
-              {(['rated', 'unrated'] as const).map((value) => (
-                <CheckRow
-                  key={value}
-                  radio
-                  disabled={!canFilterByRating}
-                  label={RATING_FILTER_LABELS[value]}
-                  checked={ratingFilter === value}
-                  onClick={() =>
-                    props.setRatingFilter(ratingFilter === value ? 'all' : value)
-                  }
-                />
-              ))}
-            </div>
-          </>
         )
     }
   }
