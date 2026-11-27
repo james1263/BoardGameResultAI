@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import RoomTimer from './RoomTimer'
 import TableHoldings from './TableHoldings'
+import DiceEditor from './DiceEditor'
+import IconPresetPicker from './IconPresetPicker'
 import { supabase } from '../lib/supabase'
 import { useSession } from '../lib/useSession'
 import {
-  ICONS,
   MAX_ROWS,
-  PRESET_GROUPS,
   fmt,
   loadTemplates,
   newRowId,
@@ -17,18 +17,13 @@ import {
 } from '../lib/scoreSheet'
 import {
   ALL_TOOLS,
-  MAX_DICE,
   MAX_DICE_GROUPS,
-  MAX_FACES,
-  MAX_LABEL,
   MAX_PLAYERS,
   TOOL_INFO,
   cellValue,
   clampValue,
   diceSummaryText,
-  diceTemplate,
   emptyDice,
-  faceTotal,
   linkedResource,
   loadStore,
   newDiceGroup,
@@ -132,10 +127,14 @@ function RowsEditor({
     }
   }
 
-  function addPreset(item: PresetItem) {
-    if (rows.length >= MAX_ROWS) return
-    if (rows.some((r) => r.name.trim() === item.name)) return
-    onChange([...rows, blankRow(item.name, item.icon)])
+  function addPresets(items: PresetItem[]) {
+    const next = [...rows]
+    for (const it of items) {
+      if (next.length >= MAX_ROWS) break
+      if (next.some((r) => r.name.trim() === it.name)) continue
+      next.push(blankRow(it.name, it.icon))
+    }
+    onChange(next)
   }
 
   async function openTemplates() {
@@ -201,20 +200,21 @@ function RowsEditor({
                 )}
               </div>
               {pickFor === r.id && (
-                <div className="gtb-icons">
-                  {ICONS.map((ic) => (
-                    <button
-                      key={ic}
-                      type="button"
-                      onClick={() => {
-                        patch(r.id, { icon: ic })
-                        setPickFor(null)
-                      }}
-                    >
-                      {ic}
-                    </button>
-                  ))}
-                </div>
+                <IconPresetPicker
+                  onPreset={
+                    isRes
+                      ? (it) => {
+                          patch(r.id, { name: it.name, icon: it.icon })
+                          setPickFor(null)
+                        }
+                      : undefined
+                  }
+                  isUsed={(name) => rows.some((x) => x.id !== r.id && x.name.trim() === name)}
+                  onIcon={(ic) => {
+                    patch(r.id, { icon: ic })
+                    setPickFor(null)
+                  }}
+                />
               )}
               <div className="gtb-line gtb-wrap">
                 {isRes ? (
@@ -310,23 +310,12 @@ function RowsEditor({
       </div>
 
       {isRes && showPreset && (
-        <div className="gtb-presets">
-          {PRESET_GROUPS.map((g) => (
-            <div key={g.label}>
-              <p className="gtb-sub">{g.label}</p>
-              <div className="gtb-chips">
-                {g.items.map((it) => {
-                  const used = rows.some((r) => r.name.trim() === it.name)
-                  return (
-                    <button key={it.name} type="button" disabled={used} onClick={() => addPreset(it)}>
-                      {it.icon} {it.name}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
+        <IconPresetPicker
+          showIcons={false}
+          onPreset={(it) => addPresets([it])}
+          onGroup={addPresets}
+          isUsed={(name) => rows.some((r) => r.name.trim() === name)}
+        />
       )}
 
       {showTpl && (
@@ -341,104 +330,6 @@ function RowsEditor({
           <p className="gtb-muted">載入會取代目前列出的項目。</p>
         </div>
       )}
-    </div>
-  )
-}
-
-/* ───────────── 骰子設定 ───────────── */
-
-function DiceEditor({
-  initial,
-  onSave,
-  onCancel,
-}: {
-  initial: DiceGroup
-  onSave: (g: DiceGroup) => void
-  onCancel: () => void
-}) {
-  const [name, setName] = useState(initial.name)
-  const [count, setCount] = useState(initial.count)
-  const [faces, setFaces] = useState(initial.faces)
-  const [msg, setMsg] = useState('')
-  const total = faceTotal(faces)
-
-  function patchFace(index: number, p: Partial<{ label: string; qty: number }>) {
-    setFaces(faces.map((f, i) => (i === index ? { ...f, ...p } : f)))
-  }
-
-  function save() {
-    const clean = faces.map((f) => ({ label: f.label.trim(), qty: f.qty }))
-    if (clean.some((f) => !f.label)) return setMsg('每個骰面都要填文字或符號。')
-    if (clean.some((f) => f.qty < 1)) return setMsg('每個骰面至少 1 面。')
-    if (faceTotal(clean) < 2) return setMsg('骰子至少要有 2 面。')
-    if (faceTotal(clean) > MAX_FACES) return setMsg(`骰面總數最多 ${MAX_FACES} 面。`)
-    onSave({ ...initial, name: name.trim(), count, faces: clean, results: [] })
-  }
-
-  return (
-    <div className="gtb-card">
-      <div className="gtb-line">
-        <input className="gtb-in gtb-grow" value={name} maxLength={12} placeholder="骰子組名稱（選填，例：戰鬥骰）" onChange={(e) => setName(e.target.value)} />
-      </div>
-      <div className="gtb-line gtb-wrap">
-        <label className="gtb-lab">
-          顆數
-          <input
-            className="gtb-in gtb-num"
-            type="number"
-            min={1}
-            max={MAX_DICE}
-            value={count}
-            onChange={(e) => setCount(Math.max(1, Math.min(MAX_DICE, Math.round(Number(e.target.value) || 1))))}
-          />
-        </label>
-        <span className="gtb-muted">骰面共 {total}／{MAX_FACES} 面</span>
-      </div>
-      <p className="gtb-sub">快速模板（會取代下面的骰面）</p>
-      <div className="gtb-chips">
-        {[3, 4, 6, 8, 10, 12, 20].map((n) => (
-          <button key={n} type="button" onClick={() => setFaces(diceTemplate(n))}>
-            d{n}
-          </button>
-        ))}
-      </div>
-      <p className="gtb-sub">骰面：符號或文字 × 面數（例：「3點」×3、「必中」×1）</p>
-      <ul className="gtb-list">
-        {faces.map((f, index) => (
-          <li key={index} className="gtb-line">
-            <input
-              className="gtb-in gtb-grow"
-              value={f.label}
-              maxLength={MAX_LABEL}
-              placeholder="文字或符號"
-              onChange={(e) => patchFace(index, { label: e.target.value })}
-            />
-            <span className="gtb-x">×</span>
-            <input
-              className="gtb-in gtb-num"
-              type="number"
-              min={1}
-              value={f.qty}
-              onChange={(e) => patchFace(index, { qty: Math.max(1, Math.round(Number(e.target.value) || 1)) })}
-            />
-            <button type="button" className="gtb-sq" aria-label="刪除這個骰面" disabled={faces.length <= 1} onClick={() => setFaces(faces.filter((_, i) => i !== index))}>
-              ✕
-            </button>
-          </li>
-        ))}
-      </ul>
-      <button type="button" className="gtb-btn" disabled={total >= MAX_FACES} onClick={() => setFaces([...faces, { label: '', qty: 1 }])}>
-        ＋ 新增骰面
-      </button>
-      {msg && <p className="gtb-error">{msg}</p>}
-      <div className="gtb-btnrow">
-        <button type="button" className="gtb-btn" onClick={onCancel}>
-          取消
-        </button>
-        <button type="button" className="gtb-btn main" onClick={save}>
-          完成
-        </button>
-      </div>
     </div>
   )
 }

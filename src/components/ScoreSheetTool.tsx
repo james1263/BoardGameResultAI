@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  ICONS,
-  PRESET_GROUPS,
   MAX_ROWS,
   MAX_VALUE,
   checkVip,
@@ -19,6 +17,7 @@ import {
   type SheetTemplate,
   type ToolKind,
 } from '../lib/scoreSheet'
+import IconPresetPicker from './IconPresetPicker'
 import '../styles/score-sheet.css'
 
 // 兩個小工具共用這支元件：
@@ -285,38 +284,21 @@ function SheetEditor({
               </div>
 
               {pickerFor === row.id && (
-                <div className="ss-picker">
-                  <div className="ss-picker-grid">
-                    {ICONS.map((icon) => (
-                      <button
-                        key={icon}
-                        type="button"
-                        className="ss-picker-item"
-                        onClick={() => {
-                          update(row.id, { icon })
-                          setPickerFor(null)
-                        }}
-                      >
-                        {icon}
-                      </button>
-                    ))}
-                  </div>
-                  <label className="gt-field">
-                    自己輸入（太新的圖示，舊電腦會變方框）
-                    <input
-                      className="gt-input ss-icon-input"
-                      value=""
-                      placeholder="貼上表情符號"
-                      onChange={(event) => {
-                        const v = Array.from(event.target.value).slice(0, 2).join('')
-                        if (v) {
-                          update(row.id, { icon: v })
+                <IconPresetPicker
+                  onPreset={
+                    isRes
+                      ? (it) => {
+                          update(row.id, { name: it.name, icon: it.icon })
                           setPickerFor(null)
                         }
-                      }}
-                    />
-                  </label>
-                </div>
+                      : undefined
+                  }
+                  isUsed={(name) => rows.some((r) => r.id !== row.id && r.name === name)}
+                  onIcon={(icon) => {
+                    update(row.id, { icon })
+                    setPickerFor(null)
+                  }}
+                />
               )}
 
               {isRes ? (
@@ -422,31 +404,15 @@ function SheetEditor({
               {showPresets ? '收起常用資源' : '＋ 從常用資源加入'}
             </button>
             {showPresets && (
-              <div className="ss-presets">
-                {PRESET_GROUPS.map((g) => (
-                  <div key={g.label} className="ss-preset-group">
-                    <div className="ss-preset-head">
-                      <span>{g.label}</span>
-                      <button type="button" className="ss-link" onClick={() => addPreset(g.items)}>
-                        整組加入
-                      </button>
-                    </div>
-                    <div className="ss-preset-chips">
-                      {g.items.map((it) => (
-                        <button
-                          key={it.name}
-                          type="button"
-                          className="ss-preset-chip"
-                          onClick={() => addPreset([it])}
-                        >
-                          {it.icon} {it.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              <>
+                <IconPresetPicker
+                  showIcons={false}
+                  onPreset={(it) => addPreset([it])}
+                  onGroup={(items) => addPreset(items)}
+                  isUsed={(name) => rows.some((r) => r.name === name)}
+                />
                 <p className="gt-hint">點一個加一列，「整組加入」會把這一組全部加進來，之後都可以再改名稱與圖示。</p>
-              </div>
+              </>
             )}
           </>
         )}
