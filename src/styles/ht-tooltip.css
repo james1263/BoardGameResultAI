@@ -39,10 +39,6 @@
   transform: translate(-50%, 0);
 }
 
-/* 小工具按鈕有自己的長按選單，不顯示這個提示 */
-.ht-bar .ht-btn.gt-launch-icon::after {
-  display: none;
-}
 
 :root[data-theme="light"] .ht-bar .ht-btn::after {
   background: rgba(40, 40, 40, 0.92);

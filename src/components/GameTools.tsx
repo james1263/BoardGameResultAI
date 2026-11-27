@@ -145,7 +145,6 @@ export function ToolsButton({
         type="button"
         className="ht-btn gt-launch-icon"
         aria-label="小工具"
-        title="小工具"
         style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
         onPointerDown={(event) => {
           longRef.current = false
