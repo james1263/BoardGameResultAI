@@ -1,0 +1,49 @@
+/* 主畫面圖示列：滑鼠移上去或手機長按時，在圖示下方顯示名字（取自 aria-label） */
+.ht-bar .ht-btn {
+  position: relative;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.ht-bar .ht-btn::after {
+  content: attr(aria-label);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 60;
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: rgba(20, 20, 20, 0.92);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -2px);
+  transition: opacity 0.12s ease 0s, transform 0.12s ease 0s;
+}
+
+@media (hover: hover) {
+  .ht-bar .ht-btn:hover::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    transition-delay: 0.35s;
+  }
+}
+
+.ht-bar .ht-btn.ht-show-tip::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* 小工具按鈕有自己的長按選單，不顯示這個提示 */
+.ht-bar .ht-btn.gt-launch-icon::after {
+  display: none;
+}
+
+:root[data-theme="light"] .ht-bar .ht-btn::after {
+  background: rgba(40, 40, 40, 0.92);
+}

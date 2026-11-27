@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react'
 import { createPortal } from 'react-dom'
 import {
   MINE_GROUPS,
@@ -17,6 +24,7 @@ import { useBackClose } from '../lib/useBackClose'
 import ViewToggle from './ViewToggle'
 import '../styles/home-toolbar.css'
 import '../styles/filter-sheet.css'
+import '../styles/ht-tooltip.css'
 
 const MAX_EXTRA_SORTS = 2
 
@@ -218,6 +226,37 @@ export default function HomeToolbar({
   const [panel, setPanel] = useState<'sort' | 'props' | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
+  // 手機長按圖示 0.45 秒顯示名字（電腦版靠 CSS 的滑鼠移上去）；長按後放開不會觸發點擊
+  const lpTimer = useRef<number | null>(null)
+  const lpFired = useRef(false)
+  function lpClear() {
+    if (lpTimer.current !== null) {
+      window.clearTimeout(lpTimer.current)
+      lpTimer.current = null
+    }
+  }
+  function lpStart(event: ReactPointerEvent<HTMLDivElement>) {
+    lpFired.current = false
+    lpClear()
+    if (event.pointerType === 'mouse') return
+    const btn = (event.target as HTMLElement).closest('.ht-btn') as HTMLElement | null
+    // 小工具按鈕自己有長按選單，不處理
+    if (!btn || btn.classList.contains('gt-launch-icon')) return
+    lpTimer.current = window.setTimeout(() => {
+      lpTimer.current = null
+      lpFired.current = true
+      btn.classList.add('ht-show-tip')
+      window.setTimeout(() => btn.classList.remove('ht-show-tip'), 1800)
+    }, 450)
+  }
+  function lpSwallowClick(event: ReactMouseEvent<HTMLDivElement>) {
+    if (lpFired.current) {
+      lpFired.current = false
+      event.stopPropagation()
+      event.preventDefault()
+    }
+  }
+
   const searching = searchOpen || searchText !== ''
   useEffect(() => {
     if (searchOpen) inputRef.current?.focus()
@@ -275,7 +314,18 @@ export default function HomeToolbar({
 
   return (
     <div className="ht-wrap">
-      <div className="ht-bar" role="toolbar" aria-label="搜尋、排序與篩選">
+      <div
+        className="ht-bar"
+        role="toolbar"
+        aria-label="搜尋、排序與篩選"
+        onPointerDown={lpStart}
+        onPointerUp={lpClear}
+        onPointerCancel={lpClear}
+        onClickCapture={lpSwallowClick}
+        onContextMenu={(event) => {
+          if (lpFired.current || lpTimer.current !== null) event.preventDefault()
+        }}
+      >
         <div className="ht-icons">
           <button
             type="button"
