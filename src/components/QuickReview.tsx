@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { getQuickReview } from '../data/quickReview'
 import type { ReviewSection } from '../data/quickReview/risingSun'
 import '../styles/quick-review.css'
+import TermText, { TermViewProvider, stripTerms } from './TermText'
+import { useVip } from '../lib/useVip'
 
 function Items({ section }: { section: ReviewSection }) {
   return (
@@ -9,8 +11,12 @@ function Items({ section }: { section: ReviewSection }) {
       {section.items.map((item, i) => (
         <li key={i} className="qr-item">
           <span className="qr-text">
-            {item.label && <b className="qr-label">{item.label}</b>}
-            {item.text}
+            {item.label && (
+              <b className="qr-label">
+                <TermText text={item.label} />
+              </b>
+            )}
+            <TermText text={item.text} />
           </span>
           <span className="qr-src">{item.src}</span>
         </li>
@@ -22,7 +28,7 @@ function Items({ section }: { section: ReviewSection }) {
 // 關鍵字（空白分隔，全部都要出現）比對區塊標題與內文
 function sectionMatches(section: ReviewSection, query: string): boolean {
   if (query === '') return true
-  const hay = [section.title, ...section.items.map((item) => `${item.label ?? ''} ${item.text}`)]
+  const hay = [section.title, ...section.items.map((item) => stripTerms(`${item.label ?? ''} ${item.text}`))]
     .join('\n')
     .toLowerCase()
   return query
@@ -44,6 +50,8 @@ export default function QuickReview({
   onPanelChange?: (open: boolean) => void
 }) {
   const data = getQuickReview(bggName)
+  // 名詞長按看圖只開給 VIP／管理者（useVip 管理者也算）；在這裡查一次，內部的名詞共用
+  const vip = useVip()
   const rootRef = useRef<HTMLDivElement | null>(null)
   // 已套用的篩選（按 OK 後才生效）
   const [applied, setApplied] = useState<string[]>([])
@@ -117,6 +125,7 @@ export default function QuickReview({
   }
 
   return (
+    <TermViewProvider value={vip.isVip}>
     <div className="qr" ref={rootRef}>
       {filtering && (
         <div className="qr-bar">
@@ -199,5 +208,6 @@ export default function QuickReview({
         </details>
       ))}
     </div>
+    </TermViewProvider>
   )
 }
