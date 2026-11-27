@@ -1,0 +1,280 @@
+/* 首頁工具列：搜尋／排序／篩選／屬性四個圖示（仿 Notion）與底部面板 */
+
+.ht-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.ht-bar {
+  --ht-size: 44px;
+  position: relative;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.ht-icons,
+.ht-mine {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* 留言板、小工具緊接在 ♡ ✓ 右邊 */
+.ht-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 0;
+}
+
+.ht-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ht-size);
+  height: var(--ht-size);
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--c-ink-soft, #6b7a70);
+  cursor: pointer;
+}
+
+.ht-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.ht-btn.on {
+  background: rgba(63, 125, 88, 0.14);
+  color: var(--c-forest, #3f7d58);
+}
+
+:root[data-theme="dark"] .ht-btn {
+  color: #b8c4bc;
+}
+
+:root[data-theme="dark"] .ht-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="dark"] .ht-btn.on {
+  background: rgba(143, 212, 164, 0.18);
+  color: #9be3b2;
+}
+
+@media (max-width: 480px) {
+  .ht-bar {
+    --ht-size: 40px;
+    gap: 4px 4px;
+  }
+}
+
+.ht-badge {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--c-forest, #3f7d58);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* 搜尋框：蓋在搜尋圖示右邊，暫時遮住其他按鈕 */
+.ht-search {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: var(--ht-size);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--ht-size);
+  padding: 0 12px;
+  border: 1px solid var(--c-line, #ddd3bf);
+  border-radius: 12px;
+  background: var(--c-paper, #fffefa);
+  color: var(--c-ink-soft, #6b7a70);
+}
+
+:root[data-theme="dark"] .ht-search {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: #202a24;
+}
+
+.ht-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--c-ink, #34463c);
+  font-size: 16px;
+}
+
+.ht-search-x {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* 底部面板 */
+.ht-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1240;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.ht-sheet {
+  width: min(520px, 100%);
+  max-height: 85vh;
+  padding: 8px 16px 24px;
+  overflow-y: auto;
+  border-radius: 18px 18px 0 0;
+  background: #fffdf8;
+  color: #34463c;
+}
+
+:root[data-theme="dark"] .ht-sheet {
+  background: #212121;
+  color: #eee;
+}
+
+.ht-grip {
+  width: 40px;
+  height: 4px;
+  margin: 0 auto 8px;
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.5);
+}
+
+.ht-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  margin-bottom: 8px;
+}
+
+.ht-sheet-head strong {
+  font-size: 17px;
+}
+
+.ht-done {
+  border: 0;
+  background: transparent;
+  color: #3b7de0;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ht-tip {
+  margin: 0 0 10px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.ht-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.ht-step {
+  flex: none;
+  width: 36px;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.ht-row select {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font-size: 16px;
+}
+
+:root[data-theme="dark"] .ht-row select option {
+  background: #212121;
+}
+
+.ht-dir {
+  flex: none;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ht-x {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.ht-add {
+  margin-top: 6px;
+  padding: 10px 4px;
+  border: 0;
+  background: transparent;
+  color: #3b7de0;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.ht-prop-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+  font-size: 15px;
+}
+
+.ht-prop-row input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+}
+
+.ht-tip-gap {
+  margin-top: 18px;
+}

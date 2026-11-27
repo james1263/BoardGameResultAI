@@ -63,9 +63,6 @@ export default function TopBar({
             scrollToTop()
           }}
         >
-          <span className="sb-logo" aria-hidden="true">
-            🎲
-          </span>
           <span className="sb-brand-text">
             <strong>玩桌遊</strong>
           </span>

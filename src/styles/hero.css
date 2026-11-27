@@ -315,3 +315,8 @@
     line-height: 50px;
   }
 }
+
+/* 2026-11-27：拿掉標語，工具列置左 */
+.hero-inner {
+  justify-content: flex-start;
+}

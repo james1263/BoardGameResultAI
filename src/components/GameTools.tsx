@@ -6,6 +6,7 @@ import ScoreSheetTool from './ScoreSheetTool'
 import { clearResourceSnapshot } from '../lib/scoreSheet'
 import '../styles/game-tools.css'
 import '../styles/tools-float.css'
+import '../styles/home-toolbar.css'
 
 export type ToolView = 'grid' | 'dice' | 'ladder' | 'sheet' | 'counter'
 export type ToolChoice = ToolView | 'picker'
@@ -45,6 +46,26 @@ function ToolPlusIcon() {
     >
       <rect x="3" y="3" width="18" height="18" rx="4" />
       <path d="M12 8v8M8 12h8" />
+    </svg>
+  )
+}
+
+// 首頁小工具按鈕的單色工具箱圖示（和搜尋、排序等圖示同一種線條風格）
+function ToolboxIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="8" width="18" height="12" rx="2" />
+      <path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M3 13h18M11 13v2h2v-2" />
     </svg>
   )
 }
@@ -167,7 +188,10 @@ export function ToolsButton({
       <button
         ref={btnRef}
         type="button"
-        className="explore-mine-btn gt-launch"
+        className="ht-btn gt-launch-icon"
+        aria-label="小工具"
+        title="小工具"
+        style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
         onPointerDown={(event) => {
           longRef.current = false
           slideRef.current = event.pointerType !== 'mouse'
@@ -220,7 +244,7 @@ export function ToolsButton({
           onSelect('grid')
         }}
       >
-        🧰 小工具
+        <ToolboxIcon />
       </button>
       {menu &&
         createPortal(

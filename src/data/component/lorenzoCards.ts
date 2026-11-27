@@ -55,7 +55,6 @@ export const LORENZO_LEADER_KIND_LABEL: Record<LorenzoLeaderKind, string> = {
 }
 
 const S = '46 張總表 v3 第 1 頁；荷蘭文手冊 第 15～19 頁'
-// const S2 = '46 張總表 v3 第 1 頁；舊版速查'
 
 export const LORENZO_LEADERS: LorenzoLeader[] = [
   // ── 基本盒 20 張 ──
