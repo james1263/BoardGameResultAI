@@ -15,6 +15,7 @@ import {
   setResourceSnapshot,
   subscribeResourceSnapshot,
   toolOf,
+  type PresetItem,
   type SheetRow,
   type SheetTemplate,
   type ToolKind,
@@ -146,6 +147,20 @@ function SheetEditor({
 
   function update(id: string, patch: Partial<EditRow>) {
     setRows((cur) => cur.map((r) => (r.id === id ? { ...r, ...patch } : r)))
+  }
+
+  // 整組加入：把這一組常用資源一次加成新列（沒填名稱的空白列會被取代、已有的名稱跳過）
+  function addGroup(items: PresetItem[]) {
+    setRows((cur) => {
+      const kept = cur.filter((r) => r.name.trim() !== '')
+      const have = new Set(kept.map((r) => r.name))
+      const adds = items
+        .filter((it) => !have.has(it.name))
+        .map((it) => ({ ...newEditRow(), name: it.name, icon: it.icon }))
+      const next = [...kept, ...adds].slice(0, MAX_ROWS)
+      return next.length === 0 ? [newEditRow()] : next
+    })
+    setPickerFor(null)
   }
 
   function move(index: number, delta: number) {
@@ -292,6 +307,7 @@ function SheetEditor({
                         }
                       : undefined
                   }
+                  onGroup={isRes ? addGroup : undefined}
                   isUsed={(name) => rows.some((r) => r.id !== row.id && r.name === name)}
                   onIcon={(icon) => {
                     update(row.id, { icon })

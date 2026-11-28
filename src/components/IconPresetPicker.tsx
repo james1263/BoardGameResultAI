@@ -25,6 +25,13 @@ export default function IconPresetPicker({
   showIcons?: boolean
 }) {
   const [open, setOpen] = useState<Record<string, boolean>>({})
+  const [iconsOpen, setIconsOpen] = useState(false)
+
+  // 有常用資源時，圖示格只列「沒出現在常用資源裡」的圖示，而且預設收起來，畫面上就不會看到兩份一樣的圖示
+  const presetIcons = new Set(PRESET_GROUPS.flatMap((g) => g.items.map((it) => it.icon)))
+  const hasPresets = onPreset !== undefined
+  const iconList = hasPresets ? ICONS.filter((icon) => !presetIcons.has(icon)) : ICONS
+  const iconsVisible = !hasPresets || iconsOpen
 
   return (
     <div className="ipk-root ipk-root">
@@ -34,7 +41,7 @@ export default function IconPresetPicker({
           <HelpNote
             text={
               onGroup
-                ? '點組名展開，點一個加一列；「整組加入」會把這一組全部加進來。之後都可以再改名稱與圖示。'
+                ? '點組名展開，點一個＝這一列改成它；「整組加入」會把這一組全部加成新的列。之後都可以再改名稱與圖示。'
                 : '點組名展開，點一個常用資源，會自動填好名稱與圖示。'
             }
           />
@@ -84,27 +91,45 @@ export default function IconPresetPicker({
 
       {showIcons && onIcon && (
         <div className="ipk-block">
-          <p className="ipk-title">只換圖示</p>
-          <div className="ipk-grid">
-            {ICONS.map((icon) => (
-              <button key={icon} type="button" className="ipk-icon" onClick={() => onIcon(icon)}>
-                <IconView icon={icon} />
-              </button>
-            ))}
-          </div>
-          <label className="ipk-custom">
-            自己輸入
-            <input
-              className="ipk-input"
-              value=""
-              placeholder="貼上表情符號"
-              onChange={(event) => {
-                const v = Array.from(event.target.value).slice(0, 2).join('')
-                if (v) onIcon(v)
-              }}
-            />
-          </label>
-          <HelpNote text="自己輸入的表情符號如果太新，舊電腦會顯示成方框。" />
+          {hasPresets ? (
+            <button
+              type="button"
+              className="ipk-fold"
+              aria-expanded={iconsOpen}
+              onClick={() => setIconsOpen((v) => !v)}
+            >
+              <span className="ipk-arrow" aria-hidden="true">
+                {iconsOpen ? '▾' : '▸'}
+              </span>
+              換其他圖示
+            </button>
+          ) : (
+            <p className="ipk-title">選圖示</p>
+          )}
+          {iconsVisible && (
+            <>
+              <div className="ipk-grid">
+                {iconList.map((icon) => (
+                  <button key={icon} type="button" className="ipk-icon" onClick={() => onIcon(icon)}>
+                    <IconView icon={icon} />
+                  </button>
+                ))}
+              </div>
+              <label className="ipk-custom">
+                自己輸入
+                <input
+                  className="ipk-input"
+                  value=""
+                  placeholder="貼上表情符號"
+                  onChange={(event) => {
+                    const v = Array.from(event.target.value).slice(0, 2).join('')
+                    if (v) onIcon(v)
+                  }}
+                />
+              </label>
+              <HelpNote text="自己輸入的表情符號如果太新，舊電腦會顯示成方框。" />
+            </>
+          )}
         </div>
       )}
     </div>

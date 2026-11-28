@@ -626,6 +626,8 @@ function Library({
   }, activePage !== null || isFilterOpen)
   // 「今天玩什麼？」推薦視窗；開了導覽頁面就自動關掉
   const [pickerOpen, setPickerOpen] = useState(false)
+  // 挑三款是從小工具九格點進來的：按 ✕ 要回到小工具九格
+  const pickerFromTools = useRef(false)
   const [toolsView, setToolsView] = useState<ToolView | null>(null)
   function handleToolsChoice(choice: ToolChoice) {
     if (choice === 'picker') setPickerOpen(true)
@@ -633,6 +635,7 @@ function Library({
   }
   useEffect(() => {
     if (activePage !== null) {
+      pickerFromTools.current = false
       setPickerOpen(false)
       setToolsView(null)
     }
@@ -1510,11 +1513,21 @@ function Library({
         view={toolsView}
         onViewChange={setToolsView}
         onClose={() => setToolsView(null)}
-        onOpenPicker={() => setPickerOpen(true)}
+        onOpenPicker={() => {
+          pickerFromTools.current = true
+          setPickerOpen(true)
+        }}
       />
       <TodayPicker
         isOpen={pickerOpen}
-        onClose={() => setPickerOpen(false)}
+        onClose={() => {
+          setPickerOpen(false)
+          if (pickerFromTools.current) {
+            pickerFromTools.current = false
+            // 稍等再開小工具，避免兩個視窗同時改瀏覽紀錄
+            window.setTimeout(() => setToolsView('grid'), 350)
+          }
+        }}
         games={statGames}
         personal={personal}
         ratings={ratings}

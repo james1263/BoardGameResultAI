@@ -277,3 +277,33 @@ html.gt-pressing * {
   user-select: none !important;
   -webkit-touch-callout: none !important;
 }
+
+/* ───── 第三版：每種工具一種顏色的標籤 ───── */
+.gt-root.gt-root .tw-side .tw-tab[data-kind] {
+  border-left: 5px solid var(--tw-c, #8fa57a);
+  background: var(--tw-bg, #f4f1e6);
+}
+.gt-root.gt-root .tw-side .tw-tab[data-kind].on {
+  background: #ffffff;
+  border-color: var(--tw-c, #2f5d3a);
+  border-left-width: 5px;
+  color: var(--tw-c, #2f5d3a);
+  box-shadow: none;
+}
+.gt-root.gt-root .tw-tab[data-kind="counter"] { --tw-c: #d9822b; --tw-bg: #fbeedb; }
+.gt-root.gt-root .tw-tab[data-kind="sheet"] { --tw-c: #2f6fd0; --tw-bg: #e0ebfb; }
+.gt-root.gt-root .tw-tab[data-kind="dice"] { --tw-c: #8a4fc4; --tw-bg: #efe4fa; }
+.gt-root.gt-root .tw-tab[data-kind="ladder"] { --tw-c: #1f9a8a; --tw-bg: #dcf3ef; }
+
+:root[data-theme="dark"] .gt-root.gt-root .tw-side .tw-tab[data-kind] {
+  background: #2a372d;
+  color: #e8efe0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .tw-side .tw-tab[data-kind].on {
+  background: #34463a;
+  color: #ffffff;
+}
+:root[data-theme="dark"] .gt-root.gt-root .tw-tab[data-kind="counter"] { --tw-c: #f0a050; }
+:root[data-theme="dark"] .gt-root.gt-root .tw-tab[data-kind="sheet"] { --tw-c: #6fa3ff; }
+:root[data-theme="dark"] .gt-root.gt-root .tw-tab[data-kind="dice"] { --tw-c: #c79bff; }
+:root[data-theme="dark"] .gt-root.gt-root .tw-tab[data-kind="ladder"] { --tw-c: #5fd0c0; }

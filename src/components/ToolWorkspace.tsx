@@ -447,6 +447,7 @@ export default function ToolWorkspace({
                     role="tab"
                     aria-selected={t.id === activeId}
                     aria-label={WS_INFO[t.kind].name}
+                    data-kind={t.kind}
                     className={`tw-tab${t.id === activeId ? ' on' : ''}`}
                     onClick={() => {
                       setActiveId(t.id)
