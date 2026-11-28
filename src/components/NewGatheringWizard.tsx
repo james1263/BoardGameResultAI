@@ -5,7 +5,20 @@ import { askConfirm } from '../lib/askConfirm'
 import { todayLocal } from '../lib/useLoyalty'
 import { announcePlayed } from '../lib/useGamePlaySessions'
 import { useBackClose } from '../lib/useBackClose'
+import {
+  ALL_TOOLS,
+  TOOL_INFO,
+  loadStore,
+  newDraft,
+  saveStore,
+  uid,
+  type TableTool,
+} from '../lib/gameTable'
 import '../styles/new-gathering.css'
+import '../styles/new-gathering-steps.css'
+
+const STEP_NAMES = ['基本資料', '指定遊戲', '參加者', '聚會連結', '小工具', '確認']
+const LAST_STEP = STEP_NAMES.length
 
 type GameOption = { bggName: string; name: string; referenceOnly?: boolean }
 type Player = { id: string; nickname: string }
@@ -48,6 +61,9 @@ export default function NewGatheringWizard({
   const [adminId, setAdminId] = useState<string | null>(null)
   const [attempted, setAttempted] = useState(false)
   const [playersOpen, setPlayersOpen] = useState(false)
+  const [step, setStep] = useState(1)
+  const [wantTools, setWantTools] = useState(false)
+  const [tools, setTools] = useState<TableTool[]>([])
   const adminInit = useRef(false)
   const sec1Ref = useRef<HTMLElement | null>(null)
   const sec2Ref = useRef<HTMLElement | null>(null)
@@ -222,6 +238,30 @@ export default function NewGatheringWizard({
     target.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  function goNext() {
+    if (busy) return
+    const err = step === 1 ? stepErrors[1] : step === 2 ? stepErrors[2] : step === 4 ? stepErrors[4] : undefined
+    if (err) {
+      setAttempted(true)
+      return
+    }
+    setAttempted(false)
+    setStep((current) => Math.min(LAST_STEP, current + 1))
+  }
+
+  function goBack() {
+    if (busy) return
+    setAttempted(false)
+    setError('')
+    setStep((current) => Math.max(1, current - 1))
+  }
+
+  function toggleTool(tool: TableTool) {
+    setTools((current) =>
+      current.includes(tool) ? current.filter((x) => x !== tool) : [...current, tool],
+    )
+  }
+
   async function submit() {
     setError('')
     setAttempted(true)
@@ -230,25 +270,6 @@ export default function NewGatheringWizard({
       return
     }
     const capValue = capValueNow
-
-    const parts: string[] = []
-    if (otherPicked.length > 0) {
-      parts.push(
-        `將有 ${otherPicked.length} 位玩家加入出席名單，他們會自動成為 VIP 並計入集點。`,
-      )
-    }
-    const skipped: string[] = []
-    if (otherPicked.length === 0) skipped.push('參加者')
-    if (linkAllowed && !linkOn) skipped.push('聚會連結')
-    if (skipped.length > 0) parts.push(`這次沒有設定：${skipped.join('、')}。`)
-    if (
-      parts.length > 0 &&
-      !(await askConfirm(`${parts.join('')}確定建立聚會嗎？`, {
-        confirmText: '建立聚會',
-        danger: false,
-      }))
-    )
-      return
 
     setBusy(true)
     const { data, error: insertError } = await supabase
@@ -300,6 +321,32 @@ export default function NewGatheringWizard({
       }
     }
 
+    // 小工具：寫成這支手機上這場聚會的「開桌草稿」，進房間按「開新桌」會接著設定
+    if (wantTools && tools.length > 0) {
+      try {
+        const store = loadStore(id)
+        const base = store.draft ?? newDraft()
+        const names = picked.map((userId) => ({
+          id: uid(),
+          name: (allPlayers.find((p) => p.id === userId)?.nickname || '玩家').slice(0, 12),
+          userId,
+        }))
+        const first = games[0]
+        saveStore(id, {
+          ...store,
+          draft: {
+            ...base,
+            title: first ? (gameName.get(first) ?? first) : base.title,
+            bggName: first ?? null,
+            tools,
+            players: names.length >= 2 ? names : base.players,
+          },
+        })
+      } catch {
+        warnings.push('小工具草稿沒有存成功，請進房間按「開新桌」自己設定。')
+      }
+    }
+
     setBusy(false)
     // 資料庫已自動替管理者記一次已玩（聚會日到了才記）：讓畫面上的「已玩」打勾同步
     if (gamesSaved && date <= todayLocal()) announcePlayed(games)
@@ -348,7 +395,8 @@ export default function NewGatheringWizard({
         ) : (
           <>
             <div className="ngw-body">
-              <section className="ngw-sec" ref={sec1Ref}>
+              {step === 1 && (
+<section className="ngw-sec" ref={sec1Ref}>
                 <h3>1. 基本資料</h3>
                 {attempted && stepErrors[1] && <p className="ngw-error">{stepErrors[1]}</p>}
                 <label className="ngw-field">
@@ -382,8 +430,10 @@ export default function NewGatheringWizard({
                   同一天可以新增多場（場次名稱不能重複）。集點是一天最多 1 點：出席並把任一款指定遊戲的七項評分填完整（或免評分）就得 1 點。
                 </p>
               </section>
+)}
 
-              <section className="ngw-sec" ref={sec2Ref}>
+              {step === 2 && (
+<section className="ngw-sec" ref={sec2Ref}>
                 <h3>2. 指定遊戲</h3>
                 {attempted && stepErrors[2] && <p className="ngw-error">{stepErrors[2]}</p>}
                 <input
@@ -483,8 +533,10 @@ export default function NewGatheringWizard({
                   </ul>
                 )}
               </section>
+)}
 
-              <section className="ngw-sec">
+              {step === 3 && (
+<section className="ngw-sec">
                 <h3>3. 參加者（可跳過）</h3>
                 <p className="ngw-hint">
                   管理者預設已在名單上並免評分（可自行取消）。勾選的玩家會直接加入出席名單，並自動成為 VIP、計入集點。也可以只用聚會連結讓大家自己報到。
@@ -587,8 +639,10 @@ export default function NewGatheringWizard({
                 </ul>
                 )}
               </section>
+)}
 
-              <section className="ngw-sec" ref={sec4Ref}>
+              {step === 4 && (
+<section className="ngw-sec" ref={sec4Ref}>
                 <h3>4. 聚會連結與人數上限</h3>
                 {attempted && stepErrors[4] && <p className="ngw-error">{stepErrors[4]}</p>}
                 <label className={`ngw-linkopt ${linkAllowed ? '' : 'off'}`}>
@@ -626,22 +680,143 @@ export default function NewGatheringWizard({
                   </p>
                 )}
               </section>
+)}
+
+              {step === 5 && (
+                <section className="ngw-sec">
+                  <h3>5. 小工具（可跳過）</h3>
+                  <p className="ngw-hint">
+                    要在這場聚會的房間用遊戲桌工具（資源計數器、計分表等）嗎？選要用的，建立後進房間按「開新桌」會接著設定細節；不需要就選「不需要」。
+                  </p>
+                  <label className="ngw-linkopt">
+                    <input
+                      type="radio"
+                      name="ngw-tools"
+                      checked={!wantTools}
+                      onChange={() => setWantTools(false)}
+                    />
+                    不需要
+                  </label>
+                  <label className="ngw-linkopt">
+                    <input
+                      type="radio"
+                      name="ngw-tools"
+                      checked={wantTools}
+                      onChange={() => setWantTools(true)}
+                    />
+                    需要，加入工具
+                  </label>
+                  {wantTools && (
+                    <ul className="ngw-toolpick">
+                      {ALL_TOOLS.map((tool) => (
+                        <li key={tool}>
+                          <label className={tools.includes(tool) ? 'on' : ''}>
+                            <input
+                              type="checkbox"
+                              checked={tools.includes(tool)}
+                              onChange={() => toggleTool(tool)}
+                            />
+                            <span>
+                              {TOOL_INFO[tool].icon} {TOOL_INFO[tool].label}
+                              <small>{TOOL_INFO[tool].hint}</small>
+                            </span>
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {wantTools && tools.length === 0 && (
+                    <p className="ngw-hint">還沒勾工具；不勾就等於不加入。</p>
+                  )}
+                  {wantTools && tools.length > 0 && otherPicked.length + 1 < 2 && (
+                    <p className="ngw-hint">參加者不到 2 人，玩家名單要進房間再加。</p>
+                  )}
+                </section>
+              )}
+
+              {step === 6 && (
+                <section className="ngw-sec">
+                  <h3>確認聚會</h3>
+                  <ul className="ngw-confirm">
+                    <li>
+                      <b>日期</b>
+                      <span>{date}</span>
+                    </li>
+                    <li>
+                      <b>場次</b>
+                      <span>
+                        {title.trim()}
+                        {note.trim() ? `（${note.trim()}）` : ''}
+                      </span>
+                    </li>
+                    <li>
+                      <b>遊戲</b>
+                      <span>{games.map((name) => gameName.get(name) ?? name).join('、')}</span>
+                    </li>
+                    <li>
+                      <b>參加者</b>
+                      <span>
+                        {picked.length === 0
+                          ? '沒有（用聚會連結報到）'
+                          : `${picked.length} 人（會自動成為 VIP 並計入集點）`}
+                      </span>
+                    </li>
+                    <li>
+                      <b>聚會連結</b>
+                      <span>
+                        {linkOn
+                          ? `建立，人數上限 ${capacity.trim()}`
+                          : linkAllowed
+                            ? '不建立'
+                            : '不建立（補登或沒有指定遊戲）'}
+                      </span>
+                    </li>
+                    <li>
+                      <b>小工具</b>
+                      <span>
+                        {wantTools && tools.length > 0
+                          ? tools.map((tool) => TOOL_INFO[tool].label).join('、')
+                          : '不加入'}
+                      </span>
+                    </li>
+                  </ul>
+                  {isTest && <p className="ngw-hint">這是測試場，不會增加已玩次數。</p>}
+                </section>
+              )}
 
               {error && <p className="ngw-error">{error}</p>}
             </div>
 
+            <div className="ngw-stepbar" aria-label={`第 ${step} 步，共 ${LAST_STEP} 步`}>
+              <span>
+                第 {step}／{LAST_STEP} 步：{STEP_NAMES[step - 1]}
+              </span>
+              <i style={{ width: `${(step / LAST_STEP) * 100}%` }} />
+            </div>
             <div className="ngw-footer">
-              <button
-                type="button"
-                className="ngw-cancel"
-                disabled={busy}
-                onClick={() => void requestClose()}
-              >
-                取消
-              </button>
-              <button type="button" className="ngw-primary" disabled={busy} onClick={() => void submit()}>
-                {busy ? '建立中…' : '建立聚會'}
-              </button>
+              {step === 1 ? (
+                <button
+                  type="button"
+                  className="ngw-cancel"
+                  disabled={busy}
+                  onClick={() => void requestClose()}
+                >
+                  取消
+                </button>
+              ) : (
+                <button type="button" className="ngw-cancel" disabled={busy} onClick={goBack}>
+                  上一步
+                </button>
+              )}
+              {step < LAST_STEP ? (
+                <button type="button" className="ngw-primary" disabled={busy} onClick={goNext}>
+                  下一步
+                </button>
+              ) : (
+                <button type="button" className="ngw-primary" disabled={busy} onClick={() => void submit()}>
+                  {busy ? '建立中…' : '建立聚會'}
+                </button>
+              )}
             </div>
           </>
         )}

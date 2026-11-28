@@ -162,21 +162,6 @@ function SheetEditor({
     })
   }
 
-  function addPreset(items: Array<{ name: string; icon: string }>) {
-    setRows((cur) => {
-      // 剛開編輯畫面只有一列空白時，先拿掉
-      const first = cur[0]
-      const base = cur.length === 1 && first && first.name.trim() === '' ? [] : cur
-      const next = [...base]
-      for (const it of items) {
-        if (next.length >= MAX_ROWS) break
-        if (next.some((r) => r.name === it.name)) continue
-        next.push({ ...newEditRow(), name: it.name, icon: it.icon })
-      }
-      return next
-    })
-  }
-
   function check(): string {
     if (rows.length === 0) return '至少要有一列。'
     if (!rows.every((r) => r.name.trim().length > 0)) return '每一列都要填名稱。'
@@ -408,15 +393,6 @@ function SheetEditor({
         >
           ＋ 新增一列（{rows.length}／{MAX_ROWS}）
         </button>
-
-        {isRes && (
-          <IconPresetPicker
-            showIcons={false}
-            onPreset={(it) => addPreset([it])}
-            onGroup={(items) => addPreset(items)}
-            isUsed={(name) => rows.some((r) => r.name === name)}
-          />
-        )}
 
         {isVip && (
           <label className="gt-check ss-share">

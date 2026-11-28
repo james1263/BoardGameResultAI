@@ -1,0 +1,80 @@
+/* 新增聚會：分步驟版面（每一步視窗大小固定一樣，內容在視窗內捲動） */
+.ngw-panel {
+  height: min(640px, calc(100dvh - 24px));
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.ngw-panel .ngw-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.ngw-stepbar {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 8px 16px 10px;
+  font-size: 13px;
+  opacity: 0.85;
+  border-top: 1px solid rgba(128, 128, 128, 0.25);
+}
+
+.ngw-stepbar i {
+  display: block;
+  height: 3px;
+  margin-top: 6px;
+  border-radius: 2px;
+  background: #5b8c5a;
+  transition: width 0.2s ease;
+}
+
+.ngw-toolpick {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.ngw-toolpick label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.ngw-toolpick label.on {
+  border-color: #5b8c5a;
+  background: rgba(91, 140, 90, 0.14);
+}
+
+.ngw-toolpick small {
+  display: block;
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.ngw-confirm {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.ngw-confirm li {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.ngw-confirm b {
+  opacity: 0.75;
+  font-weight: 600;
+}
