@@ -3,6 +3,7 @@ import NewArrivals from './components/NewArrivals'
 import './styles/board-entry.css'
 import {
   lazy,
+  startTransition,
   Suspense,
   useCallback,
   useRef,
@@ -462,7 +463,12 @@ function Library({
     setSelectedGame(game)
   }
 
+  // 導覽列切換：點下去先有反應，重畫排在後面（手機快速連點才不會卡）
   function goPage(page: NavPage) {
+    startTransition(() => goPageNow(page))
+  }
+
+  function goPageNow(page: NavPage) {
     setWriteFromBoard(false)
     setReturnGame(null)
     // 點導覽時，先關掉開著的詳細視窗與進階篩選，避免視窗疊在一起

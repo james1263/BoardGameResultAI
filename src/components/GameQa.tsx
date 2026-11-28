@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import GameErrata from './GameErrata'
 import GameFaq, { countFaqItems, getFaqNote, getGameFaq, getUnofficialFaq } from './GameFaq'
@@ -87,6 +87,8 @@ export default function GameQa({
 
   const active: Tab | null = tabs.some((t) => t.key === tab) ? tab : (tabs[0]?.key ?? null)
   const canSearch = active === 'faq' || active === 'bgg'
+  // 分頁標籤先立刻切換，下面內容晚一點再換（內容多，切換時畫面才不會定住）
+  const shown = useDeferredValue(active)
 
   // ---- 標題列「我要投稿」：切到玩錯紀錄並打開投稿視窗 ----
   useEffect(() => {
@@ -238,13 +240,13 @@ export default function GameQa({
           document.body,
         )}
 
-      {active === 'faq' && faqData && (
+      {shown === 'faq' && faqData && (
         <section className="gqa-panel gqa-panel-faq">
           <GameFaq key={`${bggName}-faq`} bggName={bggName} hideSearch externalQuery={query} hideNotes />
         </section>
       )}
 
-      {active === 'bgg' && unofficialData && (
+      {shown === 'bgg' && unofficialData && (
         <section className="gqa-panel gqa-panel-bgg">
           <GameFaq
             key={`${bggName}-bgg`}
@@ -257,7 +259,7 @@ export default function GameQa({
         </section>
       )}
 
-      {active === 'errata' && showErrata && (
+      {shown === 'errata' && showErrata && (
         <section className="gqa-panel gqa-panel-errata">
           <GameErrata
             key={`${bggName}-errata`}

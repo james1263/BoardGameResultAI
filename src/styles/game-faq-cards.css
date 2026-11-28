@@ -116,3 +116,10 @@ body .gfaq-u .gfaq-search {
 .game-modal.gm-v2 .gqa-badge.is-unofficial {
   background: var(--gm-caramel, #b8864b);
 }
+
+/* 畫面外的卡片先不排版、不繪製（手機切換 FAQ／BGG 討論才不會定住） */
+.gfaq-card,
+.gfaq-topic {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 140px;
+}
