@@ -1,0 +1,93 @@
+/* 「聚會」跳出視窗（取代原本的側邊抽屜；只作用在 .gd-*，不影響俱樂部抽屜）
+   層級 1210：低於遊戲詳細視窗 1220、房間視窗 1230、評分視窗 1245，所以從這裡開它們都會疊在上面 */
+.gd-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1210;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 12px calc(var(--nav-h, 0px) + 12px);
+  background: rgba(20, 24, 18, 0.55);
+  animation: gd-fade 0.18s ease-out;
+}
+
+.gd-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: min(85vh, 760px);
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--c-paper, #fbf8ef);
+  color: var(--c-ink, #23301f);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+  animation: gd-pop 0.2s ease-out;
+}
+
+.gd-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--c-line, #e3dccb);
+}
+
+.gd-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.gd-close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gd-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.gd-body {
+  padding-bottom: 8px;
+}
+
+@keyframes gd-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes gd-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (max-height: 560px) {
+  .gd-dialog { max-height: 100%; }
+}
+
+:root[data-theme="dark"] .gd-dialog {
+  background: #1f241c;
+  color: #e8ecdf;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="dark"] .gd-head {
+  border-bottom-color: #343b2f;
+}
+
+:root[data-theme="dark"] .gd-head h2,
+:root[data-theme="dark"] .gd-close {
+  color: #e8ecdf;
+}

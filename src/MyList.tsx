@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import type { BoardGame } from './data/boardGames.generated'
 import { usePersonalCollection } from './lib/usePersonalCollection'
 import type { PlaySessionsApi } from './lib/useGamePlaySessions'
@@ -29,6 +30,7 @@ import ClubIcon from './components/ClubIcons'
 import { FavoritePicker, FavoritePodium, useMyFavorites } from './components/FavoriteGames'
 import './styles/club-home.css'
 import './styles/club-stats.css'
+import './styles/gathering-dialog.css'
 
 type PersonalApi = ReturnType<typeof usePersonalCollection>
 type ListedGame = BoardGame & { removedAt?: string | null }
@@ -738,14 +740,20 @@ export default function MyList({
 
     // ---------- 聚會 ----------
     if (isLoyalty) {
-        return (
-            <>
-                <div className="mylist-backdrop" onClick={onClose} />
-                <aside className="mylist-drawer" role="dialog" aria-label="聚會">
-                    <div className="mylist-header">
+        // 跳出視窗（不再是側邊抽屜）：置中、點外面或 ✕ 關閉；返回鍵由 App 的 useBackClose 處理
+        return createPortal(
+            <div className="gd-backdrop" onClick={onClose}>
+                <div
+                    className="gd-dialog"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="聚會"
+                    onClick={(event) => event.stopPropagation()}
+                >
+                    <div className="gd-head">
                         <h2>聚會</h2>
                         <button
-                            className="mylist-close"
+                            className="gd-close"
                             type="button"
                             aria-label="關閉"
                             onClick={onClose}
@@ -753,31 +761,34 @@ export default function MyList({
                             ×
                         </button>
                     </div>
-                    {personal.isLoggedIn && !isAdmin && (
-                        <TodayGatherings
-                            boardGames={boardGames}
-                            ratings={ratings}
-                            isAdmin={isAdmin}
-                        />
-                    )}
-                    <div className="mylist-body">
-                        {showUpcomingTab ? (
-                            <UpcomingGatherings
-                                embedded
+                    <div className="gd-scroll">
+                        {personal.isLoggedIn && !isAdmin && (
+                            <TodayGatherings
                                 boardGames={boardGames}
-                                isVip={isVip}
+                                ratings={ratings}
                                 isAdmin={isAdmin}
-                                renderCover={renderCover}
-                                onOpenGame={onOpenGame}
                             />
-                        ) : (
-                            <p className="club-note" style={{ margin: 16 }}>
-                                「未來聚會」是 VIP 專屬。向管理者索取通關密碼，或參加聚會報到就能成為 VIP。
-                            </p>
                         )}
+                        <div className="gd-body">
+                            {showUpcomingTab ? (
+                                <UpcomingGatherings
+                                    embedded
+                                    boardGames={boardGames}
+                                    isVip={isVip}
+                                    isAdmin={isAdmin}
+                                    renderCover={renderCover}
+                                    onOpenGame={onOpenGame}
+                                />
+                            ) : (
+                                <p className="club-note" style={{ margin: 16 }}>
+                                    「未來聚會」是 VIP 專屬。向管理者索取通關密碼，或參加聚會報到就能成為 VIP。
+                                </p>
+                            )}
+                        </div>
                     </div>
-                </aside>
-            </>
+                </div>
+            </div>,
+            document.body,
         )
     }
 
