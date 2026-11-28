@@ -131,3 +131,149 @@
 :root[data-theme="dark"] .gt-root.gt-root .tw-remove { color: #d6c27a; }
 :root[data-theme="dark"] .gt-root.gt-root .tw-remove.danger { color: #ff9a86; }
 :root[data-theme="dark"] .gt-root.gt-root .ss-live { color: #a9d6b2; }
+
+/* ───── 第二版：視窗固定大小、說明收進「！」、標籤放左邊 ───── */
+.gt-root.gt-root .gt-sheet.tw-sheet {
+  height: min(86vh, 700px);
+  max-height: none;
+}
+.gt-root.gt-root .gt-body.tw-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+.gt-root.gt-root .tw-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 8px;
+  padding: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  background: transparent;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: 2px;
+  cursor: pointer;
+}
+.gt-root.gt-root .tw-info.on {
+  background: #ffffff;
+  color: #2f5d3a;
+}
+.gt-root.gt-root .tw-help-panel {
+  padding: 10px 14px;
+  border-bottom: 1px solid #b9c0a6;
+  background: #fffbe8;
+  color: #3b3a22;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.55;
+  max-height: 40%;
+  overflow-y: auto;
+}
+.gt-root.gt-root .tw-help-panel p {
+  margin: 0 0 6px;
+  text-align: left;
+}
+.gt-root.gt-root .tw-help-panel p:last-child {
+  margin-bottom: 0;
+}
+/* 說明與提示文字一律靠左 */
+.gt-root.gt-root .tw-root .gt-hint,
+.gt-root.gt-root .tw-root .gt-msg,
+.gt-root.gt-root .tw-root .tw-setup-tip,
+.gt-root.gt-root .tw-root .tw-note p {
+  text-align: left;
+}
+/* 工作畫面：左邊是標籤、右邊是表單 */
+.gt-root.gt-root .tw-work {
+  flex-direction: row;
+}
+.gt-root.gt-root .tw-side {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 4px;
+  width: 54px;
+  padding: 10px 0 10px 6px;
+  overflow-y: auto;
+  background: #e3ecd0;
+  border-right: 1px solid #b9c0a6;
+}
+.gt-root.gt-root .tw-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.gt-root.gt-root .tw-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 2px;
+  border: 1px solid #b9c0a6;
+  border-right: 0;
+  border-radius: 10px 0 0 10px;
+  background: #f4f1e6;
+  color: #26331f;
+  font-size: 11px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.gt-root.gt-root .tw-tab-ico {
+  font-size: 18px;
+  line-height: 1.1;
+}
+.gt-root.gt-root .tw-tab.on {
+  margin-right: -1px;
+  background: #ffffff;
+  border-color: #2f5d3a;
+  color: #2f5d3a;
+  font-weight: 700;
+  box-shadow: -2px 0 0 #2f5d3a inset;
+}
+.gt-root.gt-root .tw-tab-players {
+  margin-top: 8px;
+}
+.gt-root.gt-root .tw-setup-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+:root[data-theme="dark"] .gt-root.gt-root .tw-help-panel {
+  background: #3a3a24;
+  border-color: #4a5c4e;
+  color: #efe9c0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .tw-side {
+  background: #202c24;
+  border-color: #3f5143;
+}
+:root[data-theme="dark"] .gt-root.gt-root .tw-tab {
+  background: #2a372d;
+  border-color: #4a5c4e;
+  color: #e8efe0;
+}
+:root[data-theme="dark"] .gt-root.gt-root .tw-tab.on {
+  background: #34463a;
+  border-color: #6fa57c;
+  color: #cfeccf;
+  box-shadow: -2px 0 0 #6fa57c inset;
+}
+
+/* 長按小工具按鈕、九格時：整頁暫時不能選取文字，不跳系統放大鏡（見 GameTools.tsx 的 lockSelect） */
+html.gt-pressing,
+html.gt-pressing * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+}

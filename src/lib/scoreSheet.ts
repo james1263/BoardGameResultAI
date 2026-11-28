@@ -50,6 +50,8 @@ export const ICONS: string[] = [
   '🔥', '💎', '⚔️', '🛡️', '🏹', '🏠', '🏰', '⛪', '🔨', '⚒️',
   '📜', '🃏', '🎲', '⭐', '🏆', '❤️', '⚡', '🚂', '🚢', '🧱',
   '🧪', '👑', '🔔', '🐎', '🌍', '🚀', '💡', '📦', '🧭', '🎯',
+  // 彩色圓球（用 CSS 畫，不是表情符號，舊系統也不會變方框；存進資料庫的文字是 dot:顏色）
+  'dot:white', 'dot:black', 'dot:red', 'dot:blue', 'dot:green', 'dot:yellow', 'dot:orange', 'dot:purple',
 ]
 
 export type PresetItem = { name: string; icon: string }
@@ -144,12 +146,14 @@ export const PRESET_GROUPS: PresetGroup[] = [
   {
     label: '顏色方塊',
     items: [
-      { name: '白色', icon: '⚪' },
-      { name: '黑色', icon: '⚫' },
-      { name: '紅色', icon: '🔴' },
-      { name: '藍色', icon: '🔵' },
-      { name: '綠色', icon: '🍀' },
-      { name: '黃色', icon: '🌕' },
+      { name: '白色', icon: 'dot:white' },
+      { name: '黑色', icon: 'dot:black' },
+      { name: '紅色', icon: 'dot:red' },
+      { name: '藍色', icon: 'dot:blue' },
+      { name: '綠色', icon: 'dot:green' },
+      { name: '黃色', icon: 'dot:yellow' },
+      { name: '橘色', icon: 'dot:orange' },
+      { name: '紫色', icon: 'dot:purple' },
     ],
   },
 ]

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { HelpNote } from './HelpNote'
 import { WS_MAX_NAME, WS_MAX_PLAYERS, WS_MIN_PLAYERS, resizeNames } from '../lib/toolWorkspace'
 
 // 共用玩家設定：資源計數器、計分表、爬梯子共用同一份名單，第一次設定、之後的工具直接沿用。
@@ -95,7 +96,7 @@ export default function PlayersSetup({
             )}
           </select>
         </span>
-        <span className="gt-hint">名字可以改，之後的工具都沿用這份名單</span>
+        <HelpNote text="名字可以改，之後加入的工具都沿用這份名單。" />
       </div>
 
       <div className="gt-roster">
@@ -108,7 +109,7 @@ export default function PlayersSetup({
             {rosterMsg && <p className="gt-msg">{rosterMsg}</p>}
             {!people && gatherings && gatherings.length > 0 && (
               <>
-                <div className="gt-hint">先選一場聚會（最新在上）</div>
+                <HelpNote text="先選一場聚會（最新在上），再勾選要帶入的人。" />
                 {gatherings.map((g) => (
                   <button
                     key={g.id}
@@ -123,7 +124,7 @@ export default function PlayersSetup({
             )}
             {people && (
               <>
-                <div className="gt-hint">取消勾選不玩的人，最多帶入 {WS_MAX_PLAYERS} 人</div>
+                <HelpNote text={`取消勾選不玩的人，最多帶入 ${WS_MAX_PLAYERS} 人。`} />
                 {people.map((p, i) => (
                   <label key={i} className="gt-check">
                     <input

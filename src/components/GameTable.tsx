@@ -3,6 +3,7 @@ import RoomTimer from './RoomTimer'
 import TableHoldings from './TableHoldings'
 import DiceEditor from './DiceEditor'
 import IconPresetPicker from './IconPresetPicker'
+import IconView from './IconView'
 import { supabase } from '../lib/supabase'
 import { useSession } from '../lib/useSession'
 import {
@@ -175,7 +176,7 @@ function RowsEditor({
                   disabled={isLocked}
                   onClick={() => setPickFor(pickFor === r.id ? null : r.id)}
                 >
-                  {r.icon}
+                  <IconView icon={r.icon} />
                 </button>
                 <input
                   className="gtb-in gtb-grow"
@@ -794,7 +795,7 @@ function Play({
                     <p className="gtb-sumline">
                       {table.resRows.map((r) => (
                         <span key={r.id}>
-                          {r.icon}
+                          <IconView icon={r.icon} />
                           {resValue(table, p.id, r)}
                         </span>
                       ))}
@@ -807,7 +808,7 @@ function Play({
                         return (
                           <li key={r.id}>
                             <span className="gtb-rname">
-                              {r.icon} {r.name}
+                              <IconView icon={r.icon} /> {r.name}
                             </span>
                             <button type="button" className="gtb-sq" aria-label={`${r.name} 減 1`} onClick={() => api.setValue(p.id, 'res', r.id, v - 1)}>
                               －
@@ -826,7 +827,7 @@ function Play({
                       {table.resRows.map((r) => (
                         <li key={r.id}>
                           <span className="gtb-rname">
-                            {r.icon} {r.name}
+                            <IconView icon={r.icon} /> {r.name}
                           </span>
                           <span className="gtb-rovalue">{resValue(table, p.id, r)}</span>
                         </li>
@@ -926,7 +927,7 @@ function Play({
                     return (
                       <tr key={row.id}>
                         <th>
-                          {row.icon} {row.name}
+                          <IconView icon={row.icon} /> {row.name}
                           <small>
                             {row.sign === -1 ? '－' : '＋'}
                             {fmt(row.mult)}

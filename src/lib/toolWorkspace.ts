@@ -5,11 +5,12 @@ import type { DiceGroup } from './gameTable'
 
 export type WsKind = 'resource' | 'score' | 'dice' | 'ladder'
 
-export const WS_INFO: Record<WsKind, { name: string; icon: string; needsPlayers: boolean }> = {
-  resource: { name: '資源計數器', icon: '📦', needsPlayers: true },
-  score: { name: '計分表', icon: '🧮', needsPlayers: true },
-  dice: { name: '擲骰', icon: '🎲', needsPlayers: false },
-  ladder: { name: '爬梯子', icon: '', needsPlayers: true },
+// short：左邊標籤上顯示的短名稱
+export const WS_INFO: Record<WsKind, { name: string; short: string; icon: string; needsPlayers: boolean }> = {
+  resource: { name: '資源計數器', short: '資源', icon: '📦', needsPlayers: true },
+  score: { name: '計分表', short: '計分', icon: '🧮', needsPlayers: true },
+  dice: { name: '擲骰', short: '擲骰', icon: '🎲', needsPlayers: false },
+  ladder: { name: '爬梯子', short: '梯子', icon: '', needsPlayers: true },
 }
 
 export const WS_KINDS: WsKind[] = ['resource', 'score', 'dice', 'ladder']

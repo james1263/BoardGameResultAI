@@ -12,6 +12,13 @@ import '../styles/home-toolbar.css'
 export type ToolView = 'grid' | 'dice' | 'ladder' | 'sheet' | 'counter'
 export type ToolChoice = ToolView | 'picker'
 
+// 手指長按、滑動時，手機會自動把底下的文字框選起來，害人滑不到清單。
+// 按住期間在 <html> 掛上 gt-pressing（見 tool-workspace.css：全頁不能選取、不跳放大鏡），放開或清單關掉再拿掉。
+function lockSelect(on: boolean) {
+  document.documentElement.classList.toggle('gt-pressing', on)
+  if (on) window.getSelection()?.removeAllRanges()
+}
+
 
 function ToolboxIcon() {
   return (
@@ -106,9 +113,15 @@ export function ToolsButton({
   useEffect(
     () => () => {
       if (timerRef.current !== null) window.clearTimeout(timerRef.current)
+      lockSelect(false)
     },
     [],
   )
+
+  // 長按清單關掉了才解除「不能選取」（清單開著時手指可能已經放開）
+  useEffect(() => {
+    if (menu === null) lockSelect(false)
+  }, [menu])
 
   // 手指現在壓在哪一個清單項目上（沒壓在項目上就是 null）
   function itemAt(x: number, y: number): ToolChoice | null {
@@ -145,10 +158,12 @@ export function ToolsButton({
         type="button"
         className="ht-btn gt-launch-icon"
         aria-label="小工具"
-        style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
+        title="小工具"
+        style={{ WebkitTouchCallout: 'none', userSelect: 'none', touchAction: 'none' }}
         onPointerDown={(event) => {
           longRef.current = false
           slideRef.current = event.pointerType !== 'mouse'
+          if (slideRef.current) lockSelect(true)
           startRef.current = { x: event.clientX, y: event.clientY }
           setHoverId(null)
           clearTimer()
@@ -178,12 +193,14 @@ export function ToolsButton({
           }
           slideRef.current = false
           setHoverId(null)
+          if (!longRef.current) lockSelect(false)
         }}
         onPointerLeave={clearTimer}
         onPointerCancel={() => {
           clearTimer()
           slideRef.current = false
           setHoverId(null)
+          if (!longRef.current) lockSelect(false)
         }}
         onContextMenu={(event) => {
           event.preventDefault()
@@ -334,6 +351,7 @@ function ToolGrid({ onChoose }: { onChoose: (id: ToolChoice) => void }) {
               }
               onPointerDown={(event) => {
                 suppressRef.current = false
+                lockSelect(true)
                 startRef.current = { x: event.clientX, y: event.clientY }
                 try {
                   event.currentTarget.setPointerCapture(event.pointerId)
@@ -370,10 +388,12 @@ function ToolGrid({ onChoose }: { onChoose: (id: ToolChoice) => void }) {
               onPointerUp={() => {
                 clearTimer()
                 finishDrag()
+                lockSelect(false)
               }}
               onPointerCancel={() => {
                 clearTimer()
                 setDrag(null)
+                lockSelect(false)
               }}
               onContextMenu={(event) => event.preventDefault()}
               onClick={() => {
@@ -445,7 +465,7 @@ export default function GameTools({
   return (
     <div className="gt-root gt-backdrop" onClick={onClose}>
       <div
-        className="gt-sheet"
+        className={kind === null ? 'gt-sheet' : 'gt-sheet tw-sheet'}
         role="dialog"
         aria-label="小工具"
         onClick={(event) => event.stopPropagation()}

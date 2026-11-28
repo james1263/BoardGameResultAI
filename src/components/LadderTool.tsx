@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { HelpNote } from './HelpNote'
 
 // 🪜 是 2020 年才有的表情符號，舊系統會顯示成方框，所以梯子改用自己畫的圖示
 export function LadderIcon() {
@@ -157,7 +158,7 @@ export default function LadderTool({ names }: { names: string[] }) {
 
   return (
     <div className="gt-ladder">
-      <p className="gt-hint">玩家名單與人數在上方「玩家」修改。</p>
+      <HelpNote text="玩家名單與人數在左邊「玩家」分頁修改。" />
 
       <div className="gt-actions">
         {!running && !finished && (

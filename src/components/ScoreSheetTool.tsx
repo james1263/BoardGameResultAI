@@ -20,6 +20,8 @@ import {
   type ToolKind,
 } from '../lib/scoreSheet'
 import IconPresetPicker from './IconPresetPicker'
+import IconView from './IconView'
+import { HelpNote } from './HelpNote'
 import { WS_MAX_NAME, WS_MAX_PLAYERS, WS_MIN_PLAYERS, resizeNames } from '../lib/toolWorkspace'
 import '../styles/score-sheet.css'
 
@@ -139,7 +141,6 @@ function SheetEditor({
   const [shared, setShared] = useState(initial.isShared)
   const [savedId, setSavedId] = useState<string | null>(initial.id)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
-  const [showPresets, setShowPresets] = useState(false)
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -253,11 +254,13 @@ function SheetEditor({
           />
         </label>
 
-        <p className="gt-hint ss-help">
-          {isRes
-            ? '資源計數器：遊戲中用 ＋／− 記每個人的資源數量，不計分。「起始」是開局時的數量。'
-            : '計分表：每一列是一個算分項目，設好符號與「每個算幾分」，使用時只要輸入數字。'}
-        </p>
+        <HelpNote
+          text={
+            isRes
+              ? '資源計數器：遊戲中用 ＋／− 記每個人的資源數量，不計分。「起始」是開局時的數量。'
+              : '計分表：每一列是一個算分項目，設好符號與「每個算幾分」，使用時只要輸入數字。'
+          }
+        />
 
         <ul className="ss-edit-list">
           {rows.map((row, index) => (
@@ -269,7 +272,7 @@ function SheetEditor({
                   aria-label="選擇圖示"
                   onClick={() => setPickerFor(pickerFor === row.id ? null : row.id)}
                 >
-                  {row.icon}
+                  <IconView icon={row.icon} />
                 </button>
                 <input
                   className="gt-input ss-grow"
@@ -407,26 +410,12 @@ function SheetEditor({
         </button>
 
         {isRes && (
-          <>
-            <button
-              type="button"
-              className="gt-secondary ss-add ss-preset-toggle"
-              onClick={() => setShowPresets((v) => !v)}
-            >
-              {showPresets ? '收起常用資源' : '＋ 從常用資源加入'}
-            </button>
-            {showPresets && (
-              <>
-                <IconPresetPicker
-                  showIcons={false}
-                  onPreset={(it) => addPreset([it])}
-                  onGroup={(items) => addPreset(items)}
-                  isUsed={(name) => rows.some((r) => r.name === name)}
-                />
-                <p className="gt-hint">點一個加一列，「整組加入」會把這一組全部加進來，之後都可以再改名稱與圖示。</p>
-              </>
-            )}
-          </>
+          <IconPresetPicker
+            showIcons={false}
+            onPreset={(it) => addPreset([it])}
+            onGroup={(items) => addPreset(items)}
+            isUsed={(name) => rows.some((r) => r.name === name)}
+          />
         )}
 
         {isVip && (
@@ -451,7 +440,7 @@ function SheetEditor({
               {busy ? '儲存中…' : '儲存表單'}
             </button>
           ) : (
-            <p className="gt-hint">儲存與分享需要 VIP；現在可以直接使用，但關掉後不會保留表單。</p>
+            <HelpNote text="儲存與分享需要 VIP；現在可以直接使用，但關掉後不會保留表單。" />
           )}
         </div>
       </div>
@@ -783,7 +772,7 @@ export function PlayView({
                     onClick={() => goto(sel.p, i)}
                   >
                     <span className="ss-ico" aria-hidden="true">
-                      {row.icon}
+                      <IconView icon={row.icon} />
                     </span>
                     <span className="ss-name">
                       {row.name}
@@ -888,7 +877,7 @@ export function PlayView({
                       return (
                         <li key={row.id}>
                           <span>
-                            {row.icon} {row.name}
+                            <IconView icon={row.icon} /> {row.name}
                           </span>
                           <span>
                             {v} × {row.sign === -1 ? '−' : ''}
@@ -903,7 +892,7 @@ export function PlayView({
               </li>
             ))}
           </ul>
-          <p className="gt-hint">點玩家可看分數是從哪幾列來的。</p>
+          <HelpNote text="點玩家可看分數是從哪幾列來的。" />
           <button type="button" className="gt-secondary ss-back-input" onClick={() => setTab('input')}>
             回去修改
           </button>
@@ -1094,9 +1083,7 @@ export default function ScoreSheetTool({
           </p>
         )}
         {status === 'ready' && !isVip && (
-          <p className="gt-hint">
-            儲存與分享範本需要 VIP。你現在可以新增表單直接使用，關掉後不會保留表單。
-          </p>
+          <HelpNote text="儲存與分享範本需要 VIP。你現在可以新增表單直接使用，關掉後不會保留表單。" />
         )}
 
         {mine.length > 0 && (
@@ -1118,7 +1105,7 @@ export default function ScoreSheetTool({
           </>
         )}
         {status === 'ready' && isVip && list.length === 0 && (
-          <p className="gt-hint">還沒有表單。按上面的「新增表單」建立第一份。</p>
+          <HelpNote text="還沒有表單。按上面的「新增表單」建立第一份。" />
         )}
       </div>
     </div>

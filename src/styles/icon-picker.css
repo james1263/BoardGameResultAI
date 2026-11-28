@@ -104,3 +104,55 @@
   border-color: #4a5c4e;
   color: #e8efe0;
 }
+
+/* 常用資源：每一組可折疊 */
+.ipk-root.ipk-root .ipk-fold {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  color: #26331f;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.ipk-root.ipk-root .ipk-arrow {
+  width: 1em;
+  color: #2f5d3a;
+}
+.ipk-root.ipk-root .ipk-count {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #e3ecd0;
+  color: #26331f;
+  font-size: 11px;
+  font-weight: 400;
+}
+.ipk-root.ipk-root .ipk-chips {
+  padding-top: 4px;
+}
+:root[data-theme="dark"] .ipk-root.ipk-root .ipk-fold { color: #e8efe0; }
+:root[data-theme="dark"] .ipk-root.ipk-root .ipk-arrow { color: #a9d6b2; }
+:root[data-theme="dark"] .ipk-root.ipk-root .ipk-count { background: #3f5143; color: #e8efe0; }
+
+/* 彩色圓球圖示（dot:顏色）：用 CSS 畫，不是表情符號，舊系統不會變方框 */
+.ic-dot {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  vertical-align: -0.12em;
+  box-shadow: inset 0 -0.08em 0.12em rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.ic-dot[data-dot="white"] { background: radial-gradient(circle at 35% 30%, #ffffff, #d5d8cf 70%); }
+.ic-dot[data-dot="black"] { background: radial-gradient(circle at 35% 30%, #6b6b6b, #111111 70%); }
+.ic-dot[data-dot="red"] { background: radial-gradient(circle at 35% 30%, #ff8a80, #d32f2f 70%); }
+.ic-dot[data-dot="blue"] { background: radial-gradient(circle at 35% 30%, #82b1ff, #1e5fd8 70%); }
+.ic-dot[data-dot="green"] { background: radial-gradient(circle at 35% 30%, #8fe08f, #2e9e3e 70%); }
+.ic-dot[data-dot="yellow"] { background: radial-gradient(circle at 35% 30%, #fff59d, #f2c100 70%); }
+.ic-dot[data-dot="orange"] { background: radial-gradient(circle at 35% 30%, #ffcc80, #ef7d00 70%); }
+.ic-dot[data-dot="purple"] { background: radial-gradient(circle at 35% 30%, #d1a3ff, #7b3fc4 70%); }
+:root[data-theme="dark"] .ic-dot { box-shadow: inset 0 -0.08em 0.12em rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.35); }

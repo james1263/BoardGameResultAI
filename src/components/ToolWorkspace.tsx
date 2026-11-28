@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import ScoreSheetTool, { PlayView } from './ScoreSheetTool'
 import DiceTool, { clampInt, loadDice } from './DiceTool'
 import DiceEditor from './DiceEditor'
 import LadderTool, { LadderIcon } from './LadderTool'
 import PlayersSetup from './PlayersSetup'
+import { HelpBlock, HelpNote, HelpScope, type HelpApi } from './HelpNote'
 import { clearResourceSnapshot, type SheetTemplate } from '../lib/scoreSheet'
 import { diceSummaryText, faceTotal, newDiceGroup, type DiceGroup } from '../lib/gameTable'
 import {
@@ -79,6 +80,7 @@ function DiceSetup({ onNext }: { onNext: (cfg: DiceConfig) => void }) {
 
   return (
     <div className="tw-setup-body">
+      <HelpNote text="一般骰：選顆數與面數。勾選「需要自訂骰面」：用骰子編輯器設定每個面的符號或文字（可重複）。" />
       <label className="gt-check">
         <input type="checkbox" checked={needCustom} onChange={(event) => toggleCustom(event.target.checked)} />
         需要自訂骰面（例如圖案骰、特殊面骰）
@@ -191,8 +193,28 @@ export default function ToolWorkspace({
   const [history, setHistory] = useState<string[]>([])
   const [plusMenu, setPlusMenu] = useState<{ left: number; top: number } | null>(null)
   const [confirm, setConfirm] = useState<'del' | 'exit' | null>(null)
+  const [notes, setNotes] = useState<Record<string, string>>({})
+  const [helpOpen, setHelpOpen] = useState(false)
   const plusRef = useRef<HTMLButtonElement>(null)
   const confirmTimer = useRef<number | null>(null)
+
+  // 說明文字：各元件用 <HelpNote> 登記，集中顯示在標題旁「！」
+  const helpApi = useMemo<HelpApi>(
+    () => ({
+      set: (id, text) =>
+        setNotes((cur) => {
+          if (text === null) {
+            if (!(id in cur)) return cur
+            const next = { ...cur }
+            delete next[id]
+            return next
+          }
+          return cur[id] === text ? cur : { ...cur, [id]: text }
+        }),
+    }),
+    [],
+  )
+  const noteList = Object.values(notes)
 
   const setup = queue.length > 0
   const kind = queue[0]
@@ -310,9 +332,9 @@ export default function ToolWorkspace({
     if (needsPlayersPage) {
       return (
         <div className="tw-setup-body">
-          <p className="gt-hint">
-            {kind === 'ladder' ? '爬梯子用這份玩家名單。' : '先設定玩家，之後加入的工具都沿用這份名單。'}
-          </p>
+          <HelpNote
+            text={kind === 'ladder' ? '爬梯子用這份玩家名單。' : '先設定玩家，之後加入的工具都沿用這份名單。'}
+          />
           <PlayersSetup names={players} onChange={setPlayers} />
           <div className="gt-actions">
             <button
@@ -351,7 +373,20 @@ export default function ToolWorkspace({
   return (
     <>
       <div className="gt-head">
-        <span className="gt-title">{title}</span>
+        <span className="gt-title">
+          {title}
+          {noteList.length > 0 && (
+            <button
+              type="button"
+              className={`tw-info${helpOpen ? ' on' : ''}`}
+              aria-label="說明"
+              aria-expanded={helpOpen}
+              onClick={() => setHelpOpen((v) => !v)}
+            >
+              !
+            </button>
+          )}
+        </span>
         <span className="gt-head-actions">
           {addable.length > 0 && (
             <button
@@ -377,94 +412,122 @@ export default function ToolWorkspace({
         </span>
       </div>
 
-      <div className="gt-body gt-body-sheet">
+      <div className="gt-body gt-body-sheet tw-body">
         <div className="tw-root">
-          {setup && (
-            <div className="tw-setup">
-              {tools.length > 0 && (
-                <p className="tw-setup-tip">
-                  要先設定好這個工具，按「下一步」才會加進來；已經填好的數字不會變。
-                  <button type="button" className="ss-link" onClick={cancelSetup}>
-                    取消
-                  </button>
-                </p>
-              )}
-              {renderSetup()}
+          {helpOpen && noteList.length > 0 && (
+            <div className="tw-help-panel" role="note">
+              {noteList.map((text, i) => (
+                <p key={i}>{text}</p>
+              ))}
             </div>
+          )}
+          {setup && (
+            <HelpScope api={helpApi}>
+              <div className="tw-setup">
+                {tools.length > 0 && (
+                  <div className="tw-setup-tip">
+                    <HelpNote text="要先設定好這個工具，按「下一步」才會加進來；已經填好的數字不會變。" />
+                    <button type="button" className="ss-link" onClick={cancelSetup}>
+                      ‹ 取消，回到工作畫面
+                    </button>
+                  </div>
+                )}
+                {renderSetup()}
+              </div>
+            </HelpScope>
           )}
 
           {tools.length > 0 && (
             <div className="tw-work" style={setup ? { display: 'none' } : undefined}>
-              <div className="tw-tabs" role="tablist">
+              <div className="tw-side" role="tablist" aria-orientation="vertical">
                 {tools.map((t) => (
                   <button
                     key={t.id}
                     type="button"
                     role="tab"
                     aria-selected={t.id === activeId}
+                    aria-label={WS_INFO[t.kind].name}
                     className={`tw-tab${t.id === activeId ? ' on' : ''}`}
                     onClick={() => {
                       setActiveId(t.id)
                       setConfirm(null)
                     }}
                   >
-                    <KindIcon kind={t.kind} /> {WS_INFO[t.kind].name}
+                    <span className="tw-tab-ico">
+                      <KindIcon kind={t.kind} />
+                    </span>
+                    <span className="tw-tab-name">{WS_INFO[t.kind].short}</span>
                   </button>
                 ))}
                 {hasPlayerTool && (
                   <button
                     type="button"
+                    role="tab"
+                    aria-selected={playersOpen}
+                    aria-label="玩家名單"
                     className={`tw-tab tw-tab-players${playersOpen ? ' on' : ''}`}
                     onClick={() => setPlayersOpen((v) => !v)}
                   >
-                    👥 玩家（{players.length}）
+                    <span className="tw-tab-ico" aria-hidden="true">
+                      👥
+                    </span>
+                    <span className="tw-tab-name">玩家 {players.length}</span>
                   </button>
                 )}
               </div>
 
-              {playersOpen && hasPlayerTool && (
-                <div className="tw-players-panel">
-                  <PlayersSetup names={players} onChange={setPlayers} />
-                </div>
-              )}
+              <div className="tw-main">
+                {playersOpen && hasPlayerTool && (
+                  <div className="tw-players-panel">
+                    <HelpScope api={helpApi}>
+                      <PlayersSetup names={players} onChange={setPlayers} />
+                    </HelpScope>
+                  </div>
+                )}
 
-              <div className="tw-panels">
-                {tools.map((t) => {
-                  const show = !setup && t.id === activeId
-                  return (
-                    <div key={t.id} className="tw-panel" style={show ? undefined : { display: 'none' }}>
-                      {(t.kind === 'resource' || t.kind === 'score') && t.tpl && (
-                        <PlayView tpl={t.tpl} names={players} onNames={setPlayers} active={show} />
-                      )}
-                      {t.kind === 'dice' && t.dice && (
-                        <div className="tw-plain">
-                          <DiceTool config={t.dice} history={history} onRecord={record} />
-                        </div>
-                      )}
-                      {t.kind === 'ladder' && (
-                        <div className="tw-plain">
-                          <LadderTool key={players.length} names={players} />
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+                <div className="tw-panels">
+                  {tools.map((t) => {
+                    const show = !setup && t.id === activeId
+                    const body = (
+                      <>
+                        {(t.kind === 'resource' || t.kind === 'score') && t.tpl && (
+                          <PlayView tpl={t.tpl} names={players} onNames={setPlayers} active={show} />
+                        )}
+                        {t.kind === 'dice' && t.dice && (
+                          <div className="tw-plain">
+                            <DiceTool config={t.dice} history={history} onRecord={record} />
+                          </div>
+                        )}
+                        {t.kind === 'ladder' && (
+                          <div className="tw-plain">
+                            <LadderTool key={players.length} names={players} />
+                          </div>
+                        )}
+                      </>
+                    )
+                    return (
+                      <div key={t.id} className="tw-panel" style={show ? undefined : { display: 'none' }}>
+                        {show ? <HelpScope api={helpApi}>{body}</HelpScope> : <HelpBlock>{body}</HelpBlock>}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {activeTool && (
+                  <div className="tw-foot">
+                    <button
+                      type="button"
+                      className={`ss-link tw-remove${confirm === 'del' ? ' danger' : ''}`}
+                      onClick={() => (confirm === 'del' ? removeTool(activeTool.id) : armConfirm('del'))}
+                    >
+                      {confirm === 'del'
+                        ? `再按一次移除「${WS_INFO[activeTool.kind].name}」`
+                        : `移除「${WS_INFO[activeTool.kind].name}」`}
+                    </button>
+                    {confirm === 'exit' && <span className="gt-hint">再按一次 × 離開，會清掉這些工具的數字</span>}
+                  </div>
+                )}
               </div>
-
-              {activeTool && (
-                <div className="tw-foot">
-                  <button
-                    type="button"
-                    className={`ss-link tw-remove${confirm === 'del' ? ' danger' : ''}`}
-                    onClick={() => (confirm === 'del' ? removeTool(activeTool.id) : armConfirm('del'))}
-                  >
-                    {confirm === 'del'
-                      ? `再按一次移除「${WS_INFO[activeTool.kind].name}」`
-                      : `移除「${WS_INFO[activeTool.kind].name}」`}
-                  </button>
-                  {confirm === 'exit' && <span className="gt-hint">再按一次 × 離開，會清掉這些工具的數字</span>}
-                </div>
-              )}
             </div>
           )}
         </div>
