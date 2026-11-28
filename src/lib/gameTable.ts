@@ -32,6 +32,7 @@ export type DiceGroup = {
   count: number
   faces: DiceFace[]
   results: string[]
+  icon?: string
 }
 export type ValueMap = Record<string, Record<string, number>>
 
@@ -65,7 +66,8 @@ export type Draft = {
   resRows: SheetRow[]
   scoreRows: SheetRow[]
 }
-export type DiceBox = { groups: DiceGroup[]; log: string[] }
+// pick：這次要擲的組合（骰子組 id → 顆數），可混搭多組
+export type DiceBox = { groups: DiceGroup[]; log: string[]; pick?: Record<string, number> }
 export type LocalStore = {
   v: 2
   left: string[]
@@ -80,7 +82,7 @@ export function emptyStore(): LocalStore {
 }
 
 export function emptyDice(): DiceBox {
-  return { groups: [], log: [] }
+  return { groups: [], log: [], pick: {} }
 }
 
 export function uid(): string {
@@ -114,6 +116,15 @@ function cleanDraft(raw: unknown): Draft | null {
   }
 }
 
+function cleanPick(raw: unknown): Record<string, number> {
+  const out: Record<string, number> = {}
+  if (typeof raw !== 'object' || raw === null) return out
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof v === 'number' && Number.isFinite(v) && v > 0) out[k] = Math.min(MAX_DICE, Math.round(v))
+  }
+  return out
+}
+
 export function loadStore(gatheringId: string): LocalStore {
   try {
     const raw = window.localStorage.getItem(KEY + gatheringId)
@@ -127,6 +138,7 @@ export function loadStore(gatheringId: string): LocalStore {
           dice[id] = {
             groups: box.groups,
             log: Array.isArray(box.log) ? box.log.filter((x) => typeof x === 'string') : [],
+            pick: cleanPick(box.pick),
           }
         }
       }

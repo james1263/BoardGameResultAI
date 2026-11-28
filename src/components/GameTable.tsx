@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import RoomTimer from './RoomTimer'
 import TableHoldings from './TableHoldings'
 import DiceEditor from './DiceEditor'
+import DiceTray from './DiceTray'
 import IconPresetPicker from './IconPresetPicker'
 import IconView from './IconView'
 import { supabase } from '../lib/supabase'
@@ -23,7 +24,6 @@ import {
   TOOL_INFO,
   cellValue,
   clampValue,
-  diceSummaryText,
   emptyDice,
   linkedResource,
   loadStore,
@@ -670,25 +670,33 @@ function Play({
     setDiceEdit(null)
   }
 
-  function logRoll(b: DiceBox, g: DiceGroup, results: string[]): string[] {
-    const name = g.name || `骰子 ${b.groups.findIndex((x) => x.id === g.id) + 1}`
-    return [`${name}：${summarize(results)}`, ...b.log].slice(0, 5)
+  function rollPicked() {
+    onBox((b) => {
+      const pick = b.pick ?? {}
+      const parts: string[] = []
+      const groups = b.groups.map((g, i) => {
+        const n = pick[g.id] ?? 0
+        if (n <= 0) return { ...g, results: [] }
+        const results = rollGroup({ ...g, count: n })
+        parts.push(`${g.name || `骰子 ${i + 1}`}：${summarize(results)}`)
+        return { ...g, results }
+      })
+      if (parts.length === 0) return b
+      return { ...b, groups, log: [parts.join('；'), ...b.log].slice(0, 5) }
+    })
   }
 
-  function roll(g: DiceGroup) {
-    const results = rollGroup(g)
-    onBox((b) => ({
-      groups: b.groups.map((x) => (x.id === g.id ? { ...x, results } : x)),
-      log: logRoll(b, g, results),
-    }))
-  }
-
-  function reroll(g: DiceGroup, index: number) {
-    const results = g.results.map((r, i) => (i === index ? rollDie(g.faces) : r))
-    onBox((b) => ({
-      groups: b.groups.map((x) => (x.id === g.id ? { ...x, results } : x)),
-      log: logRoll(b, g, results),
-    }))
+  function reroll(gid: string, index: number) {
+    onBox((b) => {
+      let line = ''
+      const groups = b.groups.map((g, gi) => {
+        if (g.id !== gid) return g
+        const results = g.results.map((r, i) => (i === index ? rollDie(g.faces) : r))
+        line = `${g.name || `骰子 ${gi + 1}`}：${summarize(results)}`
+        return { ...g, results }
+      })
+      return { ...b, groups, log: line ? [line, ...b.log].slice(0, 5) : b.log }
+    })
   }
 
   const ranking = useMemo(() => {
@@ -845,61 +853,26 @@ function Play({
       {shownTab === 'dice' && (
         <>
           {diceEdit ? (
-            <DiceEditor initial={diceEdit} onSave={saveDice} onCancel={() => setDiceEdit(null)} />
+            <DiceEditor initial={diceEdit} hideCount onSave={saveDice} onCancel={() => setDiceEdit(null)} />
           ) : (
-            <>
-              <p className="gtb-muted">骰子只存在這支手機，別人看不到你的結果。</p>
-              {box.groups.length === 0 && <p className="gtb-muted">還沒有骰子組，按「＋ 新增骰子組」。</p>}
-              {box.groups.map((g, gi) => (
-                <div key={g.id} className="gtb-card">
-                  <div className="gtb-line">
-                    <b className="gtb-grow">{g.name || `骰子 ${gi + 1}`}</b>
-                    <button type="button" className="gtb-link" onClick={() => setDiceEdit(g)}>
-                      編輯
-                    </button>
-                    <button
-                      type="button"
-                      className="gtb-link"
-                      onClick={() => press(`dd-${g.id}`, () => onBox((b) => ({ ...b, groups: b.groups.filter((x) => x.id !== g.id) })))}
-                    >
-                      {armed === `dd-${g.id}` ? '再按一次刪除' : '刪除'}
-                    </button>
-                  </div>
-                  <p className="gtb-muted">
-                    {g.count} 顆・{diceSummaryText(g)}
-                  </p>
-                  <button type="button" className="gtb-btn main gtb-roll" onClick={() => roll(g)}>
-                    🎲 擲 {g.count} 顆
-                  </button>
-                  {g.results.length > 0 && (
-                    <>
-                      <div className="gtb-dice">
-                        {g.results.map((r, i) => (
-                          <button key={i} type="button" aria-label="重擲這一顆" onClick={() => reroll(g, i)}>
-                            {r}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="gtb-result">{summarize(g.results)}</p>
-                      <p className="gtb-muted">點單顆可重擲</p>
-                    </>
-                  )}
-                </div>
-              ))}
-              <button type="button" className="gtb-btn" disabled={box.groups.length >= MAX_DICE_GROUPS} onClick={() => setDiceEdit(newDiceGroup())}>
-                ＋ 新增骰子組（{box.groups.length}／{MAX_DICE_GROUPS}）
-              </button>
-              {box.log.length > 0 && (
-                <>
-                  <p className="gtb-sub">最近 5 次</p>
-                  <ul className="gtb-log">
-                    {box.log.map((x, i) => (
-                      <li key={i}>{x}</li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </>
+            <DiceTray
+              groups={box.groups}
+              pick={box.pick ?? {}}
+              log={box.log}
+              maxGroups={MAX_DICE_GROUPS}
+              onPick={(next) => onBox((b) => ({ ...b, pick: next }))}
+              onRoll={rollPicked}
+              onReroll={reroll}
+              onEdit={(g) => setDiceEdit(g)}
+              onDelete={(id) =>
+                onBox((b) => {
+                  const pick = { ...(b.pick ?? {}) }
+                  delete pick[id]
+                  return { ...b, groups: b.groups.filter((x) => x.id !== id), pick }
+                })
+              }
+              onAdd={() => setDiceEdit(newDiceGroup())}
+            />
           )}
         </>
       )}
