@@ -1,8 +1,9 @@
 ﻿import HomeToolbar from './components/HomeToolbar'
 import NewArrivals from './components/NewArrivals'
 import './styles/board-entry.css'
-import RulebookPage from './components/RulebookPage'
 import {
+  lazy,
+  Suspense,
   useCallback,
   useRef,
   useEffect,
@@ -15,9 +16,7 @@ import './App.css'
 import {
   boardGames as fallbackGames,
 } from './data/boardGames.generated'
-import AdminPanel from './AdminPanel'
-import MyList, { type MyListMode } from './MyList'
-import Leaderboard from './components/Leaderboard'
+import type { MyListMode } from './MyList'
 import { useIsAdmin } from './lib/useIsAdmin'
 import { uploadCover } from './lib/uploadCover'
 import { usePersonalCollection } from './lib/usePersonalCollection'
@@ -78,7 +77,6 @@ import {
 } from './lib/listColumns'
 import FilterTags, { type FilterTag } from './components/FilterTags'
 import GameCard from './components/GameCard'
-import GameModal from './components/GameModal'
 import MergeDialog from './components/MergeDialog'
 import PersonalToast from './components/PersonalToast'
 import TrashSection from './components/TrashSection'
@@ -87,7 +85,6 @@ import { useTrashActions } from './lib/useTrashActions'
 import { updateDescription } from './lib/saveDescription'
 import PostGatheringNotes from './components/PostGatheringNotes'
 import ThemeHint from './components/ThemeHint'
-import TodayPicker from './components/TodayPicker'
 import GameTools, { ToolsButton, type ToolChoice, type ToolView } from './components/GameTools'
 import NewTagAdmin from './components/NewTagAdmin'
 import { usePlannedUnseen } from './lib/usePlannedUnseen'
@@ -240,6 +237,7 @@ function Library({
   const isMyListOpen = activePage === 'mylist' || activePage === 'loyalty'
   const isLeaderboardOpen = activePage === 'leaderboard'
   const isRulesOpen = activePage === 'rules'
+  const leaderboardEver = useEverTrue(isLeaderboardOpen)
   // 俱樂部數字（VIP）：本月點數 ＋ 2 × 手上的免費券（月底點數歸零、券不會）
   const clubPoints =
     vip.isVip && !isAdmin && todayTask.summary
@@ -626,6 +624,7 @@ function Library({
   }, activePage !== null || isFilterOpen)
   // 「今天玩什麼？」推薦視窗；開了導覽頁面就自動關掉
   const [pickerOpen, setPickerOpen] = useState(false)
+  const pickerEver = useEverTrue(pickerOpen)
   // 挑三款是從小工具九格點進來的：按 ✕ 要回到小工具九格
   const pickerFromTools = useRef(false)
   const [toolsView, setToolsView] = useState<ToolView | null>(null)
@@ -1343,7 +1342,9 @@ function Library({
       <footer className="footer">
         <span>玩桌遊｜BoardGame</span>
         <span>讓每一場遊戲，都玩得更盡興。</span>
-        <AdminPanel />
+        <Suspense fallback={null}>
+<AdminPanel />
+</Suspense>
         {isAdmin && (
           <NewTagAdmin
             games={boardGames}
@@ -1361,7 +1362,8 @@ function Library({
       </footer>
 
       {selectedGame && (
-        <GameModal
+        <Suspense fallback={null}>
+<GameModal
           game={selectedGame}
           coverVersion={coverVersions[selectedGame.coverSlug] ?? 0}
           allGames={boardGames}
@@ -1412,9 +1414,11 @@ function Library({
             setRatingFromCheckin(false)
           }}
         />
+</Suspense>
       )}
 
-      <MyList
+      <Suspense fallback={null}>
+<MyList
         key={inviteKey}
         mode={myListMode}
         todayPending={todayTask.pending}
@@ -1473,7 +1477,10 @@ function Library({
           />
         )}
       />
-      <Leaderboard
+</Suspense>
+      {leaderboardEver && (
+<Suspense fallback={null}>
+<Leaderboard
         canSeePeople={vip.isVip}
         isAdmin={isAdmin}
         people={people}
@@ -1498,8 +1505,11 @@ function Library({
           />
         )}
       />
+</Suspense>
+)}
       {isRulesOpen && (vip.isVip || isAdmin) && (
-        <RulebookPage
+        <Suspense fallback={null}>
+<RulebookPage
           boardGames={boardGames}
           onClose={() => setActivePage(null)}
           onOpenGame={(game) => {
@@ -1508,6 +1518,7 @@ function Library({
             setSelectedGame(game)
           }}
         />
+</Suspense>
       )}
       <GameTools
         view={toolsView}
@@ -1518,7 +1529,9 @@ function Library({
           setPickerOpen(true)
         }}
       />
-      <TodayPicker
+      {pickerEver && (
+<Suspense fallback={null}>
+<TodayPicker
         isOpen={pickerOpen}
         onClose={() => {
           setPickerOpen(false)
@@ -1535,6 +1548,8 @@ function Library({
         coverVersions={coverVersions}
         onOpenGame={openGame}
       />
+</Suspense>
+)}
       <PostGatheringNotes
         boardGames={boardGames}
         personal={personal}
@@ -1551,6 +1566,21 @@ function Library({
       )}
     </div>
   )
+}
+
+// 大型畫面改成「用到才載入」：首頁先出來，這些元件第一次要用時才下載
+const AdminPanel = lazy(() => import('./AdminPanel'))
+const MyList = lazy(() => import('./MyList'))
+const Leaderboard = lazy(() => import('./components/Leaderboard'))
+const GameModal = lazy(() => import('./components/GameModal'))
+const RulebookPage = lazy(() => import('./components/RulebookPage'))
+const TodayPicker = lazy(() => import('./components/TodayPicker'))
+
+// 第一次變成 true 之後一直是 true（用來「第一次打開才載入」，之後保持掛載）
+function useEverTrue(value: boolean): boolean {
+  const [ever, setEver] = useState(value)
+  if (value && !ever) setEver(true)
+  return ever || value
 }
 
 function App() {

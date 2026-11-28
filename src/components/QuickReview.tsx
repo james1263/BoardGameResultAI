@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { getQuickReview } from '../data/quickReview'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { getCachedQuickReview, loadQuickReview, type QuickReviewData } from '../data/quickReview'
 import type { ReviewSection } from '../data/quickReview/risingSun'
 import '../styles/quick-review.css'
 import TermText, { TermViewProvider, stripTerms } from './TermText'
 import { useVip } from '../lib/useVip'
 
-function Items({ section }: { section: ReviewSection }) {
+// memo：面板打字、勾選時，不重畫整份內容（內容很多，會卡）
+const Items = memo(function Items({ section }: { section: ReviewSection }) {
   return (
     <ul className="qr-list">
       {section.items.map((item, i) => (
@@ -23,7 +24,7 @@ function Items({ section }: { section: ReviewSection }) {
       ))}
     </ul>
   )
-}
+})
 
 // 關鍵字（空白分隔，全部都要出現）比對區塊標題與內文
 function sectionMatches(section: ReviewSection, query: string): boolean {
@@ -49,7 +50,20 @@ export default function QuickReview({
   panelOpen?: boolean
   onPanelChange?: (open: boolean) => void
 }) {
-  const data = getQuickReview(bggName)
+  // 這一款的內容第一次要看才下載（載入過就直接用）
+  const [data, setData] = useState<QuickReviewData | undefined>(() => getCachedQuickReview(bggName))
+  useEffect(() => {
+    const cached = getCachedQuickReview(bggName)
+    setData(cached)
+    if (cached) return
+    let alive = true
+    void loadQuickReview(bggName).then((d) => {
+      if (alive) setData(d)
+    })
+    return () => {
+      alive = false
+    }
+  }, [bggName])
   // 名詞長按看圖只開給 VIP／管理者（useVip 管理者也算）；在這裡查一次，內部的名詞共用
   const vip = useVip()
   const rootRef = useRef<HTMLDivElement | null>(null)

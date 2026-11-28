@@ -26,7 +26,7 @@ import GameExpansions from './GameExpansions'
 import GameBackground from './GameBackground'
 import GameInfoSheet from './GameInfoSheet'
 import QuickReview from './QuickReview'
-import { getQuickReview } from '../data/quickReview'
+import { hasQuickReview } from '../data/quickReview'
 import GameQa from './GameQa'
 import { getGameFaq, getUnofficialFaq, countFaqItems } from './GameFaq'
 import { BrainIcon, PairIcon, PersonIcon } from './Icons'
@@ -206,6 +206,20 @@ export default function GameModal({
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const lastGameRef = useRef(game.bggName)
   const closeSheet = useCallback(() => setSheet(null), [])
+  // 底部彈窗先把外殼畫出來，內容晚兩個畫面再放進去（快速複習與玩錯紀錄內容多，切換時才不會卡住）
+  const [sheetReady, setSheetReady] = useState(false)
+  useEffect(() => {
+    setSheetReady(false)
+    if (!sheet) return
+    let id2 = 0
+    const id1 = window.requestAnimationFrame(() => {
+      id2 = window.requestAnimationFrame(() => setSheetReady(true))
+    })
+    return () => {
+      window.cancelAnimationFrame(id1)
+      window.cancelAnimationFrame(id2)
+    }
+  }, [sheet])
   const exitFull = useCallback(() => setSheetFull(false), [])
   useEffect(() => {
     setSheetFull(false)
@@ -315,7 +329,7 @@ export default function GameModal({
       sub: isAdmin ? '規則書・連結・教學影片' : '連結・教學影片',
     },
   ]
-  if (getQuickReview(game.bggName) && (vip.isVip || isAdmin) && !game.referenceOnly) {
+  if (hasQuickReview(game.bggName) && (vip.isVip || isAdmin) && !game.referenceOnly) {
     ruleEntries.push({ key: 'review', icon: '⚡', sub: '目標・流程・行動・得分' })
   }
   // 官方 FAQ、BGG 討論、玩錯紀錄、我的AI回覆合併成一張卡（重要性由左到右：官方 FAQ > BGG 討論 > 玩錯紀錄）。
@@ -898,7 +912,8 @@ export default function GameModal({
               />
               </div>
             )}
-            {sheet === 'errata' && (
+            {sheet === 'errata' && !sheetReady && <p className="er-note">載入中…</p>}
+            {sheet === 'errata' && sheetReady && (
               <GameQa
                 key={game.bggName}
                 bggName={game.bggName}
@@ -910,7 +925,8 @@ export default function GameModal({
                 onOpenHandled={clearSubmitReq}
               />
             )}
-            {sheet === 'review' && (
+            {sheet === 'review' && !sheetReady && <p className="qr-empty">載入中…</p>}
+            {sheet === 'review' && sheetReady && (
               <QuickReview
                 bggName={game.bggName}
                 noteOpen={qrNoteOpen}
